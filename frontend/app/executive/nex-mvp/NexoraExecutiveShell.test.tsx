@@ -67,6 +67,8 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
       html,
       /data-shell-identity="NEX-MVP:2\/NexoraExecutiveShell"/,
     );
+    assert.match(html, /data-canonical-approved-decision-count=/);
+    assert.match(html, /data-canonical-execution-count=/);
     assert.match(html, /data-eca-2="executive-intent-action-plan"/);
     assert.match(html, /data-eca-2-intent="none"/);
     assert.match(html, /data-eca-3="executive-initiative-judgment"/);

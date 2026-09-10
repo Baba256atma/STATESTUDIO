@@ -158,12 +158,17 @@ export function resolveRegisteredReference(input: {
       let best: RegisteredReferenceCandidate | null = null;
       for (const key of keys) {
         const compact = key.replace(/\s+/g, "");
-        if (compact.length < 5) continue;
-        const distance = damerauLevenshtein(token, compact, limit);
-        if (distance > limit) continue;
-        if (distance / Math.max(token.length, compact.length) > 0.34) continue;
-        if (!best || distance < best.distance) {
-          best = candidate(entry, key, distance, "fuzzy");
+        const parts = [
+          compact,
+          ...key.split(/\s+/).map((part) => part.replace(/\s+/g, "")),
+        ].filter((part) => part.length >= 5);
+        for (const part of [...new Set(parts)]) {
+          const distance = damerauLevenshtein(token, part, limit);
+          if (distance > limit) continue;
+          if (distance / Math.max(token.length, part.length) > 0.34) continue;
+          if (!best || distance < best.distance) {
+            best = candidate(entry, key, distance, "fuzzy");
+          }
         }
       }
       if (best) fuzzy.push(best);

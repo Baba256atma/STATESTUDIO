@@ -444,6 +444,10 @@ export type NexoraConversationalExperienceResult = {
   readonly ecaOutcomeJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveOutcome.ts").EcaExecutiveOutcomeJudgment | null;
   /** NPA-T ECA:12 read-only Learning/reassessment/closure; never CORE-OUT:2, DTH:12, APP-4, or ECA:6. */
   readonly ecaLearningClosureJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts").EcaExecutiveLearningClosureJudgment | null;
+  /** CC:10R adapter used this turn. Isolated sequential callers must pass it back. */
+  readonly decisionRuntime?: import("./executiveDecisionRuntimeAdapter.ts").NexoraDecisionRuntimeAdapter | null;
+  /** CC:11 adapter used this turn. Isolated sequential callers must pass it back. */
+  readonly executionRuntime?: import("./executiveExecutionRuntimeAdapter.ts").NexoraExecutionRuntimeAdapter | null;
   /** NEX-EXP:1 session. Omitted when entrance is not active. */
   readonly nextEntranceSession?: import("@/app/lib/nexora-entrance/nexoraEntranceTypes.ts").NexoraEntranceSession | null;
   readonly guidedAttention?: import("@/app/lib/director/nexoraGuidedAttentionPresentation.ts").NexoraGuidedAttentionRuntime | null;

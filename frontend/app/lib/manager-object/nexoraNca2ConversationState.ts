@@ -412,6 +412,15 @@ function isReturnUtterance(prepared: string): boolean {
   );
 }
 
+function isPronounOnlyReferent(utterance: string): boolean {
+  const text = utterance.trim();
+  return (
+    /^(?:explain|investigate|why|what about|tell me about|open|show|review)?\s*(?:it|this|that)(?:\s+(?:problem|scenario|one))?[.!?]?$/i.test(
+      text,
+    ) || /^how do i use this object\??$/i.test(text)
+  );
+}
+
 function isAbandonUtterance(prepared: string): boolean {
   return /\bforget\b/.test(prepared) && /\b(?:focus|look|talk|discuss)\b/.test(prepared);
 }
@@ -658,7 +667,26 @@ export function interpretNcaDialogueTurn(input: {
     } else if (incoming.name) {
       activate(incoming, "replacement-topic", true);
     }
-  } else if (isReturnUtterance(prepared)) {
+  } else if (
+    collectionOrdinalIndex(input.utterance) != null &&
+    (previous.lastCollection?.items.length ?? previous.lastOfferedOptions.length) > 0
+  ) {
+    move = "FOLLOW_UP";
+    const items =
+      previous.lastCollection?.items.length
+        ? previous.lastCollection.items
+        : previous.lastOfferedOptions;
+    answer = extractAnswer(input.utterance, "OPTION", items);
+    resolvedDeictic = answer?.optionLabel ?? items[collectionOrdinalIndex(input.utterance) ?? 0] ?? null;
+    if (resolvedDeictic) {
+      const idx = collectionOrdinalIndex(input.utterance) ?? 0;
+      activeSubject = Object.freeze({
+        id: previous.lastCollection?.memberIds?.[idx] ?? previous.activeSubject?.id ?? null,
+        name: resolvedDeictic,
+        kind: previous.lastCollection?.kind ?? "problem",
+      });
+    }
+  } else if (isReturnUtterance(prepared) && collectionOrdinalIndex(input.utterance) == null) {
     move = "RETURN_TO_TOPIC";
     const token = prepared
       .replace(/^(?:go back(?: to)?|back to|return to|let'?s return to)\s+/i, "")
@@ -688,24 +716,6 @@ export function interpretNcaDialogueTurn(input: {
       activeTopic = restored.topic;
       pendingQuestion = restoredPending;
       restoredThread = restored;
-    }
-  } else if (
-    collectionOrdinalIndex(input.utterance) != null &&
-    (previous.lastCollection?.items.length ?? previous.lastOfferedOptions.length) > 0
-  ) {
-    move = "FOLLOW_UP";
-    const items =
-      previous.lastCollection?.items.length
-        ? previous.lastCollection.items
-        : previous.lastOfferedOptions;
-    answer = extractAnswer(input.utterance, "OPTION", items);
-    resolvedDeictic = answer?.optionLabel ?? items[collectionOrdinalIndex(input.utterance) ?? 0] ?? null;
-    if (resolvedDeictic) {
-      activeSubject = Object.freeze({
-        id: previous.activeSubject?.id ?? null,
-        name: resolvedDeictic,
-        kind: previous.lastCollection?.kind ?? "problem",
-      });
     }
   } else if (
     /^(?:the )?(?:first|second|third)(?: one)?$/.test(prepared) &&
@@ -781,6 +791,8 @@ export function interpretNcaDialogueTurn(input: {
     incoming.name &&
     previous.activeSubject?.name &&
     incoming.name.toLowerCase() !== previous.activeSubject.name.toLowerCase() &&
+    !isPronounOnlyReferent(input.utterance) &&
+    collectionOrdinalIndex(input.utterance) == null &&
     input.nca.need.family !== "SOCIAL_CONVERSATION" &&
     classifyManagerSpeechAct(input.utterance) !== "PREFERENCE"
   ) {
@@ -796,7 +808,9 @@ export function interpretNcaDialogueTurn(input: {
     const speech = classifyManagerSpeechAct(input.utterance);
     if (
       incoming.name &&
-      speech !== "PREFERENCE"
+      speech !== "PREFERENCE" &&
+      !isPronounOnlyReferent(input.utterance) &&
+      collectionOrdinalIndex(input.utterance) == null
     ) {
       activate(incoming, input.nca.need.family.toLowerCase(), false);
     }
@@ -996,8 +1010,33 @@ export function applyNexoraDialogueEffects(input: {
         ? null
         : input.state.lastFailedTurn;
 
+  const spokenOrdinal = input.response.match(
+    /The (first|second|third|last) (\w+) is ([^.]+)/i,
+  );
+  const spokenOrdinalSubject = spokenOrdinal?.[3]
+    ? Object.freeze({
+        name: spokenOrdinal[3].trim(),
+        kind: spokenOrdinal[2]!.replace(/s$/i, "").toLowerCase(),
+        id: (() => {
+          const items = input.state.lastCollection?.items ?? [];
+          const idx = items.findIndex(
+            (item) => item.toLowerCase() === spokenOrdinal[3]!.trim().toLowerCase(),
+          );
+          return idx >= 0
+            ? input.state.lastCollection?.memberIds?.[idx] ?? null
+            : null;
+        })(),
+      })
+    : null;
+
   return freezeNcaConversationState({
     ...input.state,
+    activeSubject:
+      spokenOrdinalSubject &&
+      input.state.activeSubject?.id &&
+      input.state.activeSubject.name?.toLowerCase() === spokenOrdinalSubject.name.toLowerCase()
+        ? input.state.activeSubject
+        : spokenOrdinalSubject ?? input.state.activeSubject,
     pendingQuestion: pending,
     lastOfferedOptions: options.length > 0 ? options : input.state.lastOfferedOptions,
     lastRecommendation: recommendation ?? input.state.lastRecommendation,
@@ -1006,16 +1045,25 @@ export function applyNexoraDialogueEffects(input: {
     openAdvisoryWork: Object.freeze(advisory),
     lastFailedTurn,
     lastCollection: (() => {
-      const listed = input.response.match(/Current Problems:\s*([^.]+)/i);
-      if (listed?.[1]) {
+      const listed = input.response.match(
+        /Current (Problems|Scenarios|Risks|Decisions|Executions)(?::| are)\s*([^.]+)/i,
+      );
+      if (listed?.[2]) {
+        const items = Object.freeze(
+          listed[2]
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        );
+        const previousItems = input.state.lastCollection;
+        const memberIds =
+          previousItems?.items.join("|") === items.join("|")
+            ? previousItems.memberIds
+            : previousItems?.memberIds;
         return Object.freeze({
-          kind: "PROBLEM",
-          items: Object.freeze(
-            listed[1]
-              .split(",")
-              .map((item) => item.trim())
-              .filter(Boolean),
-          ),
+          kind: listed[1]!.toUpperCase().replace(/S$/, ""),
+          items,
+          ...(memberIds ? { memberIds } : {}),
         });
       }
       if (/opened problems|current problems/i.test(input.response)) {

@@ -271,7 +271,7 @@ export function judgeEcaLiveExecution(input: EcaLiveExecutionInput): EcaLiveExec
     if (managerIntent === "WRITE") {
       speak = true;
       handoff = true;
-      note = "That is an Execution mutation request. It must go through Nexora’s Execution authority. ECA:10 will not write it.";
+      note = "That is an Execution change request. It has to go through Execution confirmation before anything is written.";
     } else if (managerIntent === "OUTCOME_QUESTION") {
       speak = true;
       note =
@@ -281,8 +281,8 @@ export function judgeEcaLiveExecution(input: EcaLiveExecutionInput): EcaLiveExec
     } else if (managerIntent === "REASSESS") {
       speak = true;
       note = blockerLabel
-        ? `The live Execution evidence, including ${blockerLabel}, may justify reassessing the Decision. ECA:10 will not change the Decision.`
-        : "Live Execution evidence can be reviewed against the Decision. ECA:10 will not change the Decision.";
+        ? `The live Execution evidence, including ${blockerLabel}, may justify reassessing the Decision. Reviewing Execution does not itself change the Decision.`
+        : "Live Execution evidence can be reviewed against the Decision. Reviewing Execution does not itself change the Decision.";
     } else if (managerIntent === "CHANGED") {
       speak = true;
       if (priorProgress == null && previous.lastExecutionId !== execution!.executionId) {

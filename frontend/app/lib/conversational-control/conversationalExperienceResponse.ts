@@ -20,6 +20,7 @@ import { answerNexoraExiUtterance } from "@/app/lib/nex-mvp/nexoraExecutiveIntel
 import type { NexoraPendingTurnResolution } from "./conversationalTurnExpectation.ts";
 import {
   collectionEmptyCopy,
+  collectionOrdinalIndex,
   interpretExecutiveCollectionQuery,
 } from "@/app/lib/manager-object/nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 
@@ -175,11 +176,11 @@ export function buildNexoraConversationalExperienceResponse(input: {
     status === "applied" &&
     recommendationResult &&
     (intent.kind === "recommend" ||
-      intent.kind === "explain" ||
       intent.kind === "prioritize" ||
       command?.kind === "request-recommendation" ||
-      command?.kind === "request-explanation" ||
-      command?.kind === "request-prioritization")
+      command?.kind === "request-prioritization" ||
+      ((intent.kind === "explain" || command?.kind === "request-explanation") &&
+        collectionOrdinalIndex(input.utterance) == null))
   ) {
     return buildRecommendationResponse({
       intentKind: intent.kind,

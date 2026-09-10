@@ -224,6 +224,8 @@ export function runConversationCase(testCase: NxaConversationCase): NxaHarnessCa
       previousManagerObjectSession: previous?.managerObjectTurn.session ?? createEmptyManagerObjectSession(),
       scenarioSession: previous?.nextScenarioSession ?? null,
       decisionSession: previous?.nextDecisionSession ?? null,
+      decisionRuntime: previous ? previous.decisionRuntime : undefined,
+      executionRuntime: previous ? previous.executionRuntime : undefined,
       messageIdSeed: `nxa6-prep-${testCase.id}-${index}`,
     });
     runtime = result.nextRuntimeState;

@@ -866,6 +866,7 @@ function matchCollectionShows(normalized: string): MatchResult | null {
 
   for (const spec of specs) {
     if (!spec.pattern.test(normalized)) continue;
+    if (isSingularCollectionNounShow(normalized)) continue;
     return {
       kind: spec.kind,
       confidence: 0.94,
@@ -879,6 +880,13 @@ function matchCollectionShows(normalized: string): MatchResult | null {
   return null;
 }
 
+function isSingularCollectionNounShow(normalized: string): boolean {
+  const stripped = normalized.replace(/^(?:now|then|please|also)\s+/, "");
+  return /^(?:show|open|see|list|bring(?:\s+up)?)(?:\s+me)?(?:\s+the)?\s+(risk)(?:\s+object)?$/.test(
+    stripped,
+  );
+}
+
 function collectionKindFromToken(
   token: string,
 ): NexoraConversationalIntentKind | null {
@@ -890,6 +898,26 @@ function collectionKindFromToken(
   if (t.startsWith("execution")) return "show-execution";
   if (t.startsWith("related")) return "show-related";
   return null;
+}
+
+function matchCorrectionCollection(normalized: string): MatchResult | null {
+  const match = normalized.match(
+    /^(?:i (?:am |was )?ask(?:ing)? (?:of|about)|no,? i meant|i meant)\s+(?:the\s+)?(problems?|goals?|scenarios?|decisions?|executions?)$/,
+  );
+  if (!match?.[1]) return null;
+  const kind = collectionKindFromToken(match[1]);
+  if (!kind) return null;
+  return {
+    kind,
+    confidence: 0.93,
+    reasons: [
+      CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+    ],
+    targetHints: Object.freeze([]),
+    requiresContext: false,
+    requiresTarget: false,
+    candidateKinds: Object.freeze([kind]),
+  };
 }
 
 function matchCompare(normalized: string): MatchResult | null {
@@ -1345,14 +1373,41 @@ function unknownMatch(normalized: string): MatchResult {
 }
 
 function matchOrdinalReference(normalized: string): MatchResult | null {
+  const contrastive = normalized.match(
+    /^(?:and\s+)?(?:what about\s+)?(?:explain\s+|investigate\s+|show\s+)?(?:the\s+)?other(?:\s+(one|item|problem|scenario|decision))?$/,
+  );
+  if (contrastive) {
+    const noun = (contrastive[1] ?? "one").trim();
+    const ordinalHint = hint(noun !== "one" && noun !== "item" ? `other ${noun}` : "other", "ordinal");
+    return {
+      kind: "explain",
+      confidence: 0.86,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_ORDINAL_REFERENCE,
+        CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+        CONVERSATIONAL_INTENT_REASON.TARGET_REQUIRED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(ordinalHint ? [ordinalHint] : []),
+      requiresContext: true,
+      requiresTarget: true,
+      candidateKinds: Object.freeze(["explain"] as const),
+    };
+  }
   const m = normalized.match(
-    /^(?:open|show|focus(?:\s+on)?|select)?\s*(?:the\s+)?(first|second|third|previous)\s+(?:one|item|problem|scenario|decision)?$/,
+    /^(?:(?:and|what about)\s+)?(?:(explain|investigate|open|show|focus(?:\s+on)?|select)\s+)?(?:the\s+)?(first|second|third|previous)\s+(?:one|item|problem|scenario|decision)?$/,
   );
   if (!m) return null;
-  const ordinal = (m[1] ?? "").trim();
-  const ordinalHint = hint(ordinal, "ordinal");
+  const verb = (m[1] ?? "").trim();
+  const ordinal = (m[2] ?? "").trim();
+  const noun = normalized.match(
+    /(?:first|second|third|previous)\s+(one|item|problem|scenario|decision)\b/,
+  )?.[1] ?? "";
+  const ordinalHint = hint(noun && noun !== "one" && noun !== "item" ? `${ordinal} ${noun}` : ordinal, "ordinal");
+  const knowledge = /^(?:explain|investigate)$/.test(verb);
   return {
-    kind: "focus",
+    kind: knowledge ? "explain" : "focus",
     confidence: 0.88,
     reasons: [
       CONVERSATIONAL_INTENT_REASON.MATCHED_ORDINAL_REFERENCE,
@@ -1364,7 +1419,7 @@ function matchOrdinalReference(normalized: string): MatchResult | null {
     targetHints: Object.freeze(ordinalHint ? [ordinalHint] : []),
     requiresContext: true,
     requiresTarget: true,
-    candidateKinds: Object.freeze(["focus"] as const),
+    candidateKinds: Object.freeze([knowledge ? "explain" : "focus"] as const),
   };
 }
 
@@ -2442,12 +2497,14 @@ function resolveMatch(normalized: string): MatchResult {
     matchSwitchWorkspace(normalized) ??
     matchDecisionCommitment(normalized) ??
     matchScenarioConversation(normalized) ??
+    matchOrdinalReference(normalized) ??
     matchInvestigationFollowup(normalized) ??
     matchNamedSubjectInquiry(normalized) ??
     matchExecutiveQuestion(normalized) ??
     matchRecommendExplainPrioritize(normalized) ??
     matchOrdinalReference(normalized) ??
     matchCollectionShows(normalized) ??
+    matchCorrectionCollection(normalized) ??
     matchCompare(normalized) ??
     matchAnalyze(normalized) ??
     matchSimulate(normalized) ??

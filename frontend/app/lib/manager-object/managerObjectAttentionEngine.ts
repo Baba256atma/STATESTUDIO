@@ -489,7 +489,7 @@ function scoreItem(input: ScoreInput): ExecutiveAttentionItem {
     input.change?.managerAuthority === true;
   if (managerAuthority) {
     score += 18;
-    signals.push("MANAGER AUTHORITY REQUIREMENT");
+    signals.push("this needs a manager decision");
   }
   if (ownerCanResolve && !managerAuthority) {
     score -= 16;
@@ -497,7 +497,7 @@ function scoreItem(input: ScoreInput): ExecutiveAttentionItem {
   }
   if (input.kind === "DECISION" && input.journey.decisionState !== "committed") {
     score += 25;
-    signals.push("DECISION REQUIREMENT");
+    signals.push("a Decision is still required");
   }
   if (input.kind === "EXECUTION" && input.journey.executionState === "BLOCKED") {
     score += managerAuthority ? 22 : 8;
@@ -706,6 +706,12 @@ function collectUnknowns(
   return Object.freeze(unknowns);
 }
 
+function managerFacingAttentionLabel(label: string): string {
+  if (label === "INSUFFICIENT_REALITY") return "missing confirmed evidence";
+  if (/^[A-Z][A-Z0-9_]+$/.test(label)) return label.toLowerCase().replace(/_/g, " ");
+  return label;
+}
+
 function composeReasoning(
   primary: ExecutiveAttentionItem | null,
   items: readonly ExecutiveAttentionItem[],
@@ -716,10 +722,10 @@ function composeReasoning(
     return "Operational attention may still be surfaced, but Nexora cannot rank strategic importance because the active goal is unknown.";
   }
   if (comparable && items[0] && items[1]) {
-    return `${items[0].label} and ${items[1].label} currently have comparable executive priority. Attention ranking is inferred and is not a causal claim.`;
+    return `${managerFacingAttentionLabel(items[0].label)} and ${managerFacingAttentionLabel(items[1].label)} currently have comparable executive priority. Attention ranking is inferred and is not a causal claim.`;
   }
   if (primary == null) return "No executive intervention is required right now.";
-  return `${primary.label} is the highest-priority attention candidate because ${primary.rankingSignals.join(", ") || "available executive signals"}. This does not establish a confirmed business cause.`;
+  return `${managerFacingAttentionLabel(primary.label)} is the highest-priority attention candidate because ${primary.rankingSignals.join(", ") || "available executive signals"}. This does not establish a confirmed business cause.`;
 }
 
 function composeFacing(input: {
@@ -740,11 +746,9 @@ function composeFacing(input: {
     lines.push("Goal-directed ranking is unavailable because the active goal is unknown.");
   }
   if (input.comparable && input.secondary.length > 0) {
-    lines.push(
-      `Needs your attention: ${input.secondary.map((item) => item.label).join(" and ")} currently have comparable executive priority.`,
-    );
+    lines.push(`Needs your attention: ${input.secondary.map((item) => managerFacingAttentionLabel(item.label)).join(" and ")} currently have comparable executive priority.`);
   } else if (input.primary) {
-    lines.push(`Needs your attention: ${input.primary.label}.`);
+    lines.push(`Needs your attention: ${managerFacingAttentionLabel(input.primary.label)}.`);
     lines.push(`Why now: ${input.primary.reason}`);
     lines.push(`Intervention: ${input.intervention.need}.`);
     if (input.primary.recommendedPath) {

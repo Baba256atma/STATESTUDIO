@@ -52,6 +52,7 @@ import { answerCsvSemanticInquiry } from "@/app/lib/data-reality/csvSemanticUnde
 import {
   answerAdvisorDataInquiry,
   applyAdvisorDataSemanticClarification,
+  assistantIntroducedDataSourceIds,
   classifyAdvisorDataConversation,
   emptyAdvisorDataDialogue,
   type AdvisorDataInquiryDiagnostics,
@@ -255,6 +256,7 @@ import {
   freezeManagerObjectSession,
   type ManagerObjectSession,
 } from "@/app/lib/manager-object/managerObjectActive";
+import { applyAssistantIntroducedReferent } from "@/app/lib/manager-object/nexoraMvpFinal62ConversationContinuity";
 import { createEmptyNexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
 import type { NexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
 import { createEmptyNexoraExecutiveDecisionSession } from "@/app/lib/conversational-control/executiveDecisionAuthority";
@@ -1476,13 +1478,24 @@ export function NexoraExecutiveShell({
           utterance: trimmed,
           dialogue: advisorDataDialogueRef.current,
           focusedObjectLabel: interactionRef.current.focusedSubject?.label ?? null,
+          conversationContinuity: managerObjectSessionRef.current.conversationContinuity ?? null,
         });
         if (dataLibraryAnswer) {
           advisorDataDialogueRef.current = dataLibraryAnswer.dialogue;
           setDataAdvDiagnostics(dataLibraryAnswer.diagnostics ?? null);
+          const introducedIds = assistantIntroducedDataSourceIds(dataLibraryAnswer);
           const withDialogue = freezeManagerObjectSession({
             ...managerObjectSessionRef.current,
             advisorDataDialogue: dataLibraryAnswer.dialogue,
+            conversationContinuity:
+              introducedIds.length > 0
+                ? applyAssistantIntroducedReferent({
+                    previous: managerObjectSessionRef.current.conversationContinuity,
+                    subjectId: introducedIds.length === 1 ? introducedIds[0] ?? null : null,
+                    subjectKind: "data",
+                    presentedIds: introducedIds,
+                  })
+                : managerObjectSessionRef.current.conversationContinuity,
           });
           setManagerObjectSession(withDialogue);
           managerObjectSessionRef.current = withDialogue;
@@ -1714,6 +1727,7 @@ export function NexoraExecutiveShell({
             utterance: trimmed,
             dialogue: result.managerObjectTurn.session.advisorDataDialogue ?? advisorDataDialogueRef.current,
             focusedObjectLabel: previous.focusedSubject?.label ?? null,
+            conversationContinuity: result.managerObjectTurn.session.conversationContinuity ?? null,
           })?.diagnostics ?? null,
         );
         if (result.managerObjectTurn.session.advisorDataDialogue) {
@@ -2375,6 +2389,10 @@ export function NexoraExecutiveShell({
         }
         return actionResult.status === "SUCCEEDED" ? "MISMATCH" : "none";
       })()}
+      data-canonical-approved-decision-count={String(
+        decisionRuntime.adapter.listDecisions().filter((item) => item.status === "Approved").length,
+      )}
+      data-canonical-execution-count={String(executionRuntime.listExecutions().length)}
       data-eca-2="executive-intent-action-plan"
       data-eca-2-engine={ECA_EXECUTIVE_ACTION_PLAN_IDENTITY}
       data-eca-2-intent={ecaActionPlan?.intent ?? "none"}

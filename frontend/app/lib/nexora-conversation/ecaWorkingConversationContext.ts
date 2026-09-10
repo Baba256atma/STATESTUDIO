@@ -1,5 +1,6 @@
 import type { CanonicalManagerMeaning } from "../manager-object/canonicalManagerMeaning.ts";
 import type { NexoraConversationState } from "../manager-object/nexoraNca2ConversationStateTypes.ts";
+import { collectionOrdinalIndex } from "../manager-object/nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import type { NexoraConversationWorkingContext } from "./nexoraConversationWorkingContext.ts";
 
 export const ECA_WORKING_CONTEXT_IDENTITY = "NPA-T ECA:1/WorkingConversationContext" as const;
@@ -159,11 +160,20 @@ function subjectFromRecord(
     : null;
 }
 
-function stateSubject(state: NexoraConversationState | null | undefined): EcaSubject | null {
+function stateSubject(
+  state: NexoraConversationState | null | undefined,
+  subjects: readonly EcaSubject[],
+): EcaSubject | null {
   const subject = state?.activeSubject;
-  return subject?.id && subject.name
-    ? freeze({ id: subject.id, label: subject.name, kind: subject.kind })
-    : null;
+  const name = subject?.name;
+  if (!name) return null;
+  return (
+    (subject.id ? subjects.find((item) => item.id === subject.id) : null) ??
+    subjects.find((item) => item.label.toLowerCase() === name.toLowerCase()) ??
+    (subject.id
+      ? freeze({ id: subject.id, label: name, kind: subject.kind })
+      : freeze({ id: name, label: name, kind: subject.kind }))
+  );
 }
 
 function requestedMutation(utterance: string): EcaMutationProposal["operation"] | null {
@@ -183,24 +193,60 @@ function requestedMutation(utterance: string): EcaMutationProposal["operation"] 
     : null;
 }
 
+function mutationKindNoun(value: string | null): boolean {
+  return /^(?:this|that|it|risks?|problems?|goals?|scenarios?|decisions?|executions?|kpis?|objects?)$/i.test(
+    (value ?? "").trim(),
+  );
+}
+
 function mutationTarget(utterance: string, operation: EcaMutationProposal["operation"]): {
   readonly targetType: string | null;
   readonly proposedName: string | null;
+  readonly deictic: boolean;
 } {
   const text = utterance.trim();
   const add = text.match(/^(?:add|create)\s+(.+?)\s+as\s+(?:a|an)\s+([A-Za-z]+)\.?$/i);
   const make = text.match(/^make\s+(.+?)\s+(?:a|an)\s+([A-Za-z]+)\.?$/i);
   const requested = text.match(/^i\s+want\s+(.+?)\s+added\s+as\s+(?:a|an)\s+([A-Za-z]+)\.?$/i);
   const called = text.match(/^create\s+(?:a|an)\s+([A-Za-z]+)\s+called\s+(.+?)\.?$/i);
+  const addThis = text.match(/^(?:add|create)\s+(?:this|that|it)\s+as\s+(?:a|an)\s+([A-Za-z]+)\.?$/i);
   const match = add ?? make ?? requested;
   if (operation === "ADD" && called) {
-    return { proposedName: called[2]?.trim() ?? null, targetType: called[1]?.trim().toUpperCase() ?? null };
+    return { proposedName: called[2]?.trim() ?? null, targetType: called[1]?.trim().toUpperCase() ?? null, deictic: false };
+  }
+  if (operation === "ADD" && addThis) {
+    return { proposedName: null, targetType: addThis[1]?.trim().toUpperCase() ?? null, deictic: true };
   }
   if (operation === "ADD" && match) {
-    return { proposedName: match[1]?.trim() ?? null, targetType: match[2]?.trim().toUpperCase() ?? null };
+    const name = match[1]?.trim() ?? null;
+    return {
+      proposedName: mutationKindNoun(name) ? null : name,
+      targetType: match[2]?.trim().toUpperCase() ?? null,
+      deictic: mutationKindNoun(name),
+    };
   }
-  const remove = text.match(/^(?:remove|delete)\s+(?:this\s+|the\s+)?([A-Za-z]+)?/i);
-  return { proposedName: operation === "REMOVE" ? remove?.[1] ?? null : null, targetType: null };
+  if (operation === "REMOVE") {
+    const deictic = /^(?:remove|delete)\s+(?:this|that|it)\b/i.test(text);
+    const named = text.match(/^(?:remove|delete)\s+(?:the\s+)?(.+?)\.?$/i)?.[1]?.trim() ?? null;
+    if (deictic || mutationKindNoun(named)) {
+      return { proposedName: null, targetType: null, deictic: true };
+    }
+    return { proposedName: named, targetType: null, deictic: false };
+  }
+  return { proposedName: null, targetType: null, deictic: false };
+}
+
+function managerFacingSubjectLabel(label: string): string {
+  if (/^cc9:scenario:/i.test(label)) {
+    const kind = label.split(":")[2] ?? "option";
+    return kind === "do-nothing" ? "the current course" : kind.replace(/-/g, " ");
+  }
+  if (/^[A-Z][A-Z0-9_]+$/.test(label)) {
+    return label === "INSUFFICIENT_REALITY"
+      ? "missing confirmed evidence"
+      : label.toLowerCase().replace(/_/g, " ");
+  }
+  return label;
 }
 
 function proposalId(input: { readonly operation: string; readonly name: string | null; readonly source: string }): string {
@@ -212,7 +258,9 @@ export function isEcaMutationConfirmation(utterance: string): boolean {
 }
 
 export function isEcaMutationCancellation(utterance: string): boolean {
-  return /^(?:cancel|never mind|don't add it|do not add it|no|leave it)[.!?]?$/i.test(utterance.trim());
+  return /^(?:cancel|never mind|forget (?:it|that)(?:\s+for now)?|don't (?:add|remove|delete) it|do not (?:add|remove|delete) it|no|leave it|not now)[.!?]?$/i.test(
+    utterance.trim(),
+  );
 }
 
 function confidenceFor(input: {
@@ -246,28 +294,100 @@ export function composeEcaWorkingConversationContext(
     meaning?.objectReference ?? meaning?.subject ?? null,
     input.subjects,
   );
-  const explicit =
-    rawExplicit && /^(you|yourself)$/i.test(rawExplicit.label.trim()) ? null : rawExplicit;
-  const confirmed = stateSubject(input.conversationState);
+  const spokenExplicit =
+    rawExplicit &&
+    !/^(you|yourself|it|this|that)$/i.test(rawExplicit.label.trim()) &&
+    input.utterance.toLowerCase().includes(rawExplicit.label.toLowerCase())
+      ? rawExplicit
+      : null;
+  const explicit = spokenExplicit;
+  const confirmed = stateSubject(input.conversationState, input.subjects);
   const threadSubjectId = input.working?.conversationThread?.primarySubject ?? null;
   const threadSubject = threadSubjectId
     ? input.subjects.find((subject) => subject.id === threadSubjectId) ?? null
     : null;
-  const ordinal = input.utterance.match(/\b(?:the )?(first|second|third|last) one\b/i)?.[1]?.toLowerCase() ?? null;
-  const ordinalSubject = ordinal && input.stage.visible.length > 0
-    ? input.stage.visible[
-        ordinal === "first" ? 0 : ordinal === "second" ? 1 : ordinal === "third" ? 2 : input.stage.visible.length - 1
-      ] ?? null
-    : null;
+  const comparisonPool = (input.conversationState?.activeComparison?.candidateIds ?? [])
+    .map((id) => input.subjects.find((subject) => subject.id === id) ?? null)
+    .filter((subject): subject is EcaSubject => subject != null);
+  const collectionPool = (input.stage.collection?.members ?? []).filter(
+    (member) => !/watch$/i.test(member.label),
+  );
+  const scenarioPool = input.subjects.filter((subject) => /scenario/i.test(subject.kind ?? ""));
+  const problemPool = input.subjects.filter((subject) => /problem/i.test(subject.kind ?? ""));
+  const letter = input.utterance.match(/\bscenario\s+([ab])\b/i)?.[1]?.toLowerCase() ?? null;
+  const letterPool = collectionPool.length > 0 ? collectionPool : scenarioPool;
+  const letterSubject =
+    letter === "a"
+      ? letterPool[0] ?? null
+      : letter === "b"
+        ? letterPool[1] ?? null
+        : null;
+  const ordinalIdx = collectionOrdinalIndex(input.utterance);
+  const listedIds = input.conversationState?.lastCollection?.memberIds ?? [];
+  const listedPool = listedIds.length
+    ? listedIds
+        .map((id) => input.subjects.find((subject) => subject.id === id) ?? null)
+        .filter((subject): subject is EcaSubject => subject != null)
+    : (input.conversationState?.lastCollection?.items ?? [])
+        .map(
+          (name) =>
+            input.subjects.find((subject) => subject.label.toLowerCase() === name.toLowerCase()) ?? null,
+        )
+        .filter((subject): subject is EcaSubject => subject != null);
+  const stageMembershipUtterance = /\bon (?:the )?stage\b/i.test(input.utterance);
+  const ordinalPool =
+    comparisonPool.length > 0
+      ? comparisonPool
+      : !stageMembershipUtterance && listedPool.length > 0
+        ? listedPool
+      : /\bscenario/i.test(input.utterance)
+        ? /scenario/i.test(input.stage.collection?.kind ?? "") && collectionPool.length > 0
+          ? collectionPool
+          : scenarioPool
+        : /\bproblem/i.test(input.utterance)
+          ? /problem/i.test(input.stage.collection?.kind ?? "") && collectionPool.length > 0
+            ? collectionPool
+            : problemPool
+          : collectionPool.length > 0
+            ? collectionPool
+            : scenarioPool;
+  const ordinalSubject =
+    ordinalIdx == null || ordinalPool.length === 0
+      ? null
+      : ordinalIdx < 0
+        ? ordinalPool[ordinalPool.length - 1] ?? null
+        : ordinalPool[ordinalIdx] ?? null;
   const namedVisible = input.stage.visible.filter((subject) => {
     const needle = input.utterance.toLowerCase();
     const label = subject.label.toLowerCase();
     const base = label.replace(/\s+watch$/i, "");
-    return needle.includes(label) || needle.includes(base);
+    if (/watch$/i.test(subject.label) && !/watch/i.test(needle)) return false;
+    return needle.includes(label) || (base.length > 3 && needle.includes(base));
   });
   const uniqueVisible = namedVisible.length === 1 ? namedVisible[0]! : null;
-  const stageNamed = ordinalSubject ?? uniqueVisible;
-  const active = explicit ?? stageNamed ?? confirmed ?? threadSubject ?? input.recentSubjects?.[0] ?? null;
+  const pronounFollowUp =
+    /^(?:explain|investigate|why|what about|tell me about)?\s*(?:it|this|that)(?:\s+(?:problem|scenario|one))?[.!?]?$/i.test(
+      input.utterance.trim(),
+    );
+  const knowledgeFollowUp =
+    /^(?:explain|what is|why|tell me about)\s+(?:it|this|that)\b/i.test(input.utterance.trim()) ||
+    /^(?:it|this|that)(?:\s+problem)?[.!?]?$/i.test(input.utterance.trim());
+  const stageNamed = ordinalSubject ?? letterSubject ?? (pronounFollowUp || knowledgeFollowUp ? null : uniqueVisible);
+  const conversational =
+    confirmed ?? threadSubject ?? input.recentSubjects?.[input.recentSubjects.length - 1] ?? null;
+  const knowledgeRecent =
+    knowledgeFollowUp || pronounFollowUp
+      ? input.recentSubjects?.[input.recentSubjects.length - 1] ?? conversational
+      : null;
+  const active =
+    ordinalSubject ??
+    explicit ??
+    letterSubject ??
+    knowledgeRecent ??
+    (knowledgeFollowUp || pronounFollowUp ? conversational : stageNamed) ??
+    conversational ??
+    (knowledgeFollowUp ? null : uniqueVisible) ??
+    null;
   const ambiguous = input.explicitAmbiguity === true || meaning?.ambiguity.unresolved === true;
   const explicitCandidates = (meaning?.ambiguity.candidates ?? [])
     .map((candidate) => subjectFromRecord(candidate, input.subjects))
@@ -293,6 +413,19 @@ export function composeEcaWorkingConversationContext(
       references.push(freeze({ subject: recent, role: "RECENT_SUBJECT", confidence: "LOW", source: "NCA recent subject history" }));
     }
   }
+  if (
+    active &&
+    !references.some((reference) => reference.subject.id === active.id)
+  ) {
+    references.push(
+      freeze({
+        subject: active,
+        role: confirmed?.id === active.id ? "CONFIRMED" : "ACTIVE_SUBJECT",
+        confidence: confirmed?.id === active.id ? "HIGH" : "MEDIUM",
+        source: "ECA resolved active subject",
+      }),
+    );
+  }
   if (ambiguous) {
     for (const candidate of candidates) {
       references.push(freeze({ subject: candidate, role: "AMBIGUOUS_CANDIDATE", confidence: "LOW", source: "NCA ambiguity" }));
@@ -300,6 +433,20 @@ export function composeEcaWorkingConversationContext(
   }
   const mutation = requestedMutation(input.utterance);
   const target = mutation ? mutationTarget(input.utterance, mutation) : null;
+  const mutationName =
+    target?.proposedName ??
+    (mutation === "REMOVE" && (explicit ?? conversational)
+      ? (explicit ?? conversational)?.label ?? null
+      : target?.deictic === true
+        ? explicit && !mutationKindNoun(explicit.label)
+          ? explicit.label
+          : null
+        : explicit?.label ?? null);
+  const mutationType = target?.targetType ?? null;
+  const mutationWriter =
+    mutation === "ADD" && mutationType === "RISK" ? "canonicalRiskWriter" : null;
+  const mutationReady =
+    mutation === "ADD" ? Boolean(mutationName) : Boolean(mutationName || mutationType);
   const unresolved = [
     ...(ambiguous ? ["Manager referent is ambiguous."] : []),
     ...(active ? [] : ["Conversational subject is unknown."]),
@@ -359,22 +506,24 @@ export function composeEcaWorkingConversationContext(
         : mutation
           ? "Present the proposed change and wait for explicit manager confirmation."
           : "Answer the manager's request without changing Stage or business state.",
-      options: ambiguous ? freeze(candidates.slice(0, 3).map((candidate) => candidate.label)) : freeze([]),
+      options: ambiguous
+        ? freeze(candidates.slice(0, 3).map((candidate) => managerFacingSubjectLabel(candidate.label)))
+        : freeze([]),
     }),
     mutationProposal: mutation
       ? freeze({
-          proposalId: proposalId({ operation: mutation, name: target?.proposedName ?? explicit?.label ?? null, source: meaning?.rawUtterance ?? input.utterance }),
+          proposalId: proposalId({ operation: mutation, name: mutationName, source: meaning?.rawUtterance ?? input.utterance }),
           operation: mutation,
-          targetType: target?.targetType ?? null,
-          proposedName: target?.proposedName ?? explicit?.label ?? null,
-          subject: explicit ?? active,
+          targetType: mutationType,
+          proposedName: mutationName,
+          subject: explicit ?? conversational ?? active,
           relationship: null,
           statement: input.utterance.trim(),
           sourceTurnId: meaning?.rawUtterance ?? input.utterance,
-          status: target?.targetType || explicit || active ? "PROPOSED" : "NEEDS_CLARIFICATION",
-          provenance: freeze(["NCA canonical manager meaning", "ECA:1 explicit mutation recognition"]),
+          status: mutationReady ? "PROPOSED" : "NEEDS_CLARIFICATION",
+          provenance: freeze(["NCA canonical manager meaning", "ECA:1 typed mutation recognition"]),
           requiresExplicitConfirmation: true,
-          canonicalWriter: null,
+          canonicalWriter: mutationWriter,
           executed: false,
         })
       : null,

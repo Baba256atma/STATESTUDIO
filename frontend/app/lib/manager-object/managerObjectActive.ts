@@ -279,9 +279,9 @@ export function resolveManagerObjectActivation(input: {
   }
   if (input.deictic) {
     const preserved =
-      input.previous.activeObjectId ??
       input.stageFocusedId ??
-      input.conversationSubjectId;
+      input.conversationSubjectId ??
+      input.previous.activeObjectId;
     return replaceActive(
       input.previous,
       preserved,

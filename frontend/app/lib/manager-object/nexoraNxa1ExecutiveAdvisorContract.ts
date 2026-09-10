@@ -91,7 +91,12 @@ export function resolveNxaAdvisorTurnContract(input: {
   readonly dialogue: NexoraConversationState;
 }): NxaAdvisorTurnContract {
   const need = needFromExistingMeaning(input.meaning, input.nca);
-  const explicit = input.meaning.objectReference;
+  const rawExplicit = input.meaning.objectReference;
+  const deicticUtterance =
+    /^(?:explain|investigate|why|what about|tell me about)?\s*(?:it|this|that)(?:\s+(?:problem|scenario|one|object))?[.!?]?$/i.test(
+      input.meaning.rawUtterance.trim(),
+    ) || /how do i use this object/i.test(input.meaning.rawUtterance);
+  const explicit = deicticUtterance ? null : rawExplicit;
   const active = input.dialogue.activeSubject;
   const collection = input.dialogue.lastCollection;
   const useCollection =

@@ -1,8 +1,8 @@
-✔ duplicate running starts are not recorded (4.142208ms)
-✔ CERTIFIED barrier requires finished inspected passing required tasks (1.102792ms)
-✔ a long-lived nonessential task does not block certification (0.296ms)
-✔ diagnosis never authorizes a Fix on the record itself (1.0895ms)
-✔ insufficient evidence cannot begin a Fix (0.189583ms)
+✔ duplicate running starts are not recorded (1.382792ms)
+✔ CERTIFIED barrier requires finished inspected passing required tasks (0.20625ms)
+✔ a long-lived nonessential task does not block certification (0.081458ms)
+✔ diagnosis never authorizes a Fix on the record itself (0.411625ms)
+✔ insufficient evidence cannot begin a Fix (0.055792ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -939,11 +939,11 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ certified seed cases pass in deterministic order (1037.046083ms)
-✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (9.156ms)
-✔ response failure is distinct from Stage-effect failure (11.194833ms)
-✔ harness uses isolated runtime state per case (18.270875ms)
-✔ funnel catalog has four levels, no skips, and Level 4 is last (0.255917ms)
+✔ certified seed cases pass in deterministic order (457.320458ms)
+✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (4.775167ms)
+✔ response failure is distinct from Stage-effect failure (5.405334ms)
+✔ harness uses isolated runtime state per case (9.356ms)
+✔ funnel catalog has four levels, no skips, and Level 4 is last (0.132458ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -962,15 +962,15 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ conversation path scope is quiet until explicitly enabled (2.16325ms)
-✔ path projection reads existing Stage and DIR results without a second store (214.769625ms)
-✔ diagnostics are enabled in development by default (1.418542ms)
-✔ panel diagnostics are quiet until the panel scope is enabled (0.379834ms)
-✔ scene diagnostics are quiet until the scene scope is enabled (0.271125ms)
-✔ dthDecisionTheatre diagnostics are quiet until the scope is enabled (0.295583ms)
-✔ nxaConversation diagnostics are quiet until the scope is enabled (1.235709ms)
-✔ acceptance gate diagnostics are quiet until the scope is enabled (0.307292ms)
-✔ console helper disables global diagnostics and scoped diagnostics (0.321084ms)
+✔ conversation path scope is quiet until explicitly enabled (0.558625ms)
+✔ path projection reads existing Stage and DIR results without a second store (100.894917ms)
+✔ diagnostics are enabled in development by default (1.036875ms)
+✔ panel diagnostics are quiet until the panel scope is enabled (0.143667ms)
+✔ scene diagnostics are quiet until the scene scope is enabled (0.122167ms)
+✔ dthDecisionTheatre diagnostics are quiet until the scope is enabled (0.123834ms)
+✔ nxaConversation diagnostics are quiet until the scope is enabled (0.09375ms)
+✔ acceptance gate diagnostics are quiet until the scope is enabled (0.086834ms)
+✔ console helper disables global diagnostics and scoped diagnostics (0.103292ms)
 ℹ tests 19
 ℹ suites 0
 ℹ pass 19
@@ -978,5 +978,5 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 2741.212167
+ℹ duration_ms 1074.803292
 

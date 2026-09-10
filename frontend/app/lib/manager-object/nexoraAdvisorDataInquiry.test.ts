@@ -261,3 +261,23 @@ test("DATA-ADV:2 Advisor presents ambiguity, grounded why, unknown, correction, 
   assert.match(av?.text ?? "", /Actual Value/i);
   assert.doesNotMatch(av?.text ?? "", /confirmed for this source/i);
 });
+
+test("DATA-ADV unique CSV inventory binds an assistant-introduced source for deictic follow-up", () => {
+  resetCsvRealDataImportStoreForTests();
+  savePending("data-ux3-ambiguous.csv", ambiguous);
+  const listed = answerAdvisorDataInquiry({
+    workspaceId: "overview",
+    utterance: "is there any CSV files?",
+  });
+  assert.match(listed?.text ?? "", /data-ux3-ambiguous\.csv/i);
+  assert.ok(listed?.dialogue.sourceContextId);
+  const explain = answerAdvisorDataInquiry({
+    workspaceId: "overview",
+    utterance: "explain it.",
+    dialogue: listed?.dialogue,
+  });
+  assert.match(explain?.text ?? "", /data-ux3-ambiguous\.csv/i);
+  assert.match(explain?.text ?? "", /Confirmed fields|Still unresolved|under review|ready/i);
+  assert.doesNotMatch(explain?.text ?? "", /Capacity Expansion Plan/i);
+  resetCsvRealDataImportStoreForTests();
+});

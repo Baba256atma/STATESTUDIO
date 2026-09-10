@@ -69,17 +69,18 @@ export function evaluateNxa5ExecutiveJudgment(input: {
     const criterionName = criterion === "OVERALL_SIGNIFICANCE"
       ? "overall-significance basis"
       : `${criterion.toLowerCase().replaceAll("_", " ")} evidence`;
-    const message = `I don’t have a defensible comparable ${criterionName} for ${candidateNames(candidates)}. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.`;
+    const message = `I don’t have a defensible comparable ${criterionName} for ${candidateNames(candidates)}. You can ask me to compare them on another explicit criterion, such as ${alternativeCriterionSuggestion(criterion)}.`;
     return build(input, criterion, candidates, null, "INSUFFICIENT", "COMPARE", "INSUFFICIENT", "NOT_APPLICABLE", message, [], candidates.flatMap(changeConditions));
   }
   if (!chosen) {
     const names = candidates.map((candidate) => candidate.label);
     const criterionName = criterion.toLowerCase().replaceAll("_", " ");
     const noGoal = criterion === "GOAL_IMPACT" && !input.situation.goal;
+    const missing = !comparable ? missingCriterionEvidence(criterion, candidates) : null;
     const message = !comparable && criterion !== "UNSPECIFIED"
       ? noGoal
-        ? `I don’t have an authoritative active Goal or comparable Goal-impact evidence for ${candidateNames(candidates)}. You can choose another explicit criterion, such as urgency, risk exposure, or evidence strength.`
-        : `I don’t have enough comparable ${criterionName} evidence for ${candidateNames(candidates)} to select one. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.`
+        ? `I don’t have an authoritative active Goal or comparable Goal-impact evidence for ${candidateNames(candidates)}. You can choose another explicit criterion, such as ${alternativeCriterionSuggestion("GOAL_IMPACT")}.`
+        : `I don’t have enough comparable ${criterionName} evidence for ${candidateNames(candidates)} to select one.${missing ? ` ${missing}` : ""} You can ask me to compare them on another explicit criterion, such as ${alternativeCriterionSuggestion(criterion)}.`
       : candidates.length >= 2
       ? `Neither clearly dominates. ${names[0]} and ${names[1]} have different supported strengths. ${conditionalTie(candidates[0]!, candidates[1]!)}`
       : "There is not enough supported context to form a recommendation.";
@@ -120,6 +121,38 @@ function readinessJudgment(input: Parameters<typeof evaluateNxa5ExecutiveJudgmen
     return build(input, criterion, candidates, null, "COMPARABLE", "ACT", "QUALIFIED", "READY_WITH_KNOWN_UNCERTAINTY", `We have enough to make the Decision. ${decision.remainingUncertainty[0]} remains uncertain, but delaying is unlikely to add enough Decision value.`, ["Downside is understood and further learning value is low."], decision.remainingUncertainty);
   }
   return build(input, criterion, candidates, null, "COMPARABLE", "ACT", "STRONG", "READY", "Yes, we have enough to make the Decision. The relevant evidence, downside, and feasibility are sufficiently understood.", ["Relevant evidence, downside, and feasibility are sufficiently understood."], []);
+}
+
+function alternativeCriterionSuggestion(criterion: ExecutiveComparisonCriterion): string {
+  const options = (
+    [
+      ["URGENCY", "urgency"],
+      ["EVIDENCE_STRENGTH", "evidence strength"],
+      ["GOAL_IMPACT", "goal impact"],
+      ["RISK", "risk exposure"],
+      ["REVERSIBILITY", "reversibility"],
+    ] as const
+  ).filter(([id]) => id !== criterion).map(([, label]) => label);
+  if (options.length === 0) return "a different explicit criterion";
+  if (options.length === 1) return options[0]!;
+  if (options.length === 2) return `${options[0]} or ${options[1]}`;
+  return `${options.slice(0, -1).join(", ")}, or ${options[options.length - 1]}`;
+}
+
+function missingCriterionEvidence(
+  criterion: ExecutiveComparisonCriterion,
+  candidates: readonly Nxa5JudgmentCandidate[],
+): string | null {
+  if (criterion === "RISK") {
+    const unknown = candidates.filter((candidate) => candidate.riskExposure === "UNKNOWN");
+    return unknown.length
+      ? `Comparable risk-exposure evidence is missing or unknown for ${unknown.map((candidate) => candidate.label).join(" and ")}.`
+      : "Comparable risk-exposure evidence is insufficient across the current set.";
+  }
+  if (criterion === "EVIDENCE_STRENGTH") {
+    return "Comparable evidence-strength is insufficient across the current set.";
+  }
+  return null;
 }
 
 function hasComparableEvidence(candidates: readonly Nxa5JudgmentCandidate[], criterion: ExecutiveComparisonCriterion): boolean {

@@ -160,6 +160,7 @@ export {
   interpretContextualManagerTurn,
   applyContextualMeaningToIntent,
   updateConversationContinuity,
+  applyAssistantIntroducedReferent,
   NEXORA_MVP_FINAL62_CONTINUITY_BOUNDARY,
 } from "./nexoraMvpFinal62ConversationContinuity.ts";
 export {

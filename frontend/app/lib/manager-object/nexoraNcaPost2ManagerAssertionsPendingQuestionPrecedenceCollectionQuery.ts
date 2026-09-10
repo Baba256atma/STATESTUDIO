@@ -78,6 +78,9 @@ export const COLLECTION_KINDS = Object.freeze([
   "EXECUTION",
   "GOAL",
   "KPI",
+  "EVIDENCE",
+  "OUTCOME",
+  "DATA_OBJECT",
   "OBJECT",
   "OTHER",
 ] as const);
@@ -418,6 +421,7 @@ export function interpretExecutiveCollectionQuery(
 ): ExecutiveCollectionQuery | null {
   const prepared = preparedManagerUtterance(utterance).replace(/[?]+$/g, "");
   const countRequested = /\bhow many\b/.test(prepared);
+  const stageScoped = /\bon (?:the )?stage\b/.test(prepared);
   const stripped = prepared
     .replace(/^(?:no[, ]+(?:actually[, ]+)?)?/i, "")
     .replace(/^(?:that is not what i (?:asked|meant|said)[, ]*)/i, "")
@@ -425,33 +429,78 @@ export function interpretExecutiveCollectionQuery(
     .replace(/^(?:i (?:meant|mean|said) (?:the |about |of )?)/i, "")
     .replace(/^(?:i (?:am |was )?talking about (?:the )?)/i, "")
     .replace(/^(?:not (?:the )?(?:problem|issue|one),?\s+(?:the )?)/i, "")
-    .replace(/^(?:how many|what)\s+/i, "show ")
+    .replace(/^(?:now|then)\s+/i, "")
+    .replace(/^(?:how many)\s+/i, "show ")
+    .replace(
+      /^(?:what)\s+are\s+(?:(?:the|our|my)\s+)?(?:main|open|active|key)?\s*(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?)$/i,
+      "show $1",
+    )
+    .replace(/^(?:what)\s+(?!(?:is|are|was|were)\b)/i, "show ")
     .replace(/^go back to\s+/i, "show ")
-    .replace(/\s+on stage(?: that show)?$/i, "")
-    .replace(/\s+(?:do we have|are there|are open)$/i, "")
+    .replace(/\s+(?:that are |are )?(?:on stage(?: that show)?)$/i, "")
+    .replace(/\s+(?:do we have|are there|are open|we have)$/i, "")
     .trim();
   const issue =
     /\bissues?\b/.test(prepared) &&
     /\b(?:show|list|all|what|open)\b/.test(prepared);
+  const kindNoun =
+    "(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?|evidence|outcomes?|data objects?|objects?)";
   const match = stripped.match(
-    /^(?:(?:show|open|list|see)(?:\s+me)?|what|which)(?:\s+(?:are|do we have))?(?:\s+(the|all|active|open|current|our|my|top))?\s*(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?|objects?)(?:\s+(?:do we have|are there|are open|collection|on stage))?(?:\s+(?:related to|for|about)\s+(.+))?$/,
+    new RegExp(
+      `^(?:(?:show|open|list|see)(?:\\s+me)?|what|which)(?:\\s+(?:are|do we have))?(?:\\s+(the|all|active|open|current|our|my|top))?\\s*${kindNoun}(?:\\s+(?:do we have|are there|are open|collection|on stage))?(?:\\s+(?:related to|for|about)\\s+(.+))?$`,
+    ),
+  );
+  const memberMatch = stripped.match(
+    new RegExp(
+      `^(?:(?:show|open|list|see)(?:\\s+me)?)\\s+(.+?)\\s+${kindNoun}$`,
+    ),
   );
   const nounOnly = stripped.match(
-    /^(?:the |all |our |current )?(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?)$/,
+    new RegExp(`^(?:the |all |our |current )?${kindNoun}$`),
   );
-  if (issue && !match && !nounOnly) {
+  const scopeWords = new Set(["the", "all", "active", "open", "current", "our", "my", "top"]);
+  const grammarWords = new Set(["is", "are", "was", "were", "a", "an", "any", "some", "this", "that"]);
+  let requestedMember: string | null = null;
+  if (memberMatch && !match) {
+    const maybeMember = (memberMatch[1] ?? "").trim();
+    const words = maybeMember.split(/\s+/).filter(Boolean);
+    const onlyGrammar = words.length > 0 && words.every((word) => scopeWords.has(word) || grammarWords.has(word));
+    if (maybeMember && !scopeWords.has(maybeMember) && !onlyGrammar) {
+      requestedMember = maybeMember.replace(/^(?:about|for|regarding)\s+/i, "").trim();
+      if (
+        /^(?:problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?|evidence|outcomes?|objects?)$/i.test(
+          requestedMember,
+        )
+      ) {
+        requestedMember = null;
+      }
+    }
+  }
+  if (issue && !match && !nounOnly && !requestedMember) {
     return Object.freeze({
       collectionKind: "OTHER" as const,
       scope: "ALL" as const,
       subjectContext: null,
       ambiguousIssueNoun: true,
       countRequested,
+      stageScoped,
+      requestedMember: null,
     });
   }
-  if (!match && !nounOnly) return null;
+  if (!match && !nounOnly && !requestedMember) return null;
   const scopeToken = match?.[1] ?? "";
-  const noun = (match?.[2] ?? nounOnly?.[1] ?? "") as string;
+  const noun = (match?.[2] ?? memberMatch?.[2] ?? nounOnly?.[1] ?? "") as string;
   const subjectContext = match?.[3]?.trim() ?? null;
+  const singularCollectionNoun = /^(?:risk)$/i.test(noun);
+  if (
+    singularCollectionNoun &&
+    !countRequested &&
+    !subjectContext &&
+    scopeToken !== "all" &&
+    !requestedMember
+  ) {
+    return null;
+  }
   const scope: ExecutiveCollectionScope =
     scopeToken === "active"
       ? "ACTIVE"
@@ -480,15 +529,26 @@ export function interpretExecutiveCollectionQuery(
                 ? "GOAL"
                 : noun.startsWith("kpi")
                   ? "KPI"
-                  : noun.startsWith("object")
-                    ? "OBJECT"
-                    : "OTHER";
+                  : noun.startsWith("evidence")
+                    ? "EVIDENCE"
+                    : noun.startsWith("outcome")
+                      ? "OUTCOME"
+                      : noun.startsWith("data object")
+                        ? "DATA_OBJECT"
+                        : noun.startsWith("object")
+                          ? "OBJECT"
+                          : "OTHER";
+  if (collectionKind === "OBJECT" && requestedMember) {
+    return null;
+  }
   return Object.freeze({
     collectionKind,
     scope,
     subjectContext,
     ambiguousIssueNoun: false,
     countRequested,
+    stageScoped,
+    requestedMember,
   });
 }
 
@@ -523,20 +583,55 @@ export function conversationalIntentKindForCollection(
 }
 
 export function collectionEmptyCopy(query: ExecutiveCollectionQuery): string {
+  const kind = query.collectionKind as ExecutiveCollectionKind | undefined;
   const noun =
-    (query.collectionKind ?? query.collectionKind) === "PROBLEM"
+    kind === "PROBLEM"
       ? "Problems"
-      : (query.collectionKind ?? query.collectionKind) === "RISK"
+      : kind === "RISK"
         ? "Risks"
-        : (query.collectionKind ?? query.collectionKind) === "GOAL"
+        : kind === "GOAL"
           ? "Goals"
-          : (query.collectionKind ?? query.collectionKind) === "SCENARIO"
+          : kind === "SCENARIO"
             ? "Scenarios"
-            : (query.collectionKind ?? query.collectionKind) === "DECISION"
+            : kind === "DECISION"
               ? "Decisions"
-              : (query.collectionKind ?? query.collectionKind) === "EXECUTION"
+              : kind === "EXECUTION"
                 ? "Executions"
-                : "items";
+                : kind === "KPI"
+                  ? "KPIs"
+                  : kind === "EVIDENCE"
+                    ? "Evidence"
+                    : kind === "OUTCOME"
+                      ? "Outcomes"
+                      : kind === "DATA_OBJECT"
+                        ? "Data Objects"
+                        : "items";
+  const singular =
+    kind === "PROBLEM"
+      ? "Problem"
+      : kind === "RISK"
+        ? "Risk"
+        : kind === "GOAL"
+          ? "Goal"
+          : kind === "SCENARIO"
+            ? "Scenario"
+            : kind === "DECISION"
+              ? "Decision"
+              : kind === "EXECUTION"
+                ? "Execution"
+                : kind === "KPI"
+                  ? "KPI"
+                  : kind === "EVIDENCE"
+                    ? "Evidence item"
+                    : kind === "OUTCOME"
+                      ? "Outcome"
+                      : kind === "DATA_OBJECT"
+                        ? "Data Object"
+                        : "item";
+  const requested = typeof query.requestedMember === "string" ? query.requestedMember : null;
+  if (requested) {
+    return `I don't see that ${singular}.`;
+  }
   const scope =
     query.scope === "ACTIVE"
       ? "active "
@@ -603,17 +698,26 @@ export function collectionOrdinalIndex(utterance: string): number | null {
   const prepared = preparedManagerUtterance(utterance);
   if (
     /^(?:the )?first(?: one)?$/.test(prepared) ||
-    /\bthe first one\b/.test(prepared)
+    /\b(?:the )?first (?:one|problem|scenario|decision|execution|risk|item)\b/.test(prepared)
   ) {
     return 0;
   }
   if (
     /^(?:the )?second(?: one)?$/.test(prepared) ||
-    /\bthe other one\b/.test(prepared)
+    /\bthe other one\b/.test(prepared) ||
+    /\b(?:the )?second (?:one|problem|scenario|decision|execution|risk|item)\b/.test(prepared)
   ) {
     return 1;
   }
-  if (/^(?:the )?last(?: one)?$/.test(prepared)) return -1;
+  if (
+    /^(?:the )?third(?: one)?$/.test(prepared) ||
+    /\b(?:the )?third (?:one|problem|scenario|decision|execution|risk|item)\b/.test(prepared)
+  ) {
+    return 2;
+  }
+  if (/^(?:the )?last(?: one)?$/.test(prepared) || /\b(?:the )?last (?:one|problem|scenario)\b/.test(prepared)) {
+    return -1;
+  }
   return null;
 }
 

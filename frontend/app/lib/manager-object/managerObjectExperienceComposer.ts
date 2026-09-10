@@ -178,7 +178,10 @@ export function routeExecutiveManagerLane(input: {
   if (
     input.intent === "RELATIONSHIPS" ||
     /^(?:explain(?:\s+(?:this|it|that))?|what is this)\b/.test(input.normalized) ||
-    /^explain /.test(input.normalized)
+    /^explain /.test(input.normalized) ||
+    /(?:the other one|the first one|the second one|the second (?:problem|scenario))/.test(
+      input.normalized,
+    )
   ) {
     return "explain";
   }
@@ -471,10 +474,12 @@ function composeCompare(turn: ManagerObjectTurn, normalized: string): string {
         : primary.goalRelevance === "DIRECT"
           ? "it is directly relevant to the active goal"
           : "available executive context ranks it higher";
-    return `${mentionedLabel} is relevant, but it is not currently blocking the active journey. ${primary.label} outranks ${mentionedLabel} because ${reason}. This ranking is inferred and is not a causal claim.`;
+    return `${mentionedLabel} is relevant, but it is not currently blocking the active journey. ${primary.label === "INSUFFICIENT_REALITY" ? "Missing confirmed evidence" : primary.label} outranks ${mentionedLabel} because ${reason}. This ranking is inferred and is not a causal claim.`;
   }
   if (primary && mentionedLabel) {
-    return `${primary.label} is currently the highest-priority attention candidate relative to ${mentionedLabel}. ${turn.attention.reasoningSummary}`;
+    const primaryLabel =
+      primary.label === "INSUFFICIENT_REALITY" ? "missing confirmed evidence" : primary.label;
+    return `${primaryLabel} is currently the highest-priority attention candidate relative to ${mentionedLabel}. ${turn.attention.reasoningSummary}`;
   }
   return turn.attention.reasoningSummary || turn.attention.managerFacingText;
 }

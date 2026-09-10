@@ -380,22 +380,25 @@ export function projectAuthoritativeStageContext(input: {
         label: node.label,
       }),
     );
-  const visible = Object.freeze(
+  const collectionActors = Object.freeze(
+    members.filter((member, index, all) => all.findIndex((entry) => entry.id === member.id) === index),
+  );
+  const overviewActors = Object.freeze(
     (visibleFromPresentation.length > 0
       ? [
-          ...visibleFromPresentation,
+          ...visibleFromPresentation.filter(
+            (member) => (member.spatialRole ?? "hidden") !== "collection",
+          ),
           ...visibleNodeActors.filter((node) =>
             presentation.contextNodes.some(
               (entry) => entry.id === node.id && entry.role === "focused",
             ),
           ),
         ]
-      : [
-          ...(focus ? [focus] : []),
-          ...members.filter((member) => member.id !== focus?.id),
-        ]
+      : [...(focus ? [focus] : [])]
     ).filter((member, index, all) => all.findIndex((entry) => entry.id === member.id) === index),
   );
+  const visible = collection ? collectionActors : overviewActors;
   const presentationType: StagePresentationType = collection
     ? "COLLECTION"
     : focus

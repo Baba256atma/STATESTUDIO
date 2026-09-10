@@ -17,6 +17,19 @@ const judge = (overrides: Record<string, unknown> = {}) => evaluateNxa5Executive
 test("boundary composes existing authorities without score or mutation", () => { assert.deepEqual(verifyNexoraNxa5(), { ok: true }); const r = judge(); assert.equal(r.numericalScore, null); assert.equal(r.commitsDecision, false); assert.equal(r.startsExecution, false); assert.equal(r.writesStage, false); });
 test("problem priority prefers reversible Goal-relevant learning and distinguishes magnitude", () => { const r = judge(); assert.equal(r.preferredCandidateId, "capacity"); assert.equal(r.recommendationType, "INVESTIGATE"); assert.match(r.managerMessage, /Goal relevance|learning value|reversibility/i); assert.doesNotMatch(r.managerMessage, /definitely|is the cause/i); });
 test("unsupported overall importance refuses a fake magnitude and offers an explicit-criterion continuation", () => { const r = judge({ comparison: comparison("OVERALL_SIGNIFICANCE"), criterion: "OVERALL_SIGNIFICANCE" }); assert.equal(r.preferredCandidateId, null); assert.equal(r.comparability, "INSUFFICIENT"); assert.match(r.managerMessage, /overall-significance basis/i); assert.match(r.managerMessage, /another explicit criterion/i); assert.doesNotMatch(r.managerMessage, /more useful first investigation/i); });
+test("unsupported risk criterion does not suggest the same failed criterion again", () => {
+  const unknownRisk = candidates.map((candidate) => ({ ...candidate, riskExposure: "UNKNOWN" as const }));
+  const r = judge({
+    candidates: unknownRisk,
+    comparison: comparison("RISK", "INSUFFICIENT"),
+    criterion: "RISK",
+    judgmentType: "RISK_PRIORITY",
+  });
+  assert.equal(r.preferredCandidateId, null);
+  assert.match(r.managerMessage, /risk/i);
+  assert.match(r.managerMessage, /another explicit criterion/i);
+  assert.doesNotMatch(r.managerMessage, /such as risk exposure/i);
+});
 test("requested risk criterion uses risk evidence instead of default Goal fit", () => { const r = judge({ comparison: comparison("RISK", "SUFFICIENT"), criterion: "RISK", judgmentType: "RISK_PRIORITY" }); assert.equal(r.preferredCandidateId, "margin"); assert.match(r.managerMessage, /risk exposure/i); });
 test("reversibility protects against premature irreversible action", () => { const irreversible = { ...candidates[0]!, reversibility: "IRREVERSIBLE" as const, evidenceStrength: "WEAK" as const }; const r = judge({ comparison: comparison("REVERSIBILITY", "SUFFICIENT"), criterion: "REVERSIBILITY", candidates: [irreversible, candidates[1]] }); assert.equal(r.preferredCandidateId, "margin"); assert.notEqual(r.preferredCandidateId, irreversible.id); });
 test("weak evidence changes recommendation from action to investigation", () => { const r = judge({ candidates: [{ ...candidates[0]!, evidenceStrength: "WEAK" }, candidates[1]] }); assert.equal(r.recommendationType, "INVESTIGATE"); assert.equal(r.recommendationStrength, "TENTATIVE"); });

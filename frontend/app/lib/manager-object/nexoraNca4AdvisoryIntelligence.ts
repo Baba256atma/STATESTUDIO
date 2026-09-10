@@ -6,6 +6,7 @@
 
 import type { ManagerConversationTurn } from "./nexoraNca1ConversationTypes.ts";
 import { composeNexoraSemanticTurn } from "./nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts";
+import { collectionOrdinalIndex } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import type { NexoraConversationState } from "./nexoraNca2ConversationStateTypes.ts";
 import {
   detectKnownFacts,
@@ -490,6 +491,10 @@ function render(
       : position.recommendation.strength === "STRONGLY_RECOMMEND"
         ? `I strongly recommend ${option}`
         : `I recommend ${option}`;
+  const identity =
+    position.recommendation.optionId === "reversible-relief"
+      ? "That is an advisory suggestion, not a catalog Scenario."
+      : "";
   const why = position.rationale[0]?.statement ?? "";
   const trade = position.tradeoffs.find((item) => item.optionId === position.recommendation.optionId);
   const tradeLine = trade
@@ -503,7 +508,7 @@ function render(
   const other = position.alternatives.find((item) => item.role === "alternative");
 
   if (move === "SHORT") {
-    return `Use ${option} for now. It protects delivery while keeping options open until demand persistence is clearer.`;
+    return `Use ${option} for now. It protects delivery while keeping options open until demand persistence is clearer. ${identity}`.trim();
   }
   if (move === "PERSONAL") {
     return `Based on the current evidence, I would choose ${option}. That is an advisory position, not a personal preference and not a Decision.`;
@@ -564,7 +569,7 @@ function render(
   if (move === "PRIORITY_SHIFT") {
     return `Under a cost-first weighting, ${strength.toLowerCase()}. ${why} ${tradeLine}`;
   }
-  return `${strength}. ${why} ${tradeLine} ${confidence} ${condition}`.replace(/\s+/g, " ").trim();
+  return `${strength}. ${identity} ${why} ${tradeLine} ${confidence} ${condition}`.replace(/\s+/g, " ").trim();
 }
 
 export function evaluateNca4AdvisoryStrategy(input: {
@@ -604,9 +609,11 @@ export function evaluateNca4AdvisoryStrategy(input: {
     demandPersistence,
     lockPreviousOption,
   });
+  const typedReferentFollowUp = collectionOrdinalIndex(input.utterance) != null;
   const followUp = Boolean(previous) && move !== "NONE" && move !== "REQUEST";
   const requestLike =
-    move === "REQUEST" ||
+    !typedReferentFollowUp &&
+    (move === "REQUEST" ||
     move === "SHORT" ||
     move === "PERSONAL" ||
     move === "WALKTHROUGH" ||
@@ -614,7 +621,7 @@ export function evaluateNca4AdvisoryStrategy(input: {
     move === "NEW_EVIDENCE" ||
     move === "CHALLENGE" ||
     move === "DO_NOTHING" ||
-    input.nca.need.family === "REQUEST_RECOMMENDATION";
+    input.nca.need.family === "REQUEST_RECOMMENDATION");
   const dialogueHold =
     followUp ||
     move === "OVERRIDE" ||
@@ -628,7 +635,8 @@ export function evaluateNca4AdvisoryStrategy(input: {
   const explanationHold =
     !followUp &&
     !requestLike &&
-    (input.nca.advisorBehavior === "EXPLAIN" ||
+    (typedReferentFollowUp ||
+      input.nca.advisorBehavior === "EXPLAIN" ||
       /^(?:what is|what's|explain)\b/i.test(input.utterance.trim()));
   const canRank = rankingSupported(subjectOf(input.nca), previous);
   const semantic = composeNexoraSemanticTurn({ utterance: input.utterance });

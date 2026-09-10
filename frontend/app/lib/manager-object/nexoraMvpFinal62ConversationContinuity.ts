@@ -144,7 +144,8 @@ export function applyContextualMeaningToIntent(
     next.intent.kind !== "help" &&
     next.intent.kind !== "overview" &&
     contextual.provenance !== "CONTEXT_ACTIVE_SUBJECT" &&
-    contextual.provenance !== "EXISTING_STAGE_CONTEXT"
+    contextual.provenance !== "EXISTING_STAGE_CONTEXT" &&
+    !/\bits\b/i.test(contextual.turnMeaning.rawUtterance)
   ) {
     const hint = Object.freeze({
       raw: contextual.objectReference.canonicalName,
@@ -191,7 +192,12 @@ export function updateConversationContinuity(input: {
 }): ConversationContinuitySnapshot {
   const previous = input.previous ?? createEmptyConversationContinuity();
   const isMeta = input.contextual.requestedOperation === "HELP";
+  const explicitCurrentId =
+    input.contextual.provenance === "EXPLICIT_CURRENT_TURN"
+      ? input.contextual.objectReference?.subjectId ?? null
+      : null;
   const subjectId =
+    explicitCurrentId ??
     input.resolvedSubjectId ??
     input.contextual.objectReference?.subjectId ??
     previous.activeSubjectId;
@@ -257,10 +263,35 @@ export function updateConversationContinuity(input: {
         })
       : null;
 
+  const keepDataReferent =
+    previous.activeSubjectKind === "data" &&
+    Boolean(previous.activeSubjectId) &&
+    !explicitCurrentId &&
+    input.contextual.provenance !== "EXPLICIT_CURRENT_TURN" &&
+    input.contextual.provenance !== "UNRESOLVED" &&
+    input.contextual.continuityMove === "pronoun";
+  const nextSubjectId = keepDataReferent ? previous.activeSubjectId : subjectId;
+  const nextSubjectKind = keepDataReferent ? "data" : subjectKind;
+  const nextFrame: ConversationThreadFrame | null =
+    nextSubjectId && isBusinessOperation(input.contextual.requestedOperation)
+      ? Object.freeze({
+          subjectId: nextSubjectId,
+          subjectKind: nextSubjectKind ?? "object",
+          operation: input.contextual.requestedOperation,
+          turnIndex: previous.turnIndex + 1,
+        })
+      : frame && keepDataReferent
+        ? Object.freeze({
+            ...frame,
+            subjectId: nextSubjectId ?? frame.subjectId,
+            subjectKind: nextSubjectKind ?? frame.subjectKind,
+          })
+        : frame;
+
   return freezeConversationContinuity({
     identity: "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
-    activeSubjectId: subjectId,
-    activeSubjectKind: subjectKind,
+    activeSubjectId: nextSubjectId,
+    activeSubjectKind: nextSubjectKind,
     activeInvestigationId: investigationId,
     activeOperation:
       input.contextual.requestedOperation !== "NONE"
@@ -271,10 +302,10 @@ export function updateConversationContinuity(input: {
         ? input.contextual.questionType
         : previous.activeQuestionType,
     previousSubjectId:
-      subjectId && subjectId !== previous.activeSubjectId
+      nextSubjectId && nextSubjectId !== previous.activeSubjectId
         ? previous.activeSubjectId
         : previous.previousSubjectId,
-    thread: frame ? pushThread(previous.thread, frame) : previous.thread,
+    thread: nextFrame ? pushThread(previous.thread, nextFrame) : previous.thread,
     presentedIds: Object.freeze(
       input.presentedIds ?? previous.presentedIds,
     ),
@@ -296,5 +327,39 @@ export function updateConversationContinuity(input: {
         : previous.parkedActiveSubjectId,
     correctedSubjectId: previous.correctedSubjectId,
     turnIndex: previous.turnIndex + 1,
+  });
+}
+
+export function applyAssistantIntroducedReferent(input: {
+  readonly previous: ConversationContinuitySnapshot | null | undefined;
+  readonly subjectId: string | null;
+  readonly subjectKind: string;
+  readonly presentedIds?: readonly string[];
+  readonly operation?: ContextualManagerMeaning["requestedOperation"];
+}): ConversationContinuitySnapshot {
+  const previous = input.previous ?? createEmptyConversationContinuity();
+  const frame: ConversationThreadFrame | null = input.subjectId
+    ? Object.freeze({
+        subjectId: input.subjectId,
+        subjectKind: input.subjectKind,
+        operation: input.operation ?? "EXPLAIN",
+        turnIndex: previous.turnIndex,
+      })
+    : null;
+  return freezeConversationContinuity({
+    ...previous,
+    activeSubjectId: input.subjectId,
+    activeSubjectKind: input.subjectKind,
+    previousSubjectId:
+      input.subjectId && input.subjectId !== previous.activeSubjectId
+        ? previous.activeSubjectId
+        : previous.previousSubjectId,
+    thread: frame ? pushThread(previous.thread, frame) : previous.thread,
+    presentedIds: Object.freeze(
+      input.presentedIds ??
+        (input.subjectId ? [input.subjectId] : previous.presentedIds),
+    ),
+    parkedThread: null,
+    parkedActiveSubjectId: null,
   });
 }

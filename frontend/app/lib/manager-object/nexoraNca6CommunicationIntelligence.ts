@@ -44,7 +44,7 @@ export type {
 } from "./nexoraNca6CommunicationIntelligenceTypes.ts";
 
 const ARCHITECTURE_LEAK =
-  /\b(?:canonical(?:\s+relationship)?|resolver|runtime|state machine|journey process blocker|process blocker|goal linkage|NCA(?::\d)?|MO(?::\d)?|EI(?::\d)?|WATCH)\b/gi;
+  /\b(?:canonical(?:\s+relationship)?|resolver|runtime|state machine|journey process blocker|process blocker|goal linkage|MANAGER AUTHORITY REQUIREMENT|DECISION REQUIREMENT|NCA(?::-POST)?(?::\d)?|MO(?::\d)?|EI(?::\d)?|ECA(?::\d)?|NXA(?::\d)?|DTH|CC:\d+|INSUFFICIENT_REALITY)\b/gi;
 
 type CommunicationSignals = {
   readonly brief: boolean;
@@ -232,7 +232,12 @@ function stripArchitectureLeak(text: string, explainInternal: boolean): string {
   return text
     .replace(/before we continue, one change is important:?\s*/gi, "")
     .replace(/this is a journey process blocker[^.]*\.?/gi, "")
-    .replace(ARCHITECTURE_LEAK, (token) => (/watch/i.test(token) ? "worth monitoring" : ""))
+    .replace(/cc9:scenario:[^\s.?!,;]+/gi, "that option")
+    .replace(ARCHITECTURE_LEAK, (token) => {
+      if (/watch/i.test(token)) return "worth monitoring";
+      if (/insufficient_reality/i.test(token)) return "missing confirmed evidence";
+      return "";
+    })
     .replace(/\s{2,}/g, " ")
     .replace(/\s+\./g, ".")
     .trim();
@@ -307,9 +312,15 @@ function teachingPrefix(familiarity: NexoraFamiliarity, skip: boolean): string |
   return null;
 }
 
-function restoreTruth(adapted: string, source: string, option: string | null): string {
+function restoreTruth(adapted: string, source: string, option: string | null, utterance?: string): string {
   let next = adapted;
-  if (option && !next.toLowerCase().includes(option.toLowerCase())) {
+  const suppressLeftoverRecommendation =
+    /^(?:show|list|open|how many|what is on stage|show me what is on)/i.test((utterance ?? "").trim());
+  if (
+    option &&
+    !suppressLeftoverRecommendation &&
+    !next.toLowerCase().includes(option.toLowerCase())
+  ) {
     next = join([next, `My recommendation remains ${option}.`]);
   }
   for (const token of extractNumbers(source)) {
@@ -479,11 +490,12 @@ function composeAdaptedResponse(input: {
     }
     text = criticalProminence(text, true);
   }
-  text = restoreTruth(text, input.source, option);
+  text = restoreTruth(text, input.source, option, input.utterance);
   return text
     .replace(/I changed the plan/gi, "The plan has not been changed")
     .replace(/I approved it/gi, "This is still advice, not an approved Decision")
     .replace(/I started execution/gi, "Execution has not started")
+    .replace(/([^.?!]+[.?!])\s+\1/gi, "$1")
     .replace(/\s+/g, " ")
     .trim();
 }

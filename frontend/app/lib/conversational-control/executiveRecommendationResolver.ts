@@ -612,7 +612,7 @@ export function resolveNexoraExecutiveRecommendation(
       rationale: Object.freeze([
         Object.freeze({
           code: EXECUTIVE_REASONING_REASON.WEAK_EVIDENCE_INVESTIGATE,
-          summary: `${label} shows attention, but a goal-linked canonical relationship is not established.`,
+          summary: `${label} shows attention, but a goal-linked relationship is not established.`,
           evidenceRefs,
         }),
         Object.freeze({
@@ -626,7 +626,7 @@ export function resolveNexoraExecutiveRecommendation(
         ...assessment.uncertainties,
         Object.freeze({
           kind: "weak-relationship",
-          description: "Canonical goal linkage is missing or uncertain.",
+          description: "Goal linkage is missing or uncertain.",
           evidenceRefs,
         }),
       ]),

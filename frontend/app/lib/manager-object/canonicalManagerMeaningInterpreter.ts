@@ -333,6 +333,30 @@ function toRef(
   });
 }
 
+function editDistance(left: string, right: string): number {
+  if (left === right) return 0;
+  if (Math.abs(left.length - right.length) > 2) return 99;
+  const rows = left.length + 1;
+  const cols = right.length + 1;
+  const grid = Array.from({ length: rows }, (_, i) => {
+    const row = new Array<number>(cols);
+    row[0] = i;
+    return row;
+  });
+  for (let j = 0; j < cols; j += 1) grid[0]![j] = j;
+  for (let i = 1; i < rows; i += 1) {
+    for (let j = 1; j < cols; j += 1) {
+      const cost = left[i - 1] === right[j - 1] ? 0 : 1;
+      grid[i]![j] = Math.min(
+        (grid[i - 1]![j] ?? 99) + 1,
+        (grid[i]![j - 1] ?? 99) + 1,
+        (grid[i - 1]![j - 1] ?? 99) + cost,
+      );
+    }
+  }
+  return grid[left.length]![right.length] ?? 99;
+}
+
 function extraTokensAreActionVerbs(longer: string, shorter: string): boolean {
   const longTokens = longer.split(/\s+/).filter(Boolean);
   const shortTokens = new Set(shorter.split(/\s+/).filter(Boolean));
@@ -423,6 +447,14 @@ function findObjectMentions(
         seen.add(subject.subjectId);
         found.push(toRef(subject, phrase.normalized));
       }
+    } else if (phrase.ambiguous) {
+      for (const match of phrase.matches) {
+        if (seen.has(match.subjectId)) continue;
+        const subject = index.subjects.find((item) => item.subjectId === match.subjectId);
+        if (!subject) continue;
+        seen.add(subject.subjectId);
+        found.push(toRef(subject, phrase.normalized));
+      }
     } else {
       const tokens = prepared.split(/\s+/).filter(Boolean);
       for (const token of tokens) {
@@ -436,6 +468,28 @@ function findObjectMentions(
         seen.add(subject.subjectId);
         found.push(toRef(subject, token));
       }
+    }
+    if (found.length === 0) {
+      const tokens = prepared.split(/\s+/).filter((token) => token.length >= 5);
+      let best: CanonicalManagerObjectReference | null = null;
+      let bestScore = 99;
+      for (const subject of index.subjects) {
+        for (const key of keysForSubject(subject)) {
+          for (const part of key.split(/\s+/)) {
+            if (part.length < 5) continue;
+            for (const token of tokens) {
+              const distance = editDistance(token, part);
+              if (distance > 1) continue;
+              const score = distance * 20 - subject.canonicalName.length;
+              if (!best || score < bestScore) {
+                best = toRef(subject, token);
+                bestScore = score;
+              }
+            }
+          }
+        }
+      }
+      if (best) found.push(best);
     }
   }
   if (found.length > 1) {

@@ -10,6 +10,7 @@ import {
   interpretExecutiveCollectionQuery,
   observationShouldNotNavigate,
   preparedManagerUtterance,
+  collectionOrdinalIndex,
 } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import { isEcaInformationRequirementRequest } from "../nexora-conversation/ecaExecutiveInformationNeed.ts";
 
@@ -142,7 +143,7 @@ function helpCue(text: string): boolean {
 }
 
 function workspaceCue(text: string): boolean {
-  return /\b(?:on (?:the )?stage|on stage now|what(?:'s| is) on(?: (?:the )?stage| it)|visible objects|which object is (?:selected|focused)|what am i looking at|what is (?:in|at) the center|which (?:problems?|risks?|opportunities|scenarios?|decisions?|executions?|goals?) (?:are )?(?:shown|visible|on (?:the )?stage)|why are these here|why are (?:these|the) (?:objects?|problems?|risks?|opportunities|scenarios?|decisions?|executions?|goals?) here|what is in the queue|this scene|the scene|showing me|going on here|going on on stage|explain (?:the )?(?:stage|scene)|what are these|why (?:is|are) (?:this|these|they) here)\b/.test(
+  return /\b(?:on (?:the )?stage|on stage now|what(?:'s| is) on(?: (?:the )?stage| it)|show(?: me)? what is on(?: (?:the )?stage)|visible objects|which object is (?:selected|focused)|what am i looking at|what is (?:in|at) the center|which (?:problems?|risks?|opportunities|scenarios?|decisions?|executions?|goals?) (?:are )?(?:shown|visible|on (?:the )?stage)|how many .{0,40}\bon (?:the )?stage\b|why are these here|why are (?:these|the) (?:objects?|problems?|risks?|opportunities|scenarios?|decisions?|executions?|goals?) here|what is in the queue|this scene|the scene|showing me|going on here|going on on stage|explain (?:the )?(?:stage|scene)|what are these|why (?:is|are) (?:this|these|they) here)\b/.test(
     text,
   );
 }
@@ -193,9 +194,16 @@ export function classifyNexoraSemanticScope(utterance: string): NexoraSemanticSc
   if (/\b(?:csv|data library|data source)\b/.test(text) && !/\bwhat data (?:is|are) this using\b/.test(text)) {
     return "BUSINESS";
   }
-  // Explicit navigation remains a business/object operation even when the
-  // manager uses interface filler such as “object”.
-  if (/^(?:show|open|focus)\b/.test(text)) return "BUSINESS";
+  // SHOW of Stage membership is workspace-state, not object navigation.
+  // SHOW of a business collection remains BUSINESS so NCA-POST:3 collection
+  // ownership can still win.
+  if (/^(?:show|open|focus)\b/.test(text)) {
+    const collectionQuery = interpretExecutiveCollectionQuery(utterance);
+    if (workspaceCue(text) && (!collectionQuery || collectionQuery["stageScoped"] === true)) {
+      return "CURRENT_WORKSPACE";
+    }
+    return "BUSINESS";
+  }
   const product = productCue(text) && /\b(?:what is|explain|tell me about)\b/.test(text) && !workspaceCue(text);
   const workspace = workspaceCue(text);
   const help = helpCue(text);
@@ -238,7 +246,8 @@ export function extractManagerReferenceSet(
   utterance: string,
   catalog: NexoraMVPObjectInteractionCatalog = getDefaultNexoraMVPObjectInteractionCatalog(),
 ): ManagerReferenceSet {
-  const text = ` ${prepared(utterance)} `;
+  const addAs = utterance.match(/^(?:add|create)\s+(.+?)\s+as\s+(?:a|an)\s+[a-z]+\.?$/i);
+  const text = ` ${prepared(addAs?.[1] ?? utterance)} `;
   const found: ManagerReference[] = [];
   const seen = new Set<string>();
   const candidates = [
@@ -443,7 +452,7 @@ export function hydrateCanonicalCollectionMembers(
 }
 
 export function resolveCanonicalCollectionMembership(
-  kind: "problem" | "scenario" | "decision" | "execution" | "risk" | "opportunity" | "goal",
+  kind: "problem" | "scenario" | "decision" | "execution" | "risk" | "opportunity" | "goal" | "kpi" | "evidence" | "outcome" | "data_object",
   catalog: NexoraMVPObjectInteractionCatalog = getDefaultNexoraMVPObjectInteractionCatalog(),
 ): readonly CanonicalCollectionMember[] {
   if (kind === "problem" || kind === "scenario" || kind === "decision" || kind === "execution") {
@@ -466,6 +475,23 @@ export function resolveCanonicalCollectionMembership(
       }),
     );
   }
+  if (kind === "kpi") {
+    return Object.freeze(
+      catalog.objects
+        .filter((item) => /kpi|metric|delivery|revenue|capacity|margin/i.test(`${item.label} ${item.id}`))
+        .map((item) => Object.freeze({ id: item.id, label: item.label })),
+    );
+  }
+  if (kind === "data_object") {
+    return Object.freeze(
+      catalog.objects
+        .filter((item) => /data/i.test(`${item.label} ${item.id}`))
+        .map((item) => Object.freeze({ id: item.id, label: item.label })),
+    );
+  }
+  if (kind === "evidence" || kind === "outcome") {
+    return Object.freeze([]);
+  }
   const needle = kind === "opportunity" ? /opportunit/i : new RegExp(kind, "i");
   return Object.freeze(
     catalog.objects
@@ -478,15 +504,38 @@ export function composeCanonicalCollectionReply(input: {
   readonly kindLabel: string;
   readonly members: readonly CanonicalCollectionMember[];
   readonly filteredTo?: string | null;
+  readonly requestedMember?: string | null;
+  readonly countRequested?: boolean;
 }): string {
+  const names = input.members.map((item) => item.label);
+  const list = names.join(", ");
+  if (input.requestedMember) {
+    const ordinal = collectionOrdinalIndex(input.requestedMember) ??
+      collectionOrdinalIndex(`the ${input.requestedMember}`);
+    if (ordinal != null && input.members[ordinal]) {
+      const picked = input.members[ordinal]!;
+      return `The ${ordinal === 0 ? "first" : ordinal === 1 ? "second" : "third"} ${input.kindLabel.replace(/s$/, "")} is ${picked.label}. Current ${input.kindLabel} are ${list}.`;
+    }
+    const needle = prepared(input.requestedMember);
+    const hit = input.members.find(
+      (item) => prepared(item.label) === needle || prepared(item.label).includes(needle) || needle.includes(prepared(item.label)),
+    );
+    if (!hit) {
+      return input.members.length === 0
+        ? `I don't see that ${input.kindLabel.replace(/s$/, "")}. There are no ${input.kindLabel} in the current context.`
+        : `I don't see that ${input.kindLabel.replace(/s$/, "")}. Current ${input.kindLabel} are ${list}.`;
+    }
+  }
   if (input.members.length === 0) {
     return input.filteredTo
       ? `I don't see any ${input.kindLabel} related to ${input.filteredTo} in the current context.`
       : `I don't see any ${input.kindLabel} in the current context.`;
   }
-  const names = input.members.map((item) => item.label).join(", ");
-  if (input.filteredTo) return `${input.kindLabel} related to ${input.filteredTo}: ${names}.`;
-  return `Current ${input.kindLabel}: ${names}.`;
+  if (input.countRequested) {
+    return `Current ${input.kindLabel}: ${list}. There are ${input.members.length} ${input.kindLabel}.`;
+  }
+  if (input.filteredTo) return `${input.kindLabel} related to ${input.filteredTo}: ${list}.`;
+  return `Current ${input.kindLabel}: ${list}.`;
 }
 
 export function interpretCollectionChangeQuery(utterance: string): boolean {
@@ -703,7 +752,9 @@ export function resolvePrimaryResponseOwner(input: {
   if (input.changeIntent) return "COLLECTION_CHANGE_EXPLANATION";
   if (input.relationshipIntent) return "RELATIONSHIP_EXPLANATION";
   if (input.multiEntityAssertion) return "MULTI_ENTITY_ASSERTION";
-  if (input.collectionQuery) return "COLLECTION_QUERY";
+  if (input.collectionQuery && interpretExecutiveCollectionQuery(input.utterance)?.["stageScoped"] !== true) {
+    return "COLLECTION_QUERY";
+  }
   if (input.scope === "HELP_TEACH") return "HELP_TEACH";
   if (input.capability || input.action) return "PRODUCT_CAPABILITY";
   if (input.scope === "CURRENT_WORKSPACE") return "WORKSPACE_STATE";
@@ -764,6 +815,8 @@ export function composeNexoraSemanticTurn(input: {
       canonicalProblemIds: problems.map((item) => item.id),
     });
   } else if (owner === "COLLECTION_QUERY" && collectionQuery) {
+    const requestedMember = String(collectionQuery["requestedMember"] ?? "");
+    const stageScoped = collectionQuery["stageScoped"] === true;
     const rawKind = String(collectionQuery["collectionKind"] ?? "PROBLEM");
     const kind =
       rawKind === "SCENARIO"
@@ -778,7 +831,15 @@ export function composeNexoraSemanticTurn(input: {
                 ? "opportunity"
                 : rawKind === "GOAL"
                   ? "goal"
-                  : "problem";
+                  : rawKind === "KPI"
+                    ? "kpi"
+                    : rawKind === "EVIDENCE"
+                      ? "evidence"
+                      : rawKind === "OUTCOME"
+                        ? "outcome"
+                        : rawKind === "DATA_OBJECT"
+                          ? "data_object"
+                          : "problem";
     const members = resolveCanonicalCollectionMembership(kind, catalog);
     const filtered = collectionUsesConversationSubjectFilter(input.utterance)
       ? String(collectionQuery["subjectContext"] ?? "")
@@ -800,12 +861,38 @@ export function composeNexoraSemanticTurn(input: {
                 ? "Risks"
                 : kind === "opportunity"
                   ? "Opportunities"
-                  : "Goals";
-    reply = composeCanonicalCollectionReply({
-      kindLabel,
-      members: visible,
-      filteredTo: filtered || null,
-    });
+                  : kind === "kpi"
+                    ? "KPIs"
+                    : kind === "evidence"
+                      ? "Evidence"
+                      : kind === "outcome"
+                        ? "Outcomes"
+                        : kind === "data_object"
+                          ? "Data Objects"
+                          : "Goals";
+    if (stageScoped) {
+      const stageNames = (input.stageLabels ?? []).filter(Boolean);
+      const kindOnStage = stageNames.filter((label) =>
+        visible.some((member) => prepared(member.label) === prepared(label) || prepared(label).includes(prepared(member.label))),
+      );
+      const pool = kindOnStage.length > 0 ? kindOnStage : stageNames;
+      reply = collectionQuery["countRequested"]
+        ? `There are ${pool.length} ${kindLabel} currently visible on Stage${pool.length ? `: ${pool.join(", ")}` : ""}.`
+        : composeWorkspaceReply({
+            labels: input.stageLabels ?? [],
+            focused: input.focusedLabel ?? null,
+            snapshot: input.stageSnapshot,
+            utterance: input.utterance,
+          });
+    } else {
+      reply = composeCanonicalCollectionReply({
+        kindLabel,
+        members: visible,
+        filteredTo: filtered || null,
+        requestedMember: requestedMember || null,
+        countRequested: collectionQuery["countRequested"] === true,
+      });
+    }
   } else if (owner === "COLLECTION_CHANGE_EXPLANATION") {
     const current = resolveCanonicalCollectionMembership("problem", catalog);
     const delta = computeCollectionDelta(input.previousCollection ?? [], current, "Problem", false);

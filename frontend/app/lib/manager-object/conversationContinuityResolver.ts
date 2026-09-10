@@ -22,6 +22,7 @@ import {
   popThread,
 } from "./conversationContinuitySnapshot.ts";
 import { prepareManagerUtterance } from "./canonicalManagerMeaningInterpreter.ts";
+import { collectionOrdinalIndex } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 
 export type ContinuityResolutionInput = {
   readonly turnMeaning: CanonicalManagerMeaning;
@@ -82,11 +83,16 @@ function classifyMove(prepared: string): {
   if (
     /^(?:go back|back|the previous one|the one before|what we were looking at earlier|earlier)$/.test(
       prepared,
-    )
+    ) &&
+    collectionOrdinalIndex(prepared) == null
   ) {
     return { move: "backtrack", expectedKind: null };
   }
-  if (/^(?:the other one|the other option)$/.test(prepared)) {
+  if (
+    /^(?:and\s+)?(?:what about\s+)?(?:the\s+|that\s+)?other(?:\s+one|\s+option|\s+problem|\s+scenario|\s+item)?$/.test(
+      prepared,
+    )
+  ) {
     return { move: "other-referent", expectedKind: null };
   }
   const typed = prepared.match(
@@ -129,6 +135,36 @@ function kindCompatible(expected: string | null, actual: string | null): boolean
   if (expected === "risk" && (actual === "object" || actual === "problem")) return true;
   if (expected === "problem" && actual === "problem") return true;
   return false;
+}
+
+function isWeakLexicalHint(turnMeaning: CanonicalManagerMeaning): boolean {
+  const hint = (turnMeaning.objectReference?.lexicalHint ?? "").trim();
+  const name = prepareManagerUtterance(turnMeaning.objectReference?.canonicalName ?? "");
+  if (!hint || turnMeaning.ambiguity.candidates.length < 2) return false;
+  return name !== hint && !name.split(/\s+/).includes(hint);
+}
+
+function pickContextRankedCandidate(
+  candidates: readonly CanonicalManagerObjectReference[],
+  continuity: ConversationContinuitySnapshot,
+  session: ManagerObjectSession | null | undefined,
+): CanonicalManagerObjectReference | null {
+  const contextIds = new Set<string>([
+    ...continuity.presentedIds,
+    ...continuity.thread.map((frame) => frame.subjectId),
+    ...(session?.ncaConversationState?.lastCollection?.memberIds ?? []),
+  ]);
+  const lastKind = (session?.ncaConversationState?.lastCollection?.kind ?? "").toLowerCase();
+  const inContext = candidates.filter(
+    (item) => item.subjectId != null && contextIds.has(item.subjectId),
+  );
+  const pool = inContext.length > 0 ? inContext : candidates;
+  const kindMatched = lastKind
+    ? pool.filter((item) =>
+        item.subjectKind ? kindCompatible(lastKind, item.subjectKind) : false,
+      )
+    : inContext;
+  return kindMatched[0] ?? inContext[0] ?? null;
 }
 
 function pickByKind(
@@ -190,6 +226,7 @@ export function resolveContextualManagerMeaning(
   push(continuity.activeInvestigationId, "CONTEXT_ACTIVE_INVESTIGATION");
   push(continuity.lastRecommendedTargetId, "CONTEXT_ACTIVE_INVESTIGATION");
   push(continuity.activeSubjectId, "CONTEXT_ACTIVE_SUBJECT");
+  push(session?.ncaConversationState?.activeSubject?.id, "CONTEXT_ACTIVE_SUBJECT");
   push(session?.activeObjectId, "CONTEXT_ACTIVE_SUBJECT");
   push(executive?.currentSubject?.subjectId, "CONTEXT_ACTIVE_SUBJECT");
   push(executive?.currentProblem?.subjectId, "CONTEXT_TYPED_REFERENCE");
@@ -208,14 +245,18 @@ export function resolveContextualManagerMeaning(
     push(frame.subjectId, "CONTEXT_RECENT_SUBJECT");
   }
 
-  const explicit = turnMeaning.objectReference?.subjectId
-    ? candidate(
-        recordOf(turnMeaning.objectReference.subjectId, subjects),
-        turnMeaning.objectReference.lexicalHint
-          ? "EXPLICIT_CURRENT_TURN"
-          : "NLU_CURRENT_TURN",
-      )
-    : null;
+  const deicticLexical = /^(?:it|this|that|this one|that one|them)$/i.test(
+    (turnMeaning.objectReference?.lexicalHint ?? "").trim(),
+  );
+  const explicit =
+    !deicticLexical && turnMeaning.objectReference?.subjectId
+      ? candidate(
+          recordOf(turnMeaning.objectReference.subjectId, subjects),
+          turnMeaning.objectReference.lexicalHint
+            ? "EXPLICIT_CURRENT_TURN"
+            : "NLU_CURRENT_TURN",
+        )
+      : null;
 
   let move = classified.move;
   let provenance: ContextReferentProvenance = "UNRESOLVED";
@@ -244,10 +285,27 @@ export function resolveContextualManagerMeaning(
     operation = "EVIDENCE";
   }
 
-  if (explicit && move !== "typed-reference") {
-    selected = Object.freeze({ ...explicit, provenance: "EXPLICIT_CURRENT_TURN" });
-    provenance = "EXPLICIT_CURRENT_TURN";
-    move = "none";
+  if (explicit && move !== "typed-reference" && move !== "pronoun") {
+    const contextualOverride =
+      isWeakLexicalHint(turnMeaning)
+        ? pickContextRankedCandidate(
+            turnMeaning.ambiguity.candidates,
+            continuity,
+            session,
+          )
+        : null;
+    if (contextualOverride) {
+      selected = candidate(
+        recordOf(contextualOverride.subjectId, subjects),
+        "CONTEXT_PRESENTED_SET",
+      );
+      provenance = "CONTEXT_PRESENTED_SET";
+      move = "none";
+    } else {
+      selected = Object.freeze({ ...explicit, provenance: "EXPLICIT_CURRENT_TURN" });
+      provenance = "EXPLICIT_CURRENT_TURN";
+      move = "none";
+    }
   } else if (turnMeaning.communicativeIntent === "ASK_CAPABILITY" || operation === "HELP") {
     selected = null;
     provenance = "UNRESOLVED";
@@ -332,19 +390,85 @@ export function resolveContextualManagerMeaning(
           : "NONE";
     if (continuity.parkedActiveSubjectId) move = "resume-parked";
   } else if (move === "other-referent") {
+    const activeId =
+      continuity.activeSubjectId ?? session?.activeObjectId ?? null;
     const presented = continuity.presentedIds;
+    const activeRecord = recordOf(activeId, subjects);
+    const otherPresented =
+      presented.find((id) => {
+        if (id === activeId) return false;
+        const record = recordOf(id, subjects);
+        if (!record || /watch$/i.test(record.canonicalName)) return false;
+        if (activeRecord?.subjectKind && record.subjectKind !== activeRecord.subjectKind) {
+          return false;
+        }
+        return true;
+      }) ?? null;
+    const sibling =
+      subjects.find(
+        (item) =>
+          item.subjectId !== activeId &&
+          Boolean(activeRecord?.subjectKind) &&
+          item.subjectKind === activeRecord?.subjectKind &&
+          !/watch$/i.test(item.canonicalName),
+      ) ?? null;
     const other =
-      presented.find((id) => id !== continuity.activeSubjectId) ??
-      continuity.previousSubjectId;
-    selected = candidate(recordOf(other, subjects), "CONTEXT_PRESENTED_SET");
-    provenance = selected ? "CONTEXT_PRESENTED_SET" : "UNRESOLVED";
+      otherPresented ??
+      continuity.previousSubjectId ??
+      sibling?.subjectId ??
+      null;
+    selected = candidate(
+      recordOf(other, subjects),
+      otherPresented ? "CONTEXT_PRESENTED_SET" : "CONTEXT_TYPED_REFERENCE",
+    );
+    provenance = selected
+      ? (otherPresented ? "CONTEXT_PRESENTED_SET" : "CONTEXT_TYPED_REFERENCE")
+      : "UNRESOLVED";
+    if (operation === "NONE" && selected) operation = "EXPLAIN";
   } else if (move === "typed-reference") {
     const typedPool = pool.filter((item) =>
       kindCompatible(classified.expectedKind, item.subjectKind),
     );
-    selected = pickByKind(classified.expectedKind, typedPool);
+    selected =
+      typedPool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
+      typedPool.find((item) => item.provenance === "CONTEXT_CORRECTION") ??
+      pickByKind(classified.expectedKind, typedPool);
     provenance = selected ? "CONTEXT_TYPED_REFERENCE" : "UNRESOLVED";
     if (operation === "NONE") operation = "EXPLAIN";
+  } else if (
+    (operation === "FOCUS" || operation === "EXPLAIN" || operation === "INVESTIGATE") &&
+    turnMeaning.objectReference == null &&
+    turnMeaning.ambiguity.candidates.length >= 2 &&
+    move === "none"
+  ) {
+    const contextIds = new Set<string>([
+      ...continuity.presentedIds,
+      ...continuity.thread.map((frame) => frame.subjectId),
+      ...(session?.ncaConversationState?.lastCollection?.memberIds ?? []),
+    ]);
+    const lastKind = (session?.ncaConversationState?.lastCollection?.kind ?? "").toLowerCase();
+    const inContext = turnMeaning.ambiguity.candidates.filter(
+      (item) => item.subjectId != null && contextIds.has(item.subjectId),
+    );
+    const kindMatched = lastKind
+      ? (inContext.length > 0 ? inContext : turnMeaning.ambiguity.candidates).filter(
+          (item) =>
+            Boolean(item.subjectKind) &&
+            kindCompatible(lastKind, item.subjectKind as string),
+        )
+      : inContext;
+    const picked = kindMatched[0] ?? inContext[0] ?? null;
+    selected = picked
+      ? candidate(
+          recordOf(picked.subjectId, subjects),
+          inContext.length > 0 ? "CONTEXT_PRESENTED_SET" : "CONTEXT_TYPED_REFERENCE",
+        )
+      : null;
+    provenance = selected
+      ? inContext.length > 0
+        ? "CONTEXT_PRESENTED_SET"
+        : "CONTEXT_TYPED_REFERENCE"
+      : "UNRESOLVED";
   } else if (move === "pronoun" || turnMeaning.objectReference == null) {
     const followUp =
       move === "pronoun" ||
@@ -361,15 +485,18 @@ export function resolveContextualManagerMeaning(
     if (followUp) {
       const preferInvestigation =
         operation === "INVESTIGATE" ||
-        /tell me more|this problem|that problem|the issue/.test(prepared);
+        /\b(?:this problem|that problem|the issue)\b/.test(prepared);
       selected = preferInvestigation
         ? pool.find((item) => item.provenance === "CONTEXT_ACTIVE_INVESTIGATION") ??
           pool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
           pool[0] ??
           null
         : pool.find((item) => item.provenance === "CONTEXT_CORRECTION") ??
-          pool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT") ??
+          (session?.activationSource === "click" || input.stageFocusedId
+            ? pool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT")
+            : null) ??
           pool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
+          pool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT") ??
           pool.find((item) => item.provenance === "CONTEXT_RECENT_SUBJECT") ??
           pool[0] ??
           null;
@@ -382,7 +509,6 @@ export function resolveContextualManagerMeaning(
   const uniqueIds = new Set(pool.map((item) => item.subjectId));
   const pronounCount = (prepared.match(/\bit\b/g) ?? []).length;
   const thatWithoutIt = /\bthat\b/.test(prepared) && !/\bit\b/.test(prepared);
-  const presentedDistinct = new Set(continuity.presentedIds).size;
   const noDominantRecommendation = !continuity.lastRecommendedTargetId;
   const threadDistinct = new Set(continuity.thread.map((frame) => frame.subjectId)).size;
   const collisionPronouns = pronounCount >= 2 && uniqueIds.size > 1;
@@ -390,8 +516,18 @@ export function resolveContextualManagerMeaning(
     thatWithoutIt &&
     (move === "pronoun" || move === "none") &&
     noDominantRecommendation &&
-    (presentedDistinct >= 2 || threadDistinct >= 2);
-  if (collisionPronouns || unsafeThat) {
+    threadDistinct >= 2;
+  const mixedDomainThread =
+    continuity.activeSubjectKind === "data" ||
+    continuity.thread.some((frame) => frame.subjectKind === "data");
+  const parkedCrossDomainIt =
+    Boolean(continuity.parkedThread) &&
+    mixedDomainThread &&
+    threadDistinct >= 2 &&
+    (move === "pronoun" ||
+      (/\b(?:it|that|this)\b/.test(prepared) &&
+        (operation === "EXPLAIN" || operation === "FOCUS" || operation === "INVESTIGATE")));
+  if (collisionPronouns || unsafeThat || parkedCrossDomainIt) {
     selected = null;
     provenance = "UNRESOLVED";
     if (move === "none") move = "pronoun";
@@ -399,7 +535,7 @@ export function resolveContextualManagerMeaning(
   const ambiguous =
     !selected &&
     uniqueIds.size > 1 &&
-    (move === "pronoun" || move === "typed-reference" || collisionPronouns || unsafeThat);
+    (move === "pronoun" || move === "typed-reference" || collisionPronouns || unsafeThat || parkedCrossDomainIt);
   const confidence: ContextualManagerMeaning["confidence"] = selected
     ? provenance === "EXPLICIT_CURRENT_TURN"
       ? turnMeaning.confidence === "LOW"

@@ -196,7 +196,7 @@ describe("NPA-T ECA:1 working conversation context", () => {
     const result = composeEcaWorkingConversationContext({ utterance: "Add Supplier Delay as a Risk.", meaning: meaning({ objectReference: { subjectId: null, canonicalName: "Supplier Delay", lexicalHint: "Supplier Delay", subjectKind: "risk" }, subject: { subjectId: null, canonicalName: "Supplier Delay", lexicalHint: "Supplier Delay", subjectKind: "risk" } }), stage, subjects });
     assert.equal(result.interactionMode, "PROPOSE_MUTATION");
     assert.equal(result.mutationProposal?.executed, false);
-    assert.equal(result.mutationProposal?.canonicalWriter, null);
+    assert.equal(result.mutationProposal?.canonicalWriter, "canonicalRiskWriter");
   });
 
   it("H. data context preserves candidate semantic status and provenance", () => {
@@ -243,5 +243,33 @@ describe("NPA-T ECA:1 working conversation context", () => {
       conversationState: { activeSubject: { id: "capacity-gap", name: "Capacity Gap", kind: "problem" } } as never,
     });
     assert.equal(result.activeSubject?.id, "demand-surge");
+  });
+
+  it("MRA:3-FIX1 collection ordinal outranks leftover meaning objectReference", () => {
+    const margin = { id: "margin-pressure", label: "Margin Pressure", kind: "problem" } as const;
+    const gap = subjects[0]!;
+    const result = composeEcaWorkingConversationContext({
+      utterance: "go back to the first problem",
+      meaning: meaning({
+        objectReference: {
+          subjectId: margin.id,
+          canonicalName: margin.label,
+          lexicalHint: margin.label,
+          subjectKind: "problem",
+        },
+      }),
+      stage,
+      subjects: [...subjects, margin],
+      conversationState: {
+        activeSubject: { id: margin.id, name: margin.label, kind: "problem" },
+        lastCollection: {
+          kind: "PROBLEM",
+          items: ["Capacity Gap", "Margin Pressure"],
+          memberIds: ["capacity-gap", "margin-pressure"],
+        },
+      } as never,
+    });
+    assert.equal(result.activeSubject?.id, "capacity-gap");
+    assert.equal(result.activeSubject?.label, gap.label);
   });
 });

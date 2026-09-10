@@ -126,12 +126,12 @@ export function composeClarificationQuestion(
     const left = candidates[0]!;
     const right = candidates[1]!;
     return {
-      question: `Do you mean the ${left.canonicalName} ${kindPhrase(left.subjectKind)} or the ${right.canonicalName}?`,
+      question: `Which do you mean, the ${left.canonicalName} ${kindPhrase(left.subjectKind)} or the ${right.canonicalName}?`,
       expected: "choice",
     };
   }
   return {
-    question: `Do you mean ${candidates[0]?.canonicalName} or ${candidates[1]?.canonicalName}?`,
+    question: `Which do you mean, ${candidates[0]?.canonicalName} or ${candidates[1]?.canonicalName}?`,
     expected: "choice",
   };
 }
@@ -156,7 +156,11 @@ export function evaluateClarificationGate(input: {
   const explicit =
     contextual.provenance === "EXPLICIT_CURRENT_TURN" &&
     contextual.objectReference != null;
-  const namedNlu = contextual.turnMeaning.objectReference != null;
+  const namedNlu =
+    contextual.turnMeaning.objectReference != null &&
+    !/^(?:it|this|that|them|these|those|this one|that one)$/i.test(
+      (contextual.turnMeaning.objectReference.lexicalHint ?? "").trim(),
+    );
   const help = contextual.requestedOperation === "HELP";
   const correct = contextual.turnMeaning.communicativeIntent === "CORRECT";
   const existingAuthorityIntent =
@@ -193,7 +197,8 @@ export function evaluateClarificationGate(input: {
     ) &&
     !/^why\b/.test(contextual.turnMeaning.preparedUtterance) &&
     !/\bwhich\b/.test(contextual.turnMeaning.preparedUtterance) &&
-    (input.continuity?.thread.length ?? 0) >= 2 &&
+    new Set((input.continuity?.thread ?? []).map((frame) => frame.subjectId)).size >=
+      2 &&
     !namedNlu &&
     contextual.requestedOperation !== "COMPARE"
   ) {

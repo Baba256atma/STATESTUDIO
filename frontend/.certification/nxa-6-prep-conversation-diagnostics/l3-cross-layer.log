@@ -26,30 +26,30 @@
 [Topology][Hub] Hub: Capacity
 [Topology][Hub] Satellites: 5
 [Topology][Hub] Connections: 5
-✔ CC:4 identity and architectural boundary (0.834375ms)
-✔ Case 1 — focus-subject(obj-capacity) → Runtime focus + center (56.594333ms)
-✔ Case 2 — explicit conversation Budget beats Capacity attention (20.025958ms)
-✔ Case 3–5 — overview + navigation trail Back/Forward (4.777708ms)
-✔ Case 6 — compare-subjects unsupported (no compare engine) (1.794125ms)
-✔ Case 7 — analyze-subject routes to focus (Advisor derive) (0.949167ms)
-✔ Case 8 — simulate-scenario focuses scenario subject only (1.19725ms)
-✔ Case 9 — invalid target rejected atomically (0.189542ms)
-✔ Case 10 — confirmation-required does not execute (0.189459ms)
-✔ Click vs conversation converge on same focus authority (15.759416ms)
-✔ reveal-problems without anchor opens queue collection (1.343041ms)
-✔ reveal-problems with a restored anchor still presents the collection (1.333542ms)
-✔ reveal-goals unsupported (0.161875ms)
-✔ invariant A: CC:4 rejects raw language — accepts structured command only (0.193625ms)
-✔ invariant P/Q: failed dispatch does not mutate; confirmation gates (0.442583ms)
-✔ duplicate dispatch → no-op (1.55ms)
-✔ executeNexoraConversationalControl facade matches applicator (0.663333ms)
-✔ invariant X: no provider imports in CC:4 sources (9.439959ms)
-✔ bridge result is serializable (1.130416ms)
-✔ multi-member Problems remain one canonical collection through Stage (9.125208ms)
-✔ scenario, decision and execution membership is generic and exact (1.90575ms)
-✔ one-member Risk preserves collection semantics and empty collections do not invent objects (1.177208ms)
-✔ already-satisfied collection is stable and a collection supersedes stale focus (1.339375ms)
-✔ explain, workspace, capability, assertion and social turns are NO_CHANGE (7.775333ms)
+✔ CC:4 identity and architectural boundary (0.429125ms)
+✔ Case 1 — focus-subject(obj-capacity) → Runtime focus + center (36.601542ms)
+✔ Case 2 — explicit conversation Budget beats Capacity attention (10.965292ms)
+✔ Case 3–5 — overview + navigation trail Back/Forward (3.234042ms)
+✔ Case 6 — compare-subjects unsupported (no compare engine) (1.780291ms)
+✔ Case 7 — analyze-subject routes to focus (Advisor derive) (0.95125ms)
+✔ Case 8 — simulate-scenario focuses scenario subject only (1.386084ms)
+✔ Case 9 — invalid target rejected atomically (0.172458ms)
+✔ Case 10 — confirmation-required does not execute (0.163375ms)
+✔ Click vs conversation converge on same focus authority (9.9545ms)
+✔ reveal-problems without anchor opens queue collection (0.574291ms)
+✔ reveal-problems with a restored anchor still presents the collection (0.330584ms)
+✔ reveal-goals unsupported (0.038917ms)
+✔ invariant A: CC:4 rejects raw language — accepts structured command only (0.057042ms)
+✔ invariant P/Q: failed dispatch does not mutate; confirmation gates (0.05675ms)
+✔ duplicate dispatch → no-op (0.3425ms)
+✔ executeNexoraConversationalControl facade matches applicator (0.272417ms)
+✔ invariant X: no provider imports in CC:4 sources (5.966667ms)
+✔ bridge result is serializable (0.462916ms)
+✔ multi-member Problems remain one canonical collection through Stage (21.517666ms)
+✔ scenario, decision and execution membership is generic and exact (1.97775ms)
+✔ one-member Risk preserves collection semantics and empty collections do not invent objects (2.874167ms)
+✔ already-satisfied collection is stable and a collection supersedes stale focus (1.675167ms)
+✔ explain, workspace, capability, assertion and social turns are NO_CHANGE (5.947833ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -536,21 +536,21 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ Advisor and Queue converge on the same canonical collection presentation (343.058875ms)
-✔ Advisor still presents supported one-member Risks without inventing Queue parity (15.615084ms)
-✔ latest explicit command wins across focus and collection transitions (62.994875ms)
-✔ knowledge and judgment turns do not mutate the presented collection (70.649083ms)
-✔ Stage readback follows the post-command collection and remains read-only (35.522458ms)
-✔ collection trail preserves Back and Forward semantics (14.709708ms)
-✔ rapid generic collection transitions have one deterministic last writer (57.346209ms)
-✔ restored conversational subject cannot collapse an explicit collection command (28.736834ms)
-✔ unfiltered collection commands do not inherit a restored primary target (0.8115ms)
-✔ knowledge questions do not present a collection after restored focus (16.128084ms)
-✔ duplicate running starts are not recorded (2.670709ms)
-✔ CERTIFIED barrier requires finished inspected passing required tasks (0.777542ms)
-✔ a long-lived nonessential task does not block certification (0.517ms)
-✔ diagnosis never authorizes a Fix on the record itself (0.716542ms)
-✔ insufficient evidence cannot begin a Fix (0.107166ms)
+✔ Advisor and Queue converge on the same canonical collection presentation (171.978667ms)
+✔ Advisor still presents supported one-member Risks without inventing Queue parity (7.933583ms)
+✔ latest explicit command wins across focus and collection transitions (41.023542ms)
+✔ knowledge and judgment turns do not mutate the presented collection (33.484708ms)
+✔ Stage readback follows the post-command collection and remains read-only (18.698375ms)
+✔ collection trail preserves Back and Forward semantics (6.21725ms)
+✔ rapid generic collection transitions have one deterministic last writer (25.084833ms)
+✔ restored conversational subject cannot collapse an explicit collection command (16.116875ms)
+✔ unfiltered collection commands do not inherit a restored primary target (0.344792ms)
+✔ knowledge questions do not present a collection after restored focus (7.325292ms)
+✔ duplicate running starts are not recorded (4.065375ms)
+✔ CERTIFIED barrier requires finished inspected passing required tasks (0.477ms)
+✔ a long-lived nonessential task does not block certification (0.192375ms)
+✔ diagnosis never authorizes a Fix on the record itself (0.361666ms)
+✔ insufficient evidence cannot begin a Fix (0.068958ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -1487,11 +1487,11 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ certified seed cases pass in deterministic order (978.065416ms)
-✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (13.427542ms)
-✔ response failure is distinct from Stage-effect failure (12.295167ms)
-✔ harness uses isolated runtime state per case (20.29575ms)
-✔ funnel catalog has four levels, no skips, and Level 4 is last (0.232125ms)
+✔ certified seed cases pass in deterministic order (482.227458ms)
+✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (4.865417ms)
+✔ response failure is distinct from Stage-effect failure (4.476709ms)
+✔ harness uses isolated runtime state per case (8.640667ms)
+✔ funnel catalog has four levels, no skips, and Level 4 is last (0.121625ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -1510,8 +1510,8 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ conversation path scope is quiet until explicitly enabled (1.002375ms)
-✔ path projection reads existing Stage and DIR results without a second store (196.543625ms)
+✔ conversation path scope is quiet until explicitly enabled (0.54525ms)
+✔ path projection reads existing Stage and DIR results without a second store (109.451208ms)
 ℹ tests 46
 ℹ suites 0
 ℹ pass 46
@@ -1519,5 +1519,5 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 2632.001709
+ℹ duration_ms 1419.080667
 

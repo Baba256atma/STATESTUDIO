@@ -101,6 +101,29 @@ function isExplicitCollectionIntent(intentKind: string): boolean {
   );
 }
 
+function isReferentialKnowledgeRequest(
+  meaning: CanonicalManagerMeaning,
+  prepared: string,
+): boolean {
+  if (
+    /^(?:yes|yeah|yep|ok|okay|continue|go ahead|proceed|do it|go on)$/.test(prepared)
+  ) {
+    return false;
+  }
+  const deictic = /\b(?:it|this|that|this one|that one|this problem|that problem)\b/.test(
+    prepared,
+  );
+  const knowledge =
+    meaning.requestedOperation === "EXPLAIN" ||
+    meaning.requestedOperation === "CAUSE" ||
+    meaning.requestedOperation === "EVIDENCE" ||
+    meaning.requestedOperation === "IMPACT" ||
+    meaning.requestedOperation === "STATUS" ||
+    meaning.requestedOperation === "INVESTIGATE" ||
+    meaning.requestedOperation === "CONSEQUENCE";
+  return deictic && knowledge;
+}
+
 function isNewCompleteRequest(
   meaning: CanonicalManagerMeaning,
   prepared: string,
@@ -274,7 +297,7 @@ export function interpretClarificationTurn(input: {
     });
   }
 
-  if (pending && !pending.parked) {
+  if (pending && !pending.parked && !isReferentialKnowledgeRequest(input.turnMeaning, prepared)) {
     if (pending.expectedAnswer === "binary") {
       if (/^(?:yes|yeah|yep|ok|okay)$/.test(prepared) && pending.candidates[0]) {
         return emptyResult({

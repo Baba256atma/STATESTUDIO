@@ -20,6 +20,7 @@ import {
 } from "./nexoraNca1ConversationTypes.ts";
 import {
   classifyManagerSpeechAct,
+  collectionOrdinalIndex,
   composeManagerObservationReply,
   interpretManagerProvidedObservation,
   observationShouldNotNavigate,
@@ -519,6 +520,8 @@ export function applyNcaStrategyToResponse(input: {
     input.nca.need.family === "UNKNOWN" &&
     nca3EligibleForSemanticScope(classifyNexoraSemanticScope(input.nca.message)) &&
     !/\b(?:csv|data library|data source|uploaded file|imported file)\b/i.test(input.nca.message) &&
+    collectionOrdinalIndex(input.nca.message) == null &&
+    !/\b(?:the other one|this problem|that problem|that scenario|ready to (?:decide|execute))\b/i.test(input.nca.message) &&
     /don'?t understand|unknown intent|couldn'?t complete|not sure how that relates/i.test(
       source,
     )

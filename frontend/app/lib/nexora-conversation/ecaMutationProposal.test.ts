@@ -62,7 +62,7 @@ describe("NPA-T ECA:1-FIX1 mutation proposal", () => {
     assert.equal(result.mutationProposal?.proposedName, "Supplier Delay");
     assert.equal(result.mutationProposal?.requiresExplicitConfirmation, true);
     assert.equal(result.mutationProposal?.executed, false);
-    assert.equal(result.mutationProposal?.canonicalWriter, null);
+    assert.equal(result.mutationProposal?.canonicalWriter, "canonicalRiskWriter");
   });
 
   it("B. recognizes natural ADD variants without keyword-only risk detection", () => {
@@ -78,6 +78,8 @@ describe("NPA-T ECA:1-FIX1 mutation proposal", () => {
     assert.equal(isEcaMutationConfirmation("Yes, add the risk."), true);
     assert.equal(isEcaMutationCancellation("Never mind."), true);
     assert.equal(isEcaMutationCancellation("No."), true);
+    assert.equal(isEcaMutationCancellation("forget that for now"), true);
+    assert.equal(isEcaMutationCancellation("forget it"), true);
   });
 
   it("D. unresolved REMOVE target requires clarification and never guesses", () => {
@@ -98,8 +100,8 @@ describe("NPA-T ECA:1-FIX1 mutation proposal", () => {
 
   it("F. duplicate identity is left to the canonical authority", () => {
     const result = compose("Add Supplier Delay as a Risk.");
-    assert.equal(result.mutationProposal?.provenance.includes("ECA:1 explicit mutation recognition"), true);
-    assert.equal(result.mutationProposal?.canonicalWriter, null);
+    assert.equal(result.mutationProposal?.provenance.includes("ECA:1 typed mutation recognition"), true);
+    assert.equal(result.mutationProposal?.canonicalWriter, "canonicalRiskWriter");
   });
 
   it("G. proposal carries stable source and session-only provenance", () => {
@@ -113,7 +115,7 @@ describe("NPA-T ECA:1-FIX1 mutation proposal", () => {
     const result = compose("Add Supplier Delay as a Risk.");
     assert.equal(result.stageContext.focus?.id, "delivery");
     assert.equal(result.mutationProposal?.executed, false);
-    assert.equal(result.mutationProposal?.canonicalWriter, null);
+    assert.equal(result.mutationProposal?.canonicalWriter, "canonicalRiskWriter");
   });
 
   it("I. data uncertainty remains separate from mutation confirmation", () => {
@@ -132,5 +134,12 @@ describe("NPA-T ECA:1-FIX1 mutation proposal", () => {
     assert.equal(compose("Approve Scenario A.").mutationProposal, null);
     assert.equal(compose("Start Execution A.").mutationProposal, null);
     assert.equal(compose("Change the plan to Scenario B instead.").mutationProposal, null);
+  });
+
+  it("K. delete names the full object and never proposes ADD", () => {
+    const result = compose("delete Margin Pressure");
+    assert.equal(result.mutationProposal?.operation, "REMOVE");
+    assert.equal(result.mutationProposal?.proposedName, "Margin Pressure");
+    assert.notEqual(result.mutationProposal?.operation, "ADD");
   });
 });

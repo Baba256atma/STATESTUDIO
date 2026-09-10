@@ -154,6 +154,7 @@ type HintResolution =
 function resolveHint(
   hint: NexoraConversationalTargetHint,
   index: NexoraConversationalSubjectMatchIndex,
+  conversationContext?: NexoraConversationContextSnapshot | null,
 ): HintResolution {
   if (isCompoundCategoryHint(hint.raw)) {
     const categoryMatches = index.subjects.filter(
@@ -187,6 +188,46 @@ function resolveHint(
   }
 
   if (matches.length > 1) {
+    const presented = new Set(conversationContext?.presentedSubjectIds ?? []);
+    const inPresented = matches.filter((item) => presented.has(item.subjectId));
+    if (inPresented.length === 1) {
+      const only = inPresented[0]!;
+      return {
+        status: "resolved",
+        subject: toResolved(only, hint.raw),
+        candidates: candidateIds,
+        reasons: Object.freeze([
+          CONVERSATIONAL_CONTEXT_REASON.EXPLICIT_TARGET_MATCH,
+          CONVERSATIONAL_CONTEXT_REASON.CANONICAL_SUBJECT_MATCH,
+          CONVERSATIONAL_CONTEXT_REASON.RESOLVED_FROM_CURRENT_SUBJECT,
+          CONVERSATIONAL_CONTEXT_REASON.ID_FROM_REGISTRY_ONLY,
+          CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+        ]),
+      };
+    }
+    const presentedKind = (conversationContext?.presentedSetKind ?? "")
+      .toLowerCase()
+      .replace(/s$/, "");
+    const kindMatched =
+      presentedKind.length > 0
+        ? (inPresented.length > 0 ? inPresented : matches).filter(
+            (item) => item.subjectKind === presentedKind,
+          )
+        : inPresented;
+    if (kindMatched.length === 1) {
+      const only = kindMatched[0]!;
+      return {
+        status: "resolved",
+        subject: toResolved(only, hint.raw),
+        candidates: candidateIds,
+        reasons: Object.freeze([
+          CONVERSATIONAL_CONTEXT_REASON.EXPLICIT_TARGET_MATCH,
+          CONVERSATIONAL_CONTEXT_REASON.CANONICAL_SUBJECT_MATCH,
+          CONVERSATIONAL_CONTEXT_REASON.ID_FROM_REGISTRY_ONLY,
+          CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+        ]),
+      };
+    }
     return {
       status: "ambiguous",
       candidates: candidateIds,
@@ -396,9 +437,55 @@ function resolveOrdinalHint(
   index: NexoraConversationalSubjectMatchIndex,
 ): HintResolution {
   const token = hint.raw.trim().toLowerCase();
+  const ordinalWord = token.match(/\b(first|second|third|previous|other)\b/)?.[1] ?? token;
+  const kindHint = token.match(/\b(problem|scenario|decision|execution)\b/)?.[1] ?? null;
   const presented = conversationContext?.presentedSubjectIds ?? [];
+  const catalogPool =
+    kindHint == null
+      ? []
+      : index.subjects.filter((subject) => subject.subjectKind === kindHint);
+  const poolIds = presented.length > 0 ? presented : catalogPool.map((subject) => subject.subjectId);
 
-  if (token === "previous") {
+  if (ordinalWord === "other") {
+    const currentId = conversationContext?.currentSubjectId ?? null;
+    const current = lookupById(currentId, index);
+    const kind = kindHint ?? current?.subjectKind ?? null;
+    const siblingPool = (
+      poolIds.length > 0
+        ? poolIds
+        : index.subjects
+            .filter(
+              (subject) =>
+                (kind == null || subject.subjectKind === kind) &&
+                !/watch$/i.test(subject.canonicalName),
+            )
+            .map((subject) => subject.subjectId)
+    ).filter((id) => id !== currentId);
+    const siblingId = siblingPool[0] ?? null;
+    const record = lookupById(siblingId, index);
+    if (!record) {
+      return {
+        status: "not-found",
+        candidates: Object.freeze(siblingPool),
+        reasons: Object.freeze([
+          CONVERSATIONAL_CONTEXT_REASON.PRESENTED_SET_MISSING_FOR_ORDINAL,
+          CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+        ]),
+      };
+    }
+    return {
+      status: "resolved",
+      subject: toResolved(record, hint.raw),
+      candidates: Object.freeze([record.subjectId]),
+      reasons: Object.freeze([
+        CONVERSATIONAL_CONTEXT_REASON.RESOLVED_FROM_PREVIOUS_SUBJECT,
+        CONVERSATIONAL_CONTEXT_REASON.ID_FROM_REGISTRY_ONLY,
+        CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+      ]),
+    };
+  }
+
+  if (ordinalWord === "previous") {
     const previousId = conversationContext?.previousSubjectIds?.[0] ?? null;
     const record = lookupById(previousId, index);
     if (!record) {
@@ -424,7 +511,7 @@ function resolveOrdinalHint(
     };
   }
 
-  if (presented.length === 0) {
+  if (poolIds.length === 0) {
     return {
       status: "not-found",
       candidates: Object.freeze([]),
@@ -436,11 +523,11 @@ function resolveOrdinalHint(
   }
 
   const ordinalIndex =
-    token === "first" ? 0 : token === "second" ? 1 : token === "third" ? 2 : -1;
+    ordinalWord === "first" ? 0 : ordinalWord === "second" ? 1 : ordinalWord === "third" ? 2 : -1;
   if (ordinalIndex < 0) {
     return {
       status: "not-found",
-      candidates: Object.freeze([...presented]),
+      candidates: Object.freeze([...poolIds]),
       reasons: Object.freeze([
         CONVERSATIONAL_CONTEXT_REASON.ORDINAL_OUT_OF_RANGE,
         CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
@@ -448,11 +535,11 @@ function resolveOrdinalHint(
     };
   }
 
-  const subjectId = presented[ordinalIndex] ?? null;
+  const subjectId = poolIds[ordinalIndex] ?? null;
   if (!subjectId) {
     return {
       status: "not-found",
-      candidates: Object.freeze([...presented]),
+      candidates: Object.freeze([...poolIds]),
       reasons: Object.freeze([
         CONVERSATIONAL_CONTEXT_REASON.ORDINAL_OUT_OF_RANGE,
         CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
@@ -464,7 +551,7 @@ function resolveOrdinalHint(
   if (!record) {
     return {
       status: "not-found",
-      candidates: Object.freeze([...presented]),
+      candidates: Object.freeze([...poolIds]),
       reasons: Object.freeze([
         CONVERSATIONAL_CONTEXT_REASON.UNKNOWN_SUBJECT_IN_CONTEXT,
         CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
@@ -581,7 +668,7 @@ export function resolveNexoraExecutiveConversationalContext(
       let result =
         hint.role === "ordinal"
           ? resolveOrdinalHint(hint, input.conversationContext, index)
-          : resolveHint(hint, index);
+          : resolveHint(hint, index, input.conversationContext);
       if (result.status === "not-found" && hint.role !== "ordinal") {
         const currentRecord = lookupById(
           input.conversationContext?.currentSubjectId,

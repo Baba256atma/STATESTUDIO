@@ -12,6 +12,7 @@ import {
   type AdvisorDataField,
   type AdvisorDataSource,
 } from "./nexoraAdvisorDataContext.ts";
+import type { ConversationContinuitySnapshot } from "./contextualManagerMeaning.ts";
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
 
 export const nexoraAdvisorDataInquiryIdentity = "DATA-ADV:1/AdvisorDataInquiry" as const;
@@ -84,6 +85,46 @@ export type AdvisorDataInquiryAnswer = Readonly<{
   mutatesDataReality: false;
   diagnostics?: AdvisorDataInquiryDiagnostics;
 }>;
+
+const ASSISTANT_INTRODUCED_DATA_KINDS = new Set<AdvisorDataConversationKind>([
+  "csv-availability",
+  "inventory",
+  "source-inventory",
+  "pending-inventory",
+  "explain-all-csv",
+  "specific-source",
+  "source-contents",
+  "source-semantics",
+  "source-status",
+]);
+
+export function assistantIntroducedDataSourceIds(
+  answer: AdvisorDataInquiryAnswer | null | undefined,
+): readonly string[] {
+  const kind = answer?.diagnostics?.dataConversationIntent ?? null;
+  if (!kind || !ASSISTANT_INTRODUCED_DATA_KINDS.has(kind)) return [];
+  return answer?.diagnostics?.resolvedSourceIds ?? [];
+}
+
+function listingDialogue(
+  dialogue: AdvisorDataDialogue,
+  listed: readonly AdvisorDataSource[],
+): AdvisorDataDialogue {
+  const ids = Object.freeze(listed.map((entry) => entry.sourceContextId));
+  const unique = listed.length === 1 ? listed[0] : null;
+  return Object.freeze({
+    sourceContextId: unique?.sourceContextId ?? (listed.length === 0 ? dialogue.sourceContextId : null),
+    fieldColumn: unique || listed.length > 0 ? null : dialogue.fieldColumn,
+    listedSourceContextIds: ids,
+  });
+}
+
+function isCurrentReferentDeictic(query: string): boolean {
+  const text = query.replace(/[.?!]+$/g, "").trim();
+  return /^(?:explain|show|describe) (?:it|that|this|this one|that one)$/.test(text)
+    || /^(?:tell me more about|what(?:'s| is) going on with|what about) (?:it|that|this|this one|that one)$/.test(text)
+    || /^(?:investigate) (?:it|that|this)$/.test(text);
+}
 
 function recoverExplainVerb(text: string): string {
   const [first, ...rest] = text.split(" ");
@@ -204,6 +245,26 @@ function joinNames(names: readonly string[]): string {
 export function classifyAdvisorDataConversation(utterance: string): AdvisorDataConversationKind | null {
   const query = prepared(utterance);
   if (!query) return null;
+  if (
+    /\b(?:can|does|could) (?:this|the|my|our) (?:csv|file|data(?: source)?|source)\b/.test(query) &&
+    /\b(?:support|tell (?:us|me) about|evidence|help (?:with|us understand)|capacity gap|problem)\b/.test(query)
+  ) {
+    return "evidence-relevance";
+  }
+  if (
+    /\b(?:what (?:fields|columns) (?:do you|do we|are) (?:know|have|there)|what don'?t you understand|which (?:fields|columns).*(?:unclear|unknown|unresolved))\b/.test(
+      query,
+    )
+  ) {
+    return "field-coverage";
+  }
+  if (
+    /\b(?:explain (?:the )?(?:csv )?file you currently have|what do you understand from (?:it|this|the file)|tell me about (?:my |our |the )?data|what data (?:are|is) you using|what can you learn from this (?:file|csv|source)|does this source tell)\b/.test(
+      query,
+    )
+  ) {
+    return "source-semantics";
+  }
   if (/\bwhat data (?:is|are) this using\b/.test(query) || /\bwhat data (?:is|are) you using\b/.test(query) || /\bwhat data supports\b/.test(query) || /\bwhere did .+(come from|from)\b/.test(query)) {
     return "object-provenance";
   }
@@ -514,7 +575,7 @@ function kpiAnswer(source: AdvisorDataSource): string {
 }
 
 function evidenceObjectLabel(query: string, focused: string | null): string {
-  const named = query.match(/\b(?:related to|evidence for|evidence related to|about|understand)\s+(.+?)$/)?.[1]
+  const named = query.match(/\b(?:related to|evidence for|evidence related to|about|understand|support)\s+(.+?)$/)?.[1]
     ?.replace(/[?]+$/g, "")
     .replace(/\b(?:this risk|this problem)\b/g, "")
     .trim();
@@ -665,6 +726,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
   dialogue?: AdvisorDataDialogue;
   focusedObjectLabel?: string | null;
   context?: AdvisorDataContext;
+  conversationContinuity?: ConversationContinuitySnapshot | null;
 }>): AdvisorDataInquiryAnswer | null {
   const context = input.context ?? projectAdvisorDataContext(input.workspaceId);
   const listed = input.dialogue?.listedSourceContextIds ?? emptyAdvisorDataDialogue.listedSourceContextIds;
@@ -705,23 +767,22 @@ export function answerAdvisorDataInquiry(input: Readonly<{
     return answer(dataConcept(context), dialogue, kind, context, listedCsv);
   }
   if (kind === "csv-availability") {
-    return answer(csvAvailability(context), Object.freeze({
-      ...dialogue,
-      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
-    }), kind, context, listedCsv);
+    return answer(csvAvailability(context), listingDialogue(dialogue, listedCsv), kind, context, listedCsv);
   }
   if (kind === "explain-all-csv") {
-    return answer(explainAllCsv(context), Object.freeze({
-      ...dialogue,
-      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
-    }), kind, context, listedCsv);
+    return answer(explainAllCsv(context), listingDialogue(dialogue, listedCsv), kind, context, listedCsv);
   }
   if (kind === "pending-inventory") {
     const pending = listedCsv.filter((entry) => entry.lifecycle === "pending");
-    return answer(pendingInventory(context), Object.freeze({
-      ...dialogue,
-      listedSourceContextIds: Object.freeze(pending.map((entry) => entry.sourceContextId)),
-    }), kind, context, pending);
+    return answer(pendingInventory(context), listingDialogue(dialogue, pending), kind, context, pending);
+  }
+  if (kind === "source-semantics" || kind === "source-contents") {
+    if (!activeCsv) {
+      return listedCsv.length > 1
+        ? answer("Which CSV source should I inspect?", dialogue, kind, context, listedCsv)
+        : null;
+    }
+    return answer(describeSourceContents(activeCsv), bind(activeCsv), kind, context, [activeCsv]);
   }
   if (kind === "field-coverage" || kind === "analytical-capability" || kind === "evidence-relevance" || kind === "bounded-interpretation" || kind === "field-values") {
     if (!activeCsv) {
@@ -749,10 +810,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
     const text = kind === "inventory" && isDataLibraryInventoryRequest(query)
       ? inventoryCensus(context, query)
       : listLibrary(context, kind === "inventory");
-    return answer(text, Object.freeze({
-      ...dialogue,
-      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
-    }), kind, context, listedCsv);
+    return answer(text, listingDialogue(dialogue, listedCsv), kind, context, listedCsv);
   }
 
   if (/\bexplain\b/.test(query) && /\bpending (?:one|file|source)\b/.test(query)) {
@@ -783,10 +841,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
   const listAsk = /\b(?:what (?:data |files |sources )?(?:do (?:you|we) have|have (?:you|we) got)|which files|what sources)\b/.test(query)
     || /^what data do we have$/.test(query);
   if (listAsk && !/\bfor\b/.test(query) && !/\busing\b/.test(query)) {
-    return answer(listLibrary(context), Object.freeze({
-      ...dialogue,
-      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
-    }), "inventory", context, listedCsv);
+    return answer(listLibrary(context), listingDialogue(dialogue, listedCsv), "inventory", context, listedCsv);
   }
 
   if (/\b(?:what (?:data )?are we missing|what(?:'s| is) missing|do we have (\w+) data)\b/.test(query) || /\bdo we have\b/.test(query) && /\bdata\b/.test(query)) {
@@ -993,6 +1048,24 @@ export function answerAdvisorDataInquiry(input: Readonly<{
       mutatesStage: false,
       mutatesDataReality: false,
     });
+  }
+
+  if (isCurrentReferentDeictic(query) && !dialogue.fieldColumn) {
+    if (input.conversationContinuity?.parkedThread) return null;
+    const listedIds = dialogue.listedSourceContextIds ?? [];
+    const introducedId = dialogue.sourceContextId;
+    if (listedIds.length > 1 && !dialogue.sourceContextId) {
+      const listed = listedCsv.filter((entry) => listedIds.includes(entry.sourceContextId));
+      return answer("Which CSV source should I inspect?", dialogue, "source-contents", context, listed);
+    }
+    const source = sourceById(context, introducedId ?? null);
+    if (source) {
+      return answer(describeSourceContents(source), Object.freeze({
+        sourceContextId: source.sourceContextId,
+        fieldColumn: null,
+        listedSourceContextIds: dialogue.listedSourceContextIds,
+      }), "source-contents", context, [source]);
+    }
   }
 
   return null;
