@@ -290,16 +290,26 @@ export function composeEcaWorkingConversationContext(
   input: EcaWorkingContextInput,
 ): EcaWorkingConversationContext {
   const meaning = input.meaning;
+  const ambiguous =
+    input.explicitAmbiguity === true || meaning?.ambiguity.unresolved === true;
   const rawExplicit = subjectFromRecord(
     meaning?.objectReference ?? meaning?.subject ?? null,
     input.subjects,
   );
-  const spokenExplicit =
-    rawExplicit &&
-    !/^(you|yourself|it|this|that)$/i.test(rawExplicit.label.trim()) &&
-    input.utterance.toLowerCase().includes(rawExplicit.label.toLowerCase())
+  // NCA may still carry the resolved subject on operation-only follow-ups
+  // ("Show me the evidence.") without re-speaking the label. That meaning-carried
+  // referent is continuity, not a newly spoken subject switch.
+  const meaningCarriedSubject =
+    rawExplicit && !/^(you|yourself|it|this|that)$/i.test(rawExplicit.label.trim())
       ? rawExplicit
       : null;
+  const spokenExplicit =
+    meaningCarriedSubject &&
+    input.utterance.toLowerCase().includes(meaningCarriedSubject.label.toLowerCase())
+      ? meaningCarriedSubject
+      : null;
+  // Only a spoken name is EXPLICIT. Meaning-carried continuity is applied later
+  // after ordinal/letter/spoken winners, so leftover meaning cannot outrank them.
   const explicit = spokenExplicit;
   const confirmed = stateSubject(input.conversationState, input.subjects);
   const threadSubjectId = input.working?.conversationThread?.primarySubject ?? null;
@@ -379,6 +389,15 @@ export function composeEcaWorkingConversationContext(
     knowledgeFollowUp || pronounFollowUp
       ? input.recentSubjects?.[input.recentSubjects.length - 1] ?? conversational
       : null;
+  // Preserve a valid meaning-carried subject across compatible operation changes
+  // when the manager did not name a different subject and continuity is unambiguous.
+  const continuityFromMeaning =
+    !ambiguous &&
+    !spokenExplicit &&
+    meaningCarriedSubject &&
+    (uniqueVisible == null || uniqueVisible.id === meaningCarriedSubject.id)
+      ? meaningCarriedSubject
+      : null;
   const active =
     ordinalSubject ??
     explicit ??
@@ -386,9 +405,9 @@ export function composeEcaWorkingConversationContext(
     knowledgeRecent ??
     (knowledgeFollowUp || pronounFollowUp ? conversational : stageNamed) ??
     conversational ??
+    continuityFromMeaning ??
     (knowledgeFollowUp ? null : uniqueVisible) ??
     null;
-  const ambiguous = input.explicitAmbiguity === true || meaning?.ambiguity.unresolved === true;
   const explicitCandidates = (meaning?.ambiguity.candidates ?? [])
     .map((candidate) => subjectFromRecord(candidate, input.subjects))
     .filter((candidate): candidate is EcaSubject => candidate != null);

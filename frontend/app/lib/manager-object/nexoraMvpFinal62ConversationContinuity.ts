@@ -137,6 +137,41 @@ export function applyContextualMeaningToIntent(
     resolution,
     asOverlayMeaning(contextual),
   );
+  const deicticContinuity =
+    contextual.continuityMove === "pronoun" ||
+    contextual.provenance === "CONTEXT_ACTIVE_SUBJECT" ||
+    contextual.provenance === "CONTEXT_ACTIVE_INVESTIGATION" ||
+    contextual.provenance === "CONTEXT_RECENT_SUBJECT" ||
+    contextual.provenance === "CONTEXT_PREVIOUS_SUBJECT" ||
+    contextual.provenance === "CONTEXT_PRESENTED_SET" ||
+    contextual.provenance === "EXISTING_STAGE_CONTEXT" ||
+    contextual.provenance === "CONTEXT_TYPED_REFERENCE";
+  if (
+    deicticContinuity &&
+    contextual.provenance !== "EXPLICIT_CURRENT_TURN" &&
+    contextual.provenance !== "NLU_CURRENT_TURN"
+  ) {
+    const keepKnowledgeFollowUp =
+      resolution.intent.kind === "unknown" &&
+      (next.intent.kind === "explore" || next.intent.kind === "focus") &&
+      contextual.requestedOperation !== "FOCUS";
+    next = Object.freeze({
+      intent: Object.freeze({
+        ...next.intent,
+        kind: keepKnowledgeFollowUp ? ("explain" as const) : next.intent.kind,
+        targetHints: resolution.intent.targetHints,
+        requiresContext: true,
+        requiresTarget: resolution.intent.requiresTarget,
+      }),
+      trace: Object.freeze({
+        ...next.trace,
+        targetHints: resolution.intent.targetHints,
+        requiresContext: true,
+        requiresTarget: resolution.intent.requiresTarget,
+        finalKind: keepKnowledgeFollowUp ? ("explain" as const) : next.intent.kind,
+      }),
+    });
+  }
   if (
     next.intent.targetHints.length === 0 &&
     contextual.objectReference?.canonicalName &&
@@ -145,6 +180,9 @@ export function applyContextualMeaningToIntent(
     next.intent.kind !== "overview" &&
     contextual.provenance !== "CONTEXT_ACTIVE_SUBJECT" &&
     contextual.provenance !== "EXISTING_STAGE_CONTEXT" &&
+    (contextual.provenance === "EXPLICIT_CURRENT_TURN" ||
+      contextual.provenance === "NLU_CURRENT_TURN") &&
+    contextual.continuityMove !== "pronoun" &&
     !/\bits\b/i.test(contextual.turnMeaning.rawUtterance)
   ) {
     const hint = Object.freeze({

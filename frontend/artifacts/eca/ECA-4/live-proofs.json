@@ -1,77 +1,26 @@
 {
   "identity": "NPA-T ECA:4/live-proofs",
-  "url": "http://localhost:3019/executive?reset=1",
+  "resume": "ECA:4-2026-09-14",
+  "url": "http://localhost:3000/executive?reset=1",
+  "comparisonSubjects": [
+    {
+      "id": "ctx-scenario-demand",
+      "name": "Demand Surge"
+    },
+    {
+      "id": "ctx-scenario-pricing",
+      "name": "Pricing Response"
+    }
+  ],
   "errors": [],
-  "1-known-information": {
+  "1-known-information-no-unnecessary-question": {
     "pass": true,
     "actual": {
-      "utterance": "The on-time delivery target is 96%. Compare Scenario A and Scenario B using the on-time delivery target.",
-      "reply": "NexoraUnderstood. I'll treat that as your current manager-reported observation about Delivery, not as verified external evidence.",
-      "intent": "COMPARE",
-      "nextAction": "ASK_FOR_MISSING_INFORMATION",
-      "authority": "none",
-      "intervene": "true",
-      "action": "NO_ACQUISITION_NEEDED",
-      "ask": "false",
-      "type": "TARGET",
-      "status": "KNOWN_CONFIRMED",
-      "necessity": "REQUIRED",
-      "source": "BUSINESS_OBJECT",
-      "writes": "false",
-      "secondClarify": "false",
-      "focused": "none",
-      "stageMode": "overview"
-    }
-  },
-  "2-comparison-missing": {
-    "pass": true,
-    "actual": {
-      "utterance": "Which scenario is cheaper?",
-      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Scenario B’s cost is still unknown. What is its expected cost, or should we compare them without cost for now?",
-      "intent": "UNKNOWN",
-      "nextAction": "ASK_CLARIFICATION",
-      "authority": "none",
-      "intervene": "true",
-      "action": "ASK_MANAGER",
-      "ask": "true",
-      "type": "COST",
-      "status": "MISSING",
-      "necessity": "BLOCKING",
-      "source": "EXISTING_DATA",
-      "writes": "false",
-      "secondClarify": "false",
-      "focused": "none",
-      "stageMode": "overview"
-    }
-  },
-  "3-i-dont-know": {
-    "pass": true,
-    "actual": {
-      "utterance": "I don't know.",
-      "reply": "NexoraThen I would avoid treating the increase as permanent. We can compare a temporary-capacity option against doing nothing using the evidence we do have. I’ll keep that uncertain rather than inventing a value or asking the same question again.",
-      "intent": "UNKNOWN",
-      "nextAction": "ASK_CLARIFICATION",
-      "authority": "none",
-      "intervene": "true",
-      "action": "PROCEED_WITH_UNCERTAINTY",
-      "ask": "false",
-      "type": "none",
-      "status": "none",
-      "necessity": "none",
-      "source": "none",
-      "writes": "false",
-      "secondClarify": "false",
-      "focused": "none",
-      "stageMode": "overview"
-    }
-  },
-  "4-why": {
-    "pass": true,
-    "actual": {
-      "utterance": "Why do you need that?",
-      "reply": "NexoraNo executive object is currently active, so I cannot explain a subject. No outcome has been measured yet. You’re comparing the scenarios, and cost is currently missing for Scenario B.",
+      "utterance": "What is my current goal?",
+      "reply": "NexoraThe current goal is Close Capacity Gap, but it has not yet been confirmed by the manager.",
+      "shouldAsk": false,
       "intent": "EXPLAIN",
-      "nextAction": "ASK_FOR_MISSING_INFORMATION",
+      "nextAction": "EXPLAIN",
       "authority": "NEX-CONV Conversation Kernel",
       "intervene": "false",
       "action": "NO_ACQUISITION_NEEDED",
@@ -83,36 +32,21 @@
       "writes": "false",
       "secondClarify": "false",
       "focused": "none",
-      "stageMode": "overview"
+      "stageMode": "overview",
+      "decisions": "0",
+      "executions": "0"
     }
   },
-  "5-skip-proceed": {
+  "2-missing-material-preference": {
     "pass": true,
     "actual": {
-      "skipped": {
-        "utterance": "Not now.",
-        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Okay. I can continue with the available evidence, but that information will remain uncertain.",
-        "intent": "UNKNOWN",
-        "nextAction": "ASK_CLARIFICATION",
-        "authority": "none",
-        "intervene": "false",
-        "action": "DEFER",
-        "ask": "false",
-        "type": "none",
-        "status": "none",
-        "necessity": "none",
-        "source": "none",
-        "writes": "false",
-        "secondClarify": "false",
-        "focused": "none",
-        "stageMode": "overview"
-      },
-      "proceed": {
-        "utterance": "Compare the scenarios anyway.",
-        "reply": "NexoraI need at least two evaluated scenarios to compare.",
+      "prefer": {
+        "utterance": "Compare Demand Surge and Pricing Response.",
+        "reply": "NexoraBoth Pricing Response and Demand Surge are current candidates, but I don’t have enough comparable evidence to rank one over the other on the requested criterion.",
+        "shouldAsk": false,
         "intent": "COMPARE",
-        "nextAction": "ASK_FOR_MISSING_INFORMATION",
-        "authority": "none",
+        "nextAction": "COMPARE",
+        "authority": "Decision Theatre Comparison",
         "intervene": "true",
         "action": "NO_ACQUISITION_NEEDED",
         "ask": "false",
@@ -123,15 +57,39 @@
         "writes": "false",
         "secondClarify": "false",
         "focused": "none",
-        "stageMode": "overview"
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
+      },
+      "choose": {
+        "utterance": "Which should I choose?",
+        "reply": "NexoraNeither clearly dominates. Pricing Response and Demand Surge have different supported strengths. Pricing Response is stronger if Goal fit is decisive; Demand Surge may be stronger if its risk or resource consequence is the priority. I recommend a reversible Demand action because it better matches UNSPECIFIED. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
+        "shouldAsk": false,
+        "intent": "UNKNOWN",
+        "nextAction": "ASK_CLARIFICATION",
+        "authority": "none",
+        "intervene": "true",
+        "action": "ASK_CLARIFICATION",
+        "ask": "false",
+        "type": "REFERENCE",
+        "status": "AMBIGUOUS",
+        "necessity": "REQUIRED",
+        "source": "MANAGER",
+        "writes": "false",
+        "secondClarify": "false",
+        "focused": "none",
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
       }
     }
   },
-  "6-cap-av": {
+  "3-cap-av-uncertainty": {
     "pass": true,
     "actual": {
       "utterance": "Should I worry about CAP_AV?",
       "reply": "NexoraInvestigate evidence in the context of the current issue toward the Unknown goal goal. Check the evidence that would resolve the most important uncertainty before choosing an intervention. Does CAP_AV represent available capacity?",
+      "shouldAsk": true,
       "intent": "EVALUATE",
       "nextAction": "ASK_FOR_MISSING_INFORMATION",
       "authority": "none",
@@ -145,14 +103,64 @@
       "writes": "false",
       "secondClarify": "false",
       "focused": "none",
-      "stageMode": "overview"
+      "stageMode": "overview",
+      "decisions": "0",
+      "executions": "0"
     }
   },
-  "7-decision-execution-boundary": {
+  "4-decision-related-no-mutation": {
     "pass": true,
     "actual": {
-      "utterance": "Start the plan.",
-      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. There is no committed Decision yet. Do you want to review a Decision before starting execution?",
+      "seek": {
+        "utterance": "What should I do about Capacity Gap?",
+        "reply": "NexoraI lean toward temporary capacity. That is an advisory suggestion, not a catalog Scenario. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing.",
+        "shouldAsk": false,
+        "intent": "SEEK_RECOMMENDATION",
+        "nextAction": "RECOMMEND_INVESTIGATION",
+        "authority": "NEX-CONV Conversation Kernel",
+        "intervene": "true",
+        "action": "NO_ACQUISITION_NEEDED",
+        "ask": "false",
+        "type": "none",
+        "status": "none",
+        "necessity": "none",
+        "source": "none",
+        "writes": "false",
+        "secondClarify": "false",
+        "focused": "none",
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
+      },
+      "preference": {
+        "utterance": "I prefer Demand Surge.",
+        "reply": "NexoraPreference noted — no Decision committed. That is a preference, not a Decision.",
+        "shouldAsk": false,
+        "intent": "UNKNOWN",
+        "nextAction": "ASK_CLARIFICATION",
+        "authority": "none",
+        "intervene": "true",
+        "action": "ASK_CLARIFICATION",
+        "ask": "false",
+        "type": "REFERENCE",
+        "status": "AMBIGUOUS",
+        "necessity": "REQUIRED",
+        "source": "MANAGER",
+        "writes": "false",
+        "secondClarify": "false",
+        "focused": "none",
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
+      }
+    }
+  },
+  "5-execution-readiness-no-start": {
+    "pass": true,
+    "actual": {
+      "utterance": "Are we ready to execute?",
+      "reply": "NexoraNo Decision has been committed yet, so execution is not in play.",
+      "shouldAsk": true,
       "intent": "REQUEST_EXECUTION_ACTION",
       "nextAction": "ASK_FOR_MISSING_INFORMATION",
       "authority": "CC:10 Decision Commitment",
@@ -166,7 +174,9 @@
       "writes": "false",
       "secondClarify": "false",
       "focused": "none",
-      "stageMode": "overview"
+      "stageMode": "overview",
+      "decisions": "0",
+      "executions": "0"
     }
   }
 }

@@ -157,6 +157,11 @@ export type NexoraConversationalRuntimeBridgeInput = {
   readonly knownSubjectIds?: readonly string[];
   /** Prior command id for lightweight duplicate-dispatch detection. */
   readonly lastAppliedCommandId?: string | null;
+  /**
+   * Current Runtime focus. Duplicate command ids still apply when Stage has
+   * moved away from the command target (click/navigation).
+   */
+  readonly runtimeFocusedSubjectId?: string | null;
 };
 
 export const CONVERSATIONAL_RUNTIME_BRIDGE_REASON = Object.freeze({

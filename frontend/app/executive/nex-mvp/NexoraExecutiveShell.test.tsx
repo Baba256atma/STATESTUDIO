@@ -291,4 +291,19 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
     assert.match(html, /data-testid="executive-nav-objects"/);
     assert.doesNotMatch(html, /Daily Prep/);
   });
+
+  it("21. live Chat does not early-return DATA-ADV before CC:5", () => {
+    const source = readFileSync(join(HERE, "NexoraExecutiveShell.tsx"), "utf8");
+    assert.match(source, /DATA-ADV and CSV field Q&A are owned by CC:5/);
+    assert.match(source, /executeNexoraConversationalExperience/);
+    assert.doesNotMatch(source, /applyAssistantIntroducedReferent/);
+    const submit = source.slice(
+      source.indexOf("const onSubmitConversationalUtterance"),
+      source.indexOf("const onSelectQueueCategory"),
+    );
+    const dataInquiryBeforeCc5 = submit
+      .slice(0, submit.indexOf("executeNexoraConversationalExperience"))
+      .includes("answerAdvisorDataInquiry");
+    assert.equal(dataInquiryBeforeCc5, false);
+  });
 });

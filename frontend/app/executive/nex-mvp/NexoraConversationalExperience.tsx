@@ -103,6 +103,38 @@ export function NexoraConversationalExperience({
       data-continuity-move={lastTrace?.continuityMove ?? ""}
       data-continuity-subject={lastTrace?.continuitySubject ?? ""}
       data-continuity-active={lastTrace?.continuityActiveSubject ?? ""}
+      data-composition-resolved-subject={
+        lastTrace?.compositionResolvedSubjectId ?? ""
+      }
+      data-composition-resolved-kind={
+        lastTrace?.compositionResolvedSubjectKind ?? ""
+      }
+      data-composition-candidate-subject={
+        lastTrace?.compositionCandidateSubjectId ?? ""
+      }
+      data-composition-candidate-kind={
+        lastTrace?.compositionCandidateSubjectKind ?? ""
+      }
+      data-composition-selected-subject={
+        lastTrace?.compositionSelectedSubjectId ?? ""
+      }
+      data-composition-selected-kind={
+        lastTrace?.compositionSelectedSubjectKind ?? ""
+      }
+      data-composition-compatible={
+        lastTrace?.compositionFidelityCompatible == null
+          ? ""
+          : lastTrace.compositionFidelityCompatible
+            ? "true"
+            : "false"
+      }
+      data-composition-stale-scenario-blocked={
+        lastTrace?.compositionStaleScenarioBlocked == null
+          ? ""
+          : lastTrace.compositionStaleScenarioBlocked
+            ? "true"
+            : "false"
+      }
       aria-label="Nexora conversational control"
       style={{
         display: "flex",

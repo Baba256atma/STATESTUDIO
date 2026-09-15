@@ -325,6 +325,14 @@ export type NexoraConversationalExperienceTrace = {
   readonly nxaNeed?: string | null;
   readonly nxaReferent?: string | null;
   readonly nxaReferentSource?: string | null;
+  readonly compositionResolvedSubjectId?: string | null;
+  readonly compositionResolvedSubjectKind?: string | null;
+  readonly compositionCandidateSubjectId?: string | null;
+  readonly compositionCandidateSubjectKind?: string | null;
+  readonly compositionSelectedSubjectId?: string | null;
+  readonly compositionSelectedSubjectKind?: string | null;
+  readonly compositionFidelityCompatible?: boolean | null;
+  readonly compositionStaleScenarioBlocked?: boolean | null;
   readonly nxaNavigationAllowed?: boolean;
   readonly nxaEvidenceRequired?: boolean;
   readonly nxa2Identity?: string | null;
@@ -444,6 +452,22 @@ export type NexoraConversationalExperienceResult = {
   readonly ecaOutcomeJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveOutcome.ts").EcaExecutiveOutcomeJudgment | null;
   /** NPA-T ECA:12 read-only Learning/reassessment/closure; never CORE-OUT:2, DTH:12, APP-4, or ECA:6. */
   readonly ecaLearningClosureJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts").EcaExecutiveLearningClosureJudgment | null;
+  /** NPA-T NPS:1 read-only problem-solving path; never a business writer. */
+  readonly npsPath?: import("@/app/lib/nexora-problem-solving/npsProblemSolvingPath.ts").NpsProblemSolvingPath | null;
+  /** NPA-T NPS:2 read-only Problem understanding; never a questioning or investigation engine. */
+  readonly npsUnderstanding?: import("@/app/lib/nexora-problem-solving/npsProblemUnderstanding.ts").NpsProblemUnderstanding | null;
+  /** NPA-T NPS:3 read-only evidence/cause composition; never an Evidence store or causal engine. */
+  readonly npsEvidenceCause?: import("@/app/lib/nexora-problem-solving/npsEvidenceCauseAnalysis.ts").NpsEvidenceCauseAnalysis | null;
+  /** NPA-T NPS:4 read-only option composition; never a Scenario store, recommendation, or Decision. */
+  readonly npsOptionGeneration?: import("@/app/lib/nexora-problem-solving/npsOptionGeneration.ts").NpsOptionGeneration | null;
+  /** NPA-T NPS:5 read-only comparison/recommendation composition; never a Decision or second advisory engine. */
+  readonly npsComparisonRecommendation?: import("@/app/lib/nexora-problem-solving/npsComparisonRecommendation.ts").NpsComparisonRecommendation | null;
+  /** NPA-T NPS:6 read-only commitment path; never a Decision writer or Execution start. */
+  readonly npsDecisionCommitment?: import("@/app/lib/nexora-problem-solving/npsDecisionCommitment.ts").NpsDecisionCommitment | null;
+  /** NPA-T NPS:7 read-only execution readiness/monitoring path; never an Execution writer. */
+  readonly npsExecutionMonitoring?: import("@/app/lib/nexora-problem-solving/npsExecutionMonitoring.ts").NpsExecutionMonitoring | null;
+  /** NPA-T NPS:8 read-only Outcome/Learning/Reassessment path; never an Outcome or Learning writer. */
+  readonly npsOutcomeLearning?: import("@/app/lib/nexora-problem-solving/npsOutcomeLearning.ts").NpsOutcomeLearning | null;
   /** CC:10R adapter used this turn. Isolated sequential callers must pass it back. */
   readonly decisionRuntime?: import("./executiveDecisionRuntimeAdapter.ts").NexoraDecisionRuntimeAdapter | null;
   /** CC:11 adapter used this turn. Isolated sequential callers must pass it back. */

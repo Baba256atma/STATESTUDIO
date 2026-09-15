@@ -1,6 +1,18 @@
 {
   "identity": "NPA-T ECA:2/LiveExecutiveProofs",
-  "url": "http://localhost:3017/executive?reset=1",
+  "resume": "ECA:2-RESUME-1",
+  "url": "http://127.0.0.1:56797/executive?reset=1",
+  "comparisonSubjects": [
+    {
+      "id": "ctx-scenario-demand",
+      "name": "Demand Surge"
+    },
+    {
+      "id": "ctx-scenario-pricing",
+      "name": "Pricing Response"
+    }
+  ],
+  "scenarioInventory": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
   "errors": [],
   "proofs": {
     "1-understand-investigate": {
@@ -13,7 +25,10 @@
           "nextAction": "EXPLAIN",
           "authority": "NEX-CONV Conversation Kernel",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "ctx-problem-capacity",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         },
         "whyImportant": {
           "utterance": "Why is it important?",
@@ -22,48 +37,73 @@
           "nextAction": "EXPLAIN",
           "authority": "NEX-CONV Conversation Kernel",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "ctx-problem-capacity",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         },
         "evidence": {
           "utterance": "Show me the evidence.",
-          "reply": "NexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current state. Has backlog increased recently?",
+          "reply": "NexoraI don't see any Evidence in the current context.",
           "intent": "INSPECT_EVIDENCE",
           "nextAction": "SHOW_EVIDENCE",
           "authority": "NEX-CONV Conversation Kernel",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "ctx-problem-capacity",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         }
       }
     },
     "2-compare": {
       "pass": true,
       "actual": {
+        "comparisonSubjects": [
+          {
+            "id": "ctx-scenario-demand",
+            "name": "Demand Surge"
+          },
+          {
+            "id": "ctx-scenario-pricing",
+            "name": "Pricing Response"
+          }
+        ],
         "compare": {
-          "utterance": "Compare Scenario A and Scenario B.",
-          "reply": "NexoraI couldn't find a clear match for “Scenario A” in the current executive context.",
+          "utterance": "Compare Demand Surge and Pricing Response.",
+          "reply": "NexoraBoth Pricing Response and Demand Surge are current candidates, but I don’t have enough comparable evidence to rank one over the other on the requested criterion.",
           "intent": "COMPARE",
-          "nextAction": "ASK_FOR_MISSING_INFORMATION",
-          "authority": "none",
+          "nextAction": "COMPARE",
+          "authority": "Decision Theatre Comparison",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "none",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         },
         "lowerRisk": {
           "utterance": "Which has lower risk?",
-          "reply": "NexoraInvestigate further before committing to a course of action. Why: Evidence is material but incomplete for a stronger recommendation. Uncertainty: Risk has unresolved evidence.",
+          "reply": "NexoraI don’t have enough comparable risk evidence for Pricing Response and Demand Surge to select one. Comparable risk-exposure evidence is missing or unknown for Pricing Response and Demand Surge. You can ask me to compare them on another explicit criterion, such as urgency, evidence strength, goal impact, or reversibility.",
           "intent": "EVALUATE",
-          "nextAction": "ASK_FOR_MISSING_INFORMATION",
-          "authority": "none",
+          "nextAction": "EVALUATE",
+          "authority": "Decision Theatre Comparison",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "obj-risk",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         },
         "deliverySpeed": {
           "utterance": "What if delivery speed matters more?",
-          "reply": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+          "reply": "NexoraI don’t have enough comparable delivery impact evidence for Pricing Response and Demand Surge to select one. You can ask me to compare them on another explicit criterion, such as urgency, evidence strength, goal impact, risk exposure, or reversibility.",
           "intent": "ASK_WHAT_IF",
-          "nextAction": "ASK_FOR_MISSING_INFORMATION",
-          "authority": "none",
+          "nextAction": "EVALUATE",
+          "authority": "Decision Theatre Comparison",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "obj-risk",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         }
       }
     },
@@ -71,34 +111,55 @@
       "pass": true,
       "actual": {
         "utterance": "What should I do about Capacity Gap?",
-        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+        "reply": "NexoraI lean toward temporary capacity. That is an advisory suggestion, not a catalog Scenario. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing.",
         "intent": "SEEK_RECOMMENDATION",
         "nextAction": "RECOMMEND_INVESTIGATION",
         "authority": "NEX-CONV Conversation Kernel",
         "focused": "none",
-        "stageMode": "overview"
+        "moActive": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
       }
     },
     "4-ambiguity": {
       "pass": true,
       "actual": {
-        "demand": {
-          "utterance": "Now tell me about Demand Surge.",
-          "reply": "NexoraInvestigate Demand Surge as a possible contributor — evidence is not strong enough to prioritize action. Why: Demand Surge shows attention, but a is not established. Uncertainty: is missing or uncertain.",
+        "firstRef": {
+          "utterance": "Explain Demand Surge.",
+          "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
           "intent": "EXPLAIN",
           "nextAction": "EXPLAIN",
           "authority": "NEX-CONV Conversation Kernel",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "ctx-scenario-demand",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        "secondRef": {
+          "utterance": "Now tell me about Pricing Response.",
+          "reply": "NexoraInvestigate Pricing Response as a possible contributor — evidence is not strong enough to prioritize action. Why: Pricing Response shows attention, but a relationship is not established. Uncertainty: is missing or uncertain.",
+          "intent": "EXPLAIN",
+          "nextAction": "EXPLAIN",
+          "authority": "NEX-CONV Conversation Kernel",
+          "focused": "none",
+          "moActive": "ctx-scenario-pricing",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         },
         "investigateIt": {
           "utterance": "Investigate it.",
-          "reply": "NexoraI don't see accepted data that clearly supports investigating it yet.",
+          "reply": "NexoraPricing Response explores margin recovery under constrained capacity. Pricing Response has not been resolved yet, so it still deserves attention. Pricing Response is associated with Revenue. That connection does not by itself tell us whether Pricing Response is affecting Revenue or the reverse.",
           "intent": "INVESTIGATE",
           "nextAction": "RECOMMEND_INVESTIGATION",
           "authority": "NEX-CONV Conversation Kernel",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "ctx-scenario-pricing",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         }
       }
     },
@@ -112,7 +173,22 @@
           "nextAction": "PREPARE_PROPOSAL",
           "authority": "Canonical Risk Writer",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "none",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        "whyProposal": {
+          "utterance": "Why?",
+          "reply": "NexoraRisk has not been resolved yet, so it still deserves attention. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed..",
+          "intent": "EXPLAIN",
+          "nextAction": "EXPLAIN",
+          "authority": "NEX-CONV Conversation Kernel",
+          "focused": "none",
+          "moActive": "obj-risk",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         },
         "confirm": {
           "utterance": "Add it.",
@@ -121,7 +197,10 @@
           "nextAction": "HANDOFF_TO_CANONICAL_AUTHORITY",
           "authority": "Canonical Risk Writer",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "obj-risk",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         }
       }
     },
@@ -135,7 +214,10 @@
           "nextAction": "ASK_CLARIFICATION",
           "authority": "none",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "none",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         },
         "capAvWorry": {
           "utterance": "Should I worry about it?",
@@ -144,7 +226,10 @@
           "nextAction": "ASK_FOR_MISSING_INFORMATION",
           "authority": "none",
           "focused": "none",
-          "stageMode": "overview"
+          "moActive": "none",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
         }
       }
     },
@@ -152,12 +237,15 @@
       "pass": true,
       "actual": {
         "utterance": "What should I do?",
-        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+        "reply": "NexoraDemand has not been resolved yet, so it still deserves attention. Demand is associated with Delivery. That connection does not by itself tell us whether Demand is affecting Delivery or the reverse. I recommend investigating Delivery next to determine whether it is driving Demand. I recommend a reversible Demand action because it better matches UNSPECIFIED. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
         "intent": "SEEK_RECOMMENDATION",
         "nextAction": "RECOMMEND_INVESTIGATION",
         "authority": "NEX-CONV Conversation Kernel",
         "focused": "none",
-        "stageMode": "overview"
+        "moActive": "obj-demand",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
       }
     }
   },

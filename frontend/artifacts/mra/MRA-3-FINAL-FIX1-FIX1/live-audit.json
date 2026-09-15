@@ -1,0 +1,324 @@
+{
+  "identity": "NPA-T MRA:3-FINAL-FIX1-FIX1/LiveCompositionFidelity",
+  "url": "http://127.0.0.1:56854/executive?reset=1",
+  "errors": [],
+  "tests": {
+    "A": [
+      {
+        "managerTurn": "show me scenarios",
+        "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "is there any CSV files?",
+        "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "Capacity Gap",
+        "reply": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      }
+    ],
+    "B": [
+      {
+        "managerTurn": "show me scenarios",
+        "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "is there any CSV files?",
+        "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "Margin Pressure",
+        "reply": "NexoraFocused on Margin Pressure.",
+        "focused": "ctx-problem-margin",
+        "moActive": "ctx-problem-margin",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-margin"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraMargin Pressure is the primary problem affecting Revenue and risk exposure. Margin Pressure needs attention because Risk. Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+        "focused": "ctx-problem-margin",
+        "moActive": "ctx-problem-margin",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-margin"
+      }
+    ],
+    "C": [
+      {
+        "managerTurn": "is there any CSV files?",
+        "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "stageMode": "overview",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "look at Capacity",
+        "reply": "NexoraFocused on Capacity.",
+        "focused": "obj-capacity",
+        "moActive": "obj-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "obj-capacity"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraCapacity is 12% above the intended target band and is currently constraining delivery. Capacity has not been resolved yet, so it still deserves attention. We know utilization is 88%. Capacity is connected to Capacity Gap through a constraint.",
+        "focused": "obj-capacity",
+        "moActive": "obj-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "obj-capacity"
+      }
+    ],
+    "D": [
+      {
+        "managerTurn": "Capacity Gap",
+        "reply": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-scenario-demand"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-scenario-demand"
+      }
+    ],
+    "E": [
+      {
+        "managerTurn": "show me scenarios",
+        "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "is there any CSV files?",
+        "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraNexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      }
+    ],
+    "F": [
+      {
+        "managerTurn": "Expand Capacity",
+        "reply": "NexoraFocused on Expand Capacity.",
+        "focused": "ctx-decision-capacity",
+        "moActive": "ctx-decision-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-decision-capacity"
+      },
+      {
+        "managerTurn": "Capacity Expansion",
+        "reply": "NexoraFocused on Capacity Expansion.",
+        "focused": "ctx-execution-capacity",
+        "moActive": "ctx-execution-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-execution-capacity"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraCapacity Expansion is planned pending Decision approval. Capacity Expansion is Planned. We know progress is 0%. Capacity Expansion is associated with Capacity.",
+        "focused": "ctx-execution-capacity",
+        "moActive": "ctx-execution-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-execution-capacity"
+      }
+    ],
+    "G": [
+      {
+        "managerTurn": "is there any CSV files?",
+        "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "stageMode": "overview",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "Capacity Gap",
+        "reply": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "what can Nexora do?",
+        "reply": "NexoraNexora is the executive decision workspace: it keeps business objects, collections, and conversation on one shared truth.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraDo you mean Capacity Gap?",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      }
+    ],
+    "stage": [
+      {
+        "managerTurn": "show me scenarios",
+        "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "is there any CSV files?",
+        "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "stageMode": "collection",
+        "focusedChat": "none"
+      },
+      {
+        "managerTurn": "Capacity Gap",
+        "reply": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "(click obj-revenue)",
+        "reply": null,
+        "focused": "obj-revenue",
+        "moActive": "obj-revenue",
+        "dataRoute": "none",
+        "stageMode": "object-focus"
+      },
+      {
+        "managerTurn": "look at Capacity Gap",
+        "reply": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-problem-capacity"
+      }
+    ],
+    "scenarioExplicit": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-scenario-demand"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-scenario-demand"
+      }
+    ],
+    "scenarioSure": [
+      {
+        "managerTurn": "how sure are you?",
+        "reply": "NexoraI'm sure Demand Surge is Stable. I'm not yet sure Revenue is the confirmed cause. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation.",
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "focusedChat": "ctx-scenario-demand"
+      }
+    ]
+  },
+  "zeroPageErrors": true
+}

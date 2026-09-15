@@ -21,6 +21,7 @@ import {
   isAmbiguousConversationalReference,
   isInvestigateNowUtterance,
   isInvestigationOptionsUtterance,
+  isTargetedDeicticInvestigationUtterance,
   isNoActionConsequenceUtterance,
   classifyExecutiveInvestigationAsk,
   normalizeNexoraConversationalUtteranceWithDiagnostics,
@@ -151,7 +152,7 @@ function matchNamedSubjectInquiry(normalized: string): MatchResult | null {
   const raw = (named[1] ?? "").trim();
   if (!raw || isAmbiguousConversationalReference(raw)) return null;
   if (
-    /^(?:going\s+on|happening|different|predicted|unknown|the\s+evidence|the\s+risk|the\s+constraint|the\s+priority|the\s+downside|being\s+executed|still\s+uncertain|connected(?:\s+to\s+(?:this|it|that))?|related)$/.test(
+    /^(?:going\s+on|happening|different|predicted|unknown|the\s+evidence|the\s+risk|the\s+constraint|the\s+priority|the\s+downside|(?:the\s+)?decision\s+status|(?:the\s+)?execution\s+status|being\s+executed|still\s+uncertain|connected(?:\s+to\s+(?:this|it|that))?|related)$/.test(
       raw,
     )
   ) {
@@ -270,6 +271,55 @@ function advisoryQuery(
   };
 }
 
+/**
+ * Advisory purpose for explicit executive questions that reuse the existing
+ * intent vocabulary. This is part of CC:1 classification, not a second
+ * resolver or a new business-object authority.
+ */
+export type NexoraExecutiveAdvisoryPurpose =
+  | "execution-readiness"
+  | "execution-monitoring"
+  | "outcome-assessment"
+  | "causal-assessment"
+  | "historical-review"
+  | "executive-summary";
+
+export function executiveAdvisoryPurposeOf(
+  normalized: string,
+): NexoraExecutiveAdvisoryPurpose | null {
+  if (
+    /\b(?:are|is)\s+(?:we|the\s+(?:decision|execution)|it)\s+ready\s+(?:to\s+)?(?:execute|start|implement)\b|\bwhat\s+(?:is|remains)\s+(?:needed|required)\s+before\s+(?:we\s+)?(?:execute|start|implement)\b/.test(
+      normalized,
+    )
+  ) return "execution-readiness";
+  if (
+    /\b(?:what|which)\s+(?:data|evidence|signals|kpis?|metrics|observations)\b.*\b(?:monitor|watch|track|see|need|want)\b.*\bexecution\b|\bwhat\s+should\s+we\s+(?:monitor|watch|track)\b.*\bexecution\b|\bwhile\s+execution\s+is\s+(?:running|active)\b.*\b(?:monitor|watch|track|data|evidence)\b/.test(
+      normalized,
+    )
+  ) return "execution-monitoring";
+  if (
+    /\bhow\s+(?:would|do|can|will)\s+(?:we|you)\s+know\b.*\b(?:decision|it)\b.*\b(?:working|worked|successful)\b|\bwhat\s+(?:would|will)\s+(?:show|demonstrate|indicate)\b.*\b(?:decision|it)\b.*\b(?:working|worked|successful)\b/.test(
+      normalized,
+    )
+  ) return "outcome-assessment";
+  if (
+    /\b(?:does|would|can)\b.*\b(?:improvement|improves?|change|result)\b.*\b(?:prove|show|mean|establish)\b.*\b(?:decision|execution)\b.*\bcaus|\b(?:did|does)\b.*\b(?:decision|execution)\b.*\bcaus/.test(
+      normalized,
+    )
+  ) return "causal-assessment";
+  if (
+    /\b(?:go|return)\s+back\s+to\b.*\b(?:issue|problem)\b.*\b(?:discussed|reviewed|looked\s+at)\b.*\b(?:earlier|beginning|start)\b/.test(
+      normalized,
+    )
+  ) return "historical-review";
+  if (
+    /\b(?:three|3|top|key|most\s+important)\s+(?:things|points|items)\b.*\b(?:know|remember|take\s+away)\b|\b(?:executive|management)\s+(?:summary|brief)\b|\bwhat\s+should\s+i\s+know\s+before\s+i\s+(?:leave|go)\b/.test(
+      normalized,
+    )
+  ) return "executive-summary";
+  return null;
+}
+
 function matchConversationalEntry(normalized: string): MatchResult | null {
   if (
     /^(?:hi|hello|hey|good\s+(?:morning|afternoon|evening)|hi\s+nexora|hello\s+nexora)$/.test(
@@ -309,6 +359,89 @@ function matchConversationalEntry(normalized: string): MatchResult | null {
 }
 
 function matchExecutiveQuestion(normalized: string): MatchResult | null {
+  const advisoryPurpose = executiveAdvisoryPurposeOf(normalized);
+  if (advisoryPurpose === "execution-readiness") {
+    return advisoryQuery(
+      "execution-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+      false,
+    );
+  }
+  if (advisoryPurpose === "execution-monitoring") {
+    return advisoryQuery(
+      "evidence",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+      false,
+    );
+  }
+  if (advisoryPurpose === "outcome-assessment") {
+    return advisoryQuery(
+      "execution-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+      false,
+    );
+  }
+  if (advisoryPurpose === "causal-assessment") {
+    return advisoryQuery(
+      "evidence",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+      false,
+    );
+  }
+  if (advisoryPurpose === "historical-review") {
+    return advisoryQuery(
+      "change",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_CHANGE,
+      true,
+    );
+  }
+  if (advisoryPurpose === "executive-summary") {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      false,
+    );
+  }
+  if (
+    /^(?:forget\s+(?:the\s+)?scenario\s+for\s+(?:a\s+)?moment\s+)?what\s+is\s+(?:(?:my|our|the)\s+)?(?:main\s+|current\s+)?goal$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      false,
+    );
+  }
+  if (
+    /^(?:has\s+(?:the\s+)?execution\s+started(?:\s+yet)?|what\s+is\s+currently\s+being\s+executed|is\s+(?:the\s+)?execution\s+going\s+according\s+to\s+plan)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "execution-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+      false,
+    );
+  }
+  if (
+    /^what\s+changed\s+(?:since|after)\s+we\s+(?:made|approved|committed)\s+(?:a|the)\s+decision$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "change",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_CHANGE,
+      false,
+    );
+  }
+  if (/^what\s+should\s+i\s+do\s+next$/.test(normalized)) {
+    return advisoryQuery(
+      "recommend",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_RECOMMEND,
+      false,
+    );
+  }
   if (
     /^(?:what\s+needs\s+my\s+attention|what\s+should\s+i\s+pay\s+attention\s+to|what\s+is\s+most\s+important\s+right\s+now|do\s+i\s+need\s+to\s+intervene|should\s+i\s+intervene|what\s+can\s+continue\s+without\s+me|can\s+this\s+continue\s+without\s+me|can\s+i\s+leave\s+this\s+alone\s+for\s+now|is\s+anything\s+getting\s+(?:worse|better)|do\s+we\s+have\s+any\s+urgent\s+opportunities|is\s+the\s+evidence\s+current|should\s+i\s+review\s+this|is\s+execution\s+okay|does\s+this\s+need\s+my\s+decision|why\s+does\s+it\s+matter|what\s+should\s+i\s+do\s+next|how\s+does\s+this\s+affect\s+my\s+goal)$/.test(
       normalized,
@@ -427,7 +560,7 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:do\s+i\s+need\s+to\s+make\s+a\s+decision|what\s+decision\s+do\s+i\s+need\s+to\s+make|what\s+decision\s+is\s+required|is\s+a\s+decision\s+required)$/.test(
+    /^(?:do\s+i\s+need\s+to\s+make\s+a\s+decision|what\s+decision\s+do\s+i\s+need\s+to\s+make|what\s+decision\s+is\s+required|is\s+a\s+decision\s+required|did\s+we\s+approve\s+(?:it|this|that|the\s+decision)|is\s+(?:it|this|that|the\s+decision)\s+approved|what(?:\s+is|'s)\s+the\s+decision\s+status)$/.test(
       normalized,
     )
   ) {
@@ -438,7 +571,7 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:what\s+is\s+being\s+executed|what(?:\s+is|s)\s+blocked|what\s+should\s+happen\s+next|how\s+is\s+(?:it|this)\s+going)$/.test(
+    /^(?:what\s+is\s+being\s+executed|what(?:\s+is|s)\s+blocked|what\s+should\s+happen\s+next|how\s+is\s+(?:it|this)\s+going|did\s+(?:it|this|that|execution)\s+start|is\s+(?:it|this|that|execution)\s+running|what(?:\s+is|'s)\s+the\s+execution\s+status)$/.test(
       normalized,
     )
   ) {
@@ -1079,6 +1212,9 @@ function matchSimulate(normalized: string): MatchResult | null {
 }
 
 function matchFocusOrOpen(normalized: string): MatchResult | null {
+  // This is a knowledge follow-up on the established conversational subject,
+  // not permission to navigate to a ranked attention target.
+  if (isTargetedDeicticInvestigationUtterance(normalized)) return null;
   const focus = normalized.match(
     /^(?:focus(?:\s+on)?|look\s+at|go\s+to|take\s+me\s+to|review|investigate)\s+(.+)$/,
   );
@@ -2499,8 +2635,8 @@ function resolveMatch(normalized: string): MatchResult {
     matchScenarioConversation(normalized) ??
     matchOrdinalReference(normalized) ??
     matchInvestigationFollowup(normalized) ??
-    matchNamedSubjectInquiry(normalized) ??
     matchExecutiveQuestion(normalized) ??
+    matchNamedSubjectInquiry(normalized) ??
     matchRecommendExplainPrioritize(normalized) ??
     matchOrdinalReference(normalized) ??
     matchCollectionShows(normalized) ??

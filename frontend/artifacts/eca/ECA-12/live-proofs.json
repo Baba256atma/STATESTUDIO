@@ -1,8 +1,10 @@
 {
   "identity": "NPA-T ECA:12/live-proofs",
-  "url": "http://localhost:3027/executive?reset=1",
+  "url": "http://localhost:3000/executive?reset=1",
   "errors": [],
-  "1-bounded-learning": {
+  "pageErrors": 0,
+  "learningWrites": 0,
+  "1-outcome-to-learning": {
     "pass": true,
     "actual": {
       "utterance": "What did we learn?",
@@ -16,27 +18,31 @@
       "app4": "false",
       "secondEngine": "false",
       "objectiveStore": "false",
-      "theatreOutcome": "OUTCOME_PARTIAL"
+      "theatreOutcome": "OUTCOME_PARTIAL",
+      "decisionCount": "0",
+      "executionCount": "0"
     }
   },
-  "2-missing-outcome": {
+  "2-causal-challenge-no-inflation": {
     "pass": true,
     "actual": {
-      "utterance": "What did we learn?",
-      "reply": "NexoraThere isn't enough evidence yet to establish a reliable learning. We don’t have enough evidence to draw a useful lesson yet.",
-      "state11": "UNKNOWN",
+      "utterance": "So the execution caused the improvement?",
+      "reply": "NexoraThe available evidence does not establish that this execution alone caused the change. Do you have evidence showing that delivery delays increase when capacity falls? Execution is already active. We should review progress rather than prepare a new start. Execution is active at no authoritative progress observation. I don’t have a confirmed schedule baseline, so I can’t reliably call it on-track or off-track yet.",
+      "state11": "PARTIALLY_OBSERVED",
       "attribution": "NOT_ESTABLISHED",
-      "learning": "NONE",
-      "closure": "WAIT_FOR_EVIDENCE",
-      "reassess": "false",
+      "learning": "TENTATIVE",
+      "closure": "CONTINUE",
+      "reassess": "true",
       "writes12": "false",
       "app4": "false",
       "secondEngine": "false",
       "objectiveStore": "false",
-      "theatreOutcome": "none"
+      "theatreOutcome": "OUTCOME_PARTIAL",
+      "decisionCount": "0",
+      "executionCount": "0"
     }
   },
-  "3-reassessment": {
+  "3-reassessment-advisory": {
     "pass": true,
     "actual": {
       "utterance": "Should we reconsider the approach?",
@@ -50,48 +56,16 @@
       "app4": "false",
       "secondEngine": "false",
       "objectiveStore": "false",
-      "theatreOutcome": "OUTCOME_PARTIAL"
+      "theatreOutcome": "OUTCOME_PARTIAL",
+      "decisionCount": "0",
+      "executionCount": "0"
     }
   },
-  "4-accepted-unknown-closure": {
+  "4-future-guidance-bounded": {
     "pass": true,
     "actual": {
-      "utterance": "I don’t need to investigate the cause. Are we done?",
-      "reply": "NexoraI don't see accepted data that clearly supports investigating cause yet.",
-      "state11": "UNKNOWN",
-      "attribution": "NOT_ESTABLISHED",
-      "learning": "NONE",
-      "closure": "READY_TO_CLOSE",
-      "reassess": "false",
-      "writes12": "false",
-      "app4": "false",
-      "secondEngine": "false",
-      "objectiveStore": "false",
-      "theatreOutcome": "OUTCOME_PARTIAL"
-    }
-  },
-  "5-blocking-unknown": {
-    "pass": true,
-    "actual": {
-      "utterance": "Are we done?",
-      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Yes. The comparison is complete. You can now review the recommendation or make a Decision. Execution is already active. We should review progress rather than prepare a new start. Not yet. We don’t have an observed Outcome to learn from, so this review should wait for the result.",
-      "state11": "UNKNOWN",
-      "attribution": "NOT_ESTABLISHED",
-      "learning": "NONE",
-      "closure": "WAIT_FOR_EVIDENCE",
-      "reassess": "false",
-      "writes12": "false",
-      "app4": "false",
-      "secondEngine": "false",
-      "objectiveStore": "false",
-      "theatreOutcome": "none"
-    }
-  },
-  "6-cap-av": {
-    "pass": true,
-    "actual": {
-      "utterance": "So we proved capacity was the cause.",
-      "reply": "NexoraYou're asserting a causal link from Capacity to the named outcome. I'll treat that as a manager causal hypothesis, not as established cause, unless authoritative evidence already supports it. Do you have evidence showing that delivery delays increase when capacity falls? That’s your current interpretation. The result may strengthen a hypothesis, but the evidence still doesn’t establish it as the sole cause.",
+      "utterance": "Should we do this again?",
+      "reply": "NexoraWhich item do you mean? I will not automatically recommend repeating the approach. Any new choice belongs to the existing Decision path.",
       "state11": "PARTIALLY_OBSERVED",
       "attribution": "NOT_ESTABLISHED",
       "learning": "TENTATIVE",
@@ -101,24 +75,46 @@
       "app4": "false",
       "secondEngine": "false",
       "objectiveStore": "false",
-      "theatreOutcome": "OUTCOME_PARTIAL"
+      "theatreOutcome": "OUTCOME_PARTIAL",
+      "decisionCount": "0",
+      "executionCount": "0"
     }
   },
-  "7-new-objective": {
+  "5-refresh-no-durable-learning": {
     "pass": true,
     "actual": {
-      "utterance": "Now let’s look at supplier cost.",
-      "reply": "NexoraThe current scenario candidates are Capacity Expansion Plan, Demand Surge, Pricing Response. I don’t have enough comparable evidence to rank them on cost.",
-      "state11": "PARTIALLY_OBSERVED",
-      "attribution": "NOT_ESTABLISHED",
-      "learning": "TENTATIVE",
-      "closure": "READY_TO_CLOSE",
-      "reassess": "true",
-      "writes12": "false",
-      "app4": "false",
-      "secondEngine": "false",
-      "objectiveStore": "false",
-      "theatreOutcome": "OUTCOME_PARTIAL"
+      "first": {
+        "utterance": "What did we learn?",
+        "reply": "NexoraDelivery was observed at 94% after the execution. +3 percentage points Delivery is below the stated 96% goal. That weakens the expectation that this intervention alone would fully close the gap. The evidence still does not establish that the intervention alone caused the improvement. The result improved relative to baseline. That is bounded, case-specific evidence. It does not establish what caused the change.",
+        "state11": "PARTIALLY_OBSERVED",
+        "attribution": "NOT_ESTABLISHED",
+        "learning": "TENTATIVE",
+        "closure": "READY_TO_REASSESS",
+        "reassess": "true",
+        "writes12": "false",
+        "app4": "false",
+        "secondEngine": "false",
+        "objectiveStore": "false",
+        "theatreOutcome": "OUTCOME_PARTIAL",
+        "decisionCount": "0",
+        "executionCount": "0"
+      },
+      "refreshed": {
+        "utterance": "What did we learn?",
+        "reply": "NexoraThere isn't enough evidence yet to establish a reliable learning. We don’t have enough evidence to draw a useful lesson yet.",
+        "state11": "UNKNOWN",
+        "attribution": "NOT_ESTABLISHED",
+        "learning": "NONE",
+        "closure": "WAIT_FOR_EVIDENCE",
+        "reassess": "false",
+        "writes12": "false",
+        "app4": "false",
+        "secondEngine": "false",
+        "objectiveStore": "false",
+        "theatreOutcome": "none",
+        "decisionCount": "0",
+        "executionCount": "0"
+      }
     }
   }
 }

@@ -91,6 +91,7 @@ export function applyNexoraMVPConversationalCommand(
     command: input.command,
     knownSubjectIds,
     lastAppliedCommandId: input.lastAppliedCommandId,
+    runtimeFocusedSubjectId: input.state.focusedSubject?.id ?? null,
   });
 
   if (planned.status !== "applied" || planned.plan == null) {

@@ -67,7 +67,7 @@ describe("NEX-MVP-FINAL:5 Executive Investigation Intelligence", () => {
     assert.doesNotMatch(why.response, LEAK);
   });
 
-  it("keeps the Delivery investigation after focusing Capacity", () => {
+  it("keeps the old Delivery investigation supporting-only after focusing Capacity", () => {
     let turn = run("show Delivery");
     turn = run("Why is Delivery below target?", turn);
     turn = run("show Capacity", turn);
@@ -77,7 +77,11 @@ describe("NEX-MVP-FINAL:5 Executive Investigation Intelligence", () => {
       "obj-delivery",
     );
     turn = run("what else could explain it?", turn);
-    assert.match(turn.response, /still Delivery|larger investigation is still Delivery/i);
+    assert.equal(
+      turn.managerObjectTurn.session.investigationSubjectId,
+      "obj-capacity",
+    );
+    assert.match(turn.response, /still Capacity|larger investigation is still Capacity/i);
     assert.doesNotMatch(turn.response, /not sure how that relates/i);
   });
 

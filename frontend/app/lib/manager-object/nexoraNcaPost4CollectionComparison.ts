@@ -1,6 +1,10 @@
 /** NCA-POST:4 — collection-aware candidate precedence and advisory isolation. */
 
 import type { ManagerReference } from "./nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts";
+import {
+  isInvestigationSelectionUtterance,
+  isTargetedDeicticInvestigationUtterance,
+} from "@/app/lib/conversational-control/conversationalIntentNormalization.ts";
 
 export const nexoraNcaPost4Identity =
   "NCA-POST:4/CollectionAwareComparisonFollowUpPrecedenceAdvisoryIsolation" as const;
@@ -79,8 +83,17 @@ export function interpretExecutiveComparisonMeaning(input: {
   intentKind: string;
   activeComparison?: ActiveComparisonContext | null;
   activeCollectionPresent?: boolean;
+  singleSubjectFocus?: boolean;
 }): ExecutiveComparisonMeaning {
   const text = normalized(input.utterance);
+  const investigationSelection = isInvestigationSelectionUtterance(text);
+  const singleSubjectInvestigation =
+    isTargetedDeicticInvestigationUtterance(text) ||
+    (input.intentKind === "focus" &&
+      /\b(?:investigat\w*|look deeper)\b/.test(text) &&
+      !investigationSelection);
+  const singleSubjectOperation =
+    input.singleSubjectFocus === true || singleSubjectInvestigation;
   let active =
     input.intentKind === "compare" || input.intentKind === "compare-scenarios" ||
     input.intentKind === "prioritize" ||
@@ -132,7 +145,8 @@ export function interpretExecutiveComparisonMeaning(input: {
   );
   const comparisonFollowUp = Boolean(
     criterionAnswer ||
-    ((input.activeComparison || input.activeCollectionPresent) &&
+    (!singleSubjectOperation &&
+    (input.activeComparison || input.activeCollectionPresent) &&
     /\b(?:which|compare|rank|important|matters?|urgent|riskier|safer|investigat\w*|attention|why|bigger|recommendation)\b|\bwhat would change\b/.test(text)),
   );
   if (criterionAnswer) {
@@ -145,6 +159,7 @@ export function interpretExecutiveComparisonMeaning(input: {
   ) {
     active = false;
   }
+  if (singleSubjectOperation) active = false;
   return Object.freeze({ active, mode, criterion, criterionAmbiguous, ambiguityReason });
 }
 

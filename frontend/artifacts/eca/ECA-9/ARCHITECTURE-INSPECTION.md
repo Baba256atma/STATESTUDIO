@@ -1,78 +1,58 @@
 # NPA-T ECA:9 — Architecture Inspection
 
-Date: 2026-09-08
+**Phase:** Post-Decision Dialogue & Execution Readiness
+**Date:** 2026-09-14
+**Stop condition:** Inspect + reuse; certify ECA:9 only. Do not start ECA:10.
 
-## Stop condition
+## Existing ownership (reuse)
 
-ECA:9 may be certified only when a read-only post-Decision execution-readiness judgment consumes canonical Decision/Execution plus ECA:1–8; never writes Execution/Decision/Outcome; distinguishes create from start according to CC:11; surfaces at most one material gap; preserves CAP_AV safety; and passes focused A–T, sequences 1–8, seven live `/executive` proofs, NXA Level 4, TypeScript, ESLint, production build, and `git diff --check`.
+| Concept | Authority | Role for ECA:9 |
+| --- | --- | --- |
+| Subject / context | ECA:1 | Consume |
+| Intent / next action | ECA:2 | Consume |
+| Initiative | ECA:3 | Consume; ECA:9 is not an alert engine |
+| Information need / ask | ECA:4 | Blocker may feed ask; ECA:4 owns question |
+| Answer meaning | ECA:5 | Readiness Yes / owner answers |
+| Dialogue objective | ECA:6 | May PREPARE_EXECUTION; ECA:9 owns readiness judgment |
+| Recommendation | ECA:7 | Historical advisory only after Decision |
+| Commitment dialogue | ECA:8 | Pre-Decision only; cannot replace CC:10 |
+| Decision create/approve | CC:10 / CC:10R | Sole Decision writer |
+| Execution create/start | CC:11 | Sole Execution writer |
+| Readiness theatre | DTH:9 | Not replaced |
+| Live Execution theatre | DTH:10 | Not replaced; ECA:10 not started |
+| Data semantics | DATA-ADV | CAP_AV unconfirmed stays unconfirmed |
+| Risk / Outcome / Learning | Canonical owners | Read-only; no ECA write |
 
-## Exact canonical Execution writer
+## ECA:9 module
 
-**CC:11 Canonical Execution Runtime** (`createNexoraCanonicalExecutionRuntime` in `executiveExecutionRuntimeAdapter.ts`) is the sole product writer:
+- `frontend/app/lib/nexora-conversation/ecaExecutiveExecutionReadiness.ts`
+- Entry: `judgeEcaExecutiveExecutionReadiness`
+- Session: ephemeral `EcaExecutionReadinessSession` (no persistence store)
+- Overlay: `applyEcaExecutionReadinessToPresentedResponse`
 
-- `createExecution({ decisionId, title?, workspaceId?, modelId? })`
-- `transitionExecution({ executionId, action })`
+## Models (existing terms)
 
-Conversation façade: **`CC:11/ExecutionFollowUp`** (`resolveNexoraExecutiveExecutionFollowUp`). Boundary: `canonicalExecutionWriter: false`, `delegatesMutationsToCanonicalRuntime: true`.
+**Post-Decision states:** `NOT_APPLICABLE` | `DECISION_CONFIRMED` | `EXECUTION_REVIEW` | `EXECUTION_PREPARATION` | `EXECUTION_READY` | `EXECUTION_NOT_READY` | `EXECUTION_CREATE_INTENT` | `EXECUTION_START_INTENT` | `EXECUTION_ALREADY_ACTIVE` | `EXECUTION_BLOCKED`
 
-ECA:9 must not call `createExecution` / `transitionExecution`, and must not create `EcaExecutionStore`.
+**Execution readiness:** `READY` | `READY_WITH_CONDITIONS` | `NOT_READY` | `BLOCKED` | `ALREADY_EXECUTING` | `NOT_APPLICABLE`
 
-## Exact create vs start contracts
+**Manager intents:** includes `READINESS` | `START` | `CREATE` | `DEFER` | `RECONSIDER` | `OWNER` | `STOPPERS` | …
 
-| Conversational request | Canonical effect |
-| --- | --- |
-| Create | `createExecution` → status `planned` (or `reused` if one already exists for that Decision) |
-| Prepare | `transitionExecution({ action: "prepare" })` → `planned` → `ready` |
-| Start | Follow-up `action: "start"` **intentionally** creates if missing, then `prepare`, then `start` → `in-progress` |
+## Boundaries (hard)
 
-**Documented atomic start:** CC:11 start is allowed to create when no Execution exists. That is canonical, not an ECA:9 collapse. ECA:9 still distinguishes manager *intent* (create vs start vs review) and must not treat “Are we ready?” or “What’s next?” as start.
+- Canonical approved Decision required for post-Decision mode
+- Recommendation / preference / ECA:8 commitment alone ≠ Execution readiness
+- Decision ≠ Execution · readiness ≠ Start · READY ≠ auto-start
+- One primary gap/blocker; no invented requirements
+- Ambiguous phrases (e.g. “move forward”) are not Start
+- Risk acceptance ≠ Risk resolution; CAP_AV acceptance ≠ DATA write
+- No second Execution engine / store / readiness authority
+- ECA:9 Execution mutations = 0; CC:11 only
+- Do not implement ECA:10 live monitoring
 
-Statuses: `planned | ready | in-progress | blocked | at-risk | completed | cancelled`.
+## Not introduced
 
-Dedupe: one Execution per Decision (`findExecutionByDecisionId`, id `execution-${decisionId}`).
-
-## DTH:9 ownership
-
-`DTH:9/ExecutionReadiness` — Theatre **presentation** after a committed Decision. Does not create or start Execution (`inventedExecution: false`, `clickStartedExecution: false`). `REQUEST_START_EXECUTION` routes to CC:11.
-
-## DTH:10 ownership
-
-`DTH:10/LiveExecution` — Theatre for live statuses (`in-progress | blocked | at-risk | completed`). Does not mutate Execution. `planned` / `ready` remain DTH:9.
-
-## Existing readiness logic
-
-DTH:9 projects owner/timing/resources/dependencies/constraints/risk as known/unknown/blocked. **Unknown owner is not a start blocker** on `/executive`. Authoritative CC:11 blockers are the only Theatre start blockers.
-
-NEX-EXP:8 has separate entrance plan readiness (`MISSING_OWNER` there). That is not a second `/executive` Execution store. ECA:9 must not absorb NEX-EXP:8.
-
-## Execution-required vs optional fields
-
-**Required to mutate:** Approved Decision `decisionId`; legal status path for transitions; complete/cancel need confirmation.
-
-**Written on create, not required to start:** `ownerIds` (often `[]`), `blockers`, `risks`, `milestones`, `progress`.
-
-Missing owner → follow-up uncertainty `execution-owner-missing`, not a legal CC:11 start veto.
-
-## What ECA:9 uniquely adds
-
-Post-Decision conversational classification (review / readiness / create / start / inspect / defer / reconsider), one material readiness gap, session overlay (acknowledgement / defer), and handoff *flags* to CC:11 — without becoming the writer, DTH:9/10, or a PM checklist.
-
-## How duplicate Execution engines are avoided
-
-No second store, no `ecaCreateExecution`, no Theatre clone. Judge → session overlay → speech overlay → `data-eca-9-*`. Mutations remain `resolveNexoraExecutiveExecutionFollowUp` / adapter only. Overlay speaks only on execution-relevant turns.
-
-## Decision → Execution → Outcome
-
-Committed Decision ≠ Execution created. Execution created ≠ started. Started ≠ Outcome. ECA:9 never writes Outcome or Learning.
-
-## ECA:1–8
-
-ECA:9 consumes them after ECA:8. Post-Decision mode requires a real Approved Decision (`listDecisions` status `Approved`), not ECA:7 recommendation or ECA:8 commitment intent.
-
-## Session durability
-
-Session overlay is Manager–Object session-only (acknowledgement fingerprint, deferred-start flag, last Decision/Execution ids). Refresh clears it. Readiness is recomputed each turn from CC:11 facts.
-
-## CAP_AV / Data
-
-Unconfirmed CAP_AV must not be treated as confirmed capacity readiness. ECA:9 consumes the existing semantic-pending / ECA:4 fingerprint; it does not promote CAP_AV.
+- Second Execution engine or store
+- Parallel owner/blocker/milestone store
+- Generic action runner / autonomous task executor
+- ECA-specific Execution status

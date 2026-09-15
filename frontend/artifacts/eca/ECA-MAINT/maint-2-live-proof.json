@@ -1,0 +1,43 @@
+{
+  "identity": "NPA-T ECA:MAINT-2/live-awaiting-decision-parity",
+  "url": "http://127.0.0.1:3016/executive?reset=1",
+  "pageErrors": 0,
+  "misleadingLabelObserved": false,
+  "state1": {
+    "utterance": "What would we be committing to?",
+    "reply": "NexoraA decision is needed on Capacity Gap, but no specific option is currently under review yet.",
+    "compact": "",
+    "hasMisleadingAwaitingDecision": false,
+    "hasDecisionNeeded": false,
+    "state8": "NONE",
+    "writes8": "false",
+    "canonicalApproved": "0",
+    "canonicalExecutions": "0"
+  },
+  "state2": {
+    "utterance": "What would we be committing to?",
+    "reply": "NexoraYou would be committing to temporary capacity as the selected course of action. Approval would create the Decision, but it would not start execution.",
+    "compact": "",
+    "hasMisleadingAwaitingDecision": false,
+    "hasDecisionNeeded": false,
+    "state8": "INTENT",
+    "writes8": "false",
+    "canonicalApproved": "0",
+    "canonicalExecutions": "0"
+  },
+  "approved": {
+    "utterance": "Approve Demand Surge",
+    "reply": "NexoraDemand Surge is now the Approved decision. temporary capacity is already the committed Decision.",
+    "compact": "",
+    "hasMisleadingAwaitingDecision": false,
+    "hasDecisionNeeded": false,
+    "state8": "EXPLICIT_COMMITMENT",
+    "writes8": "false",
+    "canonicalApproved": "1",
+    "canonicalExecutions": "0"
+  },
+  "state1Pass": true,
+  "state2Pass": true,
+  "approvePass": true,
+  "passed": true
+}

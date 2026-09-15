@@ -90,6 +90,8 @@ export function composeExecutiveJourneyIntelligence(input: {
     ...(context.objectKind.value === "decision" && context.objectId
       ? [context.objectId]
       : []),
+    ...(facts.committedDecisionIds ?? []),
+    ...(facts.rejectedDecisionIds ?? []),
   ]);
   const executionIds = unique([
     ...(context.execution.value ? [context.execution.value] : []),
@@ -97,6 +99,7 @@ export function composeExecutiveJourneyIntelligence(input: {
     ...(context.objectKind.value === "execution" && context.objectId
       ? [context.objectId]
       : []),
+    ...Object.keys(facts.executionStates ?? {}),
   ]);
   const compared = new Set(facts.comparedScenarioIds ?? []);
   const committed = new Set(facts.committedDecisionIds ?? []);

@@ -516,3 +516,286 @@ test("ECA:4 question quality rejects vague patterns", () => {
   const { judgment } = judge("Which scenario is cheaper?");
   assert.equal(/tell me more|elaborate|provide more information/i.test(judgment.question?.text ?? ""), false);
 });
+
+test("ECA:4 prompt A — Known Goal information → shouldAsk false", () => {
+  const { judgment } = judge("What is my current goal?", {
+    known: { deliveryTarget: "Improve Delivery Reliability" },
+  });
+  assert.equal(judgment.shouldAsk, false);
+  boundaries(judgment);
+});
+
+test("ECA:4 prompt B — Missing material preference → one question", () => {
+  const { judgment } = judge("Which scenario is cheaper?");
+  assert.equal(judgment.shouldAsk, true);
+  assert.equal(judgment.primaryNeed?.informationType, "COST");
+  assert.ok(judgment.question?.text);
+  assert.equal(/tell me more|provide more information/i.test(judgment.question?.text ?? ""), false);
+  boundaries(judgment);
+});
+
+test("ECA:4 prompt C — Missing non-material detail → shouldAsk false", () => {
+  const { judgment } = judge("Explain Supplier Delay.", {
+    subject: SUPPLIER,
+    known: {
+      missingFields: [
+        {
+          subjectId: SUPPLIER.id,
+          subjectLabel: SUPPLIER.label,
+          field: "nickname",
+          necessity: "OPTIONAL",
+        },
+      ],
+    },
+  });
+  assert.equal(judgment.shouldAsk, false);
+});
+
+test("ECA:4 prompt D — Already available Data → do not ask manager", () => {
+  const { judgment } = judge("What is CAP_AV?", {
+    known: {
+      confirmedDataByField: { CAP_AV: "Available Capacity" },
+      semanticStatusByField: { CAP_AV: "CONFIRMED" },
+      valuePresentByField: { CAP_AV: true },
+    },
+    data: {
+      sourceId: "src-1",
+      sourceLabel: "ops.csv",
+      fieldId: "CAP_AV",
+      fieldLabel: "CAP_AV",
+      semanticStatus: "CONFIRMED",
+      evidenceRefs: Object.freeze(["csv-1:CAP_AV"]),
+    },
+  });
+  assert.equal(judgment.shouldAsk, false);
+  assert.ok(
+    judgment.acquisitionAction === "USE_EXISTING_INFORMATION" ||
+      judgment.acquisitionAction === "NO_ACQUISITION_NEEDED",
+  );
+});
+
+test("ECA:4 prompt E — CAP_AV unconfirmed → semantic question, no Data write", () => {
+  const { judgment } = judge("What does CAP_AV mean?", {
+    known: {
+      semanticStatusByField: { CAP_AV: "UNKNOWN" },
+      valuePresentByField: { CAP_AV: true },
+    },
+    data: {
+      sourceId: "src-1",
+      sourceLabel: "ops.csv",
+      fieldId: "CAP_AV",
+      fieldLabel: "CAP_AV",
+      semanticStatus: "UNKNOWN",
+      evidenceRefs: Object.freeze(["csv-1:CAP_AV"]),
+    },
+  });
+  assert.ok(
+    judgment.shouldAsk === true ||
+      judgment.acquisitionAction === "REQUEST_SEMANTIC_CONFIRMATION",
+  );
+  assert.equal(judgment.boundaries.writesDataTruth, false);
+  assert.notEqual(judgment.primaryNeed?.currentStatus, "MISSING");
+});
+
+test("ECA:4 prompt F — Ambiguous referent uses clarification, not acquisition", () => {
+  const { judgment, actionPlan } = judge("Investigate it.", {
+    meaningOverrides: {
+      ambiguity: {
+        unresolved: true,
+        reason: "multiple-objects",
+        candidates: [
+          { subjectId: CAPACITY.id, canonicalName: CAPACITY.label, lexicalHint: "it", subjectKind: CAPACITY.kind },
+          { subjectId: DEMAND.id, canonicalName: DEMAND.label, lexicalHint: "it", subjectKind: DEMAND.kind },
+        ],
+      },
+    },
+  });
+  assert.ok(
+    actionPlan.nextAction === "ASK_CLARIFICATION" ||
+      judgment.acquisitionAction === "ASK_CLARIFICATION" ||
+      judgment.shouldAsk === false,
+  );
+  assert.notEqual(judgment.primaryNeed?.informationType, "COST");
+  assert.equal(judgment.boundaries.createsSecondClarificationEngine, false);
+});
+
+test("ECA:4 prompt G — Comparison criterion missing → one preference question", () => {
+  const { judgment } = judge("Which scenario is cheaper?", {
+    known: {
+      missingFields: [
+        { subjectId: B.id, subjectLabel: B.label, field: "cost", necessity: "BLOCKING" },
+        { subjectId: B.id, subjectLabel: B.label, field: "implementation-date", necessity: "OPTIONAL" },
+      ],
+      boundedOptions: Object.freeze(["About $20,000", "About $40,000", "I don't know"]),
+    },
+  });
+  assert.equal(judgment.shouldAsk, true);
+  assert.ok(judgment.question);
+  assert.match(judgment.question?.text ?? "", /cost/i);
+  boundaries(judgment);
+});
+
+test("ECA:4 prompt H — Decision-related ask does not commit", () => {
+  const { judgment, actionPlan } = judge("Review this Decision.", {
+    known: {
+      missingFields: [
+        {
+          subjectId: SUPPLIER.id,
+          subjectLabel: SUPPLIER.label,
+          field: "risk-evidence",
+          necessity: "IMPORTANT",
+        },
+      ],
+    },
+  });
+  assert.equal(judgment.shouldAsk, true);
+  assert.equal(judgment.boundaries.commitsDecision, false);
+  assert.equal(actionPlan.boundaries.commitsDecision, false);
+});
+
+test("ECA:4 prompt I — Execution readiness may ask; Execution count unchanged", () => {
+  const { judgment, actionPlan } = judge("Start the plan.", {
+    lifecycle: { committedDecisionId: null },
+  });
+  assert.equal(judgment.shouldAsk, true);
+  assert.equal(judgment.primaryNeed?.informationType, "PREREQUISITE");
+  assert.equal(judgment.boundaries.startsExecution, false);
+  assert.equal(actionPlan.boundaries.startsExecution, false);
+});
+
+test("ECA:4 prompt J — Outcome observation ask without causality claim", () => {
+  const { judgment } = judge("Did the plan work?");
+  assert.equal(judgment.primaryNeed?.informationType, "OUTCOME");
+  assert.doesNotMatch(judgment.question?.text ?? judgment.explanation ?? "", /\bcaused\b|\bproves\b/i);
+  assert.equal(judgment.boundaries.writesOutcome, false);
+});
+
+test("ECA:4 prompt K — Unanswerable gap does not ask manager for invented knowledge", () => {
+  const { judgment } = judge("Is Capacity Gap causing late delivery?", {
+    known: { causalEvidenceSufficient: false },
+  });
+  assert.ok(
+    judgment.acquisitionAction === "REQUEST_EVIDENCE" ||
+      judgment.acquisitionAction === "PROCEED_WITH_UNCERTAINTY" ||
+      judgment.acquisitionAction === "IDENTIFY_OTHER_SOURCE" ||
+      judgment.shouldAsk === false,
+  );
+  assert.doesNotMatch(judgment.question?.text ?? "", /what caused/i);
+});
+
+test("ECA:4 prompt L — Already asked question is not repeated", () => {
+  const first = judge("Which scenario is cheaper?");
+  const session = nextEcaInformationNeedSession(null, "Which scenario is cheaper?", first.judgment);
+  const second = judge("Explain Capacity Gap.", { session });
+  assert.equal(first.judgment.shouldAsk, true);
+  assert.equal(second.judgment.shouldAsk, false);
+});
+
+test("ECA:4 prompt M — Explicit subject switch drops stale acquisition", () => {
+  const first = judge("Which scenario is cheaper?");
+  const session = nextEcaInformationNeedSession(null, "Which scenario is cheaper?", first.judgment);
+  const switched = judge("Forget that. Explain Demand Surge.", {
+    session,
+    subject: DEMAND,
+    meaningOverrides: {
+      requestedOperation: "EXPLAIN",
+      communicativeIntent: "ASK_INFORMATION",
+    },
+  });
+  assert.equal(switched.judgment.shouldAsk, false);
+  assert.ok(
+    switched.actionPlan.intent === "EXPLAIN" ||
+      switched.actionPlan.intent === "UNDERSTAND" ||
+      /demand surge/i.test(switched.workingContext.activeSubject?.label ?? ""),
+  );
+});
+
+test("ECA:4 prompt N — Three gaps → ask exactly one highest-value question", () => {
+  const { judgment } = judge("Which scenario is cheaper?", {
+    known: {
+      missingFields: [
+        { subjectId: B.id, subjectLabel: B.label, field: "cost", necessity: "BLOCKING" },
+        { subjectId: B.id, subjectLabel: B.label, field: "owner", necessity: "OPTIONAL" },
+        { subjectId: B.id, subjectLabel: B.label, field: "color", necessity: "OPTIONAL" },
+      ],
+    },
+  });
+  assert.equal(judgment.shouldAsk, true);
+  assert.ok(judgment.question);
+  assert.match(judgment.question?.text ?? "", /cost/i);
+  assert.equal((judgment.question?.text.match(/\?/g) ?? []).length <= 2, true);
+});
+
+test("ECA:4 prompt O — Suggested answers are bounded options, not facts", () => {
+  const { judgment } = judge("Which scenario is cheaper?", {
+    known: { boundedOptions: Object.freeze(["About $20,000", "About $40,000", "I don't know"]) },
+  });
+  assert.equal(judgment.shouldAsk, true);
+  assert.equal(judgment.question?.suggestedAnswersAreFacts, false);
+  assert.equal(judgment.boundaries.suggestedAnswersAreFacts, false);
+});
+
+test("ECA:4 prompt P — Manager answer is not written by ECA:4 (no ECA:5)", () => {
+  const asked = judge("Is Supplier Delay a Risk?");
+  const session = nextEcaInformationNeedSession(
+    {
+      ...emptyEcaInformationNeedSession(),
+      lastQuestion: "Is Supplier Delay a Risk?",
+      lastFingerprint: "mutation-question",
+    },
+    "Is Supplier Delay a Risk?",
+    asked.judgment,
+  );
+  const answered = judge("Yes.", { session });
+  assert.equal(answered.judgment.boundaries.mutatesBusinessState, false);
+  assert.equal(answered.judgment.boundaries.writesDataTruth, false);
+  assert.equal(answered.judgment.answerWouldRequireCanonicalProposal, true);
+});
+
+test("ECA:4 prompt multi-turn 1 — Recommendation may ask one preference; no Decision", () => {
+  const seek = judge("What should I do about Capacity Gap?");
+  assert.equal(seek.actionPlan.boundaries.commitsDecision, false);
+  const prefer = judge("Delivery speed matters more.");
+  assert.equal(prefer.judgment.boundaries.commitsDecision, false);
+  assert.equal(prefer.actionPlan.boundaries.commitsDecision, false);
+});
+
+test("ECA:4 prompt multi-turn 2 — CAP_AV uncertainty stays on DATA-ADV path", () => {
+  const meaningAsk = judge("What does CAP_AV mean?", {
+    known: {
+      semanticStatusByField: { CAP_AV: "UNKNOWN" },
+      valuePresentByField: { CAP_AV: true },
+    },
+    data: {
+      sourceId: "src-1",
+      sourceLabel: "ops.csv",
+      fieldId: "CAP_AV",
+      fieldLabel: "CAP_AV",
+      semanticStatus: "UNKNOWN",
+      evidenceRefs: Object.freeze(["csv-1:CAP_AV"]),
+    },
+  });
+  assert.equal(meaningAsk.judgment.boundaries.writesDataTruth, false);
+  assert.ok(
+    meaningAsk.judgment.acquisitionAction === "REQUEST_SEMANTIC_CONFIRMATION" ||
+      meaningAsk.judgment.shouldAsk === true ||
+      meaningAsk.judgment.proceedWithUncertainty === true,
+  );
+});
+
+test("ECA:4 prompt multi-turn 3 — Compare then choose asks criterion, no Decision", () => {
+  const compare = judge("Compare Demand Surge and Pricing Response.");
+  const choose = judge("Which scenario is cheaper?");
+  assert.ok(compare.actionPlan.intent === "COMPARE" || compare.actionPlan.nextAction === "COMPARE");
+  assert.equal(choose.judgment.boundaries.commitsDecision, false);
+  assert.equal(choose.judgment.shouldAsk, true);
+});
+
+test("ECA:4 prompt multi-turn 4 — Execution readiness ask keeps Execution at zero", () => {
+  const ready = judge("Start the plan.", {
+    lifecycle: { committedDecisionId: null },
+  });
+  assert.equal(ready.judgment.boundaries.startsExecution, false);
+  assert.equal(ready.judgment.shouldAsk, true);
+  assert.doesNotMatch(ready.judgment.question?.text ?? ready.judgment.explanation ?? "", /\bis running\b/i);
+});

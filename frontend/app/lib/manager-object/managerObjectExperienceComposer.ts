@@ -6,8 +6,13 @@
 import { findMentionedManagerObjectId } from "./managerObjectIntent.ts";
 import { projectManagerObjectConversationalSubjects } from "./managerObjectCatalog.ts";
 import { isExecutiveAttentionUtterance } from "./managerObjectAttentionEngine.ts";
+import { isTargetedDeicticInvestigationUtterance } from "@/app/lib/conversational-control/conversationalIntentNormalization.ts";
 import type { ManagerObjectTurn } from "./managerObjectInteraction.ts";
 import type { ManagerObjectSession } from "./managerObjectActive.ts";
+import type {
+  JourneyDecisionState,
+  JourneyState,
+} from "./managerObjectJourneyTypes.ts";
 import {
   MANAGER_OBJECT_EXPERIENCE_BOUNDARY,
   managerObjectExperienceIntegrationIdentity,
@@ -21,6 +26,20 @@ export {
 } from "./managerObjectExperienceTypes.ts";
 export type { ExecutiveManagerResponse } from "./managerObjectExperienceTypes.ts";
 
+/**
+ * Manager-facing journey status chip.
+ * AWAITING_DECISION means Decision needed (scenarios available), not a selected
+ * commitment candidate awaiting approval.
+ */
+export function compactJourneyStatusLabel(input: {
+  readonly journeyState: JourneyState;
+  readonly decisionState: JourneyDecisionState;
+}): string | null {
+  if (input.decisionState === "awaiting-confirmation") return "Awaiting confirmation";
+  if (input.decisionState === "committed") return "Decision approved";
+  if (input.journeyState === "AWAITING_DECISION") return "Decision needed";
+  return null;
+}
 export function getManagerObjectExperienceIntegrationIdentity(): {
   readonly id: typeof managerObjectExperienceIntegrationIdentity;
   readonly version: "1.0.0";
@@ -133,6 +152,24 @@ export function routeExecutiveManagerLane(input: {
   }
   if (input.intent === "WHY" && input.previous?.attentionPrompted === true) {
     return "attention";
+  }
+  if (isTargetedDeicticInvestigationUtterance(input.normalized)) {
+    return "explain";
+  }
+  if (
+    /(?:what\s+is\s+(?:(?:my|our|the)\s+)?(?:main\s+|current\s+)?goal|how does this (?:help|affect) my goal|(?:my|our) goal is|is now the priority)/.test(
+      input.normalized,
+    )
+  ) {
+    return "goal";
+  }
+  if (
+    input.kind === "recommend" ||
+    input.intent === "NEXT_ACTION"
+  ) {
+    if (/what\s+should\s+i\s+do\s+next/.test(input.normalized)) {
+      return "next-action";
+    }
   }
   if (input.scenarioPresent || input.decisionCommitmentPresent) return "advisor";
   if (
@@ -385,6 +422,23 @@ function composeGoalAnswer(turn: ManagerObjectTurn, normalized: string): string 
   if (/how does this (?:help|affect) my goal/.test(normalized)) {
     return `${turn.journey.objectFit} ${turn.navigation.reasoningSummary}`.trim();
   }
+  if (
+    /what\s+is\s+(?:(?:my|our|the)\s+)?(?:main\s+|current\s+)?goal/.test(
+      normalized,
+    )
+  ) {
+    const goal = turn.navigation.goal;
+    if (
+      goal.source === "unknown" ||
+      !goal.title.trim() ||
+      /unknown|not yet confirmed/i.test(goal.title)
+    ) {
+      return "No main goal is confirmed yet.";
+    }
+    return goal.managerConfirmed
+      ? `Our main goal is ${goal.title}.`
+      : `The current goal is ${goal.title}, but it has not yet been confirmed by the manager.`;
+  }
   return turn.navigation.managerFacingText.trim();
 }
 
@@ -536,8 +590,12 @@ function composeCompactContext(turn: ManagerObjectTurn): string {
   if (turn.navigation.goal.source !== "unknown") {
     parts.push(`Goal: ${turn.navigation.goal.title}`);
   }
-  if (turn.journey.journeyState === "AWAITING_DECISION") {
-    parts.push("Awaiting decision");
+  const journeyStatus = compactJourneyStatusLabel({
+    journeyState: turn.journey.journeyState,
+    decisionState: turn.journey.decisionState,
+  });
+  if (journeyStatus) {
+    parts.push(journeyStatus);
   } else if (turn.attention.doNotDisturb) {
     parts.push("No intervention required");
   } else if (turn.attention.primaryAttention) {

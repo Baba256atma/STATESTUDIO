@@ -169,8 +169,8 @@ function classifyIntent(text: string): EcaLearningManagerIntent {
   if (/\bare we done\b|\banything else we need\b|\banything else\b|\bdo we need to revisit\b/i.test(text)) return "DONE";
   if (/\bcome back later\b/i.test(text)) return "DONE";
   if (/\bshould we (?:do (?:this|it) again|repeat)\b|\bwas this worth it\b/i.test(text)) return "REPEAT";
-  if (/\bshould we (?:reconsider|rethink|reassess)\b|\brethink the approach\b/i.test(text)) return "REASSESS";
-  if (/\bwhat did we learn\b|\bwhat would you do next\b/i.test(text)) return "LEARNING";
+  if (/\bshould we (?:reconsider|rethink|reassess|change the decision)\b|\brethink the approach\b/i.test(text)) return "REASSESS";
+  if (/\bwhat did we learn\b|\bwhat would you (?:do|change) next\b|\bwhat should we (?:learn|consider) before\b|\bremember this\b/i.test(text)) return "LEARNING";
   if (/\bwhat should we do now\b/i.test(text)) return "NEXT";
   return "NONE";
 }
@@ -190,6 +190,13 @@ function mapLearning(outcome: EcaExecutiveOutcomeJudgment, conflicted: boolean):
   if (insufficientOutcome(outcome)) return "NONE";
   if (outcome.overallInterpretation === "MIXED") return "TENTATIVE";
   if (outcome.baselineComparison === "UNKNOWN" && outcome.targetComparison === "UNKNOWN") return "NONE";
+  if (
+    outcome.observationState === "OBSERVED" &&
+    outcome.baselineComparison === "IMPROVED" &&
+    (outcome.targetComparison === "MET" || outcome.targetComparison === "EXCEEDED")
+  ) {
+    return "SUPPORTED";
+  }
   return "TENTATIVE";
 }
 

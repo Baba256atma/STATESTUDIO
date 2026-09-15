@@ -1,12 +1,13 @@
 {
   "identity": "NPA-T ECA:7/live-proofs",
-  "url": "http://localhost:3022/executive?reset=1",
+  "url": "http://localhost:3000/executive?reset=1",
   "errors": [],
-  "1-supported-recommendation": {
+  "pageErrors": 0,
+  "1-grounded-recommendation": {
     "pass": true,
     "actual": {
       "utterance": "What do you recommend?",
-      "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I recommend temporary capacity. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
+      "reply": "NexoraI recommend investigating Delivery first. I don't have enough basis to commit to an intervention yet. I recommend a reversible Demand action because it better matches UNSPECIFIED. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
       "intent": "SEEK_RECOMMENDATION",
       "action": "RECOMMEND_INVESTIGATION",
       "ask": "false",
@@ -19,16 +20,18 @@
       "decisionReadiness": "READY_WITH_CONDITIONS",
       "type": "PREFER_OPTION",
       "strength": "TENTATIVE",
-      "option": "temporary capacity",
+      "option": "a reversible Demand action",
       "writes7": "false",
-      "secondDecision": "false"
+      "secondDecision": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
     }
   },
-  "2-too-early": {
+  "2-insufficient-evidence-defer": {
     "pass": true,
     "actual": {
       "utterance": "What do you recommend?",
-      "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing.",
+      "reply": "NexoraI lean toward temporary capacity. That is an advisory suggestion, not a catalog Scenario. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing.",
       "intent": "SEEK_RECOMMENDATION",
       "action": "RECOMMEND_INVESTIGATION",
       "ask": "false",
@@ -43,80 +46,17 @@
       "strength": "NONE",
       "option": "none",
       "writes7": "false",
-      "secondDecision": "false"
+      "secondDecision": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
     }
   },
-  "3-critical-gap": {
-    "pass": true,
-    "actual": {
-      "utterance": "What do you recommend?",
-      "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I recommend temporary capacity. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
-      "intent": "SEEK_RECOMMENDATION",
-      "action": "RECOMMEND_INVESTIGATION",
-      "ask": "false",
-      "bound": "false",
-      "intakeType": "UNRELATED_RESPONSE",
-      "writes5": "false",
-      "objective": "PREPARE_RECOMMENDATION",
-      "requested": "true",
-      "readiness": "READY",
-      "decisionReadiness": "READY_WITH_CONDITIONS",
-      "type": "PREFER_OPTION",
-      "strength": "TENTATIVE",
-      "option": "temporary capacity",
-      "writes7": "false",
-      "secondDecision": "false"
-    }
-  },
-  "4-estimate": {
-    "pass": true,
-    "actual": {
-      "estimate": {
-        "utterance": "Around 40k.",
-        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
-        "intent": "UNKNOWN",
-        "action": "ASK_CLARIFICATION",
-        "ask": "false",
-        "bound": "false",
-        "intakeType": "UNRELATED_RESPONSE",
-        "writes5": "false",
-        "objective": "COMPARE_OPTIONS",
-        "requested": "false",
-        "readiness": "READY",
-        "decisionReadiness": "READY_WITH_CONDITIONS",
-        "type": "PREFER_OPTION",
-        "strength": "TENTATIVE",
-        "option": "temporary capacity",
-        "writes7": "false",
-        "secondDecision": "false"
-      },
-      "afterEstimate": {
-        "utterance": "What do you recommend?",
-        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I recommend temporary capacity. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
-        "intent": "SEEK_RECOMMENDATION",
-        "action": "RECOMMEND_INVESTIGATION",
-        "ask": "false",
-        "bound": "false",
-        "intakeType": "UNRELATED_RESPONSE",
-        "writes5": "false",
-        "objective": "PREPARE_RECOMMENDATION",
-        "requested": "true",
-        "readiness": "READY",
-        "decisionReadiness": "READY_WITH_CONDITIONS",
-        "type": "PREFER_OPTION",
-        "strength": "TENTATIVE",
-        "option": "temporary capacity",
-        "writes7": "false",
-        "secondDecision": "false"
-      }
-    }
-  },
-  "5-criterion-shift": {
+  "3-preference-framing": {
     "pass": true,
     "actual": {
       "first": {
         "utterance": "What do you recommend?",
-        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I recommend temporary capacity because it better matches delivery speed. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
+        "reply": "NexoraI lean toward temporary capacity. That is an advisory suggestion, not a catalog Scenario. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I recommend temporary capacity because it better matches delivery speed. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
         "intent": "SEEK_RECOMMENDATION",
         "action": "RECOMMEND_INVESTIGATION",
         "ask": "false",
@@ -131,7 +71,9 @@
         "strength": "TENTATIVE",
         "option": "temporary capacity",
         "writes7": "false",
-        "secondDecision": "false"
+        "secondDecision": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
       },
       "shifted": {
         "utterance": "What do you recommend?",
@@ -150,38 +92,42 @@
         "strength": "TENTATIVE",
         "option": "do nothing and monitor",
         "writes7": "false",
-        "secondDecision": "false"
+        "secondDecision": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
       }
     }
   },
-  "6-cap-av": {
+  "4-decision-readiness-no-auto-decision": {
     "pass": true,
     "actual": {
       "utterance": "What do you recommend?",
-      "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. Does CAP_AV represent available capacity? I don’t have enough information to recommend one yet. cap-av-semantics is still missing.",
+      "reply": "NexoraI recommend investigating Delivery first. I don't have enough basis to commit to an intervention yet. I recommend a reversible Demand action because it better matches UNSPECIFIED. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
       "intent": "SEEK_RECOMMENDATION",
       "action": "RECOMMEND_INVESTIGATION",
-      "ask": "true",
+      "ask": "false",
       "bound": "false",
       "intakeType": "UNRELATED_RESPONSE",
       "writes5": "false",
       "objective": "PREPARE_RECOMMENDATION",
       "requested": "true",
-      "readiness": "BLOCKED_BY_CRITICAL_UNKNOWN",
-      "decisionReadiness": "BLOCKED",
-      "type": "DEFER_DECISION",
-      "strength": "NONE",
-      "option": "none",
+      "readiness": "READY",
+      "decisionReadiness": "READY_WITH_CONDITIONS",
+      "type": "PREFER_OPTION",
+      "strength": "TENTATIVE",
+      "option": "a reversible Demand action",
       "writes7": "false",
-      "secondDecision": "false"
+      "secondDecision": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
     }
   },
-  "7-recommendation-decision-boundary": {
+  "5-cc10-boundary-no-execution": {
     "pass": true,
     "actual": {
       "before": {
         "utterance": "What do you recommend?",
-        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I recommend temporary capacity. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
+        "reply": "NexoraI recommend investigating Delivery first. I don't have enough basis to commit to an intervention yet. I recommend a reversible Demand action because it better matches UNSPECIFIED. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
         "intent": "SEEK_RECOMMENDATION",
         "action": "RECOMMEND_INVESTIGATION",
         "ask": "false",
@@ -194,13 +140,15 @@
         "decisionReadiness": "READY_WITH_CONDITIONS",
         "type": "PREFER_OPTION",
         "strength": "TENTATIVE",
-        "option": "temporary capacity",
+        "option": "a reversible Demand action",
         "writes7": "false",
-        "secondDecision": "false"
+        "secondDecision": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
       },
       "choose": {
-        "utterance": "I choose A.",
-        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+        "utterance": "I choose Demand Surge.",
+        "reply": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution. You’re choosing a reversible Demand Surge action. Confirm it as the Decision?",
         "intent": "COMMIT_DECISION",
         "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
         "ask": "false",
@@ -213,9 +161,11 @@
         "decisionReadiness": "READY_WITH_CONDITIONS",
         "type": "PREFER_OPTION",
         "strength": "TENTATIVE",
-        "option": "temporary capacity",
+        "option": "a reversible Demand Surge action",
         "writes7": "false",
-        "secondDecision": "false"
+        "secondDecision": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
       }
     }
   }

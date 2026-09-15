@@ -1,51 +1,51 @@
-✔ CC:3 identity and architectural boundary (0.52075ms)
-✔ cert: focus + obj-capacity → focus-subject (19.241ms)
-✔ cert: overview → open-overview (1.736208ms)
-✔ cert: reveal related / problems / scenarios / decisions (20.126958ms)
-✔ cert: show-related with resolved context subject (0.282958ms)
-✔ cert: reveal-goals with business subject (0.384125ms)
-✔ cert: reveal-execution with decision subject (0.383834ms)
-✔ cert: analyze / compare / simulate / navigate (2.76775ms)
-✔ fail: unknown intent → unsupported-intent (0.550417ms)
-✔ fail: focus + no target → missing-target (0.374458ms)
-✔ fail: compare + one target → missing-target (0.491125ms)
-✔ fail: ambiguous CC:2 → ambiguous-context (1.45175ms)
-✔ fail: not-found CC:2 → invalid-context (8.925292ms)
-✔ fail: missing pronoun context → missing-target (0.149542ms)
-✔ fail: simulate + incompatible subject → invalid-context (0.5215ms)
-✔ invariant A: same CC:1+CC:2 input → same command (2.781667ms)
-✔ invariant B: CC:3 does not parse raw language (0.370458ms)
-✔ invariant C: CC:3 does not resolve canonical IDs (3.615542ms)
-✔ invariant D/E/F/G/H: no mutation / director / trail / relationships (5.265458ms)
-✔ invariant I/J/K: blocked paths never invent executable commands (1.854917ms)
-✔ invariant L: multi-target order preserved (0.43675ms)
-✔ invariant M: subject compatibility deterministic (0.161125ms)
-✔ invariant N: command and trace serializable (0.418625ms)
-✔ deterministic commandId derivation (0.034458ms)
-✔ invariant S: no provider imports (32.184167ms)
-✔ CC:2 identity and architectural boundary (0.697375ms)
-✔ cert: natural "show me risk object" resolves canonical Risk, not Risk Object (13.755375ms)
-✔ cert: interface filler does not collapse "show risk problem" (11.121875ms)
-✔ cert: "Focus on Capacity" → obj-capacity (0.638583ms)
-✔ cert: Show Revenue / Open Budget / Analyze Revenue (1.40025ms)
-✔ cert: Compare Revenue and Capacity preserves order (2.13775ms)
-✔ cert: with active context obj-capacity — "Show its problems" (0.557417ms)
-✔ cert: with active context obj-budget — "What about this?" (0.283084ms)
-✔ cert: without context — "Open it" → missing-context (0.3305ms)
-✔ cert: ambiguous "Open Growth" (1.123959ms)
-✔ cert: unknown "Focus on Moon Department" → not-found (4.66575ms)
-✔ relation-scoped explicit anchor: Show Capacity problems / scenarios related to Revenue (0.63425ms)
-✔ compare it with Revenue uses conversation context for primary (0.255667ms)
-✔ explicit hint beats critical Stage attention / focus (0.527375ms)
-✔ active Stage context only when permitted and conversation missing (0.292125ms)
-✔ overview / navigate intents → not-required (0.450291ms)
-✔ alias match: sales revenue → obj-revenue (3.5535ms)
-✔ never synthesizes obj- + hint (6.387042ms)
-✔ invariant A: same inputs → same resolved context (0.965875ms)
-✔ invariant B/C/D/E: pure — no runtime mutation surface (0.629292ms)
-✔ invariant F: IDs only from registry (0.844917ms)
-✔ invariant K: resolution trace is serializable (0.461416ms)
-✔ invariant N: no provider imports in CC production sources (21.7515ms)
+✔ CC:3 identity and architectural boundary (1.466958ms)
+✔ cert: focus + obj-capacity → focus-subject (78.731917ms)
+✔ cert: overview → open-overview (0.926917ms)
+✔ cert: reveal related / problems / scenarios / decisions (19.263083ms)
+✔ cert: show-related with resolved context subject (0.67525ms)
+✔ cert: reveal-goals with business subject (0.841584ms)
+✔ cert: reveal-execution with decision subject (0.875167ms)
+✔ cert: analyze / compare / simulate / navigate (15.85ms)
+✔ fail: unknown intent → unsupported-intent (0.923792ms)
+✔ fail: focus + no target → missing-target (0.810666ms)
+✔ fail: compare + one target → missing-target (0.281667ms)
+✔ fail: ambiguous CC:2 → ambiguous-context (0.750292ms)
+✔ fail: not-found CC:2 → invalid-context (4.828625ms)
+✔ fail: missing pronoun context → missing-target (0.539875ms)
+✔ fail: simulate + incompatible subject → invalid-context (1.426333ms)
+✔ invariant A: same CC:1+CC:2 input → same command (1.660458ms)
+✔ invariant B: CC:3 does not parse raw language (1.356959ms)
+✔ invariant C: CC:3 does not resolve canonical IDs (1.604084ms)
+✔ invariant D/E/F/G/H: no mutation / director / trail / relationships (2.792791ms)
+✔ invariant I/J/K: blocked paths never invent executable commands (2.972542ms)
+✔ invariant L: multi-target order preserved (1.356125ms)
+✔ invariant M: subject compatibility deterministic (0.907833ms)
+✔ invariant N: command and trace serializable (1.660416ms)
+✔ deterministic commandId derivation (0.113459ms)
+✔ invariant S: no provider imports (41.471ms)
+✔ CC:2 identity and architectural boundary (8.199125ms)
+✔ cert: natural "show me risk object" resolves canonical Risk, not Risk Object (27.2665ms)
+✔ cert: interface filler does not collapse "show risk problem" (14.510125ms)
+✔ cert: "Focus on Capacity" → obj-capacity (4.852667ms)
+✔ cert: Show Revenue / Open Budget / Analyze Revenue (2.874667ms)
+✔ cert: Compare Revenue and Capacity preserves order (1.781208ms)
+✔ cert: with active context obj-capacity — "Show its problems" (0.783084ms)
+✔ cert: with active context obj-budget — "What about this?" (0.253208ms)
+✔ cert: without context — "Open it" → missing-context (0.300209ms)
+✔ cert: ambiguous "Open Growth" (0.853ms)
+✔ cert: unknown "Focus on Moon Department" → not-found (5.461708ms)
+✔ relation-scoped explicit anchor: Show Capacity problems / scenarios related to Revenue (1.515917ms)
+✔ compare it with Revenue uses conversation context for primary (0.698709ms)
+✔ explicit hint beats critical Stage attention / focus (0.653041ms)
+✔ active Stage context only when permitted and conversation missing (0.242708ms)
+✔ overview / navigate intents → not-required (0.47425ms)
+✔ alias match: sales revenue → obj-revenue (0.548291ms)
+✔ never synthesizes obj- + hint (1.61975ms)
+✔ invariant A: same inputs → same resolved context (1.378042ms)
+✔ invariant B/C/D/E: pure — no runtime mutation surface (0.619083ms)
+✔ invariant F: IDs only from registry (0.584917ms)
+✔ invariant K: resolution trace is serializable (6.938375ms)
+✔ invariant N: no provider imports in CC production sources (53.267375ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -518,23 +518,23 @@
 [Topology][Hub] Hub: Capacity
 [Topology][Hub] Satellites: 5
 [Topology][Hub] Connections: 5
-✔ CC:5 identity and boundary (1.0735ms)
-✔ 1–2: Focus Capacity end-to-end success feedback (268.420125ms)
-✔ 3: Budget precedence under Capacity attention (34.02575ms)
-✔ 4–6: Overview + Back + Forward (211.515666ms)
-✔ 7: multi-turn Revenue → Show its problems (74.012834ms)
-✔ 8: missing-context Open it (11.518375ms)
-✔ 9: ambiguous Growth (11.131291ms)
-✔ 10: unknown intent (11.788292ms)
-✔ 11: not-found subject (34.932333ms)
-✔ 12: unsupported compare (9.782792ms)
-✔ 13: simulation messaging accuracy (12.445792ms)
-✔ 14: duplicate submission protection (39.962292ms)
-✔ 15–17: failed leaves Runtime+context unchanged; success updates context (36.209708ms)
-✔ 18: response text matches status (37.049458ms)
-✔ Analyze feedback does not claim dedicated engine (17.685ms)
-✔ Stage presentation after experience focus (19.880959ms)
-✔ invariant Y: no provider imports in CC:5 sources (29.559292ms)
+✔ CC:5 identity and boundary (1.51925ms)
+✔ 1–2: Focus Capacity end-to-end success feedback (320.711791ms)
+✔ 3: Budget precedence under Capacity attention (63.64875ms)
+✔ 4–6: Overview + Back + Forward (194.462708ms)
+✔ 7: multi-turn Revenue → Show its problems (74.182708ms)
+✔ 8: missing-context Open it (19.081375ms)
+✔ 9: ambiguous Growth (36.375958ms)
+✔ 10: unknown intent (41.861334ms)
+✔ 11: not-found subject (27.937583ms)
+✔ 12: unsupported compare (22.223292ms)
+✔ 13: simulation messaging accuracy (15.923833ms)
+✔ 14: duplicate submission protection (42.421709ms)
+✔ 15–17: failed leaves Runtime+context unchanged; success updates context (51.771875ms)
+✔ 18: response text matches status (65.886167ms)
+✔ Analyze feedback does not claim dedicated engine (21.001417ms)
+✔ Stage presentation after experience focus (20.805833ms)
+✔ invariant Y: no provider imports in CC:5 sources (40.485208ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -854,51 +854,51 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ CC:6 identity and architectural boundary (0.945708ms)
-✔ 16: registered experiences map only onto existing workspace kinds (0.204333ms)
-✔ 1: explicit workspace resolution — Open the Project workspace (229.227958ms)
-✔ 2: implicit registered meeting context (56.903167ms)
-✔ 3: keep-current when already in project review (74.29375ms)
-✔ 4: ordinary focus does not switch workspace (70.579ms)
-✔ 5: explicit focus survives experience transition (24.34025ms)
-✔ 6: Budget beats Capacity attention after prepare+focus (14.298875ms)
-✔ 7: ambiguous experience — Prepare the review (32.457833ms)
-✔ 8–9: unknown / unavailable experience does not mutate (19.276208ms)
-✔ 10–11: invalid workspace transition is atomic (rejected, no partial apply) (0.3ms)
-✔ 12: Stage/Advisor synchronization via conversation context workspace (46.798792ms)
-✔ 13: workspace-scoped navigation remains isolated across switches (66.469292ms)
-✔ 14–15: no Stage coordinate writes / no camera mutation reason codes (15.384458ms)
-✔ 16: deterministic mapping — same utterance yields same experience (24.499666ms)
-✔ 17: duplicate transition protection (38.022625ms)
-✔ 18: CC:1–5 boundary regression (still green) (0.194708ms)
-✔ 19–20: click / navigation authorities unchanged (reuse select + scoped trail) (12.70025ms)
-✔ registry soft-match prefers exact alias over soft containment (0.381583ms)
-✔ registry exposes certified experiences (0.235209ms)
-✔ CC:1 identity and architectural boundary (0.527333ms)
-✔ normalization: casing, whitespace, punctuation, prefixes (0.795792ms)
-✔ normalization does not invent semantic content (0.05925ms)
-✔ normalization recovers only the bounded explain transposition (31.207416ms)
-✔ ambiguous reference helper (0.074875ms)
-✔ cert: "take me to risk" and "show me the risk object" extract focus hints (7.008083ms)
-✔ cert: "Focus on Capacity" → focus + target hint (0.373208ms)
-✔ cert: "Show Revenue" / "Open Budget" → focus with lexical hints (0.276459ms)
-✔ cert: collection / related shows (1.257333ms)
-✔ cert: "Show goals" (0.099083ms)
-✔ cert: compare / analyze / simulate (1.145875ms)
-✔ cert: navigation — back / forward / overview (0.380917ms)
-✔ ambiguous references require context and do not invent targets (1.128916ms)
-✔ unknown intent fails safely (0.505625ms)
-✔ empty utterance is unknown (0.386291ms)
-✔ invariant A: same utterance → same canonical intent (0.831542ms)
-✔ invariant B: normalization variants preserve intent kind (0.618167ms)
-✔ invariant F: does not resolve canonical object IDs (0.130291ms)
-✔ invariant K: intent contracts are serializable (0.210292ms)
-✔ invariant C/D/E: resolution is pure — no runtime mutation surface (0.163208ms)
-✔ resolveNexoraConversationalIntentOnly returns intent (0.121625ms)
-✔ observability trace carries reason codes (0.127375ms)
-✔ LLM / provider boundary: module graph stays local (23.545292ms)
-✔ MO:1 object-aware why extracts the subject without encoding an object id (0.370791ms)
-✔ MO:1 connected / next-action / do-nothing remain generic CC intents (0.479583ms)
+✔ CC:6 identity and architectural boundary (1.010083ms)
+✔ 16: registered experiences map only onto existing workspace kinds (0.206917ms)
+✔ 1: explicit workspace resolution — Open the Project workspace (267.452667ms)
+✔ 2: implicit registered meeting context (83.9255ms)
+✔ 3: keep-current when already in project review (34.378459ms)
+✔ 4: ordinary focus does not switch workspace (106.016958ms)
+✔ 5: explicit focus survives experience transition (40.195ms)
+✔ 6: Budget beats Capacity attention after prepare+focus (56.472708ms)
+✔ 7: ambiguous experience — Prepare the review (23.562083ms)
+✔ 8–9: unknown / unavailable experience does not mutate (25.614209ms)
+✔ 10–11: invalid workspace transition is atomic (rejected, no partial apply) (0.339917ms)
+✔ 12: Stage/Advisor synchronization via conversation context workspace (26.262833ms)
+✔ 13: workspace-scoped navigation remains isolated across switches (115.989ms)
+✔ 14–15: no Stage coordinate writes / no camera mutation reason codes (22.132291ms)
+✔ 16: deterministic mapping — same utterance yields same experience (45.068875ms)
+✔ 17: duplicate transition protection (50.3295ms)
+✔ 18: CC:1–5 boundary regression (still green) (0.174875ms)
+✔ 19–20: click / navigation authorities unchanged (reuse select + scoped trail) (32.799708ms)
+✔ registry soft-match prefers exact alias over soft containment (0.429208ms)
+✔ registry exposes certified experiences (0.139416ms)
+✔ CC:1 identity and architectural boundary (1.431708ms)
+✔ normalization: casing, whitespace, punctuation, prefixes (2.209958ms)
+✔ normalization does not invent semantic content (0.197083ms)
+✔ normalization recovers only the bounded explain transposition (28.257416ms)
+✔ ambiguous reference helper (0.152292ms)
+✔ cert: "take me to risk" and "show me the risk object" extract focus hints (6.496709ms)
+✔ cert: "Focus on Capacity" → focus + target hint (1.701125ms)
+✔ cert: "Show Revenue" / "Open Budget" → focus with lexical hints (5.585041ms)
+✔ cert: collection / related shows (2.58325ms)
+✔ cert: "Show goals" (0.312166ms)
+✔ cert: compare / analyze / simulate (1.326667ms)
+✔ cert: navigation — back / forward / overview (0.286417ms)
+✔ ambiguous references require context and do not invent targets (0.20625ms)
+✔ unknown intent fails safely (0.37575ms)
+✔ empty utterance is unknown (0.282667ms)
+✔ invariant A: same utterance → same canonical intent (0.994ms)
+✔ invariant B: normalization variants preserve intent kind (0.741208ms)
+✔ invariant F: does not resolve canonical object IDs (0.233833ms)
+✔ invariant K: intent contracts are serializable (0.277416ms)
+✔ invariant C/D/E: resolution is pure — no runtime mutation surface (0.171083ms)
+✔ resolveNexoraConversationalIntentOnly returns intent (0.123875ms)
+✔ observability trace carries reason codes (0.127084ms)
+✔ LLM / provider boundary: module graph stays local (30.891375ms)
+✔ MO:1 object-aware why extracts the subject without encoding an object id (0.309792ms)
+✔ MO:1 connected / next-action / do-nothing remain generic CC intents (0.466041ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -927,25 +927,26 @@
 [Topology][Hub] Hub: Capacity
 [Topology][Hub] Satellites: 5
 [Topology][Hub] Connections: 5
-✔ CC:4 identity and architectural boundary (0.453917ms)
-✔ Case 1 — focus-subject(obj-capacity) → Runtime focus + center (69.298875ms)
-✔ Case 2 — explicit conversation Budget beats Capacity attention (17.735292ms)
-✔ Case 3–5 — overview + navigation trail Back/Forward (3.915125ms)
-✔ Case 6 — compare-subjects unsupported (no compare engine) (1.2515ms)
-✔ Case 7 — analyze-subject routes to focus (Advisor derive) (0.458416ms)
-✔ Case 8 — simulate-scenario focuses scenario subject only (1.072208ms)
-✔ Case 9 — invalid target rejected atomically (0.080959ms)
-✔ Case 10 — confirmation-required does not execute (0.077417ms)
-✔ Click vs conversation converge on same focus authority (8.67275ms)
-✔ reveal-problems without anchor opens queue collection (0.686834ms)
-✔ reveal-problems with a restored anchor still presents the collection (0.841792ms)
-✔ reveal-goals unsupported (0.043416ms)
-✔ invariant A: CC:4 rejects raw language — accepts structured command only (0.063625ms)
-✔ invariant P/Q: failed dispatch does not mutate; confirmation gates (0.057209ms)
-✔ duplicate dispatch → no-op (0.880416ms)
-✔ executeNexoraConversationalControl facade matches applicator (1.471459ms)
-✔ invariant X: no provider imports in CC:4 sources (6.561083ms)
-✔ bridge result is serializable (0.501542ms)
+✔ CC:4 identity and architectural boundary (1.877958ms)
+✔ Case 1 — focus-subject(obj-capacity) → Runtime focus + center (65.665167ms)
+✔ Case 2 — explicit conversation Budget beats Capacity attention (44.527917ms)
+✔ Case 3–5 — overview + navigation trail Back/Forward (26.368458ms)
+✔ Case 6 — compare-subjects unsupported (no compare engine) (4.6755ms)
+✔ Case 7 — analyze-subject routes to focus (Advisor derive) (12.386292ms)
+✔ Case 8 — simulate-scenario focuses scenario subject only (3.891834ms)
+✔ Case 9 — invalid target rejected atomically (0.250875ms)
+✔ Case 10 — confirmation-required does not execute (0.339875ms)
+✔ Click vs conversation converge on same focus authority (37.524625ms)
+✔ reveal-problems without anchor opens queue collection (1.153833ms)
+✔ reveal-problems with a restored anchor still presents the collection (0.713958ms)
+✔ reveal-goals unsupported (0.085959ms)
+✔ invariant A: CC:4 rejects raw language — accepts structured command only (0.120292ms)
+✔ invariant P/Q: failed dispatch does not mutate; confirmation gates (0.109041ms)
+✔ duplicate dispatch → no-op (0.759583ms)
+✔ duplicate command id still applies after Stage focus moved (0.842833ms)
+✔ executeNexoraConversationalControl facade matches applicator (0.54125ms)
+✔ invariant X: no provider imports in CC:4 sources (25.832666ms)
+✔ bridge result is serializable (1.29325ms)
 [WorkspaceRegistry][Init] {
   version: 'NW-A:1',
   workspaceCount: 1,
@@ -982,23 +983,23 @@
 }
 [WorkspaceRegistry][Mutation] {
   type: 'setActiveWorkspace',
-  activeWorkspaceId: 'conversational_risk_runtime_mtvvbgcb',
+  activeWorkspaceId: 'conversational_risk_runtime_mtxh5a4k',
   workspaceCount: 2
 }
 [ActiveWorkspace][Resolved] {
-  workspaceId: 'conversational_risk_runtime_mtvvbgcb',
+  workspaceId: 'conversational_risk_runtime_mtxh5a4k',
   workspaceName: 'Conversational Risk Runtime',
   status: 'active',
-  createdAt: '2026-09-10T18:35:51.799Z',
-  updatedAt: '2026-09-10T18:35:51.799Z',
-  lastOpenedAt: '2026-09-10T18:35:51.799Z',
+  createdAt: '2026-09-11T21:34:41.538Z',
+  updatedAt: '2026-09-11T21:34:41.538Z',
+  lastOpenedAt: '2026-09-11T21:34:41.538Z',
   domain: null,
   objectCount: 0,
   dataSourceCount: 0,
   metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
 }
 [WorkspaceLifecycle] Created Workspace {
-  workspaceId: 'conversational_risk_runtime_mtvvbgcb',
+  workspaceId: 'conversational_risk_runtime_mtxh5a4k',
   workspaceName: 'Conversational Risk Runtime'
 }
 [Topology][Flow] Generating flow layout
@@ -1038,8 +1039,8 @@
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
 [NexoraRiskFoundation] {
-  workspaceId: 'conversational_risk_runtime_mtvvbgcb',
-  riskId: 'wrisk_conversational_risk_runtime_mtvvbgcb_supplier_delay_2026_09_10t18_35_52_070z',
+  workspaceId: 'conversational_risk_runtime_mtxh5a4k',
+  riskId: 'wrisk_conversational_risk_runtime_mtxh5a4k_supplier_delay_2026_09_11t21_34_41_870z',
   action: 'created',
   tags: [
     '[DS61_RISK_FOUNDATION]',
@@ -1087,23 +1088,23 @@
 }
 [WorkspaceRegistry][Mutation] {
   type: 'setActiveWorkspace',
-  activeWorkspaceId: 'conversational_risk_runtime_mtvvbgkc',
+  activeWorkspaceId: 'conversational_risk_runtime_mtxh5ads',
   workspaceCount: 2
 }
 [ActiveWorkspace][Resolved] {
-  workspaceId: 'conversational_risk_runtime_mtvvbgkc',
+  workspaceId: 'conversational_risk_runtime_mtxh5ads',
   workspaceName: 'Conversational Risk Runtime',
   status: 'active',
-  createdAt: '2026-09-10T18:35:52.092Z',
-  updatedAt: '2026-09-10T18:35:52.092Z',
-  lastOpenedAt: '2026-09-10T18:35:52.092Z',
+  createdAt: '2026-09-11T21:34:41.872Z',
+  updatedAt: '2026-09-11T21:34:41.872Z',
+  lastOpenedAt: '2026-09-11T21:34:41.872Z',
   domain: null,
   objectCount: 0,
   dataSourceCount: 0,
   metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
 }
 [WorkspaceLifecycle] Created Workspace {
-  workspaceId: 'conversational_risk_runtime_mtvvbgkc',
+  workspaceId: 'conversational_risk_runtime_mtxh5ads',
   workspaceName: 'Conversational Risk Runtime'
 }
 [Topology][Flow] Generating flow layout
@@ -1178,23 +1179,23 @@
 }
 [WorkspaceRegistry][Mutation] {
   type: 'setActiveWorkspace',
-  activeWorkspaceId: 'conversational_risk_runtime_mtvvbglf',
+  activeWorkspaceId: 'conversational_risk_runtime_mtxh5afl',
   workspaceCount: 2
 }
 [ActiveWorkspace][Resolved] {
-  workspaceId: 'conversational_risk_runtime_mtvvbglf',
+  workspaceId: 'conversational_risk_runtime_mtxh5afl',
   workspaceName: 'Conversational Risk Runtime',
   status: 'active',
-  createdAt: '2026-09-10T18:35:52.131Z',
-  updatedAt: '2026-09-10T18:35:52.131Z',
-  lastOpenedAt: '2026-09-10T18:35:52.131Z',
+  createdAt: '2026-09-11T21:34:41.937Z',
+  updatedAt: '2026-09-11T21:34:41.937Z',
+  lastOpenedAt: '2026-09-11T21:34:41.937Z',
   domain: null,
   objectCount: 0,
   dataSourceCount: 0,
   metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
 }
 [WorkspaceLifecycle] Created Workspace {
-  workspaceId: 'conversational_risk_runtime_mtvvbglf',
+  workspaceId: 'conversational_risk_runtime_mtxh5afl',
   workspaceName: 'Conversational Risk Runtime'
 }
 [Topology][Flow] Generating flow layout
@@ -1252,8 +1253,8 @@
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
 [NexoraRiskFoundation] {
-  workspaceId: 'conversational_risk_runtime_mtvvbglf',
-  riskId: 'wrisk_conversational_risk_runtime_mtvvbglf_supplier_delay_2026_09_10t18_35_52_190z',
+  workspaceId: 'conversational_risk_runtime_mtxh5afl',
+  riskId: 'wrisk_conversational_risk_runtime_mtxh5afl_supplier_delay_2026_09_11t21_34_42_034z',
   action: 'created',
   tags: [
     '[DS61_RISK_FOUNDATION]',
@@ -1265,9 +1266,9 @@
   ],
   phase: 'DS-6:1'
 }
-✔ live orchestration binds proposal, confirms through canonical writer, and clears session state (285.884875ms)
-✔ cancel clears proposal and never writes a Risk (40.522583ms)
-✔ explanatory follow-up preserves the active proposal for its later confirmation (59.106958ms)
+✔ live orchestration binds proposal, confirms through canonical writer, and clears session state (334.946459ms)
+✔ cancel clears proposal and never writes a Risk (64.741333ms)
+✔ explanatory follow-up preserves the active proposal for its later confirmation (97.972625ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -1661,23 +1662,23 @@
 [Topology][Hub] Hub: Revenue
 [Topology][Hub] Satellites: 4
 [Topology][Hub] Connections: 4
-✔ CC:7 identity and boundary (0.906291ms)
-✔ 1: first successful subject establishes context (271.952167ms)
-✔ 2: second subject replaces current and pushes previous (143.068042ms)
-✔ 3: failed turn preserves context (84.444292ms)
-✔ 4: pronoun projection to CC:2 — Show its problems (66.221333ms)
-✔ 5: conversation → click → pronoun uses Capacity (41.62875ms)
-✔ 6: conversation → navigation Back → pronoun (31.623833ms)
-✔ 7–8: workspace transition + explicit subject after prepare (31.03275ms)
-✔ 9: automatic attention does not steal context (20.62ms)
-✔ 10–14: semantic slot updates by subject kind (0.531709ms)
-✔ 15–17: presented set + ordinal resolution / missing set fails (40.737083ms)
-✔ 18–19: bounded previous subjects and recent references (0.397ms)
-✔ 20: serialization (20.599333ms)
-✔ 21: CC:1–6 regression boundaries (0.079833ms)
-✔ 22–23: Stage click + navigation authorities unchanged (0.083625ms)
-✔ Sequence B: Focus Revenue → Focus Capacity → Show its problems (57.7145ms)
-✔ last command / runtime result recorded on success (16.444417ms)
+✔ CC:7 identity and boundary (2.100125ms)
+✔ 1: first successful subject establishes context (322.456375ms)
+✔ 2: second subject replaces current and pushes previous (126.453917ms)
+✔ 3: failed turn preserves context (107.547875ms)
+✔ 4: pronoun projection to CC:2 — Show its problems (66.856167ms)
+✔ 5: conversation → click → pronoun uses Capacity (104.758375ms)
+✔ 6: conversation → navigation Back → pronoun (35.970083ms)
+✔ 7–8: workspace transition + explicit subject after prepare (46.393917ms)
+✔ 9: automatic attention does not steal context (19.917833ms)
+✔ 10–14: semantic slot updates by subject kind (2.04025ms)
+✔ 15–17: presented set + ordinal resolution / missing set fails (38.823125ms)
+✔ 18–19: bounded previous subjects and recent references (6.11125ms)
+✔ 20: serialization (22.002583ms)
+✔ 21: CC:1–6 regression boundaries (0.15025ms)
+✔ 22–23: Stage click + navigation authorities unchanged (0.177834ms)
+✔ Sequence B: Focus Revenue → Focus Capacity → Show its problems (92.014834ms)
+✔ last command / runtime result recorded on success (18.917917ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -2164,70 +2165,70 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ identity + boundary (1.188584ms)
-✔ 1 preference-only (245.725917ms)
-✔ 2–3 explicit scenario commitment + approval (99.39825ms)
-✔ 4 ambiguous commitment (25.768375ms)
-✔ 5–7 confirmation required, yes, cancel (168.99475ms)
-✔ 8 stale confirmation on workspace change (49.272709ms)
-✔ 9 unsupported scenario (22.0395ms)
-✔ 10 partial scenario uncertainty preserved (10.93175ms)
-✔ 11 duplicate commitment idempotent against Runtime (27.538667ms)
-✔ 13 rejection does not delete scenario (26.503834ms)
-✔ 14–15 illegal / locked transition (12.654916ms)
-✔ 16 recommendation handoff (13.439958ms)
-✔ 17 scenario preference handoff (11.699584ms)
-✔ 19 approve this from current scenario (16.057791ms)
-✔ 20 workspace scope isolation for yes (23.819041ms)
-✔ 24–26 provenance + evidence/scenario preservation (7.866ms)
-✔ 30–31 no execution; compound defers execution (12.239458ms)
-✔ 28–29 no Stage/camera mutation via shouldCommitRuntime false (13.420125ms)
-✔ CC:10R identity + one canonical Runtime truth (5.883708ms)
-✔ pending confirmation does not mutate Runtime (9.8585ms)
-✔ empty decision session bootstrap (0.074583ms)
+✔ identity + boundary (1.211334ms)
+✔ 1 preference-only (264.261ms)
+✔ 2–3 explicit scenario commitment + approval (123.079208ms)
+✔ 4 ambiguous commitment (29.084583ms)
+✔ 5–7 confirmation required, yes, cancel (191.718083ms)
+✔ 8 stale confirmation on workspace change (72.522041ms)
+✔ 9 unsupported scenario (11.864125ms)
+✔ 10 partial scenario uncertainty preserved (13.248333ms)
+✔ 11 duplicate commitment idempotent against Runtime (40.986625ms)
+✔ 13 rejection does not delete scenario (33.652833ms)
+✔ 14–15 illegal / locked transition (17.673ms)
+✔ 16 recommendation handoff (25.879708ms)
+✔ 17 scenario preference handoff (19.743125ms)
+✔ 19 approve this from current scenario (11.964208ms)
+✔ 20 workspace scope isolation for yes (51.902417ms)
+✔ 24–26 provenance + evidence/scenario preservation (33.452042ms)
+✔ 30–31 no execution; compound defers execution (23.054875ms)
+✔ 28–29 no Stage/camera mutation via shouldCommitRuntime false (12.449542ms)
+✔ CC:10R identity + one canonical Runtime truth (20.156667ms)
+✔ pending confirmation does not mutate Runtime (29.144125ms)
+✔ empty decision session bootstrap (0.156375ms)
 ▶ CC:10R.1 Decision Runtime Full Debt Closure
-  ✔ phase identity + CC11_GATE OPEN only when all debts CLOSED (0.983625ms)
-  ✔ status serializer is pure projection (Under Review ↔ under-review) (0.206792ms)
-  ✔ writer authority: flowDomain Decision mutation requires canonical Runtime (0.688875ms)
-  ✔ DEBT-2: flowDomain projects from canonical Runtime (no dual truth) (0.91975ms)
-  ✔ UI / conversation transition equivalence on shared Runtime (0.19625ms)
-  ✔ locked Decision: UI and Conversation receive same rejection (0.192666ms)
-  ✔ DEBT-3: Stage catalog Decision status derives from flow projection (0.338084ms)
-  ✔ conversation Runtime → flowDomain projection → Stage essential status (0.247375ms)
-  ✔ provenance survives UI transition on shared Runtime record fields (0.808334ms)
-  ✔ no focus steal: Stage projection does not mutate interaction focus fields (1.031542ms)
-  ✔ EXS1 store adapter is thin port over live store (no mirror) (0.247875ms)
-  ✔ ApprovalBar product path uses adapter (source audit) (0.7035ms)
-  ✔ CC:10R remains green identity (0.04375ms)
-  ✔ hydration regression: Queue SSR gate source remains (0.269084ms)
-  ✔ no execution created by Decision approve path (0.152459ms)
-  ✔ projectCanonicalDecisionToFlowRecord maps lock separately (0.061917ms)
-✔ CC:10R.1 Decision Runtime Full Debt Closure (8.293875ms)
-✔ CC:11 identity boundary forbids parallel and external writers (1.409625ms)
-✔ minimal execution language stays distinct from Decision commitment (1.569459ms)
-✔ approved Decision creates and starts exactly one canonical Execution (1.203667ms)
-✔ non-approved and missing Decisions create nothing atomically (0.213792ms)
-✔ follow-up never invents progress, owner, blocker, milestone, or deadline (0.285917ms)
-✔ trusted execution evidence is read without conflating risks and blockers (0.307958ms)
-✔ illegal transition is atomic; completion/cancellation require confirmation (0.233708ms)
-✔ execution transitions never rewrite canonical Decision (0.168167ms)
-✔ why reads Decision and reconsider/scenario/recommend hand off (0.189959ms)
-✔ workspace/model scope mismatch cannot create a dangling execution (0.16125ms)
-✔ EXS1 UI and conversation converge through the live store adapter (0.565583ms)
-✔ identity boundary is historical/session-only and mutation-free (0.648042ms)
-✔ snapshot is immutable, canonical, deterministic, and ignores observedAt in fingerprint (0.46025ms)
-✔ first review captures baseline; compare-only reports no history (0.279917ms)
-✔ duplicate semantic snapshots are suppressed and no-change is concise (0.2ms)
-✔ status/blocker/risk recovery changes are factual without causality (0.167ms)
-✔ new blocker and blocked status derive critical attention (0.100875ms)
-✔ trusted progress delta and unknown-to-known remain distinct (0.154125ms)
-✔ unknown progress emits no progress change (0.072333ms)
-✔ owner, milestone, and deadline changes use canonical IDs/values (0.106042ms)
-✔ workspace/model histories are isolated (0.231459ms)
-✔ history bounds snapshots and executions (3.289125ms)
-✔ failed turn preserves memory and Runtime remains current truth (2.390208ms)
-✔ Advisor response renders through existing CC:5 message contract (0.567792ms)
-✔ handoffs preserve CC:8, CC:9, and CC:10 authorities (0.3085ms)
+  ✔ phase identity + CC11_GATE OPEN only when all debts CLOSED (0.93125ms)
+  ✔ status serializer is pure projection (Under Review ↔ under-review) (0.159458ms)
+  ✔ writer authority: flowDomain Decision mutation requires canonical Runtime (0.631833ms)
+  ✔ DEBT-2: flowDomain projects from canonical Runtime (no dual truth) (0.882ms)
+  ✔ UI / conversation transition equivalence on shared Runtime (0.168708ms)
+  ✔ locked Decision: UI and Conversation receive same rejection (0.34425ms)
+  ✔ DEBT-3: Stage catalog Decision status derives from flow projection (0.455125ms)
+  ✔ conversation Runtime → flowDomain projection → Stage essential status (0.240958ms)
+  ✔ provenance survives UI transition on shared Runtime record fields (0.915792ms)
+  ✔ no focus steal: Stage projection does not mutate interaction focus fields (0.209333ms)
+  ✔ EXS1 store adapter is thin port over live store (no mirror) (0.486625ms)
+  ✔ ApprovalBar product path uses adapter (source audit) (0.83ms)
+  ✔ CC:10R remains green identity (0.115875ms)
+  ✔ hydration regression: Queue SSR gate source remains (0.434333ms)
+  ✔ no execution created by Decision approve path (0.39475ms)
+  ✔ projectCanonicalDecisionToFlowRecord maps lock separately (0.143666ms)
+✔ CC:10R.1 Decision Runtime Full Debt Closure (9.452416ms)
+✔ CC:11 identity boundary forbids parallel and external writers (1.505375ms)
+✔ minimal execution language stays distinct from Decision commitment (1.6485ms)
+✔ approved Decision creates and starts exactly one canonical Execution (1.373875ms)
+✔ non-approved and missing Decisions create nothing atomically (0.228583ms)
+✔ follow-up never invents progress, owner, blocker, milestone, or deadline (0.283625ms)
+✔ trusted execution evidence is read without conflating risks and blockers (0.315708ms)
+✔ illegal transition is atomic; completion/cancellation require confirmation (0.239708ms)
+✔ execution transitions never rewrite canonical Decision (0.1655ms)
+✔ why reads Decision and reconsider/scenario/recommend hand off (0.18325ms)
+✔ workspace/model scope mismatch cannot create a dangling execution (0.32175ms)
+✔ EXS1 UI and conversation converge through the live store adapter (0.734958ms)
+✔ identity boundary is historical/session-only and mutation-free (1.474584ms)
+✔ snapshot is immutable, canonical, deterministic, and ignores observedAt in fingerprint (1.061417ms)
+✔ first review captures baseline; compare-only reports no history (0.660084ms)
+✔ duplicate semantic snapshots are suppressed and no-change is concise (0.463833ms)
+✔ status/blocker/risk recovery changes are factual without causality (0.439042ms)
+✔ new blocker and blocked status derive critical attention (0.271166ms)
+✔ trusted progress delta and unknown-to-known remain distinct (0.396083ms)
+✔ unknown progress emits no progress change (0.2325ms)
+✔ owner, milestone, and deadline changes use canonical IDs/values (0.398125ms)
+✔ workspace/model histories are isolated (0.697458ms)
+✔ history bounds snapshots and executions (2.906791ms)
+✔ failed turn preserves memory and Runtime remains current truth (0.151166ms)
+✔ Advisor response renders through existing CC:5 message contract (0.361625ms)
+✔ handoffs preserve CC:8, CC:9, and CC:10 authorities (0.262375ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -2629,37 +2630,37 @@
 [Topology][Hub] Hub: Capacity
 [Topology][Hub] Satellites: 5
 [Topology][Hub] Connections: 5
-✔ CC:8 identity and boundary (0.51ms)
-✔ 1: strong supported recommendation (Case A) (0.924958ms)
-✔ 2: weak-evidence investigate (Case B) (0.135875ms)
-✔ 3: no causal inference without relationship (Case C) (0.151958ms)
-✔ 4: insufficient evidence (Case D) (0.072ms)
-✔ 5: conflicting evidence (Case E) (0.115042ms)
-✔ 6: no-action recommendation (Case F) (0.105125ms)
-✔ 7: scenario-analysis-required handoff (Case G) (0.111958ms)
-✔ 8: explicit subject precedence (Case H) (417.472791ms)
-✔ 9: CC:7 context consumption (41.582417ms)
-✔ 10: click-updated context consumption (Case I) (69.900208ms)
-✔ 11: workspace-scoped reasoning (Case J) (40.040125ms)
-✔ 12: goal alignment (0.885292ms)
-✔ 13: problem alignment (0.36975ms)
-✔ 14: scenario reference-only handling (0.202333ms)
-✔ 15: decision reference-only handling (0.165083ms)
-✔ 16: execution reference-only handling (0.182458ms)
-✔ 17: evidence trace completeness (0.14625ms)
-✔ 18: deterministic recommendation output (0.343ms)
-✔ 19: confidence bounds (0.080417ms)
-✔ 20: trade-off serialization (0.088417ms)
-✔ 21: uncertainty serialization (0.054166ms)
-✔ 22: failed reasoning leaves Runtime untouched (65.52525ms)
-✔ 23: CC:1–7 regression boundaries (0.113375ms)
-✔ 24: Stage regression — recommendation does not mutate focus (24.755417ms)
-✔ 25: navigation regression (44.264542ms)
-✔ CC:1 recommend/explain intents (0.19125ms)
-✔ evidence assembler scopes to context (0.106125ms)
-✔ Advisor response reflects insufficient evidence (10.045625ms)
-✔ lastRecommendationId recorded on advisory success (33.475875ms)
-✔ Should we increase Capacity? hands off to scenario flag (32.120875ms)
+✔ CC:8 identity and boundary (1.042709ms)
+✔ 1: strong supported recommendation (Case A) (2.115ms)
+✔ 2: weak-evidence investigate (Case B) (0.311792ms)
+✔ 3: no causal inference without relationship (Case C) (0.331459ms)
+✔ 4: insufficient evidence (Case D) (0.149875ms)
+✔ 5: conflicting evidence (Case E) (0.246042ms)
+✔ 6: no-action recommendation (Case F) (0.234458ms)
+✔ 7: scenario-analysis-required handoff (Case G) (0.220792ms)
+✔ 8: explicit subject precedence (Case H) (476.85875ms)
+✔ 9: CC:7 context consumption (51.912458ms)
+✔ 10: click-updated context consumption (Case I) (126.140583ms)
+✔ 11: workspace-scoped reasoning (Case J) (72.636625ms)
+✔ 12: goal alignment (0.29425ms)
+✔ 13: problem alignment (0.197833ms)
+✔ 14: scenario reference-only handling (0.144958ms)
+✔ 15: decision reference-only handling (0.138125ms)
+✔ 16: execution reference-only handling (0.098292ms)
+✔ 17: evidence trace completeness (0.16975ms)
+✔ 18: deterministic recommendation output (6.527ms)
+✔ 19: confidence bounds (0.483458ms)
+✔ 20: trade-off serialization (0.251583ms)
+✔ 21: uncertainty serialization (0.149958ms)
+✔ 22: failed reasoning leaves Runtime untouched (175.037ms)
+✔ 23: CC:1–7 regression boundaries (0.867583ms)
+✔ 24: Stage regression — recommendation does not mutate focus (77.349417ms)
+✔ 25: navigation regression (72.624833ms)
+✔ CC:1 recommend/explain intents (0.817625ms)
+✔ evidence assembler scopes to context (0.363083ms)
+✔ Advisor response reflects insufficient evidence (13.543959ms)
+✔ lastRecommendationId recorded on advisory success (47.159875ms)
+✔ Should we increase Capacity? hands off to scenario flag (74.534875ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -2948,29 +2949,29 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ CC:9 identity and boundary (0.996458ms)
-✔ 1–2: define and evaluate do-nothing with horizon (1.898291ms)
-✔ 3: percentage intervention Capacity +15% (1.976875ms)
-✔ 4: unsupported variable (0.554541ms)
-✔ 5–7: modify scenario revision identity (0.524ms)
-✔ 6: add second assumption (0.481125ms)
-✔ 8–9: compare and explain preference (0.936625ms)
-✔ 10: downside query (0.182333ms)
-✔ 11: missing horizon clarification (0.075ms)
-✔ 12: partial evaluation (0.170209ms)
-✔ 13: insufficient data compare (0.049917ms)
-✔ 14: baseline preservation across evaluations (0.941667ms)
-✔ 15–17: integration — explicit subject, context, click pronoun (352.517959ms)
-✔ 18–20: workspace isolation + presented set + ordinal (0.347333ms)
-✔ 21: failed turn preserves scenario session (82.954125ms)
-✔ 22–24: no decision/execution/stage mutation on scenario (132.790333ms)
-✔ 25: CC:1–8 regression boundaries (0.101083ms)
-✔ 26–27: Stage + navigation regression (70.459375ms)
-✔ Case C integration: unsupported advertising (29.676292ms)
-✔ Case I integration: do nothing without horizon remains qualitative (9.970417ms)
-✔ Case L: Choose Scenario B routes to CC:10 Decision Commitment (24.855166ms)
-✔ Case A integration: do nothing with horizon (13.996584ms)
-✔ modify make it 15% via conversation (23.25125ms)
+✔ CC:9 identity and boundary (0.892292ms)
+✔ 1–2: define and evaluate do-nothing with horizon (1.705833ms)
+✔ 3: percentage intervention Capacity +15% (1.708625ms)
+✔ 4: unsupported variable (0.447834ms)
+✔ 5–7: modify scenario revision identity (0.488583ms)
+✔ 6: add second assumption (0.6305ms)
+✔ 8–9: compare and explain preference (1.124209ms)
+✔ 10: downside query (0.314958ms)
+✔ 11: missing horizon clarification (0.148583ms)
+✔ 12: partial evaluation (0.3375ms)
+✔ 13: insufficient data compare (0.096125ms)
+✔ 14: baseline preservation across evaluations (0.281542ms)
+✔ 15–17: integration — explicit subject, context, click pronoun (475.169375ms)
+✔ 18–20: workspace isolation + presented set + ordinal (0.707ms)
+✔ 21: failed turn preserves scenario session (76.137125ms)
+✔ 22–24: no decision/execution/stage mutation on scenario (71.587625ms)
+✔ 25: CC:1–8 regression boundaries (0.220416ms)
+✔ 26–27: Stage + navigation regression (120.53725ms)
+✔ Case C integration: unsupported advertising (79.471ms)
+✔ Case I integration: do nothing without horizon remains qualitative (65.721583ms)
+✔ Case L: Choose Scenario B routes to CC:10 Decision Commitment (37.916375ms)
+✔ Case A integration: do nothing with horizon (46.709458ms)
+✔ modify make it 15% via conversation (35.116584ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -3599,23 +3600,23 @@
 [Topology][Hub] Hub: Capacity
 [Topology][Hub] Satellites: 5
 [Topology][Hub] Connections: 5
-✔ FIX1 reproduce: misspelled inventory what-if is not unknown (315.312584ms)
-✔ A — Inventory increase what-if is Scenario intent (41.911167ms)
-✔ B — Inventory increases phrasing (33.236459ms)
-✔ C — increase it resolves Inventory from unique context (163.417541ms)
-✔ D — Capacity decrease is not Inventory-specialized (62.190042ms)
-✔ E — Margin improves routes as What-If where supported (47.305625ms)
-✔ F — missing magnitude does not invent a numeric change (37.391458ms)
-✔ G — supplied 10% is preserved (21.956875ms)
-✔ H — unsupported subject/change is honest, not generic fallback (30.302ms)
-✔ I — ambiguous context does not guess a subject (16.02625ms)
-✔ J — Explain Inventory remains explanation (31.162417ms)
-✔ K — decision question is not Scenario intent (41.14375ms)
-✔ L — execution question is not Scenario intent (30.508334ms)
-✔ M — current KPI question is not Scenario simulation (35.705542ms)
-✔ N — scenario result does not invent causal proof (34.590333ms)
-✔ O — scenario prediction is not Reality / Actual Outcome / Learning (23.410375ms)
-✔ FIX1 architecture: no Inventory-only hardcoding in production routing (1.421084ms)
+✔ FIX1 reproduce: misspelled inventory what-if is not unknown (440.578041ms)
+✔ A — Inventory increase what-if is Scenario intent (56.072666ms)
+✔ B — Inventory increases phrasing (85.805167ms)
+✔ C — increase it resolves Inventory from unique context (105.947042ms)
+✔ D — Capacity decrease is not Inventory-specialized (141.85525ms)
+✔ E — Margin improves routes as What-If where supported (65.844667ms)
+✔ F — missing magnitude does not invent a numeric change (47.542916ms)
+✔ G — supplied 10% is preserved (44.800208ms)
+✔ H — unsupported subject/change is honest, not generic fallback (52.690208ms)
+✔ I — ambiguous context does not guess a subject (25.248917ms)
+✔ J — Explain Inventory remains explanation (32.231833ms)
+✔ K — decision question is not Scenario intent (69.038334ms)
+✔ L — execution question is not Scenario intent (75.598875ms)
+✔ M — current KPI question is not Scenario simulation (46.975917ms)
+✔ N — scenario result does not invent causal proof (75.685875ms)
+✔ O — scenario prediction is not Reality / Actual Outcome / Learning (63.927416ms)
+✔ FIX1 architecture: no Inventory-only hardcoding in production routing (1.082583ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -4125,22 +4126,22 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ A — What is Demand Surge Scenario is named Scenario explanation (219.900125ms)
-✔ B — follow-up What-If preserves Demand Surge (56.105667ms)
-✔ C — misspelling delivery be late is recognized (34.041375ms)
-✔ D — Stage/conversation Scenario context then delayed Delivery (29.936334ms)
-✔ E — conversational name only, no Stage click (29.066875ms)
-✔ F — no Scenario context does not invent Demand Surge (6.233042ms)
-✔ G — ambiguous previous Scenarios are not guessed (96.766417ms)
-✔ H — What happened remains Outcome path (79.705917ms)
-✔ I — What happened if Delivery is late is Scenario (9.754292ms)
-✔ J — unsupported Delivery delay is honest (18.750083ms)
-✔ K — supported modifier still evaluates CC:9 (99.412875ms)
-✔ L/M — no invented delay magnitude; 2 days does not become Demand Surge (24.780875ms)
-✔ N — What risk does that create stays on Scenario (29.577708ms)
-✔ O — How sure are you uses Scenario confidence, not Outcome (28.557458ms)
-✔ P — Compare it with Pricing Response uses Scenario comparison (12.591333ms)
-✔ Q-W — explanation is not Reality; no mutations (11.234333ms)
+✔ A — What is Demand Surge Scenario is named Scenario explanation (354.576708ms)
+✔ B — follow-up What-If preserves Demand Surge (147.167375ms)
+✔ C — misspelling delivery be late is recognized (131.299125ms)
+✔ D — Stage/conversation Scenario context then delayed Delivery (16.962833ms)
+✔ E — conversational name only, no Stage click (47.129583ms)
+✔ F — no Scenario context does not invent Demand Surge (18.383ms)
+✔ G — ambiguous previous Scenarios are not guessed (59.085416ms)
+✔ H — What happened remains Outcome path (40.698708ms)
+✔ I — What happened if Delivery is late is Scenario (12.680083ms)
+✔ J — unsupported Delivery delay is honest (29.616917ms)
+✔ K — supported modifier still evaluates CC:9 (143.616292ms)
+✔ L/M — no invented delay magnitude; 2 days does not become Demand Surge (65.93625ms)
+✔ N — What risk does that create stays on Scenario (85.314334ms)
+✔ O — How sure are you uses Scenario confidence, not Outcome (60.63775ms)
+✔ P — Compare it with Pricing Response uses Scenario comparison (36.003417ms)
+✔ Q-W — explanation is not Reality; no mutations (19.758291ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -4429,16 +4430,16 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ grammar converges late/delayed variants onto delay without magnitude (36.708583ms)
-✔ show delivery then what if delivery be too late is recognized unsupported (273.535375ms)
-✔ what if it be too late resolves Delivery from current subject (78.051208ms)
-✔ explicit subject beats current Delivery context (71.826666ms)
-✔ capacity too low is understood and may evaluate the modeled subject (12.059583ms)
-✔ revenue / margin / risk state changes are recognized (71.110625ms)
-✔ unknown adjective is genuine fallback, not unsupported-model (18.278375ms)
-✔ deictic too late without context does not invent Delivery (11.940792ms)
-✔ numeric magnitude is preserved; qualitative intensity is not numeric (20.190417ms)
-✔ FIX3 architecture is not a Delivery sentence whitelist (0.633167ms)
+✔ grammar converges late/delayed variants onto delay without magnitude (20.024208ms)
+✔ show delivery then what if delivery be too late is recognized unsupported (376.525791ms)
+✔ what if it be too late resolves Delivery from current subject (111.882083ms)
+✔ explicit subject beats current Delivery context (53.323125ms)
+✔ capacity too low is understood and may evaluate the modeled subject (13.724417ms)
+✔ revenue / margin / risk state changes are recognized (75.990875ms)
+✔ unknown adjective is genuine fallback, not unsupported-model (22.276958ms)
+✔ deictic too late without context does not invent Delivery (28.719875ms)
+✔ numeric magnitude is preserved; qualitative intensity is not numeric (32.995125ms)
+✔ FIX3 architecture is not a Delivery sentence whitelist (1.190167ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -4783,16 +4784,16 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ A/B — Delivery severe delay reaches grounded impact (236.30025ms)
-✔ C/D — only canonical own-KPI is returned; Customer/Revenue omitted (31.256666ms)
-✔ E/F — no fabricated magnitude; too remains qualitative (14.767041ms)
-✔ O/P — Inventory increase uses the same architecture and stays unsupported (44.591458ms)
-✔ Q — Capacity intervention still evaluates (45.383584ms)
-✔ V-Z — follow-ups preserve Scenario impact context (109.085083ms)
-✔ AA — same input is deterministic (24.011917ms)
-✔ AB/AC — no subject-specific hardcoded branches (0.589208ms)
-✔ AD — unknown adjective remains genuine fallback (8.046542ms)
-✔ assessment delay without presentation KPI is unsupported (0.113458ms)
+✔ A/B — Delivery severe delay reaches grounded impact (308.701875ms)
+✔ C/D — only canonical own-KPI is returned; Customer/Revenue omitted (27.142541ms)
+✔ E/F — no fabricated magnitude; too remains qualitative (13.864542ms)
+✔ O/P — Inventory increase uses the same architecture and stays unsupported (42.384584ms)
+✔ Q — Capacity intervention still evaluates (64.433958ms)
+✔ V-Z — follow-ups preserve Scenario impact context (154.899208ms)
+✔ AA — same input is deterministic (22.736375ms)
+✔ AB/AC — no subject-specific hardcoded branches (1.302875ms)
+✔ AD — unknown adjective remains genuine fallback (13.029083ms)
+✔ assessment delay without presentation KPI is unsupported (0.247959ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -5289,32 +5290,42 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ A — explain Demand Surge is Scenario explanation first (248.904167ms)
-✔ B — what is Demand Surge is Scenario explanation (32.832625ms)
-✔ C — describe Demand Surge is Scenario explanation (20.859667ms)
-✔ D — tell me about Demand Surge is Scenario explanation (20.436583ms)
-✔ E — show Delivery then explain Demand Surge keeps explicit Scenario (70.503792ms)
-✔ F — what could be affected? continues the Scenario (30.431917ms)
-✔ G — what risks? uses existing Risk/Scenario authority (37.59175ms)
-✔ H — how sure are you? stays epistemic (20.416958ms)
-✔ I — why? is grounded explanation without causal invention (24.994458ms)
-✔ J — what do you recommend? after explain uses recommendation authority (37.368875ms)
-✔ K — what do you recommend about Demand Surge is recommendation-first (4.886333ms)
-✔ L — should we prioritize Demand Surge is CORE-INT:4 priority path (7.188417ms)
-✔ M — trade-offs of Demand Surge is not Scenario describe (17.742958ms)
-✔ N — what happened with Demand Surge is not Scenario explain (5.597125ms)
-✔ O — what happens if demand increases remains What-If (10.867041ms)
-✔ P — FIX4 delivery too late remains green (23.024292ms)
-✔ Q — explain Purple Dragon is honest not-found (9.022084ms)
-✔ R — weak-evidence Scenario explanation preserves uncertainty (13.5175ms)
-✔ S — Scenario explanation does not claim causal proof (8.575084ms)
-✔ T — Scenario explanation does not mutate Decision/Execution/Runtime (11.40725ms)
-✔ invariants — explain ≠ recommend/prioritize at the resolver (0.245042ms)
-✔ multi-member Problems remain one canonical collection through Stage (16.974666ms)
-✔ scenario, decision and execution membership is generic and exact (3.148625ms)
-✔ one-member Risk preserves collection semantics and empty collections do not invent objects (0.750167ms)
-✔ already-satisfied collection is stable and a collection supersedes stale focus (0.729792ms)
-✔ explain, workspace, capability, assertion and social turns are NO_CHANGE (5.193667ms)
+✔ A — explain Demand Surge is Scenario explanation first (284.174833ms)
+✔ B — what is Demand Surge is Scenario explanation (47.355417ms)
+✔ C — describe Demand Surge is Scenario explanation (42.221041ms)
+✔ D — tell me about Demand Surge is Scenario explanation (22.596834ms)
+✔ E — show Delivery then explain Demand Surge keeps explicit Scenario (92.607583ms)
+✔ F — what could be affected? continues the Scenario (114.30075ms)
+✔ G — what risks? uses existing Risk/Scenario authority (45.3165ms)
+✔ H — how sure are you? stays epistemic (38.633833ms)
+✔ I — why? is grounded explanation without causal invention (19.686917ms)
+✔ J — what do you recommend? after explain uses recommendation authority (33.231541ms)
+✔ K — what do you recommend about Demand Surge is recommendation-first (10.478542ms)
+✔ L — should we prioritize Demand Surge is CORE-INT:4 priority path (10.863708ms)
+✔ M — trade-offs of Demand Surge is not Scenario describe (12.902292ms)
+✔ N — what happened with Demand Surge is not Scenario explain (12.725375ms)
+✔ O — what happens if demand increases remains What-If (13.00625ms)
+✔ P — FIX4 delivery too late remains green (41.583334ms)
+✔ Q — explain Purple Dragon is honest not-found (17.890917ms)
+✔ R — weak-evidence Scenario explanation preserves uncertainty (11.292417ms)
+✔ S — Scenario explanation does not claim causal proof (10.10825ms)
+✔ T — Scenario explanation does not mutate Decision/Execution/Runtime (14.156875ms)
+✔ invariants — explain ≠ recommend/prioritize at the resolver (0.543ms)
+✔ continuity is the resolved composition subject when present (1.258292ms)
+✔ deictic explain of a Problem is stale Scenario capture (0.407084ms)
+✔ how sure remains a Scenario operation but cannot capture a newer Object (0.670666ms)
+✔ how sure continues an active Scenario when no newer conversation subject owns the turn (0.16475ms)
+✔ named Scenario explain is not blocked (0.083875ms)
+✔ resolved Scenario deictic explain is not stale (0.089584ms)
+✔ stale Scenario cannot capture Risk evidence or uncertainty follow-ups (0.380417ms)
+✔ deictic tell me more of a Problem is stale Scenario capture (0.077167ms)
+✔ different Scenario ids are not interchangeable composition subjects (0.237167ms)
+✔ incompatible Scenario candidate cannot be the composition subject (0.180666ms)
+✔ multi-member Problems remain one canonical collection through Stage (16.03775ms)
+✔ scenario, decision and execution membership is generic and exact (16.212375ms)
+✔ one-member Risk preserves collection semantics and empty collections do not invent objects (1.270375ms)
+✔ already-satisfied collection is stable and a collection supersedes stale focus (1.252167ms)
+✔ explain, workspace, capability, assertion and social turns are NO_CHANGE (5.82575ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -5645,16 +5656,16 @@
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
 ▶ NXA:1 Executive Decision Advisor contract
-  ✔ declares one policy identity over existing authorities (1.011542ms)
-  ✔ knowledge need outranks recognized object and does not navigate (181.169916ms)
-  ✔ explicit navigation remains authorized (56.935958ms)
-  ✔ pronoun follow-up preserves Delivery (61.187208ms)
-  ✔ investigation and advice preserve evidence limits (85.460625ms)
-  ✔ rejects unsupported causal certainty (59.701333ms)
-  ✔ teaches how Nexora helps without architecture leakage (33.8815ms)
-  ✔ keeps the active Problem collection for prioritization (42.661417ms)
-  ✔ is generic across registered executive objects (26.049416ms)
-✔ NXA:1 Executive Decision Advisor contract (549.303208ms)
+  ✔ declares one policy identity over existing authorities (0.733416ms)
+  ✔ knowledge need outranks recognized object and does not navigate (283.243792ms)
+  ✔ explicit navigation remains authorized (73.507291ms)
+  ✔ pronoun follow-up preserves Delivery (98.193333ms)
+  ✔ investigation and advice preserve evidence limits (87.440542ms)
+  ✔ rejects unsupported causal certainty (58.177875ms)
+  ✔ teaches how Nexora helps without architecture leakage (53.523416ms)
+  ✔ keeps the active Problem collection for prioritization (59.959125ms)
+  ✔ is generic across registered executive objects (42.738ms)
+✔ NXA:1 Executive Decision Advisor contract (758.819541ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -6188,20 +6199,20 @@
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
 ▶ NXA:2 Executive Conversation Guidance
-  ✔ is a policy projection over existing authorities (0.362125ms)
-  ✔ A direct knowledge question selects ANSWER without a question (194.183208ms)
-  ✔ B vague performance goal asks one high-value goal question (48.756666ms)
-  ✔ C existing Delivery target is used and not requested again (55.265083ms)
-  ✔ D advice is contextual and actionable (36.796125ms)
-  ✔ E unsupported certainty selects CHALLENGE and preserves authority (29.871709ms)
-  ✔ F explicit manager override is respected (16.793791ms)
-  ✔ G Why deepens advice without resetting the recommendation (49.538167ms)
-  ✔ H manager uncertainty selects contextual GUIDE (21.153292ms)
-  ✔ I contextual education teaches through the active object (22.010417ms)
-  ✔ J closure selects WAIT without workflow pressure (23.033333ms)
-  ✔ K readiness stays behind existing commitment authority (33.780959ms)
-  ✔ L guidance remains object-generic (33.599875ms)
-✔ NXA:2 Executive Conversation Guidance (566.029875ms)
+  ✔ is a policy projection over existing authorities (0.742375ms)
+  ✔ A direct knowledge question selects ANSWER without a question (244.8755ms)
+  ✔ B vague performance goal asks one high-value goal question (73.563417ms)
+  ✔ C existing Delivery target is used and not requested again (93.60175ms)
+  ✔ D advice is contextual and actionable (55.033209ms)
+  ✔ E unsupported certainty selects CHALLENGE and preserves authority (59.475583ms)
+  ✔ F explicit manager override is respected (38.439709ms)
+  ✔ G Why deepens advice without resetting the recommendation (80.688667ms)
+  ✔ H manager uncertainty selects contextual GUIDE (40.10675ms)
+  ✔ I contextual education teaches through the active object (29.5765ms)
+  ✔ J closure selects WAIT without workflow pressure (31.158833ms)
+  ✔ K readiness stays behind existing commitment authority (50.890333ms)
+  ✔ L guidance remains object-generic (49.906125ms)
+✔ NXA:2 Executive Conversation Guidance (849.534ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -6217,15 +6228,17 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
-[Topology][Flow] Generating flow layout
-[Topology][Flow] Nodes: 2
-[Topology][Flow] Connections: 1
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
-[Topology][Flow] Generating flow layout
-[Topology][Flow] Nodes: 2
-[Topology][Flow] Connections: 1
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -6769,45 +6782,45 @@
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
 ▶ NXA:3 Executive Situation
-  ✔ is a derived read model with no shadow authority (0.469125ms)
-  ✔ A preserves Goal awareness and causal uncertainty (271.559416ms)
-  ✔ B maintains one cross-turn investigation situation (88.953541ms)
-  ✔ C uses known current and target values (34.666458ms)
-  ✔ D invalidates advice when later manager evidence weakens its premise (33.627208ms)
-  ✔ E manager override becomes current direction and recovery (26.478833ms)
-  ✔ I preserves manager assertion separately from validated evidence (31.217375ms)
-  ✔ J explicit topic shift invalidates old active focus (24.892375ms)
-  ✔ K context recovery is compressed rather than a transcript dump (30.430791ms)
-  ✔ L composes the same situation model across categories (29.791375ms)
-✔ NXA:3 Executive Situation (572.935792ms)
-✔ NXA:4 boundary is a composition policy, not a duplicate authority (2.628542ms)
-✔ A material KPI deterioration linked to the Goal speaks without inventing cause (1.212292ms)
-✔ Noise and process-only state are intelligent silence (0.624416ms)
-✔ An unchanged prior intervention is suppressed but material deterioration re-evaluates (0.567ms)
-✔ Manager override and high-value focus defer ordinary interruption, not critical escalation (0.523291ms)
-✔ Decision premise invalidation and execution blocker escalate without mutating CC truth (0.676292ms)
-✔ Positive and partial Outcomes preserve causal uncertainty (0.142625ms)
-✔ A material Opportunity can speak; weak evidence defers and cannot warn confidently (0.0745ms)
-✔ Generic policy covers Problem, Risk, Decision, Execution, and Outcome families (0.11025ms)
-✔ Monitoring response is honest when no runtime monitoring exists (0.104792ms)
-✔ boundary composes existing authorities without score or mutation (1.121708ms)
-✔ problem priority prefers reversible Goal-relevant learning and distinguishes magnitude (0.17225ms)
-✔ unsupported overall importance refuses a fake magnitude and offers an explicit-criterion continuation (0.9255ms)
-✔ unsupported risk criterion does not suggest the same failed criterion again (7.598583ms)
-✔ requested risk criterion uses risk evidence instead of default Goal fit (0.120084ms)
-✔ reversibility protects against premature irreversible action (0.100541ms)
-✔ weak evidence changes recommendation from action to investigation (0.069ms)
-✔ strong supported reversible recommendation can act without endless analysis (0.068958ms)
-✔ decision readiness distinguishes NOT_READY, READY_WITH_KNOWN_UNCERTAINTY, and READY (0.142167ms)
-✔ specific change condition makes recommendation falsifiable (0.107125ms)
-✔ new contradictory evidence revises recommendation without defending stale advice (0.085958ms)
-✔ manager preference influences judgment without becoming evidence (0.074166ms)
-✔ genuine tie produces conditional judgment and no fake winner (0.079792ms)
-✔ candidate set integrity excludes unrelated high-attention candidate (0.045584ms)
-✔ priority is deterministic and stable under irrelevant context changes (0.235875ms)
-✔ generic judgment types share one architecture (0.275125ms)
-✔ unknown Goal context never invents Goal relevance (0.272ms)
-✔ missing Goal context produces Goal-specific insufficiency and a safe continuation (0.206ms)
+  ✔ is a derived read model with no shadow authority (0.826083ms)
+  ✔ A preserves Goal awareness and causal uncertainty (391.520542ms)
+  ✔ B maintains one cross-turn investigation situation (139.701792ms)
+  ✔ C uses known current and target values (41.097208ms)
+  ✔ D invalidates advice when later manager evidence weakens its premise (40.715584ms)
+  ✔ E manager override becomes current direction and recovery (42.558083ms)
+  ✔ I preserves manager assertion separately from validated evidence (35.143542ms)
+  ✔ J explicit topic shift invalidates old active focus (48.633959ms)
+  ✔ K context recovery is compressed rather than a transcript dump (59.117291ms)
+  ✔ L composes the same situation model across categories (52.11925ms)
+✔ NXA:3 Executive Situation (852.75825ms)
+✔ NXA:4 boundary is a composition policy, not a duplicate authority (1.46825ms)
+✔ A material KPI deterioration linked to the Goal speaks without inventing cause (1.411458ms)
+✔ Noise and process-only state are intelligent silence (0.490042ms)
+✔ An unchanged prior intervention is suppressed but material deterioration re-evaluates (0.5595ms)
+✔ Manager override and high-value focus defer ordinary interruption, not critical escalation (0.474083ms)
+✔ Decision premise invalidation and execution blocker escalate without mutating CC truth (0.42175ms)
+✔ Positive and partial Outcomes preserve causal uncertainty (0.29425ms)
+✔ A material Opportunity can speak; weak evidence defers and cannot warn confidently (0.264417ms)
+✔ Generic policy covers Problem, Risk, Decision, Execution, and Outcome families (0.344375ms)
+✔ Monitoring response is honest when no runtime monitoring exists (0.265208ms)
+✔ boundary composes existing authorities without score or mutation (2.89225ms)
+✔ problem priority prefers reversible Goal-relevant learning and distinguishes magnitude (0.392708ms)
+✔ unsupported overall importance refuses a fake magnitude and offers an explicit-criterion continuation (0.844208ms)
+✔ unsupported risk criterion does not suggest the same failed criterion again (14.100834ms)
+✔ requested risk criterion uses risk evidence instead of default Goal fit (0.317875ms)
+✔ reversibility protects against premature irreversible action (0.355958ms)
+✔ weak evidence changes recommendation from action to investigation (0.206417ms)
+✔ strong supported reversible recommendation can act without endless analysis (0.211ms)
+✔ decision readiness distinguishes NOT_READY, READY_WITH_KNOWN_UNCERTAINTY, and READY (0.385959ms)
+✔ specific change condition makes recommendation falsifiable (0.772125ms)
+✔ new contradictory evidence revises recommendation without defending stale advice (0.382625ms)
+✔ manager preference influences judgment without becoming evidence (0.206ms)
+✔ genuine tie produces conditional judgment and no fake winner (0.191875ms)
+✔ candidate set integrity excludes unrelated high-attention candidate (0.1135ms)
+✔ priority is deterministic and stable under irrelevant context changes (0.129833ms)
+✔ generic judgment types share one architecture (0.168667ms)
+✔ unknown Goal context never invents Goal relevance (0.173ms)
+✔ missing Goal context produces Goal-specific insufficiency and a safe continuation (0.2715ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -7294,21 +7307,21 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ Advisor and Queue converge on the same canonical collection presentation (280.032042ms)
-✔ Advisor still presents supported one-member Risks without inventing Queue parity (14.796208ms)
-✔ latest explicit command wins across focus and collection transitions (51.952792ms)
-✔ knowledge and judgment turns do not mutate the presented collection (49.731375ms)
-✔ Stage readback follows the post-command collection and remains read-only (19.943041ms)
-✔ collection trail preserves Back and Forward semantics (12.131834ms)
-✔ rapid generic collection transitions have one deterministic last writer (37.863166ms)
-✔ restored conversational subject cannot collapse an explicit collection command (14.5125ms)
-✔ unfiltered collection commands do not inherit a restored primary target (0.322958ms)
-✔ knowledge questions do not present a collection after restored focus (9.193458ms)
-✔ duplicate running starts are not recorded (1.130333ms)
-✔ CERTIFIED barrier requires finished inspected passing required tasks (0.21ms)
-✔ a long-lived nonessential task does not block certification (0.080834ms)
-✔ diagnosis never authorizes a Fix on the record itself (0.721959ms)
-✔ insufficient evidence cannot begin a Fix (0.130667ms)
+✔ Advisor and Queue converge on the same canonical collection presentation (416.628167ms)
+✔ Advisor still presents supported one-member Risks without inventing Queue parity (15.014708ms)
+✔ latest explicit command wins across focus and collection transitions (65.266208ms)
+✔ knowledge and judgment turns do not mutate the presented collection (76.729667ms)
+✔ Stage readback follows the post-command collection and remains read-only (38.175834ms)
+✔ collection trail preserves Back and Forward semantics (11.135375ms)
+✔ rapid generic collection transitions have one deterministic last writer (53.287042ms)
+✔ restored conversational subject cannot collapse an explicit collection command (22.767917ms)
+✔ unfiltered collection commands do not inherit a restored primary target (0.557708ms)
+✔ knowledge questions do not present a collection after restored focus (13.277459ms)
+✔ duplicate running starts are not recorded (2.119333ms)
+✔ CERTIFIED barrier requires finished inspected passing required tasks (0.47425ms)
+✔ a long-lived nonessential task does not block certification (0.197417ms)
+✔ diagnosis never authorizes a Fix on the record itself (0.827792ms)
+✔ insufficient evidence cannot begin a Fix (0.162167ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -8245,11 +8258,11 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ certified seed cases pass in deterministic order (515.608875ms)
-✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (7.005125ms)
-✔ response failure is distinct from Stage-effect failure (5.019041ms)
-✔ harness uses isolated runtime state per case (8.447667ms)
-✔ funnel catalog has four levels, no skips, and Level 4 is last (0.1425ms)
+✔ certified seed cases pass in deterministic order (900.202583ms)
+✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (8.386709ms)
+✔ response failure is distinct from Stage-effect failure (8.154ms)
+✔ harness uses isolated runtime state per case (17.426167ms)
+✔ funnel catalog has four levels, no skips, and Level 4 is last (0.232209ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -8268,14 +8281,14 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ conversation path scope is quiet until explicitly enabled (0.593ms)
-✔ path projection reads existing Stage and DIR results without a second store (145.026375ms)
-ℹ tests 426
+✔ conversation path scope is quiet until explicitly enabled (1.142458ms)
+✔ path projection reads existing Stage and DIR results without a second store (220.906209ms)
+ℹ tests 437
 ℹ suites 4
-ℹ pass 426
+ℹ pass 437
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 4721.306875
+ℹ duration_ms 6705.541292
 

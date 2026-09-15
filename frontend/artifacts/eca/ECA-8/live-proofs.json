@@ -1,8 +1,9 @@
 {
   "identity": "NPA-T ECA:8/live-proofs",
-  "url": "http://localhost:3023/executive?reset=1",
+  "url": "http://localhost:3000/executive?reset=1",
   "errors": [],
-  "1-preference-safety": {
+  "pageErrors": 0,
+  "1-preference-without-commitment": {
     "pass": true,
     "actual": {
       "baseline": {
@@ -10,6 +11,7 @@
         "action": "none",
         "readiness": "none",
         "decisionReadiness": "none",
+        "option": "none",
         "writes7": "false",
         "state": "none",
         "resolution": "none",
@@ -23,15 +25,16 @@
         "executionCount": "0"
       },
       "prefer": {
-        "utterance": "I prefer Scenario A.",
-        "reply": "NexoraPreference noted — no Decision committed. Scenario A is your current preference. It has not been committed as a Decision.",
+        "utterance": "I prefer Demand Surge.",
+        "reply": "NexoraPreference noted — no Decision committed. That is a preference, not a Decision.",
         "intent": "UNKNOWN",
         "action": "ASK_CLARIFICATION",
         "readiness": "NOT_READY",
         "decisionReadiness": "NOT_READY",
+        "option": "none",
         "writes7": "false",
         "state": "PREFERENCE",
-        "resolution": "RESOLVED",
+        "resolution": "UNKNOWN",
         "challenge": "NONE",
         "confirmation": "false",
         "handoff": "false",
@@ -43,126 +46,18 @@
       }
     }
   },
-  "2-explicit-commitment": {
+  "2-ready-with-conditions-challenge": {
     "pass": true,
     "actual": {
-      "utterance": "Choose Scenario A.",
-      "reply": "NexoraWhich option do you want to commit to? You’re choosing Scenario A. Confirm it as the Decision? Scenario A was not Nexora’s recommendation. The strongest argument for permanent expansion is that temporary capacity may become more expensive if demand stays elevated longer than expected.",
+      "utterance": "Choose Demand Surge.",
+      "reply": "NexoraDemand Surge is now the Approved decision. That option is already the committed Decision.",
       "intent": "COMMIT_DECISION",
       "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
-      "readiness": "READY",
-      "decisionReadiness": "READY_WITH_CONDITIONS",
-      "writes7": "false",
-      "state": "EXPLICIT_COMMITMENT",
-      "resolution": "RESOLVED",
-      "challenge": "NONE",
-      "confirmation": "true",
-      "handoff": "false",
-      "writes8": "false",
-      "secondWriter": "false",
-      "startsExecution": "false",
-      "decisionCount": "0",
-      "executionCount": "0"
-    }
-  },
-  "3-critical-challenge": {
-    "pass": true,
-    "actual": {
-      "utterance": "Choose Supplier A.",
-      "reply": "NexoraWhich option do you want to commit to? You’re choosing Supplier A. Confirm it as the Decision? Supplier A was not Nexora’s recommendation. The strongest argument for permanent expansion is that temporary capacity may become more expensive if demand stays elevated longer than expected.",
-      "intent": "COMMIT_DECISION",
-      "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
-      "readiness": "READY",
-      "decisionReadiness": "READY_WITH_CONDITIONS",
-      "writes7": "false",
-      "state": "EXPLICIT_COMMITMENT",
-      "resolution": "RESOLVED",
-      "challenge": "NONE",
-      "confirmation": "true",
-      "handoff": "false",
-      "writes8": "false",
-      "secondWriter": "false",
-      "startsExecution": "false",
-      "decisionCount": "0",
-      "executionCount": "0"
-    }
-  },
-  "4-acknowledge-and-proceed": {
-    "pass": true,
-    "actual": {
-      "challenged": {
-        "utterance": "Choose Supplier A.",
-        "reply": "NexoraWhich option do you want to commit to? You’re choosing Supplier A. Confirm it as the Decision? Supplier A was not Nexora’s recommendation. The strongest argument for permanent expansion is that temporary capacity may become more expensive if demand stays elevated longer than expected.",
-        "intent": "COMMIT_DECISION",
-        "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
-        "readiness": "READY",
-        "decisionReadiness": "READY_WITH_CONDITIONS",
-        "writes7": "false",
-        "state": "EXPLICIT_COMMITMENT",
-        "resolution": "RESOLVED",
-        "challenge": "NONE",
-        "confirmation": "true",
-        "handoff": "false",
-        "writes8": "false",
-        "secondWriter": "false",
-        "startsExecution": "false",
-        "decisionCount": "0",
-        "executionCount": "0"
-      },
-      "acknowledged": {
-        "utterance": "I understand. Proceed with Supplier A.",
-        "reply": "NexoraWhich item do you mean? You’re choosing Supplier A. Confirm it as the Decision?",
-        "intent": "EXPLAIN",
-        "action": "ASK_FOR_MISSING_INFORMATION",
-        "readiness": "READY",
-        "decisionReadiness": "READY_WITH_CONDITIONS",
-        "writes7": "false",
-        "state": "EXPLICIT_COMMITMENT",
-        "resolution": "RESOLVED",
-        "challenge": "NONE",
-        "confirmation": "true",
-        "handoff": "false",
-        "writes8": "false",
-        "secondWriter": "false",
-        "startsExecution": "false",
-        "decisionCount": "0",
-        "executionCount": "0"
-      }
-    }
-  },
-  "5-ambiguous-it": {
-    "pass": true,
-    "actual": {
-      "utterance": "Choose it.",
-      "reply": "NexoraWhich option do you want to commit to?",
-      "intent": "COMMIT_DECISION",
-      "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
-      "readiness": "READY",
-      "decisionReadiness": "READY_WITH_CONDITIONS",
-      "writes7": "false",
-      "state": "EXPLICIT_COMMITMENT",
-      "resolution": "AMBIGUOUS",
-      "challenge": "CHALLENGE_TARGET_AMBIGUITY",
-      "confirmation": "false",
-      "handoff": "false",
-      "writes8": "false",
-      "secondWriter": "false",
-      "startsExecution": "false",
-      "decisionCount": "0",
-      "executionCount": "0"
-    }
-  },
-  "6-stale-yes": {
-    "pass": true,
-    "actual": {
-      "utterance": "Yes.",
-      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
-      "intent": "CONFIRM_ACTION",
-      "action": "NO_SAFE_ACTION",
       "readiness": "NOT_READY",
-      "decisionReadiness": "NOT_READY",
+      "decisionReadiness": "BLOCKED",
+      "option": "none",
       "writes7": "false",
-      "state": "NONE",
+      "state": "EXPLICIT_COMMITMENT",
       "resolution": "UNKNOWN",
       "challenge": "NONE",
       "confirmation": "false",
@@ -174,7 +69,95 @@
       "executionCount": "0"
     }
   },
-  "7-decision-execution-boundary": {
+  "3-challenge-accepted-no-decision": {
+    "pass": true,
+    "actual": {
+      "challenged": {
+        "utterance": "Choose Demand Surge.",
+        "reply": "NexoraDemand Surge is now the Approved decision. That option is already the committed Decision.",
+        "intent": "COMMIT_DECISION",
+        "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
+        "readiness": "NOT_READY",
+        "decisionReadiness": "BLOCKED",
+        "option": "none",
+        "writes7": "false",
+        "state": "EXPLICIT_COMMITMENT",
+        "resolution": "UNKNOWN",
+        "challenge": "NONE",
+        "confirmation": "false",
+        "handoff": "false",
+        "writes8": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      },
+      "acknowledged": {
+        "utterance": "Yes, I accept that risk.",
+        "reply": "NexoraBoth Pricing Response and Demand Surge are current candidates, but I don’t have enough comparable evidence to rank one over the other on risk.",
+        "intent": "EVALUATE",
+        "action": "EVALUATE",
+        "readiness": "NOT_READY",
+        "decisionReadiness": "BLOCKED",
+        "option": "none",
+        "writes7": "false",
+        "state": "NONE",
+        "resolution": "UNKNOWN",
+        "challenge": "NONE",
+        "confirmation": "false",
+        "handoff": "false",
+        "writes8": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      }
+    }
+  },
+  "4-explicit-approval-cc10-only": {
+    "pass": true,
+    "actual": {
+      "beforeApprove": {
+        "intent": "none",
+        "action": "none",
+        "readiness": "none",
+        "decisionReadiness": "none",
+        "option": "none",
+        "writes7": "false",
+        "state": "none",
+        "resolution": "none",
+        "challenge": "none",
+        "confirmation": "false",
+        "handoff": "false",
+        "writes8": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      },
+      "approved": {
+        "utterance": "Approve Demand Surge.",
+        "reply": "NexoraDemand Surge is already the current Approved decision. That option is already the committed Decision.",
+        "intent": "COMMIT_DECISION",
+        "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
+        "readiness": "NOT_READY",
+        "decisionReadiness": "BLOCKED",
+        "option": "none",
+        "writes7": "false",
+        "state": "EXPLICIT_COMMITMENT",
+        "resolution": "UNKNOWN",
+        "challenge": "NONE",
+        "confirmation": "false",
+        "handoff": "false",
+        "writes8": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      }
+    }
+  },
+  "5-decision-execution-boundary": {
     "pass": true,
     "actual": {
       "beforeCommit": {
@@ -182,6 +165,7 @@
         "action": "none",
         "readiness": "none",
         "decisionReadiness": "none",
+        "option": "none",
         "writes7": "false",
         "state": "none",
         "resolution": "none",
@@ -195,17 +179,18 @@
         "executionCount": "0"
       },
       "committed": {
-        "utterance": "I choose outsourcing.",
-        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. You’re choosing outsourcing. Confirm it as the Decision? outsourcing was not Nexora’s recommendation. The strongest argument for permanent expansion is that temporary capacity may become more expensive if demand stays elevated longer than expected.",
+        "utterance": "I choose Demand Surge.",
+        "reply": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution. That option is already the committed Decision.",
         "intent": "COMMIT_DECISION",
         "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
-        "readiness": "READY",
-        "decisionReadiness": "READY_WITH_CONDITIONS",
+        "readiness": "NOT_READY",
+        "decisionReadiness": "BLOCKED",
+        "option": "none",
         "writes7": "false",
         "state": "EXPLICIT_COMMITMENT",
-        "resolution": "RESOLVED",
+        "resolution": "UNKNOWN",
         "challenge": "NONE",
-        "confirmation": "true",
+        "confirmation": "false",
         "handoff": "false",
         "writes8": "false",
         "secondWriter": "false",
@@ -216,13 +201,14 @@
       "afterCommit": {
         "intent": "COMMIT_DECISION",
         "action": "HANDOFF_TO_CANONICAL_AUTHORITY",
-        "readiness": "READY",
-        "decisionReadiness": "READY_WITH_CONDITIONS",
+        "readiness": "NOT_READY",
+        "decisionReadiness": "BLOCKED",
+        "option": "none",
         "writes7": "false",
         "state": "EXPLICIT_COMMITMENT",
-        "resolution": "RESOLVED",
+        "resolution": "UNKNOWN",
         "challenge": "NONE",
-        "confirmation": "true",
+        "confirmation": "false",
         "handoff": "false",
         "writes8": "false",
         "secondWriter": "false",

@@ -83,10 +83,14 @@ function classifyMove(prepared: string): {
   if (
     /^(?:go back|back|the previous one|the one before|what we were looking at earlier|earlier)$/.test(
       prepared,
-    ) &&
-    collectionOrdinalIndex(prepared) == null
+    ) ||
+    /\b(?:go|return)\s+back\s+to\b.*\b(?:issue|problem)\b.*\b(?:discussed|reviewed|looked\s+at)\b.*\b(?:earlier|beginning|start)\b/.test(
+      prepared,
+    )
   ) {
-    return { move: "backtrack", expectedKind: null };
+    if (collectionOrdinalIndex(prepared) == null) {
+      return { move: "backtrack", expectedKind: null };
+    }
   }
   if (
     /^(?:and\s+)?(?:what about\s+)?(?:the\s+|that\s+)?other(?:\s+one|\s+option|\s+problem|\s+scenario|\s+item)?$/.test(
@@ -113,13 +117,13 @@ function classifyMove(prepared: string): {
     /\b(?:it|that|this|this one|that one)\b/.test(prepared)
   ) {
     const named = prepared.replace(
-      /\b(?:it|that|this|this one|that one|them|why|how|really|explain|show|what|does|affect|about|with|happens|if|we|ignore|should|i|do)\b/g,
+      /\b(?:it|that|this|this one|that one|them|why|how|really|explain|show|what|does|affect|about|with|happens|if|we|ignore|should|i|do|tell|me|more|look|deeper|into|investigate|know|else|go|dig|can)\b/g,
       " ",
     ).replace(/\s+/g, " ").trim();
     if (!named) return { move: "pronoun", expectedKind: null };
   }
   if (
-    /^(?:why|how|really|how bad|since when|what changed|what happens next|which one|why that(?: one)?|how confident are we|based on what|tell me more|then what|after that|go on|same|and if we wait)$/.test(
+    /^(?:why|how|really|how bad|since when|what changed|what happens next|which one|why that(?: one)?|how confident are we|based on what|tell me more|look deeper|then what|after that|go on|same|and if we wait)$/.test(
       prepared,
     )
   ) {
@@ -312,12 +316,29 @@ export function resolveContextualManagerMeaning(
     move = "none";
     operation = "HELP";
   } else if (move === "backtrack") {
+    const historicalIssueFrames = continuity.thread.filter((frame, index, frames) => {
+      const record = recordOf(frame.subjectId, subjects);
+      return (
+        record?.subjectKind === "problem" &&
+        frames.findIndex((candidate) => candidate.subjectId === frame.subjectId) === index
+      );
+    });
+    const historicalIssueRequest = /\b(?:issue|problem)\b.*\b(?:earlier|beginning|start)\b/.test(prepared);
+    const asksForBeginning = /\b(?:beginning|start)\b/.test(prepared);
+    const historicalId = historicalIssueRequest
+      ? asksForBeginning
+        ? historicalIssueFrames[0]?.subjectId ?? null
+        : historicalIssueFrames.length === 1
+          ? historicalIssueFrames[0]?.subjectId ?? null
+          : null
+      : null;
     const popped = popThread(continuity.thread);
-    const previousId =
-      popped.previous?.subjectId ??
-      continuity.previousSubjectId ??
-      session?.previousActiveObjectId ??
-      null;
+    const previousId = historicalIssueRequest
+      ? historicalId
+      : popped.previous?.subjectId ??
+        continuity.previousSubjectId ??
+        session?.previousActiveObjectId ??
+        null;
     selected = candidate(recordOf(previousId, subjects), "CONTEXT_PREVIOUS_SUBJECT");
     provenance = selected ? "CONTEXT_PREVIOUS_SUBJECT" : "UNRESOLVED";
     if (operation === "NONE" || operation === "FOCUS") operation = "FOCUS";
@@ -481,26 +502,44 @@ export function resolveContextualManagerMeaning(
       operation === "COMPARE" ||
       operation === "STATUS" ||
       operation === "ATTENTION" ||
-      operation === "INVESTIGATE";
+      operation === "INVESTIGATE" ||
+      (operation === "NONE" &&
+        /\b(?:it|this|that|this one|that one)\b/.test(prepared));
     if (followUp) {
-      const preferInvestigation =
-        operation === "INVESTIGATE" ||
+      const activeId =
+        continuity.activeSubjectId ??
+        session?.ncaConversationState?.activeSubject?.id ??
+        session?.activeObjectId ??
+        executive?.currentSubject?.subjectId ??
+        null;
+      const activeCandidate =
+        pool.find((item) => item.subjectId === activeId) ??
+        candidate(recordOf(activeId, subjects), "CONTEXT_ACTIVE_SUBJECT");
+      const distinctInvestigation = pool.find(
+        (item) =>
+          item.provenance === "CONTEXT_ACTIVE_INVESTIGATION" &&
+          item.subjectId !== activeId,
+      );
+      const preferDistinctInvestigation =
+        Boolean(distinctInvestigation) &&
         /\b(?:this problem|that problem|the issue)\b/.test(prepared);
-      selected = preferInvestigation
-        ? pool.find((item) => item.provenance === "CONTEXT_ACTIVE_INVESTIGATION") ??
-          pool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
-          pool[0] ??
-          null
+      selected = preferDistinctInvestigation
+        ? distinctInvestigation ?? activeCandidate ?? pool[0] ?? null
         : pool.find((item) => item.provenance === "CONTEXT_CORRECTION") ??
           (session?.activationSource === "click" || input.stageFocusedId
             ? pool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT")
             : null) ??
+          activeCandidate ??
           pool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
           pool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT") ??
           pool.find((item) => item.provenance === "CONTEXT_RECENT_SUBJECT") ??
           pool[0] ??
           null;
-      provenance = selected?.provenance ?? "UNRESOLVED";
+      provenance =
+        selected?.subjectId === activeId && activeId
+          ? (pool.find((item) => item.subjectId === activeId)?.provenance ??
+            "CONTEXT_ACTIVE_SUBJECT")
+          : (selected?.provenance ?? "UNRESOLVED");
       if (operation === "NONE" && selected) operation = "EXPLAIN";
       if (move === "none" && selected) move = "pronoun";
     }

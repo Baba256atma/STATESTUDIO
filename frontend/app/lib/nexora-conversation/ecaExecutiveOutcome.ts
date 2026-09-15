@@ -198,7 +198,7 @@ export function emptyEcaOutcomeSession(): EcaOutcomeSession {
 
 function classifyIntent(text: string, intent: EcaExecutiveIntent): EcaOutcomeManagerIntent {
   if (/\bwhat would have happened\b|\bwithout the decision\b/i.test(text)) return "COUNTERFACTUAL";
-  if (/\bdid (?:our |the |this )?decision cause\b|\bdid capacity cause\b|\bcause (?:the improvement|it)\b/i.test(text)) {
+  if (/\bdid (?:our |the |this )?decision cause\b|\bdid capacity cause\b|\bcause (?:the improvement|it)\b|\bdoes .*\b(?:improvement|improves?|change|result)\b.*\b(?:prove|show|mean|establish)\b.*\bdecision\b.*\bcaus/i.test(text)) {
     return "CAUSE";
   }
   if (/\bwhy (?:did|are) .*(?:improve|below|target)\b|\bwhy did it improve\b/i.test(text)) return "WHY";
@@ -206,7 +206,7 @@ function classifyIntent(text: string, intent: EcaExecutiveIntent): EcaOutcomeMan
   if (/\bdid we improve\b|\bhow (?:did|much did) (?:delivery |we |it )?change\b|\bhow much did it improve\b/i.test(text)) {
     return "IMPROVE";
   }
-  if (/\bwas it successful\b|\bwas choosing .*(?:mistake|right)\b|\bwas nexora right\b/i.test(text)) return "SUCCESS";
+  if (/\bwas it successful\b|\bwas choosing .*(?:mistake|right)\b|\bwas nexora right\b|\bhow (?:would|do|can|will) (?:we|you) know\b.*\b(?:decision|it)\b.*\b(?:working|worked|successful)\b|\bwhat (?:would|will) (?:show|demonstrate|indicate)\b.*\b(?:decision|it)\b.*\b(?:working|worked|successful)\b/i.test(text)) return "SUCCESS";
   if (/\bwhat should we do now\b|\breassess\b/i.test(text)) return "NEXT";
   if (
     intent === "REVIEW_OUTCOME" ||
@@ -230,8 +230,17 @@ function compareBaseline(
   return improved ? "IMPROVED" : "DETERIORATED";
 }
 
-function compareTarget(target: number | null, observed: number | null): EcaExecutiveOutcomeJudgment["targetComparison"] {
+function compareTarget(
+  target: number | null,
+  observed: number | null,
+  invert = false,
+): EcaExecutiveOutcomeJudgment["targetComparison"] {
   if (target == null || observed == null) return "UNKNOWN";
+  if (invert) {
+    if (observed < target) return "EXCEEDED";
+    if (observed === target) return "MET";
+    return "NOT_MET";
+  }
   if (observed > target) return "EXCEEDED";
   if (observed === target) return "MET";
   return "NOT_MET";
@@ -262,12 +271,24 @@ export function judgeEcaExecutiveOutcome(input: EcaOutcomeDialogueInput): EcaExe
   else if (hasObservation) observationState = "OBSERVED";
   else if (completed || managerIntent !== "NONE") observationState = "NOT_YET_OBSERVED";
 
-  const baselineComparison = conflicted || stale ? "UNKNOWN" : compareBaseline(primary?.baseline ?? null, primary?.observed ?? null);
+  const baselineComparison = conflicted || stale
+    ? "UNKNOWN"
+    : compareBaseline(
+        primary?.baseline ?? null,
+        primary?.observed ?? null,
+        /cost|delay|days/i.test(primary?.measure ?? ""),
+      );
   const secondaryComparison =
     secondary != null
-      ? compareBaseline(secondary.baseline, secondary.observed, /cost/i.test(secondary.measure))
+      ? compareBaseline(secondary.baseline, secondary.observed, /cost|delay|days/i.test(secondary.measure))
       : "UNKNOWN";
-  const targetComparison = conflicted || stale ? "UNKNOWN" : compareTarget(primary?.target ?? null, primary?.observed ?? null);
+  const targetComparison = conflicted || stale
+    ? "UNKNOWN"
+    : compareTarget(
+        primary?.target ?? null,
+        primary?.observed ?? null,
+        /cost|delay|days/i.test(primary?.measure ?? ""),
+      );
   let overall: EcaExecutiveOutcomeJudgment["overallInterpretation"] = "UNKNOWN";
   if (conflicted) overall = "INCONCLUSIVE";
   else if (!hasObservation) overall = "UNKNOWN";
@@ -320,7 +341,9 @@ export function judgeEcaExecutiveOutcome(input: EcaOutcomeDialogueInput): EcaExe
     note = "The latest recorded measurement predates this Execution, so I won’t treat it as the post-Execution Outcome.";
   } else if (!hasObservation && resultQuestion) {
     speak = Boolean(completed || managerIntent === "RESULT" || managerIntent === "GOAL" || managerIntent === "SUCCESS");
-    if (completed) {
+    if (managerIntent === "SUCCESS" && !completed) {
+      note = "To know whether the Decision is working, compare validated post-start observations with the confirmed baseline and intended target, and check for material trade-offs or blockers. Improvement would support the conclusion that the intended Outcome is emerging, but it would not by itself prove the Decision caused it.";
+    } else if (completed) {
       note = "The Execution is complete, but I don’t have an observed result yet to judge whether it achieved the intended Outcome. Completion tells us the work finished; it doesn’t yet tell us whether the Decision achieved its result.";
     } else {
       speak = false;

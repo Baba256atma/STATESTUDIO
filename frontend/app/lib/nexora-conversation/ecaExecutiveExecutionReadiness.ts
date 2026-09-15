@@ -159,10 +159,12 @@ export function emptyEcaExecutionReadinessSession(): EcaExecutionReadinessSessio
 
 function classifyIntent(text: string, intent: EcaExecutiveIntent): EcaExecutionManagerIntent {
   if (/\bwhat if\b|\bif we start monday\b|\bcan we start monday\b|\bstart monday\b/i.test(text)) return "HYPOTHETICAL";
+  // A readiness question owns the advisory purpose even when the manager also
+  // supplies an explicit no-start constraint. ECA:9 remains read-only.
+  if (/\bare we ready(?: to execute| to start| to implement)?\b|\bready to execute\b/i.test(text)) return "READINESS";
   if (/\bdon[’']t start(?: yet)?\b|\bhold off\b|\bnot yet\b.*\bstart\b|\bdelay execution\b/i.test(text)) return "DEFER";
   if (/\breconsider\b|\brevisit (?:the )?decision\b/i.test(text) || intent === "REASSESS") return "RECONSIDER";
   if (/\bwhat(?:[’']s| is) happening now\b|\bhow is (?:it|this|execution) going\b/i.test(text)) return "LIVE";
-  if (/\bare we ready(?: to execute)?\b|\bready to execute\b/i.test(text)) return "READINESS";
   if (/\bwhat is missing\b|\bwhat(?:[’']s| is) missing\b|\bwhat do we need before\b/i.test(text)) return "MISSING";
   if (/\bwho owns\b/i.test(text)) return "OWNER";
   if (/\bwhat could stop\b|\bwhat(?:[’']s| is) blocking\b|\bshow blockers\b/i.test(text)) return "STOPPERS";

@@ -452,9 +452,7 @@ export function interpretClarificationTurn(input: {
       correctionBeforeId: input.continuity?.activeSubjectId ?? null,
       correctionAfterId: target.subjectId,
       resumeOperation:
-        input.continuity?.activeOperation && input.continuity.activeOperation !== "NONE"
-          ? input.continuity.activeOperation
-          : "FOCUS",
+        pending?.requestedOperation ?? "FOCUS",
       resumeReference: target,
       resumeIntentKind: null,
       pending: null,

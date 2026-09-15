@@ -2,10 +2,10 @@
 
 **Status: CERTIFIED**
 
-Certification date: 2026-09-07
-Runtime: `http://localhost:3017/executive` (3015 remained occupied/unresponsive; 3016 held a stale production process this continuation did not fully reclaim)
-
-Prerequisite ECA:1 remains certified and was not reopened. This continuation aligned remaining original-prompt gaps (explicit investigate cue, comparison follow-up intent without a manufactured pair, suggested manager turns on the plan, original live sequences 1–7, and the required certification matrix).
+Certification close: NPA-T CLEANUP-3 — 2026-09-14
+Prerequisite live proofs: ECA:2-RESUME-1 PASS (`live-proofs.json`, comparison subjects Demand Surge / Pricing Response).
+Prerequisite repairs: ECA:2-FIX1 (subject continuity), CLEANUP-1 (L4 product precedence), CLEANUP-2 (MRA TypeScript test typing).
+Prerequisite ECA:1 remains certified. ECA:3 was not started.
 
 ## Verdict
 
@@ -16,51 +16,62 @@ Prerequisite ECA:1 remains certified and was not reopened. This continuation ali
 | Gate | Result |
 | --- | --- |
 | Executive intent resolution | PASS |
-| Action planning | PASS |
-| Context reuse from ECA:1 | PASS |
-| Ambiguity safety | PASS (focused G; live 4 consumes ECA:1 pronoun resolution or asks) |
+| Action planning | PASS (focused 22/22; multi-turn 4/4) |
+| Context reuse from ECA:1 | PASS (ECA:2-FIX1) |
+| Ambiguity safety | PASS |
 | Missing-information safety | PASS |
 | Recommendation safety | PASS |
 | Proposal reuse | PASS |
 | Confirmation binding | PASS |
-| Data uncertainty preservation | PASS (focused Q; live 6 does not confirm CAP_AV without Data Reality) |
+| Data uncertainty preservation | PASS |
 | Stage separation | PASS |
 | Decision isolation | PASS |
 | Execution isolation | PASS |
 | Outcome isolation | PASS |
-| Authority handoff | PASS |
-| Suggested next-action discipline | PASS (`suggestedManagerTurns` ≤ 3, alternatives ≤ 2) |
-| Live runtime | PASS |
-| Regression gates | PASS (ECA:1 + FIX1/FIX2 35/35; NXA funnel L1–L4 7/7 required) |
-| TypeScript | PASS |
-| ESLint | PASS |
+| Authority handoff / Risk writer | PASS |
+| Suggested next-action discipline | PASS |
+| Live runtime | PASS — RESUME-1 **7/7** |
+| NXA Level 4 | PASS — **7/7** (`funnel-level-4.json`) |
+| TypeScript | PASS — **0 errors** |
+| ESLint (PREP) | PASS |
 | Production build | PASS |
-| git diff --check | PASS |
+| git diff --check | PASS (global; CLEANUP-3 whitespace hygiene) |
+
+## Exact test counts (closing evidence)
+
+| Suite | Count | Evidence |
+| --- | --- | --- |
+| Focused + multi-turn planner | **22/22 PASS** | CLEANUP-2 / FIX1 |
+| ECA:2 multi-turn subset | **4/4 PASS** | CLEANUP-2 |
+| Live `/executive` proofs | **7/7 PASS** | RESUME-1 `live-proofs.json` |
+| ECA:1 working context | **19/19 PASS** | ECA:2-FIX1 |
+| ECA:2-FIX1 continuity | **8/8 PASS** | ECA:2-FIX1 |
+| CLEANUP-1 prior L4 failures | **5/5 PASS** | CLEANUP-1 |
+| MRA TS-affected runtime tests | **7/7 PASS** | CLEANUP-2 |
+| NXA L4 omnibus | **1612/1612 PASS** | CLEANUP-3 L4 run |
+| NXA L4 required barrier | **7/7 PASS** | CLEANUP-3 |
+
+## Live comparison subjects (RESUME-1)
+
+| id | name |
+| --- | --- |
+| `ctx-scenario-demand` | Demand Surge |
+| `ctx-scenario-pricing` | Pricing Response |
 
 ## Architecture
 
-Canonical planner: `planEcaExecutiveConversationAction`. No second NCA, workflow engine, proposal store, or Decision/Execution/Risk/Stage/Data writer. Frozen APP-3 Executive Intent was inspected and not reused as a conversational planner.
+Canonical planner remains `planEcaExecutiveConversationAction`. See `ARCHITECTURE-INSPECTION.md`.
+No duplicate planner, resolver, store, writer, or authority introduced in CLEANUP-1/2/3.
 
-Role/project from ECA:1 BCA context may bias alternatives only. Facts are not fabricated from job title.
+## Cleanup chain
 
-## Focused and multi-turn
-
-A–T, CAP_AV semantic-confirmation alternative, and multi-turn sequences 1–4 pass in `ecaExecutiveIntentActionPlan.test.ts`.
-
-## Original live `/executive` sequences
-
-Evidence: `frontend/artifacts/eca/ECA-2/live-proofs.json`.
-
-| Proof | Result |
+| Phase | Result |
 | --- | --- |
-| 1 Understand → Investigate | PASS — Explain / Why is it important / Show me the evidence |
-| 2 Compare | PASS — Compare intent; lower-risk/what-if remain EVALUATE/ASK_WHAT_IF without Decision authority |
-| 3 Recommendation | PASS — What should I do about Capacity Gap; no automatic Decision |
-| 4 Ambiguity | PASS — two references then Investigate it planned INVESTIGATE / RECOMMEND_INVESTIGATION without inventing a new object |
-| 5 Mutation | PASS — existing Risk proposal → canonical writer |
-| 6 Data | PASS — without an imported CAP_AV source, ECA:2 does not confirm field meaning |
-| 7 Decision boundary | PASS — recommendation after comparison is not CC:10 commitment |
+| ECA:2-FIX1 | CERTIFIED — active subject continuity |
+| CLEANUP-1 | product L4 5/5 repaired; blocked by TypeScript |
+| CLEANUP-2 | CERTIFIED — MRA TypeScript test/harness |
+| CLEANUP-3 | CERTIFIED — artifact whitespace + final gates |
 
 ## Stop
 
-ECA:3 was not started. ECA:2-FIX1 was not created. ECA:1 was not redesigned.
+ECA:3 was not started automatically. No further named phase started.

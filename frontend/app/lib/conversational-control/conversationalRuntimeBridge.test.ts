@@ -460,6 +460,29 @@ test("duplicate dispatch → no-op", () => {
   assert.equal(second.nextState, first.nextState);
 });
 
+test("duplicate command id still applies after Stage focus moved", () => {
+  const command = commandFromUtterance("Focus on Capacity Gap");
+  const first = applyNexoraMVPConversationalCommand({
+    command,
+    state: initialState(),
+    catalog: catalog(),
+  });
+  assert.equal(first.result.status, "applied");
+  const moved = selectNexoraMVPInteractionSubject(
+    first.nextState,
+    "obj-revenue",
+    catalog(),
+  );
+  const again = applyNexoraMVPConversationalCommand({
+    command,
+    state: moved,
+    catalog: catalog(),
+    lastAppliedCommandId: command.commandId,
+  });
+  assert.equal(again.result.status, "applied");
+  assert.equal(again.nextState.focusedSubject?.id, first.nextState.focusedSubject?.id);
+});
+
 test("executeNexoraConversationalControl facade matches applicator", () => {
   const command = commandFromUtterance("Focus on Delivery");
   const a = executeNexoraConversationalControl({

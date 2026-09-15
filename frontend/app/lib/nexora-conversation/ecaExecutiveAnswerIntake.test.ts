@@ -421,3 +421,219 @@ test("ECA:5 ECA:4 pending need is not falsely satisfied by a new question", () =
   });
   assert.equal(judgment.needSatisfaction, "UNRESOLVED");
 });
+
+test("ECA:5 prompt A — Direct complete preference answer binds without Decision", () => {
+  const { judgment } = intake("Scenario A.", {
+    lastQuestion: "Which scenario do you choose?",
+  });
+  assert.equal(judgment.bound, true);
+  assert.ok(judgment.completeness === "COMPLETE" || judgment.answerType === "FACT_CLAIM" || judgment.answerType === "CONFIRMATION");
+  assert.equal(judgment.boundaries.commitsDecision, false);
+  isolation(judgment);
+});
+
+test("ECA:5 prompt B — Qualified preference preserves uncertainty", () => {
+  const { judgment } = intake("I think delivery speed matters more.", {
+    lastQuestion: "Is delivery speed or cost more important?",
+  });
+  assert.ok(judgment.answerType === "OPINION" || judgment.answerType === "ESTIMATE" || judgment.qualifier);
+  assert.notEqual(judgment.confidence, "CONFIRMED_BY_MANAGER");
+  assert.equal(judgment.lostUncertainty, false);
+  isolation(judgment);
+});
+
+test("ECA:5 prompt C — I don't know is valid uncertainty", () => {
+  const { judgment } = intake("I don't know.", {
+    lastQuestion: "What is Supplier B's available capacity?",
+  });
+  assert.equal(judgment.answerType, "UNKNOWN");
+  assert.equal(judgment.needSatisfaction, "UNRESOLVED");
+  assert.equal(judgment.boundaries.writesDataTruth, false);
+});
+
+test("ECA:5 prompt D — Explicit new request is NOT_AN_ANSWER to CAP_AV", () => {
+  const { judgment } = intake("Show me Demand Surge.", {
+    lastQuestion: "What does CAP_AV represent?",
+    lastNeedId: "cap-av-meaning",
+  });
+  assert.equal(judgment.bound, false);
+  assert.ok(judgment.answerType === "UNRELATED_RESPONSE" || judgment.answerType === "INSTRUCTION");
+  assert.equal(judgment.needSatisfaction, "UNRESOLVED");
+});
+
+test("ECA:5 prompt E — CAP_AV semantic answer hands off without ECA:5 write", () => {
+  const { judgment } = intake("Yes.", {
+    lastQuestion: "Does CAP_AV represent available capacity?",
+    lastFingerprint: "semantic:CAP_AV",
+    semantic: true,
+  });
+  assert.equal(judgment.answerType, "CONFIRMATION");
+  assert.equal(judgment.authorityTarget, "DATA-ADV/Data Reality");
+  assert.equal(judgment.boundaries.writesDataTruth, false);
+});
+
+test("ECA:5 prompt F — Uncertain Data meaning is not CONFIRMED", () => {
+  const { judgment } = intake("I think it means Available Capacity.", {
+    lastQuestion: "What does CAP_AV represent?",
+    semantic: true,
+  });
+  assert.ok(judgment.answerType === "OPINION" || judgment.answerType === "ESTIMATE" || judgment.answerType === "HYPOTHESIS");
+  assert.notEqual(judgment.confidence, "CONFIRMED_BY_MANAGER");
+  assert.equal(judgment.boundaries.writesDataTruth, false);
+});
+
+test("ECA:5 prompt G — Causal assertion is not confirmed causality", () => {
+  const { judgment } = intake("Maybe capacity is the reason.");
+  assert.equal(judgment.answerType, "HYPOTHESIS");
+  assert.equal(judgment.intakeAction, "PRESERVE_AS_HYPOTHESIS");
+  isolation(judgment);
+});
+
+test("ECA:5 prompt H — Preference does not create Decision", () => {
+  const { judgment } = intake("I prefer Demand Surge.", {
+    lastQuestion: "Which scenario do you prefer?",
+  });
+  assert.equal(judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:5 prompt I — Explicit Decision approval routes to CC:10 only as handoff", () => {
+  const { judgment } = intake("Scenario A.", {
+    lastQuestion: "Which scenario do you choose?",
+  });
+  assert.equal(judgment.boundaries.commitsDecision, false);
+  assert.equal(judgment.authorityTarget, "CC:10 Decision Commitment");
+});
+
+test("ECA:5 prompt J — Readiness Yes does not start Execution", () => {
+  const { judgment } = intake("Yes.", {
+    lastQuestion: "Are you ready to proceed?",
+  });
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:5 prompt K — Explicit Start routes to CC:11 without ECA:5 write", () => {
+  const { judgment } = intake("Start the plan.", {
+    lastQuestion: "Should I start Execution now?",
+  });
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:5 prompt L — Proposal confirmation binds without Risk write by ECA:5", () => {
+  const { judgment } = intake("Add it.", {
+    lastQuestion: "Add Supplier Delay as a Risk?",
+    proposal: true,
+  });
+  assert.equal(judgment.boundaries.writesRisk, false);
+});
+
+test("ECA:5 prompt M — Stale confirmation does not mutate", () => {
+  const { judgment } = intake("Yes.");
+  assert.equal(judgment.staleConfirmation, true);
+  assert.equal(judgment.staleYesMutation, false);
+  assert.equal(judgment.boundaries.mutatesBusinessState, false);
+});
+
+test("ECA:5 prompt N — Correction recognized without overwrite", () => {
+  const { judgment } = intake("No, I meant Supplier A, not Supplier B.", {
+    lastQuestion: "What is Supplier B's lead time?",
+  });
+  assert.equal(judgment.answerType, "CORRECTION");
+  assert.equal(judgment.boundaries.writesDataTruth, false);
+  isolation(judgment);
+});
+
+test("ECA:5 prompt O — Partial conditional preference is not flattened", () => {
+  const { judgment } = intake("Cost is about $40,000.", {
+    lastQuestion: "What is Supplier B's expected cost and lead time?",
+  });
+  assert.equal(judgment.completeness, "PARTIAL");
+  assert.equal(judgment.needSatisfaction, "PARTIALLY_SATISFIED");
+  assert.equal(judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:5 prompt P — Ordinal clarification can bind second subject conversationally", () => {
+  const { judgment } = intake("The second one.", {
+    lastQuestion: "Do you mean Capacity Gap or Demand Surge?",
+  });
+  assert.equal(judgment.boundaries.mutatesBusinessState, false);
+});
+
+test("ECA:5 prompt Q — Ambiguous response does not guess", () => {
+  const { judgment } = intake("Cost is about $40,000.", {
+    lastQuestion: "What is Supplier B's expected cost and lead time?",
+  });
+  assert.equal(judgment.completeness, "PARTIAL");
+  assert.equal(judgment.components.some((item) => item.field === "lead-time"), false);
+  isolation(judgment);
+});
+
+test("ECA:5 prompt R — Outcome observation is not causal proof", () => {
+  const { judgment } = intake("Delivery improved to 94%.", {
+    lastQuestion: "What delivery result did you observe?",
+  });
+  assert.equal(judgment.boundaries.writesOutcome, false);
+});
+
+test("ECA:5 prompt S — Explicit subject switch outranks pending question", () => {
+  const { judgment } = intake("Forget that. Explain Demand Surge.", {
+    lastQuestion: "What is Supplier B's expected cost?",
+  });
+  assert.equal(judgment.bound, false);
+  assert.ok(judgment.answerType === "UNRELATED_RESPONSE" || judgment.answerType === "INSTRUCTION");
+});
+
+test("ECA:5 prompt T — ECA:5 performs zero direct domain writes", () => {
+  for (const sample of [
+    intake("6 weeks.", { lastQuestion: "What is Supplier B's lead time?" }),
+    intake("I don't know.", { lastQuestion: "What is Supplier B's available capacity?" }),
+    intake("Yes.", { lastQuestion: "Does CAP_AV represent available capacity?", semantic: true }),
+    intake("Scenario A.", { lastQuestion: "Which scenario do you choose?" }),
+    intake("Add it.", { lastQuestion: "Add Supplier Delay as a Risk?", proposal: true }),
+  ]) {
+    isolation(sample.judgment);
+  }
+});
+
+test("ECA:5 prompt multi-turn 1 — Preference then recommendation stays non-Decision", () => {
+  const prefer = intake("Scenario A.", {
+    lastQuestion: "Which scenario do you choose?",
+  });
+  assert.equal(prefer.judgment.bound, true);
+  const recommend = intake("What do you recommend now?");
+  assert.equal(recommend.judgment.boundaries.commitsDecision, false);
+  assert.equal(prefer.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:5 prompt multi-turn 2 — Uncertain CAP_AV meaning preserves qualification", () => {
+  const answer = intake("I think it means Available Capacity.", {
+    lastQuestion: "What does CAP_AV represent?",
+    semantic: true,
+  });
+  assert.equal(answer.judgment.boundaries.writesDataTruth, false);
+  assert.ok(answer.judgment.lostUncertainty === false);
+  assert.notEqual(answer.judgment.confidence, "CONFIRMED_BY_MANAGER");
+});
+
+test("ECA:5 prompt multi-turn 3 — Why then Add it keeps Risk handoff only", () => {
+  const why = intake("Why?", {
+    lastQuestion: "Add Supplier Delay as a Risk?",
+    proposal: true,
+  });
+  const add = intake("Add it.", {
+    lastQuestion: "Add Supplier Delay as a Risk?",
+    proposal: true,
+    previousIntake: nextEcaAnswerIntakeSession(null, "Why?", why.judgment),
+  });
+  assert.equal(add.judgment.boundaries.writesRisk, false);
+});
+
+test("ECA:5 prompt multi-turn 4 — Preference → readiness Yes → no Execution; Start is handoff only", () => {
+  const prefer = intake("I prefer Demand Surge.", {
+    lastQuestion: "Which scenario do you prefer?",
+  });
+  assert.equal(prefer.judgment.boundaries.commitsDecision, false);
+  const ready = intake("Yes.", { lastQuestion: "Are you ready to proceed?" });
+  assert.equal(ready.judgment.boundaries.startsExecution, false);
+  const start = intake("Start the plan.", { lastQuestion: "Should I start Execution now?" });
+  assert.equal(start.judgment.boundaries.startsExecution, false);
+});

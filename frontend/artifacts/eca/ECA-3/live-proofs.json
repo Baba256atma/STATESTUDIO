@@ -1,29 +1,24 @@
 {
   "identity": "NPA-T ECA:3/live-proofs",
-  "url": "http://localhost:3018/executive?reset=1",
-  "errors": [],
-  "1-appropriate-silence": {
-    "pass": true,
-    "actual": {
-      "utterance": "Explain Demand Surge.",
-      "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
-      "intent": "EXPLAIN",
-      "nextAction": "EXPLAIN",
-      "authority": "NEX-CONV Conversation Kernel",
-      "intervene": "false",
-      "reason": "NO_JUSTIFIED_INITIATIVE",
-      "strength": "none",
-      "suppression": "ACTIVE_MANAGER_TASK_MORE_IMPORTANT",
-      "writes": "false",
-      "focused": "none",
-      "stageMode": "overview"
+  "resume": "ECA:3-2026-09-14",
+  "url": "http://localhost:3000/executive?reset=1",
+  "comparisonSubjects": [
+    {
+      "id": "ctx-scenario-demand",
+      "name": "Demand Surge"
+    },
+    {
+      "id": "ctx-scenario-pricing",
+      "name": "Pricing Response"
     }
-  },
-  "2-goal-risk": {
+  ],
+  "errors": [],
+  "1-important-issue-speak": {
     "pass": true,
     "actual": {
       "utterance": "On-time delivery is at 91% against the 96% goal and getting worse. How are we doing?",
-      "reply": "NexoraNot yet. There is no active execution.",
+      "reply": "NexoraNot yet. There is no active execution. No Execution is active yet. Readiness still belongs to the pre-start path.",
+      "initiative": "SPEAK",
       "intent": "UNKNOWN",
       "nextAction": "ASK_CLARIFICATION",
       "authority": "none",
@@ -33,96 +28,38 @@
       "suppression": "none",
       "writes": "false",
       "focused": "none",
-      "stageMode": "overview"
+      "stageMode": "overview",
+      "decisions": "0",
+      "executions": "0"
     }
   },
-  "3-missing-information": {
+  "2-stable-silence": {
     "pass": true,
     "actual": {
-      "utterance": "Compare Scenario A and Scenario B.",
-      "reply": "NexoraI couldn't find a clear match for “Scenario A” in the current executive context.",
-      "intent": "COMPARE",
-      "nextAction": "ASK_FOR_MISSING_INFORMATION",
-      "authority": "none",
-      "intervene": "true",
-      "reason": "MISSING_CRITICAL_INFORMATION",
-      "strength": "SUGGEST",
-      "suppression": "none",
+      "utterance": "Explain Demand Surge.",
+      "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "initiative": "SILENT",
+      "intent": "EXPLAIN",
+      "nextAction": "EXPLAIN",
+      "authority": "NEX-CONV Conversation Kernel",
+      "intervene": "false",
+      "reason": "NO_JUSTIFIED_INITIATIVE",
+      "strength": "none",
+      "suppression": "ACTIVE_MANAGER_TASK_MORE_IMPORTANT",
       "writes": "false",
       "focused": "none",
-      "stageMode": "overview"
+      "stageMode": "overview",
+      "decisions": "0",
+      "executions": "0"
     }
   },
-  "4-dismissal": {
-    "pass": true,
-    "actual": {
-      "firstRisk": {
-        "utterance": "Supplier Delay has become more relevant to the delivery goal. How are we doing?",
-        "reply": "NexoraNot yet. There is no active execution.",
-        "intent": "UNKNOWN",
-        "nextAction": "ASK_CLARIFICATION",
-        "authority": "none",
-        "intervene": "true",
-        "reason": "OUTCOME_DEVIATION",
-        "strength": "RECOMMEND",
-        "suppression": "none",
-        "writes": "false",
-        "focused": "none",
-        "stageMode": "overview"
-      },
-      "dismissed": {
-        "utterance": "Not now.",
-        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
-        "intent": "UNKNOWN",
-        "nextAction": "ASK_CLARIFICATION",
-        "authority": "none",
-        "intervene": "false",
-        "reason": "NO_JUSTIFIED_INITIATIVE",
-        "strength": "none",
-        "suppression": "RECENTLY_DISMISSED",
-        "writes": "false",
-        "focused": "none",
-        "stageMode": "overview"
-      },
-      "continueAfter": {
-        "utterance": "Explain Capacity Gap.",
-        "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. My recommendation remains temporary capacity.",
-        "intent": "EXPLAIN",
-        "nextAction": "EXPLAIN",
-        "authority": "NEX-CONV Conversation Kernel",
-        "intervene": "false",
-        "reason": "NO_JUSTIFIED_INITIATIVE",
-        "strength": "none",
-        "suppression": "ACTIVE_MANAGER_TASK_MORE_IMPORTANT",
-        "writes": "false",
-        "focused": "none",
-        "stageMode": "overview"
-      }
-    }
-  },
-  "5-new-evidence-after-dismissal": {
-    "pass": true,
-    "actual": {
-      "utterance": "New confirmed evidence shows Supplier Delay is now blocking execution. How are we doing?",
-      "reply": "NexoraNot yet. There is no active execution. Has backlog increased recently?",
-      "intent": "REVIEW_EXECUTION",
-      "nextAction": "SHOW",
-      "authority": "CC:11 Execution Follow-up",
-      "intervene": "true",
-      "reason": "RISK_ESCALATION",
-      "strength": "SUGGEST",
-      "suppression": "none",
-      "writes": "false",
-      "focused": "none",
-      "stageMode": "overview"
-    }
-  },
-  "6-data-uncertainty": {
+  "3-data-uncertainty": {
     "pass": true,
     "actual": {
       "capAvMeaning": {
         "utterance": "What does CAP_AV mean?",
         "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+        "initiative": "SPEAK",
         "intent": "UNKNOWN",
         "nextAction": "ASK_CLARIFICATION",
         "authority": "none",
@@ -132,11 +69,14 @@
         "suppression": "none",
         "writes": "false",
         "focused": "none",
-        "stageMode": "overview"
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
       },
       "capAvWorry": {
         "utterance": "Should I worry about it?",
         "reply": "NexoraInvestigate evidence in the context of the current issue toward the Unknown goal goal. Check the evidence that would resolve the most important uncertainty before choosing an intervention.",
+        "initiative": "SPEAK",
         "intent": "EVALUATE",
         "nextAction": "ASK_FOR_MISSING_INFORMATION",
         "authority": "none",
@@ -146,25 +86,69 @@
         "suppression": "none",
         "writes": "false",
         "focused": "none",
-        "stageMode": "overview"
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
       }
     }
   },
-  "7-decision-execution-boundary": {
+  "4-decision-readiness-no-commit": {
     "pass": true,
     "actual": {
-      "utterance": "What should I do about Capacity Gap?",
-      "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
-      "intent": "SEEK_RECOMMENDATION",
-      "nextAction": "RECOMMEND_INVESTIGATION",
-      "authority": "NEX-CONV Conversation Kernel",
+      "seek": {
+        "utterance": "What should I do about Capacity Gap?",
+        "reply": "NexoraI lean toward temporary capacity. That is an advisory suggestion, not a catalog Scenario. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing.",
+        "initiative": "SPEAK",
+        "intent": "SEEK_RECOMMENDATION",
+        "nextAction": "RECOMMEND_INVESTIGATION",
+        "authority": "NEX-CONV Conversation Kernel",
+        "intervene": "true",
+        "reason": "NEW_EVIDENCE",
+        "strength": "NOTICE",
+        "suppression": "none",
+        "writes": "false",
+        "focused": "none",
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
+      },
+      "prefer": {
+        "utterance": "I prefer Demand Surge.",
+        "reply": "NexoraPreference noted — no Decision committed. That is a preference, not a Decision.",
+        "initiative": "SPEAK",
+        "intent": "UNKNOWN",
+        "nextAction": "ASK_CLARIFICATION",
+        "authority": "none",
+        "intervene": "true",
+        "reason": "DECISION_REVIEW_NEEDED",
+        "strength": "SUGGEST",
+        "suppression": "none",
+        "writes": "false",
+        "focused": "none",
+        "stageMode": "overview",
+        "decisions": "0",
+        "executions": "0"
+      }
+    }
+  },
+  "5-execution-readiness-no-start": {
+    "pass": true,
+    "actual": {
+      "utterance": "Are we ready to start?",
+      "reply": "NexoraNo Decision has been committed yet, so execution is not in play.",
+      "initiative": "SPEAK",
+      "intent": "REQUEST_EXECUTION_ACTION",
+      "nextAction": "ASK_FOR_MISSING_INFORMATION",
+      "authority": "CC:10 Decision Commitment",
       "intervene": "true",
       "reason": "NEW_EVIDENCE",
       "strength": "NOTICE",
       "suppression": "none",
       "writes": "false",
       "focused": "none",
-      "stageMode": "overview"
+      "stageMode": "overview",
+      "decisions": "0",
+      "executions": "0"
     }
   }
 }

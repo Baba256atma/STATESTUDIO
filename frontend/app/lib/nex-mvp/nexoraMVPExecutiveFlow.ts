@@ -931,8 +931,9 @@ export function projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
   state: NexoraMVPFlowDomainState,
   runtime: NexoraDecisionRuntimeAdapter,
 ): NexoraMVPFlowDomainState {
-  const nextDecisions = Object.freeze(
-    state.decisions.map((entry) => {
+  const projectedIds = new Set<string>();
+  const existing = state.decisions.map((entry) => {
+      projectedIds.add(entry.id);
       const canonical = runtime.getDecision(entry.id);
       if (canonical == null) return entry;
       const projected = projectCanonicalDecisionToFlowRecord(canonical, {
@@ -950,8 +951,23 @@ export function projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
         objectId: projected.objectId,
         label: projected.label,
       });
-    }),
-  );
+    });
+  const runtimeOnly = runtime
+    .listDecisions()
+    .filter((decision) => !projectedIds.has(decision.decisionId))
+    .map((decision) => {
+      const projected = projectCanonicalDecisionToFlowRecord(decision);
+      return Object.freeze({
+        id: projected.id,
+        status: projected.status as NexoraMVPFlowDecisionStatus,
+        locked: projected.locked,
+        sourceScenarioId: projected.sourceScenarioId,
+        sourceProblemId: projected.sourceProblemId,
+        objectId: projected.objectId,
+        label: projected.label,
+      });
+    });
+  const nextDecisions = Object.freeze([...existing, ...runtimeOnly]);
   return Object.freeze({
     ...state,
     decisions: nextDecisions,
@@ -978,17 +994,29 @@ export function projectNexoraMVPCatalogDecisionStatusesFromFlowDomain<
   state: NexoraMVPFlowDomainState,
 ): TCatalog {
   const byId = new Map(state.decisions.map((d) => [d.id, d]));
-  const contextSubjects = Object.freeze(
-    catalog.contextSubjects.map((subject) => {
+  const projectedIds = new Set<string>();
+  const existing = catalog.contextSubjects.map((subject) => {
       if (subject.kind !== "decision") return subject;
+      projectedIds.add(subject.id);
       const decision = byId.get(subject.id);
       if (decision == null) return subject;
       return Object.freeze({
         ...subject,
         status: decision.status,
       });
-    }),
-  );
+    });
+  const runtimeOnly = state.decisions
+    .filter((decision) => !projectedIds.has(decision.id))
+    .map((decision) =>
+      Object.freeze({
+        id: decision.id,
+        kind: "decision",
+        status: decision.status,
+        label: decision.label,
+        attention: decision.status === "approved" ? "elevated" : "normal",
+      }),
+    );
+  const contextSubjects = Object.freeze([...existing, ...runtimeOnly]);
   return Object.freeze({
     ...catalog,
     contextSubjects,

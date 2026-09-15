@@ -1,0 +1,320 @@
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+{
+  "utterance": "show me scenarios",
+  "intent": "show-scenarios",
+  "referent": "Capacity Expansion Plan",
+  "kind": "scenario",
+  "provenance": "EXPLICIT_CURRENT_TURN",
+  "continuityId": "ctx-scenario-capacity",
+  "continuityKind": "scenario",
+  "presentedIds": [],
+  "lastCollection": {
+    "kind": "SCENARIO",
+    "items": [
+      "Capacity Expansion Plan",
+      "Demand Surge",
+      "Pricing Response"
+    ],
+    "memberIds": [
+      "ctx-scenario-capacity",
+      "ctx-scenario-demand",
+      "ctx-scenario-pricing"
+    ],
+    "establishedAtTurn": 1,
+    "scope": "ALL",
+    "source": "NCA-POST:3_CANONICAL_COLLECTION"
+  },
+  "ncaActive": {
+    "id": "ctx-scenario-capacity",
+    "name": "Capacity Expansion Plan",
+    "kind": "scenario"
+  },
+  "dialogue": {
+    "sourceContextId": null,
+    "fieldColumn": null,
+    "listedSourceContextIds": []
+  },
+  "execCurrent": null,
+  "stageFocus": null,
+  "stageCollection": "scenario",
+  "reply": "Current Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response."
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+{
+  "utterance": "is there any CSV files?",
+  "intent": "unknown",
+  "referent": null,
+  "kind": null,
+  "provenance": "UNRESOLVED",
+  "continuityId": "csv:overview:data-ux3-ambiguous-csv",
+  "continuityKind": "data",
+  "presentedIds": [
+    "csv:overview:data-ux3-ambiguous-csv"
+  ],
+  "lastCollection": {
+    "kind": "SCENARIO",
+    "items": [
+      "Capacity Expansion Plan",
+      "Demand Surge",
+      "Pricing Response"
+    ],
+    "memberIds": [
+      "ctx-scenario-capacity",
+      "ctx-scenario-demand",
+      "ctx-scenario-pricing"
+    ],
+    "establishedAtTurn": 1,
+    "scope": "ALL",
+    "source": "NCA-POST:3_CANONICAL_COLLECTION"
+  },
+  "ncaActive": {
+    "id": null,
+    "name": "Capacity Expansion Plan",
+    "kind": null
+  },
+  "dialogue": {
+    "sourceContextId": "csv:overview:data-ux3-ambiguous-csv",
+    "fieldColumn": null,
+    "listedSourceContextIds": [
+      "csv:overview:data-ux3-ambiguous-csv"
+    ]
+  },
+  "execCurrent": null,
+  "stageFocus": null,
+  "stageCollection": "scenario",
+  "reply": "Yes. I currently have 1 CSV source: data-ux3-ambiguous.csv."
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+{
+  "utterance": "explain it",
+  "intent": "explain-scenario",
+  "referent": "Capacity Expansion Plan",
+  "kind": "scenario",
+  "provenance": "CONTEXT_ACTIVE_INVESTIGATION",
+  "continuityId": "csv:overview:data-ux3-ambiguous-csv",
+  "continuityKind": "data",
+  "presentedIds": [
+    "csv:overview:data-ux3-ambiguous-csv"
+  ],
+  "lastCollection": {
+    "kind": "SCENARIO",
+    "items": [
+      "Capacity Expansion Plan",
+      "Demand Surge",
+      "Pricing Response"
+    ],
+    "memberIds": [
+      "ctx-scenario-capacity",
+      "ctx-scenario-demand",
+      "ctx-scenario-pricing"
+    ],
+    "establishedAtTurn": 1,
+    "scope": "ALL",
+    "source": "NCA-POST:3_CANONICAL_COLLECTION"
+  },
+  "ncaActive": {
+    "id": null,
+    "name": "Capacity Expansion Plan",
+    "kind": null
+  },
+  "dialogue": {
+    "sourceContextId": "csv:overview:data-ux3-ambiguous-csv",
+    "fieldColumn": null,
+    "listedSourceContextIds": [
+      "csv:overview:data-ux3-ambiguous-csv"
+    ]
+  },
+  "execCurrent": {
+    "subjectId": "ctx-scenario-capacity",
+    "subjectKind": "scenario",
+    "canonicalName": "Capacity Expansion Plan",
+    "source": "explicit",
+    "turnIndex": 1
+  },
+  "stageFocus": null,
+  "stageCollection": "scenario",
+  "reply": "Nexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not acc"
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+{
+  "utterance": "Capacity Gap",
+  "intent": "focus",
+  "referent": "Capacity Gap",
+  "kind": "problem",
+  "provenance": "EXPLICIT_CURRENT_TURN",
+  "continuityId": "ctx-problem-capacity",
+  "continuityKind": "problem",
+  "presentedIds": [
+    "ctx-scenario-capacity"
+  ],
+  "lastCollection": {
+    "kind": "SCENARIO",
+    "items": [
+      "Capacity Expansion Plan",
+      "Demand Surge",
+      "Pricing Response"
+    ],
+    "memberIds": [
+      "ctx-scenario-capacity",
+      "ctx-scenario-demand",
+      "ctx-scenario-pricing"
+    ],
+    "establishedAtTurn": 1,
+    "scope": "ALL",
+    "source": "NCA-POST:3_CANONICAL_COLLECTION"
+  },
+  "ncaActive": {
+    "id": "ctx-problem-capacity",
+    "name": "Capacity Gap",
+    "kind": "problem"
+  },
+  "dialogue": {
+    "sourceContextId": null,
+    "fieldColumn": null,
+    "listedSourceContextIds": []
+  },
+  "execCurrent": {
+    "subjectId": "ctx-problem-capacity",
+    "subjectKind": "problem",
+    "canonicalName": "Capacity Gap",
+    "source": "explicit",
+    "turnIndex": 2
+  },
+  "stageFocus": "Capacity Gap",
+  "stageCollection": null,
+  "reply": "Focused on Capacity Gap. My recommendation remains temporary capacity."
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+{
+  "utterance": "explain it",
+  "intent": "explain",
+  "referent": "Capacity Gap",
+  "kind": "problem",
+  "provenance": "CONTEXT_ACTIVE_INVESTIGATION",
+  "continuityId": "ctx-problem-capacity",
+  "continuityKind": "problem",
+  "presentedIds": [
+    "ctx-scenario-capacity"
+  ],
+  "lastCollection": {
+    "kind": "SCENARIO",
+    "items": [
+      "Capacity Expansion Plan",
+      "Demand Surge",
+      "Pricing Response"
+    ],
+    "memberIds": [
+      "ctx-scenario-capacity",
+      "ctx-scenario-demand",
+      "ctx-scenario-pricing"
+    ],
+    "establishedAtTurn": 1,
+    "scope": "ALL",
+    "source": "NCA-POST:3_CANONICAL_COLLECTION"
+  },
+  "ncaActive": {
+    "id": "ctx-problem-capacity",
+    "name": "Capacity Gap",
+    "kind": "problem"
+  },
+  "dialogue": {
+    "sourceContextId": null,
+    "fieldColumn": null,
+    "listedSourceContextIds": []
+  },
+  "execCurrent": {
+    "subjectId": "ctx-problem-capacity",
+    "subjectKind": "problem",
+    "canonicalName": "Capacity Gap",
+    "source": "explicit",
+    "turnIndex": 3
+  },
+  "stageFocus": "Capacity Gap",
+  "stageCollection": null,
+  "reply": "Capacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a con"
+}

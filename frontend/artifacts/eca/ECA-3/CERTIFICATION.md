@@ -2,106 +2,89 @@
 
 **Status: CERTIFIED**
 
-Certification date: 2026-09-07
-Runtime: `http://localhost:3018/executive` (isolated `?reset=1` journeys). Port 3017 from ECA:2 was left running; this phase started 3018 after a production build.
-
-Prerequisite ECA:1 and ECA:2 remain certified. Neither was reopened or redesigned. ECA:4 was not started. ECA:3-FIX1 was not created.
+Certification date: 2026-09-14
+Prerequisite: ECA:2 CERTIFIED (CLEANUP-3). ECA:1 remains certified. Neither was reopened.
+ECA:4 was not started. ECA:3-FIX1 was not created.
 
 ## Verdict
 
 **NPA-T ECA:3 — Proactive Executive Guidance & Advisor Initiative: CERTIFIED**
 
-## Architecture questions
+## Architecture
 
-| Q | Required | Result |
-| --- | --- | --- |
-| Q1 Second initiative engine? | NO | PASS — NCA:5 remains conversational initiative; ECA:3 is judgment only |
-| Q2 Mutate business state? | NO | PASS — frozen writer boundaries all false |
-| Q3 Can choose silence? | YES | PASS |
-| Q4 Dismissal suppresses repetition? | YES | PASS — session fingerprints, no durable memory |
-| Q5 Material change can resurface? | YES | PASS |
-| Q6 Weak evidence weaker guidance? | YES | PASS — TENTATIVE cannot WARN |
-| Q7 Casual override of explicit intent? | NO | PASS — EXPLAIN/SHOW/COUNT/LOCATE/INSPECT suppress non-CRITICAL |
-| Q8 Reuse ECA:2 for planning? | YES | PASS — ECA:1 → ECA:2 → ECA:3; plan referenced, not recomposed |
-| Q9 Direct Decision/Execution commit? | NO | PASS |
-| Q10 Diagnostics for speak/silence? | YES | PASS — `data-eca-3-*` and `suppressionReason` |
+Reused existing canonical module `judgeEcaExecutiveInitiative` (implemented 2026-09-07).
+NEW PHASE work: architecture re-inspection, prompt A–O + multi-turn contract tests, short live proofs (5) with canonical catalog names, re-certification gates.
 
-## Required certification matrix
-
-| Gate | Result |
+| Item | Result |
 | --- | --- |
-| Architecture reuse | PASS |
-| NCA:5 boundary | PASS |
-| Initiative judgment | PASS |
-| Silence judgment | PASS |
-| Significance handling | PASS |
-| Urgency separation | PASS |
-| Evidence confidence | PASS |
-| Goal-at-risk initiative | PASS |
-| Risk initiative | PASS |
-| Contradictory evidence | PASS |
-| Missing-information initiative | PASS |
-| Decision review initiative | PASS |
-| Execution initiative | PASS |
-| Outcome/reassessment initiative | PASS |
-| Duplicate suppression | PASS |
-| Acknowledgement suppression | PASS |
-| Dismissal suppression | PASS |
-| Material-change resurfacing | PASS |
-| Explicit-manager-intent priority | PASS |
-| Stage separation | PASS |
-| Data uncertainty preservation | PASS |
-| ECA:2 reuse | PASS |
-| Authority isolation | PASS |
-| Live runtime | PASS |
-| Regression gates | PASS |
-| NXA funnel | PASS |
-| TypeScript | PASS |
-| ESLint | PASS |
-| Production build | PASS |
-| git diff --check | PASS |
+| New initiative engine | NO |
+| New attention authority | NO |
+| New recommendation engine | NO |
+| New writer / store / resolver | NO |
+| Production ECA:3 judgment changed this phase | NO |
 
-## Dependency direction
+Initiative model: `shouldIntervene` maps to SPEAK / SILENT.
 
-ECA:1 (NOW) → ECA:2 (NEXT) → ECA:3 (whether to speak). ECA:3 does not call the ECA:2 planner. Conversational speech remains NCA:5 / NXA:4 / Advisor. ECA:3 does not overlay a second message.
+## Focused coverage
 
-Canonical module: `judgeEcaExecutiveInitiative` (`NPA-T ECA:3/ProactiveExecutiveGuidanceAdvisorInitiative`).
+| Suite | Result |
+| --- | --- |
+| Legacy A–T + sequences 1–5 + urgency | PASS |
+| Prompt A–O (SPEAK/SILENT contract) | PASS |
+| Prompt multi-turn 1–4 | PASS |
+| Combined focused file | **45/45 PASS** |
+| Orchestrator runtime | **4/4 PASS** |
 
-## Focused and multi-turn
+SPEAK cases include: important Risk, evidence gap, execution deviation, goal risk, weak-contribution wording.
+SILENT cases include: trivial stable, execution stable, explicit intent, repetition, subject switch, silence after answer.
 
-A–T and sequences 1–5 pass in `ecaExecutiveInitiativeJudgment.test.ts`. Orchestrator runtime proofs pass in `ecaExecutiveInitiativeJudgment.runtime.test.ts`.
+## Live runtime (short, max 5)
 
-## Live `/executive` sequences
-
-Evidence: `frontend/artifacts/eca/ECA-3/live-proofs.json`.
+Evidence: `live-proofs.json` via `scripts/eca-3-live-proofs.mjs` on `http://localhost:3000/executive?reset=1`.
 
 | Proof | Result |
 | --- | --- |
-| 1 Appropriate silence | PASS |
-| 2 Goal risk | PASS |
-| 3 Missing information | PASS |
-| 4 Dismissal | PASS |
-| 5 New evidence after dismissal | PASS |
-| 6 Data uncertainty | PASS — no WARN / no authoritative capacity warning |
-| 7 Decision/Execution boundary | PASS — no CC:10 commit, `writes=false` |
+| 1 Important issue → SPEAK | PASS |
+| 2 Stable Explain → SILENT | PASS |
+| 3 Data uncertainty (CAP_AV) | PASS |
+| 4 Decision readiness (prefer Demand Surge) — no CC:10 | PASS |
+| 5 Execution readiness — no start / not running | PASS |
 
-## Funnel and quality
+**5/5 PASS**, page errors **0**. Subjects: Demand Surge, Pricing Response, Capacity Gap (canonical).
+
+## Safety matrix
 
 | Gate | Result |
 | --- | --- |
-| NXA L1 | PASS |
-| NXA L2 | PASS |
-| NXA L3 | PASS |
-| NXA L4 omnibus | PASS |
-| NXA L4 DIR inventory | PASS |
-| NXA L4 typecheck | PASS |
-| NXA L4 eslint (PREP surface) | PASS (also ECA:3 files) |
-| NXA L4 git diff --check PREP | PASS |
-| Production build | PASS |
-| Live smoke | PASS on 3018 |
+| Explicit-intent protection | PASS |
+| Causal safety (no “caused” inflation) | PASS |
+| Data safety | PASS |
+| Decision safety (preference ≠ commit) | PASS |
+| Execution safety (readiness ≠ ACTIVE/start) | PASS |
+| Repetition protection | PASS |
+| Significance ≠ urgency ≠ confidence | PASS |
 
-Workspace `*.test.ts` files that import Vitest were not executed with `node --test`; that is the existing canonical-runner boundary, not an ECA:3 failure.
+## ECA regressions (this run)
+
+| Suite | Result |
+| --- | --- |
+| ECA:2 focused + multi-turn | **22/22 PASS** |
+| ECA:1 working context | **19/19 PASS** (suite green in combined 98) |
+| ECA:2-FIX1 continuity | PASS (included in combined regression **98/98**) |
+
+## Quality gates
+
+| Gate | Result | Notes |
+| --- | --- | --- |
+| TypeScript | **0 errors** | this run |
+| ESLint (ECA:3 surface) | PASS | this run |
+| git diff --check | PASS | this run |
+| NXA Level 4 | **7/7 PASS** | reused CLEANUP-3 (no production behavior change) |
+| NXA omnibus | **1612/1612 PASS** | reused CLEANUP-3 |
+| Production build | PASS | reused CLEANUP-3 |
+
+New S0/S1: **0**. Authority violations: **0**.
 
 ## Stop
 
-ECA:4 was not started. ECA:3-FIX1 was not created. ECA:1 and ECA:2 were not redesigned.
+ECA:4 was not started. Ready for ECA:4: **YES** (do not start automatically).

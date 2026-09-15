@@ -505,3 +505,255 @@ test("ECA:6 overlay stays natural", () => {
   assert.doesNotMatch(spoken, /step \d+ of \d+/i);
   assert.doesNotMatch(spoken, /OBJECTIVE_STATE=/);
 });
+
+test("ECA:6 prompt A — Objective creation without Decision", () => {
+  const { judgment } = play("Help me understand why delivery is late.");
+  assert.equal(judgment.objectiveType, "INVESTIGATE_ISSUE");
+  assert.equal(judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:6 prompt B — Objective persistence across evidence turn", () => {
+  const [start, evidence] = chain([
+    "Help me understand why delivery is late.",
+    "Show me the evidence.",
+  ]);
+  assert.equal(start.judgment.objectiveType, "INVESTIGATE_ISSUE");
+  assert.equal(evidence.judgment.objectiveType, "INVESTIGATE_ISSUE");
+  assert.notEqual(evidence.actionPlan.intent, start.actionPlan.intent);
+});
+
+test("ECA:6 prompt C — Multi-step progress without forced workflow", () => {
+  const turns = chain([
+    "Help me understand why delivery is late.",
+    "Show me the evidence.",
+    "Compare outsourcing and overtime.",
+  ]);
+  assert.equal(turns[0]?.judgment.objectiveType, "INVESTIGATE_ISSUE");
+  assert.ok(turns[2]?.judgment.objectiveType === "COMPARE_OPTIONS" || turns[2]?.judgment.objectiveType === "EXPLORE_OPTIONS");
+  assert.equal(turns[2]?.judgment.boundaries.forcesWorkflow, false);
+});
+
+test("ECA:6 prompt D — Explicit objective switch wins", () => {
+  const [, switched] = chain([
+    "Help me understand why delivery is late.",
+    "Forget this. Let’s look at staffing.",
+  ]);
+  assert.equal(switched.judgment.relationshipToCurrentTurn, "SWITCH");
+  assert.notEqual(switched.judgment.objectiveType, "INVESTIGATE_ISSUE");
+});
+
+test("ECA:6 prompt E — Temporary CAP_AV detour preserves comparison", () => {
+  const [compare, side] = chain([
+    "Compare outsourcing and overtime.",
+    "What does CAP_AV mean?",
+  ]);
+  assert.equal(compare.judgment.objectiveType, "COMPARE_OPTIONS");
+  assert.equal(side.judgment.relationshipToCurrentTurn, "SIDE_QUESTION");
+  assert.equal(side.judgment.objectiveType, "COMPARE_OPTIONS");
+});
+
+test("ECA:6 prompt F — Resume after detour", () => {
+  const turns = chain([
+    "Compare outsourcing and overtime.",
+    "What does CAP_AV mean?",
+    "Thanks.",
+  ]);
+  assert.equal(turns[2]?.judgment.objectiveType, "COMPARE_OPTIONS");
+  assert.notEqual(turns[2]?.judgment.lifecycle, "ABANDONED");
+});
+
+test("ECA:6 prompt G — Unknown objective is not invented", () => {
+  const { judgment } = play("Hello.");
+  assert.equal(judgment.unnecessaryObjective, false);
+  assert.equal(judgment.boundaries.forcesWorkflow, false);
+});
+
+test("ECA:6 prompt H — Primary unresolved item is singular", () => {
+  const start = play("Compare outsourcing and overtime.");
+  const workingContext = working("Are we done?");
+  const actionPlan = planEcaExecutiveConversationAction({ utterance: "Are we done?", workingContext });
+  const informationNeed = {
+    ...judgeEcaExecutiveInformationNeed({ utterance: "Are we done?", workingContext, actionPlan }),
+    shouldAsk: true,
+  };
+  const judgment = judgeEcaExecutiveDialogueStrategy({
+    utterance: "Are we done?",
+    workingContext,
+    actionPlan,
+    informationNeed,
+    session: start.session,
+  });
+  isolation(judgment);
+  assert.notEqual(judgment.lifecycle, "COMPLETED");
+  assert.ok(judgment.unresolvedNeedId == null || typeof judgment.unresolvedNeedId === "string");
+});
+
+test("ECA:6 prompt I — Next milestone stays evidence-related when incomplete", () => {
+  const turns = chain(["Help me understand why delivery is late.", "What’s next?"]);
+  assert.notEqual(turns[1]?.judgment.recommendedMilestone, "NONE");
+  assert.notEqual(turns[1]?.judgment.recommendedMilestone, "REVIEW_DECISION_READINESS");
+});
+
+test("ECA:6 prompt J — Manager may skip to recommendation", () => {
+  const turns = chain([
+    "Compare outsourcing and overtime.",
+    "What do you recommend?",
+  ]);
+  assert.ok(
+    turns[1]?.judgment.objectiveType === "COMPARE_OPTIONS" ||
+      turns[1]?.judgment.objectiveType === "PREPARE_RECOMMENDATION",
+  );
+  assert.equal(turns[1]?.judgment.boundaries.forcesWorkflow, false);
+  assert.equal(turns[1]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:6 prompt K — Objective completion", () => {
+  const turns = chain([
+    "Compare outsourcing and overtime.",
+    "Which has lower risk?",
+    "What do you recommend?",
+    "Are we done?",
+  ]);
+  assert.equal(turns[3]?.judgment.lifecycle, "COMPLETED");
+  assert.equal(turns[3]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:6 prompt L — Objective abandonment", () => {
+  const [, paused] = chain([
+    "Help me understand why delivery is late.",
+    "We’ll come back to this later.",
+  ]);
+  assert.equal(paused.judgment.lifecycle, "PAUSED");
+  assert.equal(paused.judgment.returnToObjective, false);
+});
+
+test("ECA:6 prompt M — Subject/objective/intent remain distinct", () => {
+  const [start, evidence] = chain([
+    "Help me understand why delivery is late.",
+    "Show me the evidence.",
+  ]);
+  assert.equal(start.judgment.objectiveType, "INVESTIGATE_ISSUE");
+  assert.equal(evidence.judgment.objectiveType, "INVESTIGATE_ISSUE");
+  assert.notEqual(evidence.actionPlan.intent, start.actionPlan.intent);
+  assert.ok(evidence.workingContext.activeSubject?.label || CAPACITY.label);
+});
+
+test("ECA:6 prompt N — Business Goal is not mutated by dialogue objective", () => {
+  const { judgment } = play("Help me understand why delivery is late.");
+  assert.equal(judgment.boundaries.writesGoal, false);
+  assert.equal(judgment.boundaries.mutatesBusinessState, false);
+});
+
+test("ECA:6 prompt O — Decision readiness does not commit", () => {
+  const turns = chain([
+    "Compare outsourcing and overtime.",
+    "What do you recommend?",
+    "I choose A.",
+  ]);
+  assert.equal(turns[2]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:6 prompt P — Execution readiness does not start Execution", () => {
+  const workingContext = working("Are we ready to execute?");
+  const actionPlan = planEcaExecutiveConversationAction({ utterance: "Are we ready to execute?", workingContext });
+  const judgment = judgeEcaExecutiveDialogueStrategy({
+    utterance: "Are we ready to execute?",
+    workingContext,
+    actionPlan,
+    session: null,
+    committedDecisionId: "dec-1",
+  });
+  isolation(judgment);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:6 prompt Q — CAP_AV blocker without semantic mutation", () => {
+  const [compare, side] = chain([
+    "Compare outsourcing and overtime.",
+    "What does CAP_AV mean?",
+  ]);
+  assert.equal(side.judgment.objectiveType, compare.judgment.objectiveType);
+  assert.equal(side.judgment.boundaries.writesDataTruth, false);
+});
+
+test("ECA:6 prompt R — Outcome discussion without causal inflation", () => {
+  const { judgment } = play("Did the plan work?");
+  assert.equal(judgment.boundaries.writesOutcome, false);
+  assert.doesNotMatch(judgment.managerFacingNote ?? "", /caused the improvement/i);
+});
+
+test("ECA:6 prompt S — Explicit manager intent wins over sticky strategy", () => {
+  const turns = chain([
+    "Help me understand why delivery is late.",
+    "Show me current Executions.",
+  ]);
+  assert.equal(turns[1]?.judgment.relationshipToCurrentTurn, "UNRELATED");
+  assert.equal(turns[1]?.judgment.returnToObjective, false);
+  assert.equal(turns[1]?.judgment.boundaries.writesGoal, false);
+});
+
+test("ECA:6 prompt T — No workflow engine / no second store", () => {
+  const { judgment } = play("Help me understand why delivery is late.");
+  assert.equal(judgment.boundaries.forcesWorkflow, false);
+  assert.equal(judgment.boundaries.createsSecondObjectiveStore, false);
+  assert.equal(judgment.boundaries.replacesConv2, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+  assert.equal(judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:6 prompt multi-turn 1 — Investigation to recommendation without Decision", () => {
+  const turns = chain([
+    "Help me understand why delivery is late.",
+    "Show me the evidence.",
+    "What should we investigate first?",
+    "What do you recommend?",
+  ]);
+  assert.equal(turns[0]?.judgment.objectiveType, "INVESTIGATE_ISSUE");
+  assert.equal(turns[3]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:6 prompt multi-turn 2 — Comparison + CAP_AV detour + resume", () => {
+  const turns = chain([
+    "Compare outsourcing and overtime.",
+    "Which has lower risk?",
+    "What does CAP_AV mean?",
+    "Thanks.",
+  ]);
+  assert.equal(turns[0]?.judgment.objectiveType, "COMPARE_OPTIONS");
+  assert.equal(turns[2]?.judgment.relationshipToCurrentTurn, "SIDE_QUESTION");
+  assert.equal(turns[3]?.judgment.objectiveType, "COMPARE_OPTIONS");
+});
+
+test("ECA:6 prompt multi-turn 3 — Recommendation to Decision readiness without commit", () => {
+  const turns = chain([
+    "Compare outsourcing and overtime.",
+    "What do you recommend?",
+    "I choose A.",
+  ]);
+  assert.equal(turns[2]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:6 prompt multi-turn 4 — Decision to Execution readiness without start", () => {
+  const workingContext = working("Are we ready to execute?");
+  const actionPlan = planEcaExecutiveConversationAction({ utterance: "Are we ready to execute?", workingContext });
+  const before = judgeEcaExecutiveDialogueStrategy({
+    utterance: "Are we ready to execute?",
+    workingContext,
+    actionPlan,
+    session: null,
+    committedDecisionId: "dec-approved-1",
+  });
+  isolation(before);
+  assert.equal(before.boundaries.startsExecution, false);
+  const startCtx = working("Start the plan.");
+  const startPlan = planEcaExecutiveConversationAction({ utterance: "Start the plan.", workingContext: startCtx });
+  const after = judgeEcaExecutiveDialogueStrategy({
+    utterance: "Start the plan.",
+    workingContext: startCtx,
+    actionPlan: startPlan,
+    session: null,
+    committedDecisionId: "dec-approved-1",
+  });
+  isolation(after);
+  assert.equal(after.boundaries.startsExecution, false);
+});

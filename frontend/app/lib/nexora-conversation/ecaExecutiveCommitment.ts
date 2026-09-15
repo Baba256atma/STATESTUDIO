@@ -85,6 +85,7 @@ export type EcaExecutiveCommitmentJudgment = Readonly<{
   reusedSuggestedManagerTurns: EcaConversationActionPlan["suggestedManagerTurns"];
   managerFacingNote: string | null;
   speak: boolean;
+  commitmentReview: boolean;
   falseCommitment: false;
   staleYesMutation: false;
   targetDrift: false;
@@ -108,6 +109,17 @@ export type EcaCommitmentInput = Readonly<{
   session?: EcaCommitmentSession | null;
   committedDecisionId?: string | null;
   decisionCommitmentStatus?: string | null;
+  /** Current Decision-theatre / awaiting-decision candidate (read-only). */
+  decisionCandidate?: Readonly<{ id: string; label: string }> | null;
+  /** Compared options when more than one candidate is plausible. */
+  candidateChoices?: readonly Readonly<{ id: string; label: string }>[];
+  /**
+   * Journey AWAITING_DECISION: Decision is needed (scenarios available),
+   * not that a specific candidate is under review.
+   */
+  decisionNeeded?: boolean;
+  /** Manager-facing subject label when decision is needed (e.g. Capacity). */
+  decisionNeededSubjectLabel?: string | null;
 }>;
 
 function freeze<T>(value: T): T {
@@ -162,10 +174,19 @@ function isWhatAmIApproving(text: string): boolean {
   return /\bwhat (?:exactly )?am i approving\b|\bwhat am i about to decide\b|\bshow me what i(?:'| a)m about to decide\b/i.test(text);
 }
 function isWhatHappens(text: string): boolean {
-  return /\bwhat happens if i confirm\b/i.test(text);
+  return /\bwhat happens if i (?:confirm|commit|approve)\b/i.test(text);
 }
 function isFinalCheck(text: string): boolean {
   return /\bbefore i decide\b|\banything i(?:'| a)m missing\b|\bcan i decide now\b/i.test(text);
+}
+/** Informational commitment-review family — not EXPLICIT_COMMITMENT. */
+function isCommitmentReview(text: string): boolean {
+  if (isWhatAmIApproving(text) || isWhatHappens(text) || isFinalCheck(text)) return true;
+  return (
+    /\bwhat(?:\s+\w+){0,4}\s+(?:are we|would we be|am i|would i be)\s+committing\s+to\b/i.test(text) ||
+    /\bwhat would (?:this |the )?commitment mean\b/i.test(text) ||
+    /\bwhat does approving (?:this|it|that) mean\b/i.test(text)
+  );
 }
 function isChooseIt(text: string): boolean {
   return /\bchoose it\b|\bapprove it\b|\bgo with it\b/i.test(text);
@@ -174,8 +195,23 @@ function isActuallyOther(text: string): boolean {
   return /\bactually\b.+\b(?:choose |go with |b\b)/i.test(text) || /^actually b\.?$/i.test(text.trim());
 }
 
-function namedTarget(text: string, recommendation: EcaExecutiveRecommendationJudgment | null): EcaSubject | null {
-  const options = recommendation?.consideredOptions ?? [];
+function namedTarget(
+  text: string,
+  recommendation: EcaExecutiveRecommendationJudgment | null,
+  extraChoices: readonly Readonly<{ id: string; label: string }>[] = [],
+): EcaSubject | null {
+  const options = [...(recommendation?.consideredOptions ?? []), ...extraChoices];
+  const lower = text.toLowerCase();
+  const labeled = options.find((item) => item.label && lower.includes(item.label.toLowerCase()));
+  if (labeled) return freeze({ id: labeled.id, label: labeled.label, kind: "option" });
+  if (/external capacity/i.test(text)) {
+    const hit = options.find((item) => /external/i.test(item.label));
+    if (hit) return freeze({ id: hit.id, label: hit.label, kind: "option" });
+  }
+  if (/capacity expansion plan/i.test(text)) {
+    const hit = options.find((item) => /expansion/i.test(item.label));
+    if (hit) return freeze({ id: hit.id, label: hit.label, kind: "option" });
+  }
   const match = text.match(/\b(?:scenario\s+)?([ab]|outsourcing|overtime|supplier [ab])\b/i);
   if (match?.[1]) {
     const token = match[1].toLowerCase();
@@ -196,6 +232,38 @@ function asSubject(option: { readonly id: string; readonly label: string } | nul
   return freeze({ id: option.id, label: option.label, kind: "option" });
 }
 
+function resolveCommitmentReviewTarget(input: {
+  readonly named: EcaSubject | null;
+  readonly previous: EcaCommitmentSession;
+  readonly recommendation: EcaExecutiveRecommendationJudgment | null;
+  readonly decisionCandidate: Readonly<{ id: string; label: string }> | null | undefined;
+  readonly candidateChoices: readonly Readonly<{ id: string; label: string }>[];
+}): { target: EcaSubject | null; resolution: EcaTargetResolution } {
+  if (input.named) return { target: input.named, resolution: "RESOLVED" };
+  if (input.previous.pendingTargetId) {
+    return {
+      target: freeze({
+        id: input.previous.pendingTargetId,
+        label: input.previous.pendingTargetLabel ?? input.previous.pendingTargetId,
+        kind: "option",
+      }),
+      resolution: "RESOLVED",
+    };
+  }
+  const recommended = asSubject(input.recommendation?.recommendedOption);
+  if (recommended) return { target: recommended, resolution: "RESOLVED" };
+  if (input.decisionCandidate?.id) {
+    return { target: asSubject(input.decisionCandidate), resolution: "RESOLVED" };
+  }
+  if (input.candidateChoices.length === 1) {
+    return { target: asSubject(input.candidateChoices[0]!), resolution: "RESOLVED" };
+  }
+  if (input.candidateChoices.length > 1) {
+    return { target: null, resolution: "AMBIGUOUS" };
+  }
+  return { target: null, resolution: "UNKNOWN" };
+}
+
 export function judgeEcaExecutiveCommitment(
   input: EcaCommitmentInput,
 ): EcaExecutiveCommitmentJudgment {
@@ -211,7 +279,8 @@ export function judgeEcaExecutiveCommitment(
   const acknowledge = isAcknowledge(text) || (isDoIt(text) && pending) || (/\bproceed\b/i.test(text) && previous.lastChallenge);
 
   let state: EcaCommitmentState = "NONE";
-  let target = namedTarget(text, rec);
+  const extras = input.candidateChoices ?? [];
+  let target = namedTarget(text, rec, extras);
   let resolution: EcaTargetResolution = target ? "RESOLVED" : "UNKNOWN";
   let challenge: EcaPreDecisionChallenge = "NONE";
   let confirmationRequired = false;
@@ -219,6 +288,7 @@ export function judgeEcaExecutiveCommitment(
   let speak = false;
   let note: string | null = null;
   let rationale = "Commitment dialogue is judged without writing Decision truth.";
+  let commitmentReview = false;
 
   if (isPrefer(text) && !isExplicit(text, intent)) {
     state = "PREFERENCE";
@@ -254,7 +324,7 @@ export function judgeEcaExecutiveCommitment(
           })
         : rec?.recommendedOption
           ? asSubject(rec.recommendedOption)
-          : namedTarget(text, rec));
+          : namedTarget(text, rec, extras));
     resolution = target ? "RESOLVED" : "UNKNOWN";
     speak = true;
     note = `${target?.label ?? "That option"} is already the committed Decision.`;
@@ -265,17 +335,23 @@ export function judgeEcaExecutiveCommitment(
   } else if (isDoIt(text) && !pending && intent !== "COMMIT_DECISION" && intent !== "REQUEST_EXECUTION_ACTION") {
     state = "NONE";
     rationale = "Do it / proceed is not a lexical Decision default.";
-  } else if (isWhatAmIApproving(text) || isWhatHappens(text) || isFinalCheck(text)) {
-    state = pending ? "AWAITING_CONFIRMATION" : rec?.decisionReadiness === "READY" ? "INTENT" : "NONE";
-    target = target ?? (previous.pendingTargetId
-      ? freeze({ id: previous.pendingTargetId, label: previous.pendingTargetLabel ?? previous.pendingTargetId, kind: "option" })
-      : rec?.recommendedOption
-        ? asSubject(rec.recommendedOption)
-        : null);
-    resolution = target ? "RESOLVED" : "UNKNOWN";
+  } else if (isCommitmentReview(text)) {
+    commitmentReview = true;
+    const review = resolveCommitmentReviewTarget({
+      named: target,
+      previous,
+      recommendation: rec,
+      decisionCandidate: input.decisionCandidate,
+      candidateChoices: input.candidateChoices ?? [],
+    });
+    target = review.target;
+    resolution = review.resolution;
+    state = pending ? "AWAITING_CONFIRMATION" : resolution === "RESOLVED" ? "INTENT" : "NONE";
     speak = true;
     if (isWhatHappens(text)) {
-      note = "The Decision will be committed through Nexora’s Decision authority. Execution still requires a separate step.";
+      note = target
+        ? `If you approve ${target.label}, the Decision will be committed through Nexora’s Decision authority. Execution still requires a separate step.`
+        : "Approval would commit a Decision through Nexora’s Decision authority. Execution still requires a separate step.";
     } else if (isFinalCheck(text)) {
       if (rec?.decisionReadiness === "BLOCKED" || rec?.readiness === "BLOCKED_BY_CRITICAL_UNKNOWN") {
         note = rec.unresolvedCriticalNeedId
@@ -287,11 +363,21 @@ export function judgeEcaExecutiveCommitment(
       } else {
         note = "I don’t see a material blocker in the current evidence.";
       }
+    } else if (resolution === "AMBIGUOUS") {
+      note = "More than one option is still under review. Which one would you be committing to?";
+      challenge = "CHALLENGE_TARGET_AMBIGUITY";
+    } else if (target) {
+      note = `You would be committing to ${target.label} as the selected course of action. Approval would create the Decision, but it would not start execution.`;
+    } else if (input.decisionNeeded) {
+      const subject = input.decisionNeededSubjectLabel?.trim();
+      note = subject
+        ? `A decision is needed on ${subject}, but no specific option is currently under review yet.`
+        : "A decision is needed, but no specific option is currently under review yet.";
     } else {
-      note = target
-        ? `You’re reviewing ${target.label} as the Decision. No Execution has started.`
-        : "There is no pending Decision target yet.";
+      note =
+        "There is no current Decision candidate under review yet. Name the option you mean, or open Decision review first.";
     }
+    rationale = "Commitment review explains the current candidate without writing a Decision.";
   } else if (isYes(text) && pending) {
     state = "EXPLICIT_COMMITMENT";
     target = freeze({
@@ -307,7 +393,7 @@ export function judgeEcaExecutiveCommitment(
       ? `${target.label} is already the committed Decision.`
       : `Confirm ${target.label} as the Decision through the existing Decision authority.`;
     rationale = "Yes is bound to the current pending confirmation overlay only.";
-  } else if (isChooseIt(text) && (rec?.consideredOptions.length ?? 0) >= 2 && !namedTarget(text, rec)) {
+  } else if (isChooseIt(text) && (rec?.consideredOptions.length ?? 0) >= 2 && !namedTarget(text, rec, extras)) {
     state = "EXPLICIT_COMMITMENT";
     resolution = "AMBIGUOUS";
     challenge = "CHALLENGE_TARGET_AMBIGUITY";
@@ -316,7 +402,7 @@ export function judgeEcaExecutiveCommitment(
     rationale = "Ambiguous it cannot bind a Decision target.";
   } else if (isExplicit(text, intent) || (isDoIt(text) && pending) || isActuallyOther(text)) {
     if (isActuallyOther(text) && pending) {
-      target = namedTarget(text, rec) ?? freeze({ id: "scenario-b", label: "Scenario B", kind: "option" });
+      target = namedTarget(text, rec, extras) ?? freeze({ id: "scenario-b", label: "Scenario B", kind: "option" });
       resolution = "RESOLVED";
       state = "AWAITING_CONFIRMATION";
       confirmationRequired = true;
@@ -421,6 +507,7 @@ export function judgeEcaExecutiveCommitment(
     reusedSuggestedManagerTurns: input.actionPlan.suggestedManagerTurns,
     managerFacingNote: note,
     speak,
+    commitmentReview,
     falseCommitment: false,
     staleYesMutation: false,
     targetDrift: false,
@@ -464,5 +551,7 @@ export function applyEcaCommitmentToPresentedResponse(input: {
   const note = input.judgment.managerFacingNote;
   if (!note) return input.source;
   if (input.source.toLowerCase().includes(note.slice(0, 28).toLowerCase())) return input.source;
+  // Commitment review owns the answer — do not append onto NCA investigation/outcome clarification.
+  if (input.judgment.commitmentReview) return note;
   return `${input.source} ${note}`.trim();
 }

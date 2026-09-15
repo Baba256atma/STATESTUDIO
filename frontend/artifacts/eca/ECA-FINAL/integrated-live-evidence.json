@@ -1,0 +1,264 @@
+{
+  "identity": "NPA-T ECA:FINAL/IntegratedExecutiveConversation",
+  "url": "http://localhost:3000/executive?reset=1",
+  "pageErrors": 0,
+  "learningWrites": 0,
+  "s0": 0,
+  "s1": 0,
+  "s2": 1,
+  "s3": 0,
+  "journeyA": {
+    "pass": true,
+    "turns": 19,
+    "failed": [
+      {
+        "id": "A-architecture-leak",
+        "severity": "S2",
+        "detail": [
+          {
+            "u": "What do you recommend?",
+            "match": "UNSPECIFIED"
+          }
+        ]
+      }
+    ],
+    "decisions": 1,
+    "executions": 1,
+    "sample": [
+      {
+        "u": "What's our current situation?",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Explain Capacity Gap.",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Show me the evidence.",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "What does CAP_AV mean?",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "I think it means Available Capacity.",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Compare Demand Surge and Pricing Response.",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "What do you recommend?",
+        "leak": true,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "That option looks best.",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "show scenarios",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Compare them.",
+        "leak": false,
+        "d": "0",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Approve Demand Surge",
+        "leak": false,
+        "d": "1",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Are we ready to execute?",
+        "leak": false,
+        "d": "1",
+        "e": "0",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Start it.",
+        "leak": false,
+        "d": "1",
+        "e": "1",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "How is the execution going?",
+        "leak": false,
+        "d": "1",
+        "e": "1",
+        "learn": "NONE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Delivery improved from 91% to 94%.",
+        "leak": false,
+        "d": "1",
+        "e": "1",
+        "learn": "TENTATIVE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Did it work?",
+        "leak": false,
+        "d": "1",
+        "e": "1",
+        "learn": "TENTATIVE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Did our decision cause the improvement?",
+        "leak": false,
+        "d": "1",
+        "e": "1",
+        "learn": "TENTATIVE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "What did we learn?",
+        "leak": false,
+        "d": "1",
+        "e": "1",
+        "learn": "TENTATIVE",
+        "attr": "NOT_ESTABLISHED"
+      },
+      {
+        "u": "Should we reconsider?",
+        "leak": false,
+        "d": "1",
+        "e": "1",
+        "learn": "TENTATIVE",
+        "attr": "NOT_ESTABLISHED"
+      }
+    ]
+  },
+  "journeyB": {
+    "pass": true,
+    "turns": 10,
+    "failed": []
+  },
+  "journeyC": {
+    "pass": true,
+    "turns": 12,
+    "failed": []
+  },
+  "journeyD": {
+    "pass": true,
+    "turns": 12,
+    "failed": []
+  },
+  "refresh": {
+    "pass": true,
+    "failed": [],
+    "pre": {
+      "focused": "none",
+      "moActive": "ctx-decision-reprice",
+      "continuitySubject": "",
+      "compositionSelected": "",
+      "canonicalApproved": "1",
+      "canonicalExecutions": "1",
+      "decisionCount": "0",
+      "executionCount": "0",
+      "writes7": "false",
+      "writes8": "false",
+      "writes9": "false",
+      "writes10": "false",
+      "writes11": "false",
+      "writes12": "false",
+      "app4": "false",
+      "learning": "TENTATIVE",
+      "attribution": "NOT_ESTABLISHED",
+      "state11": "PARTIALLY_OBSERVED",
+      "overall": "INCONCLUSIVE",
+      "live": "ACTIVE",
+      "track": "UNKNOWN",
+      "readiness": "ALREADY_EXECUTING",
+      "reassess": "true",
+      "theatreOutcome": "OUTCOME_PARTIAL",
+      "dataRoute": "none"
+    },
+    "post": {
+      "focused": "none",
+      "moActive": "none",
+      "continuitySubject": "",
+      "compositionSelected": "",
+      "canonicalApproved": "1",
+      "canonicalExecutions": "1",
+      "decisionCount": "0",
+      "executionCount": "0",
+      "writes7": "false",
+      "writes8": "false",
+      "writes9": "false",
+      "writes10": "false",
+      "writes11": "false",
+      "writes12": "false",
+      "app4": "false",
+      "learning": "none",
+      "attribution": "none",
+      "state11": "none",
+      "overall": "none",
+      "live": "none",
+      "track": "none",
+      "readiness": "none",
+      "reassess": "false",
+      "theatreOutcome": "none",
+      "dataRoute": "none"
+    }
+  },
+  "probe": {
+    "pass": true,
+    "turns": 12,
+    "failed": [],
+    "leaks": []
+  },
+  "architectureLeakage": 1,
+  "trustPass": true,
+  "passed": false
+}

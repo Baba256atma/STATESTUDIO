@@ -1,0 +1,468 @@
+{
+  "identity": "NPA-T MRA:3-FINAL/LiveManagerSimulation",
+  "url": "http://127.0.0.1:54941/executive?reset=1",
+  "errors": [],
+  "journeys": {
+    "orientation": [
+      {
+        "managerTurn": "hi, I'm Sam. I run operations here.",
+        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "whats on stage",
+        "reply": "NexoraCapacity Watch and Customer Watch are currently visible on Stage.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "show me problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "what can you help me with",
+        "reply": "NexoraI can compare the options, investigate remaining issues, explain the trade-offs, or show why one fits the goal better. You make the final decision.",
+        "focused": "none",
+        "moActive": "ctx-problem-margin",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      }
+    ],
+    "investigation": [
+      {
+        "managerTurn": "What are the main problems?",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "look at capcity",
+        "reply": "NexoraFocused on Capacity Gap.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "object-focus",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "go back to the first problem",
+        "reply": "NexoraThe first Problem is Capacity Gap. Current Problems are Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+        "focused": "none",
+        "moActive": "ctx-problem-capacity",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      }
+    ],
+    "crossDomain": {
+      "import": "ok",
+      "turns": [
+        {
+          "managerTurn": "show me scenarios",
+          "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+          "focused": "none",
+          "moActive": "none",
+          "dataRoute": "none",
+          "stageMode": "collection",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "is there any CSV files?",
+          "reply": "NexoraYes. I currently have 1 CSV source: capacity.csv.",
+          "focused": "none",
+          "moActive": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "stageMode": "collection",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "explain it",
+          "reply": "NexoraNexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Confirmed fields include currentRevenue (Current Revenue), previousRevenue (Previous Revenue), usedCapacity (Production Used Capacity), totalCapacity (Production Total Capacity). capacity.csv is under review and is not accepted into Data Reality yet. Nexora thinks Production, Revenue may later be relevant, but has not connected them yet.",
+          "focused": "none",
+          "moActive": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "stageMode": "collection",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "Capacity Gap",
+          "reply": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+          "focused": "ctx-problem-capacity",
+          "moActive": "ctx-problem-capacity",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "explain it",
+          "reply": "NexoraScenario: Capacity Expansion Plan. Capacity Expansion Plan is a scenario. What it represents: Capacity Expansion Plan explores relieving the Capacity Gap affecting Delivery. The current scenario model associates it with Capacity. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+          "focused": "ctx-problem-capacity",
+          "moActive": "ctx-problem-capacity",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "Demand Surge",
+          "reply": "NexoraFocused on Demand Surge.",
+          "focused": "ctx-scenario-demand",
+          "moActive": "ctx-scenario-demand",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "tell me more about it",
+          "reply": "NexoraDemand Surge is related to Delivery. Recommendation: Review Margin Pressure.",
+          "focused": "ctx-scenario-demand",
+          "moActive": "ctx-scenario-demand",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "look at Capacity",
+          "reply": "NexoraFocused on Capacity.",
+          "focused": "obj-capacity",
+          "moActive": "obj-capacity",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "what's going on with that?",
+          "reply": "NexoraAre you asking about the problem or the KPI?",
+          "focused": "obj-capacity",
+          "moActive": "obj-capacity",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "what can Nexora do?",
+          "reply": "NexoraNexora is the executive decision workspace: it keeps business objects, collections, and conversation on one shared truth.",
+          "focused": "obj-capacity",
+          "moActive": "obj-capacity",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "explain it",
+          "reply": "NexoraAre you asking about the problem or the KPI?",
+          "focused": "obj-capacity",
+          "moActive": "obj-capacity",
+          "dataRoute": "none",
+          "stageMode": "object-focus",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        }
+      ]
+    },
+    "data": {
+      "import": "TimeoutError: locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n  - waiting for getByTestId('nexora-csv-understanding-summary') to be visible\n",
+      "turns": [
+        {
+          "managerTurn": "Do you have any CSV files?",
+          "reply": "NexoraYes. I currently have 1 CSV source: capacity.csv.",
+          "focused": "none",
+          "moActive": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "Explain it.",
+          "reply": "NexoraNexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Confirmed fields include currentRevenue (Current Revenue), previousRevenue (Previous Revenue), usedCapacity (Production Used Capacity), totalCapacity (Production Total Capacity). capacity.csv is under review and is not accepted into Data Reality yet. Nexora thinks Production, Revenue may later be relevant, but has not connected them yet.",
+          "focused": "none",
+          "moActive": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "Can this data support the Capacity Gap?",
+          "reply": "NexoraI do not have a confirmed evidence relationship from capacity.csv to the capacity gap. I will not infer one from the filename. capacity.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+          "focused": "none",
+          "moActive": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        },
+        {
+          "managerTurn": "Does it prove Capacity Gap caused the delivery problem?",
+          "reply": "NexoraDo you want to compare Capacity and Delivery, or look at one of them?",
+          "focused": "none",
+          "moActive": "none",
+          "dataRoute": "none",
+          "stageMode": "overview",
+          "canonicalApproved": "0",
+          "canonicalExecutions": "0"
+        }
+      ]
+    },
+    "decisionExecution": [
+      {
+        "managerTurn": "show me scenarios",
+        "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "compare them",
+        "reply": "NexoraThe current scenario candidates are Capacity Expansion Plan, Demand Surge, Pricing Response. I don’t have enough comparable evidence to rank them on the requested criterion.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "which one is more important?",
+        "reply": "NexoraImportant in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "risk exposure",
+        "reply": "NexoraI don’t have enough comparable risk evidence for Capacity Expansion Plan and Demand Surge and Pricing Response to select one. Comparable risk-exposure evidence is missing or unknown for Capacity Expansion Plan and Demand Surge and Pricing Response. You can ask me to compare them on another explicit criterion, such as urgency, evidence strength, goal impact, or reversibility.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "I prefer Demand Surge",
+        "reply": "NexoraPreference noted — no Decision committed. a reversible Demand Surge action is your current preference. It has not been committed as a Decision.",
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "Approve Demand Surge",
+        "reply": "NexoraDemand Surge is now the Approved decision. a reversible Demand Surge action is already the committed Decision.",
+        "focused": "none",
+        "moActive": "cc10:decision:ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "1",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "start it",
+        "reply": "NexoraExecution has started. This Decision already has an active Execution. We should review its progress rather than start another one.",
+        "focused": "none",
+        "moActive": "cc10:decision:ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "1",
+        "canonicalExecutions": "1"
+      },
+      {
+        "managerTurn": "Did it start?",
+        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. This Decision already has an active Execution. We should review its progress rather than start another one.",
+        "focused": "none",
+        "moActive": "cc10:decision:ctx-scenario-demand",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "1",
+        "canonicalExecutions": "1"
+      },
+      {
+        "managerTurn": "Did our Decision cause this improvement?",
+        "reply": "NexoraInvestigate Approve Repricing as a possible contributor — evidence is not strong enough to prioritize action. Why: Approve Repricing shows attention, but a relationship is not established. Uncertainty: is missing or uncertain. Do you have evidence showing that delivery delays increase when capacity falls?",
+        "focused": "none",
+        "moActive": "ctx-decision-reprice",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "1",
+        "canonicalExecutions": "1"
+      }
+    ],
+    "mutation": [
+      {
+        "managerTurn": "Add this as a Risk.",
+        "reply": "NexoraWhich item should I add as a RISK?",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "show me problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "moActive": "obj-risk",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "yes",
+        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+        "focused": "none",
+        "moActive": "ctx-problem-margin",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "delete Margin Pressure",
+        "reply": "NexoraI won’t delete “Margin Pressure” because Nexora has no certified delete writer for that object. I will not turn this into an add.",
+        "focused": "none",
+        "moActive": "ctx-problem-margin",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "no",
+        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+        "focused": "none",
+        "moActive": "ctx-problem-margin",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      }
+    ],
+    "nav": [
+      {
+        "managerTurn": "show me problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "(queue Problems collection)",
+        "reply": null,
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "(Stage Back)",
+        "reply": null,
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "(Overview dial)",
+        "reply": null,
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "whats on stage",
+        "reply": "NexoraCapacity Watch and Customer Watch are currently visible on Stage.",
+        "focused": "none",
+        "moActive": "ctx-problem-margin",
+        "dataRoute": "none",
+        "stageMode": "overview",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      },
+      {
+        "managerTurn": "what problems do we have",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "moActive": "none",
+        "dataRoute": "none",
+        "stageMode": "collection",
+        "canonicalApproved": "0",
+        "canonicalExecutions": "0"
+      }
+    ]
+  },
+  "zeroPageErrors": true
+}

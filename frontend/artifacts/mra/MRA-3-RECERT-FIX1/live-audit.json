@@ -1,0 +1,120 @@
+{
+  "identity": "NPA-T MRA:3-RECERT-FIX1/LiveDeicticFidelity",
+  "url": "http://127.0.0.1:57903/executive?reset=1",
+  "errors": [],
+  "checks": [
+    {
+      "id": "RECERT-001",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/Investigate Capacity Expansion Plan/i",
+      "actual": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain."
+    },
+    {
+      "id": "explain-it",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/Investigate Capacity Expansion Plan/i",
+      "actual": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain."
+    },
+    {
+      "id": "how-sure",
+      "pass": true,
+      "expected": "/Demand Surge|sure|uncertain|projection/i",
+      "anti": "/Investigate Capacity Expansion Plan/i",
+      "actual": "NexoraI'm sure Demand Surge is Stable. I'm not yet sure Revenue is the confirmed cause. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation."
+    },
+    {
+      "id": "impact",
+      "pass": true,
+      "expected": "/Demand Surge|impact|affect|projection/i",
+      "anti": "/Investigate Capacity Expansion Plan/i",
+      "actual": "NexoraDemand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse. Demand Surge is associated with Delivery. That connection does not by itself tell us whether Demand Surge is affecting Delivery or the reverse."
+    }
+  ],
+  "journeys": {
+    "blocker": [
+      {
+        "managerTurn": "show me scenarios",
+        "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "leak": false,
+        "focused": "none",
+        "moActive": "none"
+      },
+      {
+        "managerTurn": "is there any CSV files?",
+        "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+        "leak": false,
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraNexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+        "leak": false,
+        "focused": "none",
+        "moActive": "ctx-scenario-capacity"
+      },
+      {
+        "managerTurn": "Capacity Gap",
+        "reply": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+        "leak": false,
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+        "leak": false,
+        "focused": "ctx-problem-capacity",
+        "moActive": "ctx-problem-capacity"
+      },
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand"
+      },
+      {
+        "managerTurn": "tell me more about it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand"
+      }
+    ],
+    "operations": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand"
+      },
+      {
+        "managerTurn": "how sure are you?",
+        "reply": "NexoraI'm sure Demand Surge is Stable. I'm not yet sure Revenue is the confirmed cause. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand"
+      },
+      {
+        "managerTurn": "what impact could it have?",
+        "reply": "NexoraDemand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse. Demand Surge is associated with Delivery. That connection does not by itself tell us whether Demand Surge is affecting Delivery or the reverse.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand"
+      }
+    ]
+  },
+  "pageErrors": 0,
+  "passed": true
+}

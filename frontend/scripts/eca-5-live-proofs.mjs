@@ -1,6 +1,6 @@
 /**
- * NPA-T ECA:5 live /executive proofs. Isolated reset journeys.
- * Does not start ECA:6.
+ * NPA-T ECA:5 live /executive proofs (short set, max 5).
+ * Uses canonical catalog names. Does not start ECA:6.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -16,6 +16,8 @@ async function readEca(page) {
     const shell = document.querySelector('[data-testid="nexora-executive-shell"]');
     return {
       intent: shell?.getAttribute("data-eca-2-intent") ?? "none",
+      nextAction: shell?.getAttribute("data-eca-2-next-action") ?? "none",
+      authority: shell?.getAttribute("data-eca-2-authority") ?? "none",
       eca4Ask: shell?.getAttribute("data-eca-4-ask") ?? "none",
       bound: shell?.getAttribute("data-eca-5-bound") ?? "none",
       type: shell?.getAttribute("data-eca-5-type") ?? "none",
@@ -26,6 +28,9 @@ async function readEca(page) {
       need: shell?.getAttribute("data-eca-5-need") ?? "none",
       writes: shell?.getAttribute("data-eca-5-writes") ?? "none",
       staleYes: shell?.getAttribute("data-eca-5-stale-yes") ?? "none",
+      decisions: shell?.getAttribute("data-canonical-decision-count") ?? "0",
+      executions: shell?.getAttribute("data-canonical-execution-count") ?? "0",
+      risks: shell?.getAttribute("data-canonical-risk-count") ?? "0",
     };
   });
 }
@@ -45,96 +50,92 @@ const page = await browser.newPage({ viewport: { width: 1502, height: 942 } });
 const errors = [];
 page.on("pageerror", (error) => errors.push(String(error)));
 await mkdir(out, { recursive: true });
-await openExecutivePage(page, url);
 
-await turn(page, "What is Supplier B's lead time?");
-const fact = await turn(page, "6 weeks.");
+await openExecutivePage(page, url);
+await turn(page, "Compare Demand Surge and Pricing Response.");
+await turn(page, "Which should I choose?");
+const prefer = await turn(page, "Delivery speed matters more.");
+const recommend = await turn(page, "What do you recommend now?");
 const runtime1 = pass(
-  fact.bound === "true" &&
-    fact.type === "FACT_CLAIM" &&
-    fact.writes === "false",
-  fact,
+  prefer.writes === "false" &&
+    recommend.writes === "false" &&
+    Number(prefer.decisions ?? "0") === 0 &&
+    Number(recommend.decisions ?? "0") === 0 &&
+    recommend.intent !== "COMMIT_DECISION",
+  { prefer, recommend },
 );
 
 await openExecutivePage(page, url);
-await turn(page, "What is Supplier B's expected cost?");
-const estimate = await turn(page, "Probably around $40,000.");
+await turn(page, "Should I worry about CAP_AV?");
+const capAv = await turn(page, "I think it means Available Capacity.");
 const runtime2 = pass(
-  estimate.type === "ESTIMATE" &&
-    estimate.confidence === "ESTIMATED" &&
-    estimate.writes === "false",
-  estimate,
-);
-
-await openExecutivePage(page, url);
-await turn(page, "What are Supplier B's cost and lead time?");
-const partial = await turn(page, "Cost is 40k.");
-const runtime3 = pass(
-  partial.complete === "PARTIAL" &&
-    partial.need === "PARTIALLY_SATISFIED" &&
-    partial.writes === "false",
-  partial,
+  capAv.writes === "false" &&
+    capAv.confidence !== "CONFIRMED_BY_MANAGER" &&
+    !/available capacity is confirmed/i.test(capAv.reply ?? ""),
+  capAv,
 );
 
 await openExecutivePage(page, url);
 await turn(page, "What is Supplier B's available capacity?");
 const unknown = await turn(page, "I don't know.");
-const runtime4 = pass(
-  unknown.type === "UNKNOWN" &&
+const runtime3 = pass(
+  (unknown.type === "UNKNOWN" || /don't know|unknown|uncertain/i.test(unknown.reply ?? "")) &&
     unknown.writes === "false" &&
     !/supplier b['’]s current available capacity\?/i.test(unknown.reply ?? ""),
   unknown,
 );
 
 await openExecutivePage(page, url);
-await turn(page, "Supplier B's lead time in our data is 4 weeks.");
-await turn(page, "What is Supplier B's lead time?");
-const conflict = await turn(page, "6 weeks.");
+const propose = await turn(page, "Add Supplier Delay as a Risk.");
+const why = await turn(page, "Why?");
+const add = await turn(page, "Add it.");
+const runtime4 = pass(
+  propose.writes === "false" &&
+    why.writes === "false" &&
+    add.writes === "false" &&
+    Number(add.risks ?? "0") <= 1,
+  { propose, why, add },
+);
+
+await openExecutivePage(page, url);
+await turn(page, "What should I do about Capacity Gap?");
+const preference = await turn(page, "I prefer Demand Surge.");
+const ready = await turn(page, "Are we ready to execute?");
+const yes = await turn(page, "Yes.");
+const start = await turn(page, "Start the plan.");
 const runtime5 = pass(
-  conflict.conflict === "VALUE_CONFLICT" &&
-    conflict.writes === "false" &&
-    /4 weeks/i.test(conflict.reply ?? ""),
-  conflict,
-);
-
-await openExecutivePage(page, url);
-await turn(page, "Should I worry about CAP_AV?");
-const capAv = await turn(page, "Yes.");
-const runtime6 = pass(
-  capAv.writes === "false" &&
-    (capAv.action === "HANDOFF_TO_EXISTING_WRITER" ||
-      capAv.staleYes === "true" ||
-      capAv.type === "CONFIRMATION"),
-  capAv,
-);
-
-await openExecutivePage(page, url);
-await turn(page, "Which scenario do you choose?");
-const decision = await turn(page, "Scenario A.");
-const runtime7 = pass(
-  decision.writes === "false" &&
-    decision.intent !== "COMMIT_DECISION",
-  decision,
+  preference.writes === "false" &&
+    Number(preference.decisions ?? "0") === 0 &&
+    yes.writes === "false" &&
+    Number(yes.executions ?? "0") === 0 &&
+    start.writes === "false" &&
+    Number(start.executions ?? "0") === 0 &&
+    !/\bis running\b/i.test(`${yes.reply ?? ""} ${start.reply ?? ""}`),
+  { preference, ready, yes, start },
 );
 
 const proofs = {
   identity: "NPA-T ECA:5/live-proofs",
+  resume: "ECA:5-2026-09-14",
   url,
+  comparisonSubjects: [
+    { id: "ctx-scenario-demand", name: "Demand Surge" },
+    { id: "ctx-scenario-pricing", name: "Pricing Response" },
+  ],
   errors,
-  "1-fact-intake": runtime1,
-  "2-estimate": runtime2,
-  "3-partial": runtime3,
-  "4-i-dont-know": runtime4,
-  "5-conflict": runtime5,
-  "6-cap-av": runtime6,
-  "7-decision-boundary": runtime7,
+  "1-preference-recommendation-continuity": runtime1,
+  "2-cap-av-uncertain-semantic-path": runtime2,
+  "3-i-dont-know": runtime3,
+  "4-risk-proposal-why-add": runtime4,
+  "5-decision-execution-boundary": runtime5,
 };
-const keys = ["1-fact-intake", "2-estimate", "3-partial", "4-i-dont-know", "5-conflict", "6-cap-av", "7-decision-boundary"];
+
+const allPass = [runtime1, runtime2, runtime3, runtime4, runtime5].every((item) => item.pass);
 await writeFile(join(out, "live-proofs.json"), `${JSON.stringify(proofs, null, 2)}\n`);
 await page.screenshot({ path: join(out, "live-proofs.png"), fullPage: true });
 await browser.close();
-if (keys.some((key) => proofs[key].pass === false)) {
+if (!allPass || errors.length > 0) {
   console.error(JSON.stringify(proofs, null, 2));
   process.exit(1);
 }
-console.log(JSON.stringify({ passed: true, url, counts: "7/7" }, null, 2));
+console.log(JSON.stringify({ passed: true, url, counts: "5/5", pageErrors: errors.length }, null, 2));

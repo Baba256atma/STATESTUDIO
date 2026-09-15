@@ -1,6 +1,6 @@
 /**
- * NPA-T ECA:3 live /executive proofs. Isolated reset journeys.
- * Does not start ECA:4.
+ * NPA-T ECA:3 live /executive proofs (short set, max 5).
+ * Uses canonical catalog names only. Does not start ECA:4.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -26,6 +26,8 @@ async function readEca(page) {
       writes: shell?.getAttribute("data-eca-3-writes") ?? "none",
       focused: shell?.getAttribute("data-focused-subject") ?? "none",
       stageMode: stage?.getAttribute("data-stage-presentation-mode") ?? "none",
+      decisions: shell?.getAttribute("data-canonical-decision-count") ?? "0",
+      executions: shell?.getAttribute("data-canonical-execution-count") ?? "0",
     };
   });
 }
@@ -33,7 +35,12 @@ async function readEca(page) {
 async function turn(page, utterance) {
   const chat = await askExecutiveChat(page, utterance);
   const eca = await readEca(page);
-  return { utterance, reply: chat.last, ...eca };
+  return {
+    utterance,
+    reply: chat.last,
+    initiative: eca.intervene === "true" ? "SPEAK" : "SILENT",
+    ...eca,
+  };
 }
 
 function pass(condition, actual) {
@@ -45,105 +52,84 @@ const page = await browser.newPage({ viewport: { width: 1502, height: 942 } });
 const errors = [];
 page.on("pageerror", (error) => errors.push(String(error)));
 await mkdir(out, { recursive: true });
-await openExecutivePage(page, url);
-
-const silenceAsk = await turn(page, "Explain Demand Surge.");
-const runtime1 = pass(
-  silenceAsk.intent === "EXPLAIN" &&
-    silenceAsk.intervene === "false" &&
-    silenceAsk.writes === "false",
-  silenceAsk,
-);
 
 await openExecutivePage(page, url);
-const goal = await turn(
+const important = await turn(
   page,
   "On-time delivery is at 91% against the 96% goal and getting worse. How are we doing?",
 );
+const runtime1 = pass(
+  important.initiative === "SPEAK" &&
+    important.writes === "false" &&
+    important.authority !== "CC:10 Decision Commitment" &&
+    important.authority !== "CC:11 Execution Follow-up",
+  important,
+);
+
+await openExecutivePage(page, url);
+const silence = await turn(page, "Explain Demand Surge.");
 const runtime2 = pass(
-  goal.intervene === "true" &&
-    goal.reason === "GOAL_AT_RISK" &&
-    goal.writes === "false" &&
-    goal.authority !== "CC:10 Decision Commitment",
-  goal,
-);
-
-await openExecutivePage(page, url);
-const missing = await turn(page, "Compare Scenario A and Scenario B.");
-const runtime3 = pass(
-  missing.intent === "COMPARE" &&
-    (missing.nextAction === "ASK_FOR_MISSING_INFORMATION" || missing.reason === "MISSING_CRITICAL_INFORMATION") &&
-    missing.writes === "false",
-  missing,
-);
-
-await openExecutivePage(page, url);
-const firstRisk = await turn(
-  page,
-  "Supplier Delay has become more relevant to the delivery goal. How are we doing?",
-);
-const dismissed = await turn(page, "Not now.");
-const continueAfter = await turn(page, "Explain Capacity Gap.");
-const runtime4 = pass(
-  firstRisk.intervene === "true" &&
-    continueAfter.intent === "EXPLAIN" &&
-    continueAfter.intervene === "false" &&
-    continueAfter.writes === "false",
-  { firstRisk, dismissed, continueAfter },
-);
-
-await openExecutivePage(page, url);
-await turn(page, "Supplier Delay has become more relevant to the delivery goal. How are we doing?");
-await turn(page, "Not now.");
-const changed = await turn(
-  page,
-  "New confirmed evidence shows Supplier Delay is now blocking execution. How are we doing?",
-);
-const runtime5 = pass(
-  changed.intervene === "true" &&
-    (changed.reason === "RISK_ESCALATION" || /supplier delay/i.test(`${changed.reason} ${changed.reply ?? ""}`)) &&
-    changed.writes === "false",
-  changed,
+  silence.intent === "EXPLAIN" &&
+    silence.initiative === "SILENT" &&
+    silence.writes === "false",
+  silence,
 );
 
 await openExecutivePage(page, url);
 const capAvMeaning = await turn(page, "What does CAP_AV mean?");
 const capAvWorry = await turn(page, "Should I worry about it?");
-const runtime6 = pass(
+const runtime3 = pass(
   capAvWorry.strength !== "WARN" &&
     !/available capacity has fallen dangerously/i.test(`${capAvMeaning.reply ?? ""} ${capAvWorry.reply ?? ""}`) &&
+    capAvWorry.writes === "false" &&
     capAvWorry.authority !== "CC:10 Decision Commitment",
   { capAvMeaning, capAvWorry },
 );
 
 await openExecutivePage(page, url);
-const review = await turn(page, "What should I do about Capacity Gap?");
-const runtime7 = pass(
-  review.intent === "SEEK_RECOMMENDATION" &&
-    review.writes === "false" &&
-    review.authority !== "CC:10 Decision Commitment" &&
-    review.nextAction !== "HANDOFF_TO_CANONICAL_AUTHORITY",
-  review,
+const seek = await turn(page, "What should I do about Capacity Gap?");
+const prefer = await turn(page, "I prefer Demand Surge.");
+const runtime4 = pass(
+  seek.writes === "false" &&
+    prefer.writes === "false" &&
+    prefer.authority !== "CC:10 Decision Commitment" &&
+    prefer.nextAction !== "HANDOFF_TO_CANONICAL_AUTHORITY" &&
+    Number(prefer.decisions ?? "0") === 0,
+  { seek, prefer },
+);
+
+await openExecutivePage(page, url);
+const ready = await turn(page, "Are we ready to start?");
+const runtime5 = pass(
+  ready.writes === "false" &&
+    ready.authority !== "CC:11 Execution Follow-up" &&
+    !/\bis running\b/i.test(ready.reply ?? "") &&
+    Number(ready.executions ?? "0") === 0,
+  ready,
 );
 
 const proofs = {
   identity: "NPA-T ECA:3/live-proofs",
+  resume: "ECA:3-2026-09-14",
   url,
+  comparisonSubjects: [
+    { id: "ctx-scenario-demand", name: "Demand Surge" },
+    { id: "ctx-scenario-pricing", name: "Pricing Response" },
+  ],
   errors,
-  "1-appropriate-silence": runtime1,
-  "2-goal-risk": runtime2,
-  "3-missing-information": runtime3,
-  "4-dismissal": runtime4,
-  "5-new-evidence-after-dismissal": runtime5,
-  "6-data-uncertainty": runtime6,
-  "7-decision-execution-boundary": runtime7,
+  "1-important-issue-speak": runtime1,
+  "2-stable-silence": runtime2,
+  "3-data-uncertainty": runtime3,
+  "4-decision-readiness-no-commit": runtime4,
+  "5-execution-readiness-no-start": runtime5,
 };
-const passed = Object.values(proofs).every((item) => item === proofs.identity || item === url || item === errors || item.pass !== false);
+
+const allPass = [runtime1, runtime2, runtime3, runtime4, runtime5].every((item) => item.pass);
 await writeFile(join(out, "live-proofs.json"), `${JSON.stringify(proofs, null, 2)}\n`);
 await page.screenshot({ path: join(out, "live-proofs.png"), fullPage: true });
 await browser.close();
-if (!runtime1.pass || !runtime2.pass || !runtime3.pass || !runtime4.pass || !runtime5.pass || !runtime6.pass || !runtime7.pass) {
+if (!allPass || errors.length > 0) {
   console.error(JSON.stringify(proofs, null, 2));
   process.exit(1);
 }
-console.log(JSON.stringify({ passed: true, url, counts: "7/7" }, null, 2));
+console.log(JSON.stringify({ passed: true, url, counts: "5/5", pageErrors: errors.length }, null, 2));

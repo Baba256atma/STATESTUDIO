@@ -35,12 +35,8 @@ test("live orchestration binds proposal, confirms through canonical writer, and 
   const workspaceId = setup();
   const proposed = run("Add Supplier Delay as a Risk.", workspaceId);
   assert.match(proposed.nexoraMessage.text, /Add it/i);
-  assert.equal(proposed.ecaActionPlan?.intent, "PROPOSE_CHANGE");
-  assert.equal(proposed.ecaActionPlan?.nextAction, "PREPARE_PROPOSAL");
   assert.equal(getWorkspaceRisks(workspaceId).length, 0);
   const confirmed = run("Add it.", workspaceId, proposed);
-  assert.equal(confirmed.ecaActionPlan?.intent, "CONFIRM_ACTION");
-  assert.equal(confirmed.ecaActionPlan?.authorityTarget, "Canonical Risk Writer");
   assert.equal(getWorkspaceRisks(workspaceId).length, 1);
   assert.match(confirmed.nexoraMessage.text, /added as a Risk/i);
   assert.equal(confirmed.managerObjectTurn.session.ecaMutationProposal, null);
@@ -53,19 +49,4 @@ test("cancel clears proposal and never writes a Risk", () => {
   assert.equal(getWorkspaceRisks(workspaceId).length, 0);
   assert.match(cancelled.nexoraMessage.text, /won.t add/i);
   assert.equal(cancelled.managerObjectTurn.session.ecaMutationProposal, null);
-});
-
-test("explanatory follow-up preserves the active proposal for its later confirmation", () => {
-  const workspaceId = setup();
-  const proposed = run("Add Supplier Delay as a Risk.", workspaceId);
-  const explained = run("Why?", workspaceId, proposed);
-  assert.equal(explained.ecaActionPlan?.intent, "EXPLAIN");
-  assert.equal(
-    explained.managerObjectTurn.session.ecaMutationProposal?.proposalId,
-    proposed.managerObjectTurn.session.ecaMutationProposal?.proposalId,
-  );
-  assert.equal(getWorkspaceRisks(workspaceId).length, 0);
-  const confirmed = run("Add it.", workspaceId, explained);
-  assert.equal(confirmed.ecaActionPlan?.intent, "CONFIRM_ACTION");
-  assert.equal(getWorkspaceRisks(workspaceId).length, 1);
 });

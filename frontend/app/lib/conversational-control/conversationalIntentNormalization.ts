@@ -240,6 +240,33 @@ export function isInvestigateNowUtterance(normalized: string): boolean {
   );
 }
 
+function strippedInvestigationUtterance(normalized: string): string {
+  return normalized.trim().replace(/[?!.,]+$/g, "").trim();
+}
+
+/**
+ * Manager asks Nexora to choose what to investigate. Attention/urgency may answer.
+ */
+export function isInvestigationSelectionUtterance(normalized: string): boolean {
+  const text = strippedInvestigationUtterance(normalized);
+  return /^(?:what should i investigate(?: first)?|what should i look at first|what needs my attention|what should i pay attention to|actually,? what should i investigate first)$/.test(
+    text,
+  );
+}
+
+/**
+ * Manager asks to investigate an already-established referent (it/this/that).
+ * Attention must not replace that subject.
+ */
+export function isTargetedDeicticInvestigationUtterance(
+  normalized: string,
+): boolean {
+  const text = strippedInvestigationUtterance(normalized);
+  return /^(?:investigate(?: it| this| that| this one| that one)?|look deeper(?: into (?:it|this|that|this one|that one))?|what else do we know(?: about (?:it|this|that|this one|that one))?)$/.test(
+    text,
+  );
+}
+
 export type ExecutiveInvestigationAsk =
   | "open-why"
   | "list-explanations"

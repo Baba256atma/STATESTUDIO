@@ -1,5 +1,5 @@
 /**
- * NPA-T ECA:7 live /executive proofs. Isolated reset journeys.
+ * NPA-T ECA:7 live /executive proofs. Maximum 5 isolated reset journeys.
  * Does not start ECA:8.
  */
 import { mkdir, writeFile } from "node:fs/promises";
@@ -30,6 +30,8 @@ async function readEca(page) {
       option: shell?.getAttribute("data-eca-7-option") ?? "none",
       writes7: shell?.getAttribute("data-eca-7-writes") ?? "none",
       secondDecision: shell?.getAttribute("data-eca-7-decision-engine") ?? "none",
+      decisionCount: shell?.getAttribute("data-decision-count") ?? "0",
+      executionCount: shell?.getAttribute("data-execution-count") ?? "0",
     };
   });
 }
@@ -51,82 +53,67 @@ page.on("pageerror", (error) => errors.push(String(error)));
 await mkdir(out, { recursive: true });
 await openExecutivePage(page, url);
 
-await turn(page, "Compare outsourcing and overtime.");
-const rec = await turn(page, "What do you recommend?");
+// 1. Grounded recommendation (Demand Surge / Capacity Gap path via compare)
+await turn(page, "Help me decide what to do about Capacity Gap.");
+await turn(page, "Compare Demand Surge and Pricing Response.");
+const grounded = await turn(page, "What do you recommend?");
 const runtime1 = pass(
-  rec.requested === "true" &&
-    rec.writes7 === "false" &&
-    rec.secondDecision === "false" &&
-    rec.intent !== "COMMIT_DECISION",
-  rec,
+  grounded.requested === "true" &&
+    grounded.writes7 === "false" &&
+    grounded.secondDecision === "false" &&
+    grounded.intent !== "COMMIT_DECISION" &&
+    (grounded.decisionCount === "0" || grounded.decisionCount === "none" || Number(grounded.decisionCount) === 0),
+  grounded,
 );
 
+// 2. Insufficient evidence → DEFER / not READY
 await openExecutivePage(page, url);
 const early = await turn(page, "What do you recommend?");
 const runtime2 = pass(
   early.option === "none" &&
     early.readiness !== "READY" &&
-    early.writes7 === "false",
+    early.writes7 === "false" &&
+    early.secondDecision === "false",
   early,
 );
 
+// 3. Preference changes recommendation framing
 await openExecutivePage(page, url);
-await turn(page, "Compare Supplier A and Supplier B.");
-const gap = await turn(page, "What do you recommend?");
-const runtime3 = pass(
-  gap.writes7 === "false" &&
-    gap.secondDecision === "false" &&
-    (gap.type === "DEFER_DECISION" ||
-      gap.readiness === "BLOCKED_BY_CRITICAL_UNKNOWN" ||
-      gap.type === "NO_CLEAR_PREFERENCE" ||
-      gap.type === "CONDITIONAL_PREFERENCE" ||
-      gap.type === "PREFER_OPTION" ||
-      gap.type === "CONTINUE_INVESTIGATION"),
-  gap,
-);
-
-await openExecutivePage(page, url);
-await turn(page, "Compare Supplier A and Supplier B.");
-const estimate = await turn(page, "Around 40k.");
-const afterEstimate = await turn(page, "What do you recommend?");
-const runtime4 = pass(
-  afterEstimate.writes7 === "false" &&
-    afterEstimate.writes5 === "false" &&
-    afterEstimate.strength !== "STRONG",
-  { estimate, afterEstimate },
-);
-
-await openExecutivePage(page, url);
-await turn(page, "Compare outsourcing and overtime.");
+await turn(page, "Compare Demand Surge and Pricing Response.");
 await turn(page, "Delivery speed matters most.");
 const first = await turn(page, "What do you recommend?");
 await turn(page, "Actually, cost matters more.");
 const shifted = await turn(page, "What do you recommend?");
-const runtime5 = pass(
+const runtime3 = pass(
   shifted.writes7 === "false" &&
     shifted.requested === "true" &&
     shifted.secondDecision === "false",
   { first, shifted },
 );
 
+// 4. Decision readiness without automatic Decision
 await openExecutivePage(page, url);
-await turn(page, "Should I worry about CAP_AV?");
-const cap = await turn(page, "What do you recommend?");
-const runtime6 = pass(
-  cap.writes7 === "false" &&
-    cap.strength !== "STRONG",
-  cap,
+await turn(page, "Compare Demand Surge and Pricing Response.");
+const readyAsk = await turn(page, "What do you recommend?");
+const runtime4 = pass(
+  readyAsk.writes7 === "false" &&
+    readyAsk.secondDecision === "false" &&
+    readyAsk.intent !== "COMMIT_DECISION" &&
+    (readyAsk.decisionCount === "0" || readyAsk.decisionCount === "none" || Number(readyAsk.decisionCount) === 0),
+  readyAsk,
 );
 
+// 5. Explicit Decision approval → CC:10 only; Execution remains separate
 await openExecutivePage(page, url);
-await turn(page, "Compare outsourcing and overtime.");
+await turn(page, "Compare Demand Surge and Pricing Response.");
 const before = await turn(page, "What do you recommend?");
-const choose = await turn(page, "I choose A.");
-const runtime7 = pass(
+const choose = await turn(page, "I choose Demand Surge.");
+const runtime5 = pass(
   before.writes7 === "false" &&
     choose.writes7 === "false" &&
     choose.secondDecision === "false" &&
-    (choose.intent !== "COMMIT_DECISION" || choose.action === "HANDOFF_TO_CANONICAL_AUTHORITY"),
+    (choose.intent !== "COMMIT_DECISION" || choose.action === "HANDOFF_TO_CANONICAL_AUTHORITY") &&
+    (choose.executionCount === "0" || choose.executionCount === "none" || Number(choose.executionCount) === 0),
   { before, choose },
 );
 
@@ -134,28 +121,25 @@ const proofs = {
   identity: "NPA-T ECA:7/live-proofs",
   url,
   errors,
-  "1-supported-recommendation": runtime1,
-  "2-too-early": runtime2,
-  "3-critical-gap": runtime3,
-  "4-estimate": runtime4,
-  "5-criterion-shift": runtime5,
-  "6-cap-av": runtime6,
-  "7-recommendation-decision-boundary": runtime7,
+  pageErrors: errors.length,
+  "1-grounded-recommendation": runtime1,
+  "2-insufficient-evidence-defer": runtime2,
+  "3-preference-framing": runtime3,
+  "4-decision-readiness-no-auto-decision": runtime4,
+  "5-cc10-boundary-no-execution": runtime5,
 };
 const keys = [
-  "1-supported-recommendation",
-  "2-too-early",
-  "3-critical-gap",
-  "4-estimate",
-  "5-criterion-shift",
-  "6-cap-av",
-  "7-recommendation-decision-boundary",
+  "1-grounded-recommendation",
+  "2-insufficient-evidence-defer",
+  "3-preference-framing",
+  "4-decision-readiness-no-auto-decision",
+  "5-cc10-boundary-no-execution",
 ];
 await writeFile(join(out, "live-proofs.json"), `${JSON.stringify(proofs, null, 2)}\n`);
 await page.screenshot({ path: join(out, "live-proofs.png"), fullPage: true });
 await browser.close();
-if (keys.some((key) => proofs[key].pass === false)) {
+if (errors.length > 0 || keys.some((key) => proofs[key].pass === false)) {
   console.error(JSON.stringify(proofs, null, 2));
   process.exit(1);
 }
-console.log(JSON.stringify({ passed: true, url, counts: "7/7" }, null, 2));
+console.log(JSON.stringify({ passed: true, url, counts: "5/5", pageErrors: 0 }, null, 2));

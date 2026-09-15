@@ -188,3 +188,66 @@ test("plain navigation does not become comparison merely because a collection ex
   });
   assert.equal(meaning.active, false);
 });
+
+test("targeted investigation exits stale collection comparison primary mode", () => {
+  const meaning = interpretExecutiveComparisonMeaning({
+    utterance: "investigate it",
+    intentKind: "explain",
+    activeComparison: {
+      candidateIds: [capacity.id, demand.id],
+      candidateKind: "SCENARIO",
+      mode: "COMPARE",
+      criterion: "RISK",
+      establishedAtTurn: 4,
+      sourceCollectionTurn: 2,
+    },
+    activeCollectionPresent: true,
+  });
+  assert.equal(meaning.active, false);
+});
+
+test("named single-subject investigation exits stale comparison primary mode", () => {
+  const meaning = interpretExecutiveComparisonMeaning({
+    utterance: "Investigate Capacity Expansion Plan",
+    intentKind: "focus",
+    activeComparison: {
+      candidateIds: [capacity.id, demand.id],
+      candidateKind: "SCENARIO",
+      mode: "COMPARE",
+      criterion: "RISK",
+      establishedAtTurn: 4,
+      sourceCollectionTurn: 2,
+    },
+    activeCollectionPresent: true,
+  });
+  assert.equal(meaning.active, false);
+});
+
+test("investigation selection keeps collection comparison eligible", () => {
+  const meaning = interpretExecutiveComparisonMeaning({
+    utterance: "Which one should I investigate first?",
+    intentKind: "explain",
+    activeComparison: null,
+    activeCollectionPresent: true,
+  });
+  assert.equal(meaning.active, true);
+  assert.equal(meaning.criterion, "INVESTIGATION_PRIORITY");
+});
+
+test("explicit single-subject handoff exits comparison after contextual intent rewriting", () => {
+  const meaning = interpretExecutiveComparisonMeaning({
+    utterance: "Okay, go back to Capacity Gap.",
+    intentKind: "compare",
+    activeComparison: {
+      candidateIds: [capacity.id, demand.id],
+      candidateKind: "SCENARIO",
+      mode: "COMPARE",
+      criterion: "RISK",
+      establishedAtTurn: 4,
+      sourceCollectionTurn: 2,
+    },
+    activeCollectionPresent: true,
+    singleSubjectFocus: true,
+  });
+  assert.equal(meaning.active, false);
+});

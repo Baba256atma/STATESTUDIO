@@ -8,6 +8,7 @@ import {
   assessDecisionExecutionEligibility,
   executionTransitionTarget,
   isExecutionTransitionAllowed,
+  NEXORA_EXECUTION_STATUSES,
   type NexoraExecutiveExecutionStatus,
   type NexoraExecutionTransitionAction,
 } from "./executiveExecutionPolicy.ts";
@@ -60,6 +61,80 @@ export type NexoraExecutionRuntimeAdapter = {
   }): NexoraExecutionRuntimeResult;
 };
 
+export type NexoraCanonicalExecutionRuntimeState = Readonly<{
+  executionsById: Readonly<Record<string, NexoraCanonicalExecution>>;
+}>;
+
+export type NexoraCanonicalExecutionRuntimeAdapter =
+  NexoraExecutionRuntimeAdapter &
+    Readonly<{
+      getState(): NexoraCanonicalExecutionRuntimeState;
+      subscribe(listener: () => void): () => void;
+      hydrateExecutions(executions: readonly NexoraCanonicalExecution[]): void;
+    }>;
+
+export const NEXORA_CANONICAL_EXECUTION_RUNTIME_SESSION_KEY =
+  "nexora.executive-shell.canonical-execution-runtime.v1" as const;
+
+function isCanonicalExecution(value: unknown): value is NexoraCanonicalExecution {
+  if (value == null || typeof value !== "object") return false;
+  const candidate = value as Partial<NexoraCanonicalExecution>;
+  return (
+    typeof candidate.executionId === "string" &&
+    candidate.executionId.length > 0 &&
+    typeof candidate.decisionId === "string" &&
+    candidate.decisionId.length > 0 &&
+    typeof candidate.title === "string" &&
+    typeof candidate.status === "string" &&
+    NEXORA_EXECUTION_STATUSES.includes(
+      candidate.status as NexoraExecutiveExecutionStatus,
+    ) &&
+    Array.isArray(candidate.ownerIds) &&
+    Array.isArray(candidate.blockers) &&
+    Array.isArray(candidate.risks) &&
+    Array.isArray(candidate.milestones) &&
+    candidate.createdFromDecision === true
+  );
+}
+
+export function serializeNexoraCanonicalExecutionRuntimeState(
+  state: NexoraCanonicalExecutionRuntimeState,
+): string {
+  return JSON.stringify({
+    version: 1,
+    executions: Object.values(state.executionsById),
+  });
+}
+
+export function hydrateNexoraCanonicalExecutionRuntimeRecords(
+  serialized: string | null,
+  fallback: readonly NexoraCanonicalExecution[],
+): readonly NexoraCanonicalExecution[] {
+  if (!serialized) return Object.freeze([...fallback]);
+  try {
+    const parsed = JSON.parse(serialized) as {
+      readonly version?: unknown;
+      readonly executions?: unknown;
+    };
+    if (parsed.version !== 1 || !Array.isArray(parsed.executions)) {
+      return Object.freeze([...fallback]);
+    }
+    const persisted = parsed.executions.filter(isCanonicalExecution);
+    if (persisted.length !== parsed.executions.length) {
+      return Object.freeze([...fallback]);
+    }
+    const byId = new Map(
+      fallback.map((execution) => [execution.executionId, execution]),
+    );
+    for (const execution of persisted) {
+      byId.set(execution.executionId, execution);
+    }
+    return Object.freeze([...byId.values()]);
+  } catch {
+    return Object.freeze([...fallback]);
+  }
+}
+
 function freezeExecution(record: NexoraCanonicalExecution): NexoraCanonicalExecution {
   return Object.freeze({
     ...record,
@@ -74,10 +149,12 @@ export function createNexoraCanonicalExecutionRuntime(options: {
   readonly decisionRuntime: NexoraDecisionRuntimeAdapter;
   readonly initialExecutions?: readonly NexoraCanonicalExecution[];
   readonly authorityId?: string;
-}): NexoraExecutionRuntimeAdapter {
+}): NexoraCanonicalExecutionRuntimeAdapter {
   let records: Readonly<Record<string, NexoraCanonicalExecution>> = Object.freeze(
     Object.fromEntries((options.initialExecutions ?? []).map((e) => [e.executionId, freezeExecution(e)])),
   );
+  const listeners = new Set<() => void>();
+  const notify = () => listeners.forEach((listener) => listener());
 
   return Object.freeze({
     authorityId: options.authorityId ?? "nexora.canonical-execution-runtime",
@@ -107,6 +184,7 @@ export function createNexoraCanonicalExecutionRuntime(options: {
         workspaceId: decision.workspaceId ?? null, modelId: decision.modelId ?? null,
       });
       records = Object.freeze({ ...records, [execution.executionId]: execution });
+      notify();
       return Object.freeze({ status: "created" as const, execution, reasons: Object.freeze(["execution-created", "execution-decision-link-preserved"]) });
     },
     transitionExecution(input) {
@@ -117,9 +195,28 @@ export function createNexoraCanonicalExecutionRuntime(options: {
       if (target === existing.status) return Object.freeze({ status: "reused" as const, execution: existing, reasons: Object.freeze(["execution-existing-reused"]) });
       const next = freezeExecution({ ...existing, status: target });
       records = Object.freeze({ ...records, [next.executionId]: next });
+      notify();
       return Object.freeze({ status: "applied" as const, execution: next, reasons: Object.freeze(["execution-transition-applied", `execution-${target}`]) });
     },
-  } satisfies NexoraExecutionRuntimeAdapter);
+    getState: () => Object.freeze({ executionsById: records }),
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    hydrateExecutions(executions) {
+      records = Object.freeze(
+        Object.fromEntries(
+          executions.map((execution) => [
+            execution.executionId,
+            freezeExecution(execution),
+          ]),
+        ),
+      );
+      notify();
+    },
+  } satisfies NexoraCanonicalExecutionRuntimeAdapter);
 }
 
 type ExsExecutionPlanView = {

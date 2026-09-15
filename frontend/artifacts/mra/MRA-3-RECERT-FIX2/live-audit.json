@@ -1,0 +1,344 @@
+{
+  "identity": "NPA-T MRA:3-RECERT-FIX2/LiveInvestigationFidelity",
+  "url": "http://127.0.0.1:61158/executive?reset=1",
+  "errors": [],
+  "checks": [
+    {
+      "id": "A-investigate-it",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/^(?:Nexora)?(?:Margin Pressure needs urgent|Prioritize Margin Pressure)/i",
+      "actual": "NexoraDemand Surge explores volume upside with delivery risk. Demand Surge is Stable. Demand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse."
+    },
+    {
+      "id": "B-look-deeper",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/^(?:Nexora)?(?:Margin Pressure needs urgent|Prioritize Margin Pressure)/i",
+      "actual": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. That association is not a proven causal finding. This is a scenario projection, not an observed outcome. Unsupported causal claims are withheld; modeled association is no"
+    },
+    {
+      "id": "C-what-else",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/^(?:Nexora)?(?:Margin Pressure needs urgent|Prioritize Margin Pressure)/i",
+      "actual": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. That association is not a proven causal finding. This is a scenario projection, not an observed outcome. Unsupported causal claims are withheld; modeled association is no"
+    },
+    {
+      "id": "D-tell-me-more",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/^(?:Nexora)?(?:Margin Pressure needs urgent|Prioritize Margin Pressure)/i",
+      "actual": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain."
+    },
+    {
+      "id": "E-how-sure",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/^(?:Nexora)?(?:Margin Pressure needs urgent|Prioritize Margin Pressure)/i",
+      "actual": "NexoraI'm sure Demand Surge is Stable. I'm not yet sure Revenue is the confirmed cause. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation."
+    },
+    {
+      "id": "F-impact",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/^(?:Nexora)?(?:Margin Pressure needs urgent|Prioritize Margin Pressure)/i",
+      "actual": "NexoraDemand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse. Demand Surge is associated with Delivery. That connection does not by itself tell us whether Demand Surge is affecting Delivery or the reverse."
+    },
+    {
+      "id": "G-selection-attention",
+      "pass": true,
+      "expected": "/Margin Pressure|Capacity Gap|investigate|attention|look at first|Neither clearly dominates|Which item|enough evidence/i",
+      "anti": null,
+      "actual": "NexoraWhich item do you mean? I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing."
+    },
+    {
+      "id": "H-explicit-margin",
+      "pass": true,
+      "expected": "/Margin Pressure/i",
+      "anti": null,
+      "actual": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+    },
+    {
+      "id": "hist-investigate-after-explain",
+      "pass": true,
+      "expected": "/Demand Surge/i",
+      "anti": "/^(?:Nexora)?(?:Margin Pressure needs urgent|Prioritize Margin Pressure)/i",
+      "actual": "NexoraDemand Surge explores volume upside with delivery risk. Demand Surge is Stable. Demand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse."
+    }
+  ],
+  "journeys": {
+    "A": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "FOCUS",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "MISSING_GOAL",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "investigate it",
+        "reply": "NexoraDemand Surge explores volume upside with delivery risk. Demand Surge is Stable. Demand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "INVESTIGATE",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "explain",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      }
+    ],
+    "B": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "FOCUS",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "MISSING_GOAL",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "look deeper into it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. That association is not a proven causal finding. This is a scenario projection, not an observed outcome. Unsupported causal claims are withheld; modeled association is not causal proof.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "INVESTIGATE",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "explain",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      }
+    ],
+    "C": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "FOCUS",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "MISSING_GOAL",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "what else do we know about it?",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. That association is not a proven causal finding. This is a scenario projection, not an observed outcome. Unsupported causal claims are withheld; modeled association is not causal proof.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "EXPLAIN",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "explain",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      }
+    ],
+    "DEF": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "FOCUS",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "MISSING_GOAL",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "tell me more about it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "EXPLAIN",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "how sure are you?",
+        "reply": "NexoraI'm sure Demand Surge is Stable. I'm not yet sure Revenue is the confirmed cause. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "NONE",
+        "continuitySubject": "",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "what impact could it have?",
+        "reply": "NexoraDemand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse. Demand Surge is associated with Delivery. That connection does not by itself tell us whether Demand Surge is affecting Delivery or the reverse.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "IMPACT",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "explain",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      }
+    ],
+    "G": [
+      {
+        "managerTurn": "What should I investigate?",
+        "reply": "NexoraWhich item do you mean? I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing.",
+        "leak": false,
+        "focused": "none",
+        "moActive": "none",
+        "nluOperation": "INVESTIGATE",
+        "continuitySubject": "",
+        "continuityActive": "",
+        "continuityInvestigation": "",
+        "explanationSummary": "No executive object is currently active, so I cannot explain a subject.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "MISSING_GOAL",
+        "communicationRecommendation": "false"
+      }
+    ],
+    "H": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "FOCUS",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "MISSING_GOAL",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "Investigate Margin Pressure",
+        "reply": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-problem-margin",
+        "nluOperation": "INVESTIGATE",
+        "continuitySubject": "Margin Pressure",
+        "continuityActive": "ctx-problem-margin",
+        "continuityInvestigation": "ctx-problem-margin",
+        "explanationSummary": "Margin Pressure is the primary problem affecting Revenue and risk exposure.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      }
+    ],
+    "historical": [
+      {
+        "managerTurn": "Demand Surge",
+        "reply": "NexoraFocused on Demand Surge.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "FOCUS",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "MISSING_GOAL",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "explain it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "EXPLAIN",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "tell me more about it",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "EXPLAIN",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "advisor",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      },
+      {
+        "managerTurn": "investigate it",
+        "reply": "NexoraDemand Surge explores volume upside with delivery risk. Demand Surge is Stable. Demand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse.",
+        "leak": false,
+        "focused": "ctx-scenario-demand",
+        "moActive": "ctx-scenario-demand",
+        "nluOperation": "INVESTIGATE",
+        "continuitySubject": "Demand Surge",
+        "continuityActive": "ctx-scenario-demand",
+        "continuityInvestigation": "ctx-scenario-demand",
+        "explanationSummary": "Demand Surge explores volume upside with delivery risk.",
+        "experienceLane": "explain",
+        "attentionPrimary": "DECISION_REQUIRED",
+        "communicationRecommendation": "false"
+      }
+    ]
+  },
+  "leakCount": 0,
+  "pageErrors": 0,
+  "passed": true
+}

@@ -68,6 +68,12 @@ export type ManagerObjectSession = {
   readonly ecaLearningClosureSession?: import("@/app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts").EcaLearningClosureSession | null;
   /** DATA-ADV:1 dialogue continuity; not a Data Library store. */
   readonly advisorDataDialogue?: import("./nexoraAdvisorDataInquiry.ts").AdvisorDataDialogue | null;
+  /** NPS:1 session-only Problem ownership continuity; never a Problem store. */
+  readonly npsProblemId?: string | null;
+  /** NPS:4 session-only option-candidate focus; never a Scenario store. */
+  readonly npsOptionCandidateId?: string | null;
+  /** NPS:5 session-only compared-option continuity for ECA:8; never a Scenario store. */
+  readonly npsComparedOptions?: readonly { readonly id: string; readonly label: string }[];
 };
 
 export function createEmptyManagerObjectSession(): ManagerObjectSession {
@@ -107,6 +113,9 @@ export function createEmptyManagerObjectSession(): ManagerObjectSession {
     ecaOutcomeSession: null,
     ecaLearningClosureSession: null,
     advisorDataDialogue: null,
+    npsProblemId: null,
+    npsOptionCandidateId: null,
+    npsComparedOptions: Object.freeze([]),
   });
 }
 
@@ -151,6 +160,9 @@ export function freezeManagerObjectSession(
     ecaOutcomeSession: session.ecaOutcomeSession ?? null,
     ecaLearningClosureSession: session.ecaLearningClosureSession ?? null,
     advisorDataDialogue: session.advisorDataDialogue ?? null,
+    npsProblemId: session.npsProblemId ?? null,
+    npsOptionCandidateId: session.npsOptionCandidateId ?? null,
+    npsComparedOptions: Object.freeze(session.npsComparedOptions ?? []),
   });
 }
 
@@ -195,6 +207,9 @@ function replaceActive(
       ecaOutcomeSession: previous.ecaOutcomeSession ?? null,
       ecaLearningClosureSession: previous.ecaLearningClosureSession ?? null,
       advisorDataDialogue: previous.advisorDataDialogue ?? null,
+      npsProblemId: previous.npsProblemId ?? null,
+      npsOptionCandidateId: previous.npsOptionCandidateId ?? null,
+      npsComparedOptions: previous.npsComparedOptions ?? Object.freeze([]),
     });
   }
   return freezeManagerObjectSession({
@@ -241,6 +256,9 @@ function replaceActive(
     ecaOutcomeSession: previous.ecaOutcomeSession ?? null,
     ecaLearningClosureSession: previous.ecaLearningClosureSession ?? null,
     advisorDataDialogue: previous.advisorDataDialogue ?? null,
+    npsProblemId: previous.npsProblemId ?? null,
+    npsOptionCandidateId: previous.npsOptionCandidateId ?? null,
+    npsComparedOptions: previous.npsComparedOptions ?? Object.freeze([]),
   });
 }
 
@@ -279,8 +297,8 @@ export function resolveManagerObjectActivation(input: {
   }
   if (input.deictic) {
     const preserved =
-      input.stageFocusedId ??
       input.conversationSubjectId ??
+      input.stageFocusedId ??
       input.previous.activeObjectId;
     return replaceActive(
       input.previous,
@@ -289,8 +307,8 @@ export function resolveManagerObjectActivation(input: {
     );
   }
   const fallback =
-    input.stageFocusedId ??
     input.conversationSubjectId ??
+    input.stageFocusedId ??
     input.previous.activeObjectId;
   if (fallback && fallback === input.previous.activeObjectId) {
     return freezeManagerObjectSession({

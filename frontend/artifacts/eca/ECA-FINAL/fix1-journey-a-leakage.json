@@ -1,0 +1,9 @@
+{
+  "identity": "NPA-T ECA:FINAL-FIX1/JourneyA-recommendation-leakage-segment",
+  "url": "http://127.0.0.1:3013/executive?reset=1",
+  "pageErrors": 0,
+  "utterance": "What do you recommend?",
+  "reply": "NexoraI recommend investigating Capacity first. I don't have enough basis to commit to an intervention yet. I recommend a reversible Demand action. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
+  "leakMatch": null,
+  "pass": true
+}

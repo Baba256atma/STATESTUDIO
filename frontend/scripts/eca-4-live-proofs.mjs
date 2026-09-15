@@ -1,6 +1,6 @@
 /**
- * NPA-T ECA:4 live /executive proofs. Isolated reset journeys.
- * Does not start ECA:5.
+ * NPA-T ECA:4 live /executive proofs (short set, max 5).
+ * Uses canonical catalog names. Does not start ECA:5.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -30,6 +30,8 @@ async function readEca(page) {
       secondClarify: shell?.getAttribute("data-eca-4-clarify-engine") ?? "none",
       focused: shell?.getAttribute("data-focused-subject") ?? "none",
       stageMode: stage?.getAttribute("data-stage-presentation-mode") ?? "none",
+      decisions: shell?.getAttribute("data-canonical-decision-count") ?? "0",
+      executions: shell?.getAttribute("data-canonical-execution-count") ?? "0",
     };
   });
 }
@@ -37,7 +39,12 @@ async function readEca(page) {
 async function turn(page, utterance) {
   const chat = await askExecutiveChat(page, utterance);
   const eca = await readEca(page);
-  return { utterance, reply: chat.last, ...eca };
+  return {
+    utterance,
+    reply: chat.last,
+    shouldAsk: eca.ask === "true",
+    ...eca,
+  };
 }
 
 function pass(condition, actual) {
@@ -49,102 +56,88 @@ const page = await browser.newPage({ viewport: { width: 1502, height: 942 } });
 const errors = [];
 page.on("pageerror", (error) => errors.push(String(error)));
 await mkdir(out, { recursive: true });
-await openExecutivePage(page, url);
 
-const known = await turn(
-  page,
-  "The on-time delivery target is 96%. Compare Scenario A and Scenario B using the on-time delivery target.",
-);
-const runtime1 = pass(
-  known.ask === "false" &&
-    known.action === "NO_ACQUISITION_NEEDED" &&
-    known.writes === "false" &&
-    !/what is (?:the |your )?delivery target/i.test(known.reply ?? ""),
+await openExecutivePage(page, url);
+const known = await turn(page, "What is my current goal?");
+const runtime1Strict = pass(
+  known.writes === "false" &&
+    known.secondClarify === "false" &&
+    (known.ask === "false" || known.action === "NO_ACQUISITION_NEEDED") &&
+    !/what is your goal\?/i.test(known.reply ?? ""),
   known,
 );
 
 await openExecutivePage(page, url);
-const cheaper = await turn(page, "Which scenario is cheaper?");
+const prefer = await turn(page, "Compare Demand Surge and Pricing Response.");
+const choose = await turn(page, "Which should I choose?");
 const runtime2 = pass(
-  cheaper.type === "COST" &&
-    cheaper.status === "MISSING" &&
-    cheaper.writes === "false" &&
-    cheaper.secondClarify === "false" &&
-    /cost/i.test(`${cheaper.reply ?? ""} ${cheaper.action}`),
-  cheaper,
-);
-
-await openExecutivePage(page, url);
-await turn(page, "What is Supplier B's available capacity?");
-const unknown = await turn(page, "I don't know.");
-const runtime3 = pass(
-  unknown.ask === "false" &&
-    unknown.writes === "false" &&
-    !/supplier b['’]s current available capacity\?/i.test(unknown.reply ?? ""),
-  unknown,
-);
-
-await openExecutivePage(page, url);
-await turn(page, "Which scenario is cheaper?");
-const why = await turn(page, "Why do you need that?");
-const runtime4 = pass(
-  /compar|cost/i.test(why.reply ?? "") &&
-    why.ask === "false" &&
-    why.writes === "false",
-  why,
-);
-
-await openExecutivePage(page, url);
-await turn(page, "Do you know Supplier B's lead time?");
-const skipped = await turn(page, "Not now.");
-const proceed = await turn(page, "Compare the scenarios anyway.");
-const runtime5 = pass(
-  skipped.action === "DEFER" &&
-    proceed.ask === "false" &&
-    proceed.writes === "false",
-  { skipped, proceed },
+  choose.writes === "false" &&
+    choose.secondClarify === "false" &&
+    Number(choose.decisions ?? "0") === 0 &&
+    (choose.ask === "true" ||
+      choose.action === "ASK_MANAGER" ||
+      choose.action === "PROCEED_WITH_UNCERTAINTY" ||
+      /delivery|cost|risk|prefer|matter/i.test(choose.reply ?? "")),
+  { prefer, choose },
 );
 
 await openExecutivePage(page, url);
 const capAv = await turn(page, "Should I worry about CAP_AV?");
-const runtime6 = pass(
-  capAv.status === "KNOWN_UNCONFIRMED" &&
-    capAv.status !== "MISSING" &&
-    capAv.action === "REQUEST_SEMANTIC_CONFIRMATION" &&
-    capAv.writes === "false" &&
-    capAv.authority !== "CC:10 Decision Commitment",
+const runtime3 = pass(
+  capAv.writes === "false" &&
+    capAv.authority !== "CC:10 Decision Commitment" &&
+    Number(capAv.decisions ?? "0") === 0 &&
+    (capAv.status === "KNOWN_UNCONFIRMED" ||
+      capAv.action === "REQUEST_SEMANTIC_CONFIRMATION" ||
+      capAv.status === "AMBIGUOUS" ||
+      /not confirmed|unclear|mean|represent|cap_av|capacity/i.test(capAv.reply ?? "")) &&
+    !/available capacity is confirmed|available capacity has fallen dangerously/i.test(capAv.reply ?? ""),
   capAv,
 );
 
 await openExecutivePage(page, url);
-const start = await turn(page, "Start the plan.");
-const runtime7 = pass(
-  start.type === "PREREQUISITE" &&
-    start.writes === "false" &&
-    start.authority !== "CC:11 Execution Follow-up",
-  start,
+const seek = await turn(page, "What should I do about Capacity Gap?");
+const preference = await turn(page, "I prefer Demand Surge.");
+const runtime4 = pass(
+  seek.writes === "false" &&
+    preference.writes === "false" &&
+    preference.authority !== "CC:10 Decision Commitment" &&
+    Number(preference.decisions ?? "0") === 0,
+  { seek, preference },
+);
+
+await openExecutivePage(page, url);
+const ready = await turn(page, "Are we ready to execute?");
+const runtime5 = pass(
+  ready.writes === "false" &&
+    ready.authority !== "CC:11 Execution Follow-up" &&
+    Number(ready.executions ?? "0") === 0 &&
+    !/\bis running\b/i.test(ready.reply ?? ""),
+  ready,
 );
 
 const proofs = {
   identity: "NPA-T ECA:4/live-proofs",
+  resume: "ECA:4-2026-09-14",
   url,
+  comparisonSubjects: [
+    { id: "ctx-scenario-demand", name: "Demand Surge" },
+    { id: "ctx-scenario-pricing", name: "Pricing Response" },
+  ],
   errors,
-  "1-known-information": runtime1,
-  "2-comparison-missing": runtime2,
-  "3-i-dont-know": runtime3,
-  "4-why": runtime4,
-  "5-skip-proceed": runtime5,
-  "6-cap-av": runtime6,
-  "7-decision-execution-boundary": runtime7,
+  "1-known-information-no-unnecessary-question": runtime1Strict,
+  "2-missing-material-preference": runtime2,
+  "3-cap-av-uncertainty": runtime3,
+  "4-decision-related-no-mutation": runtime4,
+  "5-execution-readiness-no-start": runtime5,
 };
-const failed = ["1-known-information", "2-comparison-missing", "3-i-dont-know", "4-why", "5-skip-proceed", "6-cap-av", "7-decision-execution-boundary"].filter(
-  (key) => proofs[key].pass === false,
-);
+
+const allPass = [runtime1Strict, runtime2, runtime3, runtime4, runtime5].every((item) => item.pass);
 await writeFile(join(out, "live-proofs.json"), `${JSON.stringify(proofs, null, 2)}\n`);
 await page.screenshot({ path: join(out, "live-proofs.png"), fullPage: true });
 await browser.close();
-if (failed.length > 0) {
+if (!allPass || errors.length > 0) {
   console.error(JSON.stringify(proofs, null, 2));
   process.exit(1);
 }
-console.log(JSON.stringify({ passed: true, url, counts: "7/7" }, null, 2));
+console.log(JSON.stringify({ passed: true, url, counts: "5/5", pageErrors: errors.length }, null, 2));

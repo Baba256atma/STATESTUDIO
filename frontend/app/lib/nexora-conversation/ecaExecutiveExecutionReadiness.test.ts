@@ -412,3 +412,351 @@ test("ECA:9 empty session after refresh", () => {
   });
   assert.equal(judgment.postDecisionState, "NOT_APPLICABLE");
 });
+
+test("ECA:9 prompt A — Recommendation without Decision", () => {
+  const { judgment } = play("Are we ready to execute?");
+  assert.equal(judgment.readiness, "NOT_APPLICABLE");
+  assert.equal(judgment.postDecisionState, "NOT_APPLICABLE");
+  assert.equal(judgment.canonicalStartAllowed, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt B — Preference without Decision", () => {
+  const { judgment } = play("I prefer Scenario A.");
+  assert.equal(judgment.readiness, "NOT_APPLICABLE");
+  assert.equal(judgment.canonicalStartAllowed, false);
+  assert.equal(judgment.boundaries.createsExecution, false);
+});
+
+test("ECA:9 prompt C — Commitment before CC:10 Decision", () => {
+  const { judgment } = play("Approve Scenario A.");
+  assert.equal(judgment.readiness, "NOT_APPLICABLE");
+  assert.equal(judgment.canonicalStartAllowed, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt D — Approved Decision enables readiness", () => {
+  const { judgment } = play("What’s next?", { committedDecisionId: "decision-a" });
+  assert.notEqual(judgment.postDecisionState, "NOT_APPLICABLE");
+  assert.equal(judgment.decisionId, "decision-a");
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt E — NOT_READY / material gap", () => {
+  const { judgment } = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    capAvUnconfirmed: true,
+  });
+  assert.ok(
+    judgment.readiness === "NOT_READY" ||
+      judgment.readiness === "READY_WITH_CONDITIONS" ||
+      judgment.postDecisionState === "EXECUTION_NOT_READY",
+  );
+  assert.equal(judgment.canonicalStartAllowed === false || judgment.trustInflation === false, true);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt F — READY_WITH_CONDITIONS", () => {
+  const { judgment } = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("planned"),
+  });
+  assert.equal(judgment.readiness, "READY_WITH_CONDITIONS");
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt G — READY does not start", () => {
+  const { judgment } = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.readiness, "READY");
+  assert.equal(judgment.implicitStart, false);
+  assert.equal(judgment.canonicalStartAllowed, false);
+});
+
+test("ECA:9 prompt H — BLOCKED", () => {
+  const { judgment } = play("Start it.", {
+    committedDecisionId: "decision-a",
+    execution: planned("blocked", {
+      blockers: [{ blockerId: "b", label: "Supplier confirmation" }],
+    }),
+  });
+  assert.equal(judgment.readiness, "BLOCKED");
+  assert.equal(judgment.canonicalStartAllowed, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt I — One primary blocker", () => {
+  const { judgment } = play("What could stop us?", {
+    committedDecisionId: "decision-a",
+    execution: planned("planned", {
+      blockers: [
+        { label: "Supplier approval" },
+        { label: "Staffing gap" },
+        { label: "Budget hold" },
+      ],
+      risks: [{ label: "Capacity variability" }],
+    }),
+  });
+  assert.ok(judgment.primaryGap);
+  assert.match(judgment.managerFacingNote ?? "", /Supplier approval/i);
+});
+
+test("ECA:9 prompt J — Readiness question is not Start", () => {
+  const { judgment } = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.managerIntent, "READINESS");
+  assert.equal(judgment.implicitStart, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt K — Readiness Yes is not Start", () => {
+  const ready = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  const yes = play("Yes.", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+    session: ready.session,
+  });
+  assert.notEqual(yes.judgment.managerIntent, "START");
+  assert.equal(yes.judgment.implicitStart, false);
+  assert.equal(yes.judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt L — Explicit Start hands off to CC:11 only", () => {
+  const { judgment } = play("Start the execution.", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.managerIntent, "START");
+  assert.equal(judgment.canonicalAuthority, "CC:11 Execution Follow-up");
+  assert.equal(judgment.boundaries.startsExecution, false);
+  assert.equal(judgment.boundaries.createsExecution, false);
+});
+
+test("ECA:9 prompt M — Ambiguous move forward does not Start", () => {
+  const { judgment } = play("Let's move forward.", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.notEqual(judgment.managerIntent, "START");
+  assert.equal(judgment.implicitStart, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt N — Safe pronoun Start when Decision bound", () => {
+  const { judgment } = play("Start it.", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.managerIntent, "START");
+  assert.equal(judgment.decisionId, "decision-a");
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt O — Ambiguous pronoun Start without Decision", () => {
+  const { judgment } = play("Start it.");
+  assert.equal(judgment.readiness, "NOT_APPLICABLE");
+  assert.equal(judgment.canonicalStartAllowed, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt P — Stale Start after subject switch context", () => {
+  const ready = play("Are we ready to execute?", { committedDecisionId: "decision-a" });
+  const side = play("Forget this. Explain the Goal.", {
+    committedDecisionId: "decision-a",
+    session: ready.session,
+  });
+  const stale = play("Start it.", {
+    committedDecisionId: null,
+    session: emptyEcaExecutionReadinessSession(),
+  });
+  assert.equal(side.judgment.speak === false || side.judgment.managerIntent !== "START", true);
+  assert.equal(stale.judgment.canonicalStartAllowed, false);
+  assert.equal(stale.judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt Q — Existing Active Execution no duplicate", () => {
+  const { judgment } = play("Start it.", {
+    committedDecisionId: "decision-a",
+    execution: planned("in-progress", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.readiness, "ALREADY_EXECUTING");
+  assert.equal(judgment.canonicalCreateAllowed, false);
+  assert.equal(judgment.boundaries.createsExecution, false);
+});
+
+test("ECA:9 prompt R — Decision identity preserved", () => {
+  const { judgment } = play("Start the execution.", {
+    committedDecisionId: "decision-demand-surge",
+    execution: planned("ready", {
+      decisionId: "decision-demand-surge",
+      title: "Implement Demand Surge",
+      ownerIds: ["alex"],
+    }),
+  });
+  assert.equal(judgment.decisionId, "decision-demand-surge");
+  assert.equal(judgment.targetDrift, false);
+});
+
+test("ECA:9 prompt S — Owner gap advisory, no owner write", () => {
+  const { judgment } = play("Who owns this?", {
+    committedDecisionId: "decision-a",
+    execution: planned("planned"),
+  });
+  assert.equal(judgment.ownerState, "UNKNOWN");
+  assert.equal(judgment.boundaries.writesStage, false);
+  assert.equal(judgment.boundaries.mutatesBusinessState, false);
+});
+
+test("ECA:9 prompt T — No invented requirement when READY", () => {
+  const { judgment } = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.readiness, "READY");
+  assert.equal(judgment.unnecessaryBlocker, false);
+  assert.equal(judgment.primaryGap, null);
+});
+
+test("ECA:9 prompt U — Risk acceptance ≠ Risk resolution", () => {
+  const { judgment } = play("I accept that risk. Start it.", {
+    committedDecisionId: "decision-a",
+    execution: planned("planned", {
+      ownerIds: ["alex"],
+      risks: [{ riskId: "r", label: "Capacity variability" }],
+    }),
+  });
+  assert.equal(judgment.riskIsBlocker, false);
+  assert.equal(judgment.boundaries.writesRisk, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt V — New evidence lowers readiness without Decision revoke", () => {
+  const ready = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  const blocked = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("blocked", {
+      ownerIds: ["alex"],
+      blockers: [{ label: "New supplier evidence conflict" }],
+    }),
+    session: ready.session,
+  });
+  assert.equal(ready.judgment.readiness, "READY");
+  assert.equal(blocked.judgment.readiness, "BLOCKED");
+  assert.equal(blocked.judgment.boundaries.commitsDecision, false);
+  assert.equal(blocked.judgment.canonicalStartAllowed, false);
+});
+
+test("ECA:9 prompt W — Reconsider Decision prevents Start", () => {
+  const { judgment } = play("Before we execute, I want to reconsider the decision.", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.managerIntent, "RECONSIDER");
+  assert.equal(judgment.canonicalStartAllowed, false);
+  assert.equal(judgment.implicitStart, false);
+});
+
+test("ECA:9 prompt X — Cancel Start creates no Execution", () => {
+  const { judgment } = play("Don't start it.", {
+    committedDecisionId: "decision-a",
+  });
+  assert.equal(judgment.managerIntent, "DEFER");
+  assert.equal(judgment.canonicalStartAllowed, false);
+  assert.equal(judgment.boundaries.createsExecution, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt Y — Decision ≠ Execution", () => {
+  const { judgment } = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  assert.equal(judgment.decisionId, "decision-a");
+  assert.equal(judgment.implicitStart, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+  assert.equal(judgment.boundaries.createsExecution, false);
+});
+
+test("ECA:9 prompt Z — Zero ECA Execution writes across samples", () => {
+  for (const sample of [
+    play("Are we ready to execute?"),
+    play("I prefer Scenario A."),
+    play("Are we ready to execute?", { committedDecisionId: "decision-a", execution: planned("ready", { ownerIds: ["alex"] }) }),
+    play("Start the execution.", { committedDecisionId: "decision-a", execution: planned("ready", { ownerIds: ["alex"] }) }),
+    play("Don't start it.", { committedDecisionId: "decision-a" }),
+  ]) {
+    isolation(sample.judgment);
+    assert.equal(sample.judgment.boundaries.createsExecution, false);
+    assert.equal(sample.judgment.boundaries.startsExecution, false);
+    assert.equal(sample.judgment.boundaries.createsSecondExecutionWriter, false);
+  }
+});
+
+test("ECA:9 prompt multi-turn 1 — Decision → readiness", () => {
+  const next = play("What’s next?", { committedDecisionId: "decision-a" });
+  const ready = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    session: next.session,
+  });
+  assert.notEqual(next.judgment.postDecisionState, "NOT_APPLICABLE");
+  assert.ok(ready.judgment.readiness === "READY" || ready.judgment.readiness === "READY_WITH_CONDITIONS");
+  assert.equal(ready.judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:9 prompt multi-turn 2 — Missing readiness then answer, still no Start", () => {
+  const can = play("Can we start?", {
+    committedDecisionId: "decision-a",
+    execution: planned("planned"),
+  });
+  const owned = play("Alex owns it.", {
+    committedDecisionId: "decision-a",
+    execution: planned("planned", { ownerIds: ["alex"] }),
+    session: can.session,
+  });
+  assert.equal(can.judgment.ownerState, "UNKNOWN");
+  assert.equal(owned.judgment.ownerState, "KNOWN");
+  assert.equal(owned.judgment.boundaries.startsExecution, false);
+  assert.equal(owned.judgment.implicitStart, false);
+});
+
+test("ECA:9 prompt multi-turn 3 — READY → Start handoff only", () => {
+  const ready = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  const start = play("Start the execution.", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+    session: ready.session,
+  });
+  assert.equal(ready.judgment.readiness, "READY");
+  assert.equal(start.judgment.managerIntent, "START");
+  assert.equal(start.judgment.canonicalAuthority, "CC:11 Execution Follow-up");
+  assert.equal(start.judgment.boundaries.startsExecution, false);
+  assert.equal(start.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:9 prompt multi-turn 4 — Reconsider before Start", () => {
+  const ready = play("Are we ready to execute?", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+  });
+  const reconsider = play("Wait. I want to reconsider the decision.", {
+    committedDecisionId: "decision-a",
+    execution: planned("ready", { ownerIds: ["alex"] }),
+    session: ready.session,
+  });
+  assert.equal(reconsider.judgment.managerIntent, "RECONSIDER");
+  assert.equal(reconsider.judgment.canonicalStartAllowed, false);
+  assert.equal(reconsider.judgment.boundaries.startsExecution, false);
+});

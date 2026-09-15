@@ -253,16 +253,12 @@ export function composeExecutiveInvestigationAnswer(input: {
   readonly thread: ExecutiveInvestigationThread | null;
 } {
   const normalized = normalizeNexoraConversationalUtterance(input.utterance);
-  const subjectId =
-    input.ask === "open-why"
-      ? (input.focusId ?? input.thread?.subjectId ?? null)
-      : (input.thread?.subjectId ?? input.focusId);
+  const subjectId = input.focusId ?? input.thread?.subjectId ?? null;
   if (subjectId == null && input.ask !== "manager-observation") {
     return { answer: "", thread: input.thread };
   }
 
   const reopen =
-    input.ask === "open-why" &&
     subjectId != null &&
     (!input.thread || input.thread.subjectId !== subjectId);
 

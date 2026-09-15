@@ -477,9 +477,12 @@ export function isStageGroundedReference(utterance: string): boolean {
 }
 
 export function isExplicitPresentationRequest(utterance: string, intentKind: string): boolean {
-  const text = prepared(utterance);
+  const text = prepared(utterance).replace(
+    /^(?:(?:okay|ok|now|actually)\s*,?\s*)+/,
+    "",
+  );
   if (/^(?:what|which|why|how|explain)\b/.test(text)) return false;
-  if (/^(?:show|open|focus(?: on)?|bring up|go to|take me to|go back)\b/.test(text)) return true;
+  if (/^(?:show|open|focus(?: on)?|bring up|go to|take me to|go back|look at)\b/.test(text)) return true;
   return /^(?:show-|open-|overview)/.test(intentKind);
 }
 

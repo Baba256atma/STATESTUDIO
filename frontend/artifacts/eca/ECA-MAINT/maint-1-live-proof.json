@@ -1,0 +1,42 @@
+{
+  "identity": "NPA-T ECA:MAINT-1/live-commitment-review",
+  "url": "http://127.0.0.1:3015/executive?reset=1",
+  "pageErrors": 0,
+  "before": {
+    "state8": "NONE",
+    "resolution": "UNKNOWN",
+    "writes8": "false",
+    "handoff": "false",
+    "canonicalApproved": "0",
+    "canonicalExecutions": "0",
+    "decisionCount": "0",
+    "executionCount": "0"
+  },
+  "review": {
+    "utterance": "What would we be committing to?",
+    "reply": "NexoraYou would be committing to temporary capacity as the selected course of action. Approval would create the Decision, but it would not start execution.",
+    "state8": "INTENT",
+    "resolution": "RESOLVED",
+    "writes8": "false",
+    "handoff": "false",
+    "canonicalApproved": "0",
+    "canonicalExecutions": "0",
+    "decisionCount": "0",
+    "executionCount": "0"
+  },
+  "approved": {
+    "utterance": "Approve Demand Surge",
+    "reply": "NexoraDemand Surge is now the Approved decision. temporary capacity is already the committed Decision.",
+    "state8": "EXPLICIT_COMMITMENT",
+    "resolution": "RESOLVED",
+    "writes8": "false",
+    "handoff": "false",
+    "canonicalApproved": "1",
+    "canonicalExecutions": "0",
+    "decisionCount": "0",
+    "executionCount": "0"
+  },
+  "reviewPass": true,
+  "commitPass": true,
+  "passed": true
+}

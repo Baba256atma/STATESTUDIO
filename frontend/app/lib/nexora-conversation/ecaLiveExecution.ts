@@ -212,7 +212,9 @@ export function judgeEcaLiveExecution(input: EcaLiveExecutionInput): EcaLiveExec
     rationale = "No canonical live Execution; ECA:9 remains the readiness authority.";
     if (managerIntent === "SUMMARY" || managerIntent === "TRACK") {
       speak = true;
-      note = "Execution is not live yet. Readiness still belongs to the pre-start path.";
+      note = /\b(?:show|current|list)\b.*\bexecutions?\b/i.test(text)
+        ? "The listed Execution objects are planned or catalog records; no canonical Execution is active."
+        : "No canonical Execution is active yet. Readiness still belongs to the pre-start path.";
     }
   } else {
     liveState =

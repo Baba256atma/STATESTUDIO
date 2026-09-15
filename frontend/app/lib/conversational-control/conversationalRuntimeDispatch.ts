@@ -154,7 +154,12 @@ export function dispatchNexoraConversationalCommand(
 
   if (
     input.lastAppliedCommandId != null &&
-    input.lastAppliedCommandId === command.commandId
+    input.lastAppliedCommandId === command.commandId &&
+    (
+      !command.primaryTargetId ||
+      input.runtimeFocusedSubjectId == null ||
+      input.runtimeFocusedSubjectId === command.primaryTargetId
+    )
   ) {
     return freezeResult({
       status: "no-op",

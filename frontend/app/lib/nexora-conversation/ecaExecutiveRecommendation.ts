@@ -213,6 +213,19 @@ function criterionFromUtterance(text: string): { criterion: string; source: EcaC
   return null;
 }
 
+/** Internal comparison sentinels (e.g. NCA-POST:4) must not appear raw in manager-facing notes. */
+const INTERNAL_CRITERION_SENTINELS = Object.freeze(
+  new Set(["UNSPECIFIED", "UNKNOWN", "NOT_APPLICABLE", "NONE", "UNRESOLVED", "NULL", "UNDEFINED"]),
+);
+
+function managerFacingCriterionPhrase(criterion: string | null | undefined): string | null {
+  if (criterion == null) return null;
+  const trimmed = criterion.trim();
+  if (!trimmed) return null;
+  if (INTERNAL_CRITERION_SENTINELS.has(trimmed.toUpperCase())) return null;
+  return trimmed.replaceAll("_", " ").toLowerCase();
+}
+
 function optionsFromText(text: string, working: EcaWorkingConversationContext, previous: EcaRecommendationSession): readonly EcaRecommendationOption[] {
   const named: EcaRecommendationOption[] = [];
   const compare = text.match(/\bcompare\s+(.+?)\s+and\s+(.+?)(?:[.?!]|$)/i);
@@ -322,6 +335,7 @@ export function judgeEcaExecutiveRecommendation(
   const evaluateOnly = isEvaluateOnly(text, intent);
   const fromUtterance = criterionFromUtterance(text);
   const criterion = fromUtterance?.criterion ?? previous.criterion ?? input.workingContext.decisionContext.criterion;
+  const facingCriterion = managerFacingCriterionPhrase(criterion);
   const criterionSource: EcaCriterionSource = fromUtterance?.source ??
     (previous.criterion ? previous.criterionSource : input.workingContext.decisionContext.criterion ? "COMPARISON" : "NONE");
   const compared = previous.sawCompare || intent === "COMPARE" || /\bcompare\b/i.test(text) || strategy?.progress.some((item) => item.id === "OPTIONS_COMPARED") === true;
@@ -387,7 +401,7 @@ export function judgeEcaExecutiveRecommendation(
   } else if (authority.option && compared) {
     recommended = authority.option;
     const other = options.find((item) => item.id !== recommended!.id) ?? options.find((item) => item.label !== recommended!.label);
-    supporting.push(criterion ? `Aligns with ${criterion}.` : "Supported by current advisory/comparison context.");
+    supporting.push(facingCriterion ? `Aligns with ${facingCriterion}.` : "Supported by current advisory/comparison context.");
     if (other) {
       counter.push(`${other.label} remains a viable alternative if priorities change.`);
       if (tradeoffs.length === 0) tradeoffs.push(`${recommended.label} is preferred on the stated criterion; ${other.label} remains the material alternative.`);
@@ -412,7 +426,11 @@ export function judgeEcaExecutiveRecommendation(
     decisionReadiness = "NOT_READY";
     const [first, second] = options;
     tradeoffs.push(`${first?.label ?? "One option"} and ${second?.label ?? "the other"} remain in trade-off until an advisory authority prefers one.`);
-    conditions.push(`If ${criterion} remains the priority, ask to compare on that criterion in Decision Theatre.`);
+    if (facingCriterion) {
+      conditions.push(`If ${facingCriterion} remains the priority, ask to compare on that criterion in Decision Theatre.`);
+    } else {
+      conditions.push("Ask to compare on a stated priority in Decision Theatre before treating this as decided.");
+    }
     rationale = "Criterion is known but NCA:4/NXA:5 have not established a preferred candidate.";
   } else if (requested && compared && options.length >= 2) {
     readiness = "NO_CLEAR_PREFERENCE";
@@ -433,7 +451,7 @@ export function judgeEcaExecutiveRecommendation(
   if (!change.length && recommended) {
     if (gap && need?.primaryNeed) change.push(`Resolving ${need.primaryNeed.id} could reverse the comparison.`);
     if (capAv) change.push("Confirmed CAP_AV meaning could change the capacity-based preference.");
-    if (criterion) change.push(`A change in whether ${criterion} remains the priority would reassess this advice.`);
+    if (facingCriterion) change.push(`A change in whether ${facingCriterion} remains the priority would reassess this advice.`);
   }
 
   if (isReadyToDecide(text) && !postDecision) {
@@ -444,7 +462,7 @@ export function judgeEcaExecutiveRecommendation(
 
   const whyBits = [
     recommended ? `I recommend ${recommended.label}` : null,
-    criterion ? `because ${criterion} is the current priority` : null,
+    facingCriterion ? `because ${facingCriterion} is the current priority` : null,
     supporting[0] ?? null,
     tradeoffs[0] ? `The trade-off is ${tradeoffs[0]}` : null,
     uncertainty[0] ? uncertainty[0] : null,
@@ -497,9 +515,9 @@ export function judgeEcaExecutiveRecommendation(
       const [first, second] = options;
       note = `There isn’t a justified single winner yet. ${first?.label ?? "One option"} and ${second?.label ?? "the other"} trade off. Your priority determines the choice.`;
     } else if (recommendationType === "CONDITIONAL_PREFERENCE" && recommended) {
-      note = `I would lean toward ${recommended.label} if ${criterion ?? "the current priority"} remains the focus. ${tradeoffs[0] ?? ""} ${uncertainty[0] ?? "Treat this as conditional, not a Decision."}`.replace(/\s+/g, " ").trim();
+      note = `I would lean toward ${recommended.label} if ${facingCriterion ?? "the current priority"} remains the focus. ${tradeoffs[0] ?? ""} ${uncertainty[0] ?? "Treat this as conditional, not a Decision."}`.replace(/\s+/g, " ").trim();
     } else if (recommended) {
-      note = `I recommend ${recommended.label}${criterion ? ` because it better matches ${criterion}` : ""}. ${tradeoffs[0] ? `The trade-off is ${tradeoffs[0]}.` : ""} ${uncertainty[0] ?? ""} This is advice, not a Decision.`.replace(/\s+/g, " ").trim();
+      note = `I recommend ${recommended.label}${facingCriterion ? ` because it better matches ${facingCriterion}` : ""}. ${tradeoffs[0] ? `The trade-off is ${tradeoffs[0]}.` : ""} ${uncertainty[0] ?? ""} This is advice, not a Decision.`.replace(/\s+/g, " ").trim();
     }
   }
 

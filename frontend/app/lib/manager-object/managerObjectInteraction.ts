@@ -4,6 +4,10 @@
  */
 
 import type { NexoraConversationalIntentKind } from "@/app/lib/conversational-control/conversationalIntent.ts";
+import {
+  isTargetedDeicticInvestigationUtterance,
+  normalizeNexoraConversationalUtterance,
+} from "@/app/lib/conversational-control/conversationalIntentNormalization.ts";
 import type { NexoraConversationalSubjectRecord } from "@/app/lib/conversational-control/conversationalContext.ts";
 import type { NexoraMVPObjectInteractionCatalog } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
 import { getDefaultNexoraMVPObjectInteractionCatalog } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
@@ -92,11 +96,18 @@ export function resolveManagerObjectTurn(input: {
   const subjects =
     input.subjects ?? projectManagerObjectConversationalSubjects(catalog);
   const previous = input.previousSession ?? createEmptyManagerObjectSession();
-  const followUpTarget = resolveExplorationFollowUpTarget(
+  const normalizedUtterance = normalizeNexoraConversationalUtterance(
     input.utterance ?? "",
-    previous.explorationAnchor,
-    previous.activeObjectId,
   );
+  const followUpTarget = isTargetedDeicticInvestigationUtterance(
+    normalizedUtterance,
+  )
+    ? null
+    : resolveExplorationFollowUpTarget(
+        input.utterance ?? "",
+        previous.explorationAnchor,
+        previous.activeObjectId,
+      );
   const namedSubjectId = followUpTarget ?? input.namedSubjectId ?? null;
   const hasNamedTargetHint =
     followUpTarget != null || input.hasNamedTargetHint === true;

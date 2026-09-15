@@ -1,13 +1,14 @@
 {
   "identity": "NPA-T ECA:10/live-proofs",
-  "url": "http://localhost:3025/executive?reset=1",
+  "url": "http://localhost:3000/executive?reset=1",
   "errors": [],
-  "1-live-gate": {
+  "pageErrors": 0,
+  "1-active-execution-direct-status": {
     "pass": true,
     "actual": {
       "beforeStart": {
         "utterance": "How is execution going?",
-        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Execution is not live yet. Readiness still belongs to the pre-start path.",
+        "reply": "NexoraInvestigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Expansion shows attention, but a relationship is not established. Uncertainty: is missing or uncertain. No Execution is active yet. Readiness still belongs to the pre-start path.",
         "intent": "REVIEW_EXECUTION",
         "action": "SHOW",
         "state9": "EXECUTION_PREPARATION",
@@ -21,17 +22,12 @@
         "secondWriter": "false",
         "monitor": "false",
         "initiative": "false",
-        "state8": "NONE",
-        "confirm8": "false",
         "decisionCount": "0",
-        "executionCount": "0",
-        "theatreLive": "none",
-        "executionStarted": "false",
-        "decisionCommitted": "false"
+        "executionCount": "0"
       },
       "afterStart": {
         "utterance": "How is execution going?",
-        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Execution is already active. We should review progress rather than prepare a new start. Execution is active at no authoritative progress observation. I don’t have a confirmed schedule baseline, so I can’t reliably call it on-track or off-track yet.",
+        "reply": "NexoraInvestigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Expansion shows attention, but a relationship is not established. Uncertainty: is missing or uncertain. Execution is already active. We should review progress rather than prepare a new start. Execution is active at no authoritative progress observation. I don’t have a confirmed schedule baseline, so I can’t reliably call it on-track or off-track yet.",
         "intent": "REVIEW_EXECUTION",
         "action": "SHOW",
         "state9": "EXECUTION_ALREADY_ACTIVE",
@@ -45,44 +41,12 @@
         "secondWriter": "false",
         "monitor": "false",
         "initiative": "false",
-        "state8": "NONE",
-        "confirm8": "false",
         "decisionCount": "0",
-        "executionCount": "0",
-        "theatreLive": "EXECUTION_ACTIVE",
-        "executionStarted": "false",
-        "decisionCommitted": "false"
+        "executionCount": "0"
       }
     }
   },
-  "2-live-summary": {
-    "pass": true,
-    "actual": {
-      "utterance": "Update me.",
-      "reply": "NexoraI can add “Demand Surge”. Add it?",
-      "intent": "PROPOSE_CHANGE",
-      "action": "PREPARE_PROPOSAL",
-      "state9": "EXECUTION_ALREADY_ACTIVE",
-      "readiness": "ALREADY_EXECUTING",
-      "writes9": "false",
-      "live": "ACTIVE",
-      "track": "UNKNOWN",
-      "deviation": "NO_MATERIAL_DEVIATION",
-      "eca10Intent": "SUMMARY",
-      "writes10": "false",
-      "secondWriter": "false",
-      "monitor": "false",
-      "initiative": "false",
-      "state8": "NONE",
-      "confirm8": "false",
-      "decisionCount": "0",
-      "executionCount": "0",
-      "theatreLive": "EXECUTION_ACTIVE",
-      "executionStarted": "false",
-      "decisionCommitted": "false"
-    }
-  },
-  "3-baseline-safety": {
+  "2-progress-observed-expected": {
     "pass": true,
     "actual": {
       "utterance": "Are we on track?",
@@ -100,43 +64,33 @@
       "secondWriter": "false",
       "monitor": "false",
       "initiative": "false",
-      "state8": "NONE",
-      "confirm8": "false",
       "decisionCount": "0",
-      "executionCount": "0",
-      "theatreLive": "EXECUTION_ACTIVE",
-      "executionStarted": "false",
-      "decisionCommitted": "false"
+      "executionCount": "0"
     }
   },
-  "4-what-changed": {
+  "3-deviation-causal-safe": {
     "pass": true,
     "actual": {
-      "utterance": "What changed?",
-      "reply": "NexoraRisk currently needs attention. Nexora does not have a validated prior-state comparison in this session. I can describe the current state (no authoritative progress observation), but I don’t have a prior execution observation to compare against.",
-      "intent": "UNKNOWN",
-      "action": "ASK_CLARIFICATION",
+      "utterance": "Update me.",
+      "reply": "NexoraWhich item should I update?",
+      "intent": "PROPOSE_CHANGE",
+      "action": "PREPARE_PROPOSAL",
       "state9": "EXECUTION_ALREADY_ACTIVE",
       "readiness": "ALREADY_EXECUTING",
       "writes9": "false",
       "live": "ACTIVE",
       "track": "UNKNOWN",
-      "deviation": "UNKNOWN",
-      "eca10Intent": "CHANGED",
+      "deviation": "NO_MATERIAL_DEVIATION",
+      "eca10Intent": "SUMMARY",
       "writes10": "false",
       "secondWriter": "false",
       "monitor": "false",
       "initiative": "false",
-      "state8": "NONE",
-      "confirm8": "false",
       "decisionCount": "0",
-      "executionCount": "0",
-      "theatreLive": "EXECUTION_ACTIVE",
-      "executionStarted": "false",
-      "decisionCommitted": "false"
+      "executionCount": "0"
     }
   },
-  "5-attention": {
+  "4-risk-without-false-blocked": {
     "pass": true,
     "actual": {
       "utterance": "What needs my attention?",
@@ -154,67 +108,51 @@
       "secondWriter": "false",
       "monitor": "false",
       "initiative": "false",
-      "state8": "NONE",
-      "confirm8": "false",
       "decisionCount": "0",
-      "executionCount": "0",
-      "theatreLive": "EXECUTION_ACTIVE",
-      "executionStarted": "false",
-      "decisionCommitted": "false"
+      "executionCount": "0"
     }
   },
-  "6-cap-av": {
+  "5-refresh-no-duplicate": {
     "pass": true,
     "actual": {
-      "utterance": "Are we on track?",
-      "reply": "NexoraExecution has started, but no authoritative progress observation is available yet. Execution is already active. We should review progress rather than prepare a new start. Current progress is no authoritative progress observation, but I don’t have a confirmed baseline to judge whether that is ahead or behind plan.",
-      "intent": "REVIEW_EXECUTION",
-      "action": "SHOW",
-      "state9": "EXECUTION_ALREADY_ACTIVE",
-      "readiness": "ALREADY_EXECUTING",
-      "writes9": "false",
-      "live": "ACTIVE",
-      "track": "UNKNOWN",
-      "deviation": "NO_MATERIAL_DEVIATION",
-      "eca10Intent": "TRACK",
-      "writes10": "false",
-      "secondWriter": "false",
-      "monitor": "false",
-      "initiative": "false",
-      "state8": "NONE",
-      "confirm8": "false",
-      "decisionCount": "0",
-      "executionCount": "0",
-      "theatreLive": "EXECUTION_ACTIVE",
-      "executionStarted": "false",
-      "decisionCommitted": "false"
-    }
-  },
-  "7-completion-boundary": {
-    "pass": true,
-    "actual": {
-      "utterance": "Did it work?",
-      "reply": "NexoraNo validated actual outcome is available yet. What is the latest observed delivery rate? Execution is progressing, but it is too early to judge the Decision’s Outcome.",
-      "intent": "REVIEW_OUTCOME",
-      "action": "SHOW",
-      "state9": "EXECUTION_ALREADY_ACTIVE",
-      "readiness": "ALREADY_EXECUTING",
-      "writes9": "false",
-      "live": "ACTIVE",
-      "track": "UNKNOWN",
-      "deviation": "NO_MATERIAL_DEVIATION",
-      "eca10Intent": "OUTCOME_QUESTION",
-      "writes10": "false",
-      "secondWriter": "false",
-      "monitor": "false",
-      "initiative": "false",
-      "state8": "NONE",
-      "confirm8": "false",
-      "decisionCount": "0",
-      "executionCount": "0",
-      "theatreLive": "EXECUTION_ACTIVE",
-      "executionStarted": "false",
-      "decisionCommitted": "false"
+      "first": {
+        "utterance": "How is execution going?",
+        "reply": "NexoraInvestigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Expansion shows attention, but a relationship is not established. Uncertainty: is missing or uncertain. Execution is already active. We should review progress rather than prepare a new start. Execution is active at no authoritative progress observation. I don’t have a confirmed schedule baseline, so I can’t reliably call it on-track or off-track yet.",
+        "intent": "REVIEW_EXECUTION",
+        "action": "SHOW",
+        "state9": "EXECUTION_ALREADY_ACTIVE",
+        "readiness": "ALREADY_EXECUTING",
+        "writes9": "false",
+        "live": "ACTIVE",
+        "track": "UNKNOWN",
+        "deviation": "NO_MATERIAL_DEVIATION",
+        "eca10Intent": "SUMMARY",
+        "writes10": "false",
+        "secondWriter": "false",
+        "monitor": "false",
+        "initiative": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      },
+      "refreshed": {
+        "utterance": "How is execution going?",
+        "reply": "NexoraInvestigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Expansion shows attention, but a relationship is not established. Uncertainty: is missing or uncertain. Execution is already active. We should review progress rather than prepare a new start. Execution is active at no authoritative progress observation. I don’t have a confirmed schedule baseline, so I can’t reliably call it on-track or off-track yet.",
+        "intent": "REVIEW_EXECUTION",
+        "action": "SHOW",
+        "state9": "EXECUTION_ALREADY_ACTIVE",
+        "readiness": "ALREADY_EXECUTING",
+        "writes9": "false",
+        "live": "ACTIVE",
+        "track": "UNKNOWN",
+        "deviation": "NO_MATERIAL_DEVIATION",
+        "eca10Intent": "SUMMARY",
+        "writes10": "false",
+        "secondWriter": "false",
+        "monitor": "false",
+        "initiative": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      }
     }
   }
 }

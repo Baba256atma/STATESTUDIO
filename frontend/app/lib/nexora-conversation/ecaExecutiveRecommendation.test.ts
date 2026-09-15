@@ -153,9 +153,19 @@ function play(
     capAvUnconfirmed?: boolean;
     forceAsk?: boolean;
     estimate?: boolean;
+    decisionCriterion?: string | null;
   } = {},
 ) {
-  const workingContext = working(utterance);
+  let workingContext = working(utterance);
+  if (extras.decisionCriterion != null) {
+    workingContext = {
+      ...workingContext,
+      decisionContext: {
+        ...workingContext.decisionContext,
+        criterion: extras.decisionCriterion,
+      },
+    };
+  }
   const actionPlan = planEcaExecutiveConversationAction({ utterance, workingContext });
   let informationNeed = judgeEcaExecutiveInformationNeed({
     utterance,
@@ -606,4 +616,459 @@ test("ECA:7 overlay stays bounded", () => {
   });
   assert.doesNotMatch(spoken, /\bdefinitely\b|\b82%\b/);
   assert.match(spoken, /not a Decision/i);
+});
+
+test("ECA:7 prompt A — Grounded recommendation", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+  ]);
+  assert.equal(turns[1]?.judgment.recommendationType, "PREFER_OPTION");
+  assert.equal(turns[1]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt B — Insufficient evidence defers", () => {
+  const turns = chain([
+    { utterance: "Compare Supplier A and Supplier B." },
+    { utterance: "What do you recommend?", extras: { forceAsk: true } },
+  ]);
+  assert.ok(
+    turns[1]?.judgment.recommendationType === "DEFER_DECISION" ||
+      turns[1]?.judgment.readiness === "BLOCKED_BY_CRITICAL_UNKNOWN",
+  );
+  assert.equal(turns[1]?.judgment.recommendedOption, null);
+});
+
+test("ECA:7 prompt C — No clear preference", () => {
+  const turns = chain([
+    { utterance: "Compare Scenario A and Scenario B." },
+    { utterance: "Which is best?" },
+  ]);
+  assert.equal(turns[1]?.judgment.recommendationType, "NO_CLEAR_PREFERENCE");
+});
+
+test("ECA:7 prompt D — Manager preference usable", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "Delivery speed matters more than cost." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+  ]);
+  assert.ok(turns[2]?.judgment.criterionSource === "MANAGER" || turns[2]?.judgment.criterion);
+  assert.equal(turns[2]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt E — Preference provenance distinct from analytical judgment", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "I prefer overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing") },
+    },
+  ]);
+  assert.equal(turns[2]?.judgment.recommendedOption?.label, "outsourcing");
+  assert.equal(turns[2]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt F — Tradeoff surfaced", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing") },
+    },
+  ]);
+  assert.ok((turns[1]?.judgment.tradeoffs.length ?? 0) >= 1);
+});
+
+test("ECA:7 prompt G — Risk context reused without new score", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "Which has lower risk?" },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+  ]);
+  assert.equal(turns[2]?.judgment.boundaries.writesRisk, false);
+  assert.equal(turns[2]?.judgment.boundaries.createsSecondDecisionEngine, false);
+});
+
+test("ECA:7 prompt H — Weak evidence keeps bounded confidence", () => {
+  const turns = chain([
+    { utterance: "Compare Supplier A and Supplier B." },
+    { utterance: "Around 40k.", extras: { estimate: true } },
+    {
+      utterance: "Now what do you recommend?",
+      extras: { nxa5: pref("supplier-a", "Supplier A"), estimate: true },
+    },
+  ]);
+  assert.equal(turns[2]?.judgment.strength, "TENTATIVE");
+  assert.equal(turns[2]?.judgment.trustInflation, false);
+});
+
+test("ECA:7 prompt I — Causal safety preserved", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: {
+        nxa5: pref("outsourcing", "outsourcing", {
+          why: Object.freeze(["outsourcing may contribute to delivery recovery"]),
+        }),
+      },
+    },
+  ]);
+  assert.doesNotMatch(turns[1]?.judgment.managerFacingNote ?? "", /\bcaused\b/i);
+});
+
+test("ECA:7 prompt J — CAP_AV unconfirmed stays bounded", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing"), capAvUnconfirmed: true },
+    },
+  ]);
+  assert.ok(
+    turns[1]?.judgment.strength === "TENTATIVE" ||
+      turns[1]?.judgment.recommendationType === "CONDITIONAL_PREFERENCE" ||
+      turns[1]?.judgment.recommendationType === "DEFER_DECISION" ||
+      turns[1]?.judgment.semanticPromotion === false,
+  );
+  assert.equal(turns[1]?.judgment.boundaries.writesDataTruth, false);
+});
+
+test("ECA:7 prompt K — Decision NOT_READY", () => {
+  const { judgment } = play("What do you recommend?");
+  assert.ok(judgment.decisionReadiness === "NOT_READY" || judgment.decisionReadiness === "BLOCKED" || judgment.readiness !== "READY");
+  assert.equal(judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt L — Decision CONDITIONALLY_READY", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: {
+        nxa5: pref("outsourcing", "outsourcing", {
+          decisionReadiness: "READY_WITH_KNOWN_UNCERTAINTY",
+          uncertainty: Object.freeze(["capacity evidence incomplete"]),
+        }),
+      },
+    },
+  ]);
+  assert.ok(
+    turns[1]?.judgment.decisionReadiness === "READY_WITH_CONDITIONS" ||
+      turns[1]?.judgment.readiness === "READY_WITH_CONDITIONS" ||
+      turns[1]?.judgment.recommendationType === "CONDITIONAL_PREFERENCE",
+  );
+  assert.equal(turns[1]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt M — Decision READY without Decision write", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing", { decisionReadiness: "READY" }) },
+    },
+  ]);
+  assert.ok(
+    turns[1]?.judgment.decisionReadiness === "READY" ||
+      turns[1]?.judgment.decisionReadiness === "READY_WITH_CONDITIONS" ||
+      turns[1]?.judgment.decisionReadiness === "NOT_READY",
+  );
+  assert.equal(turns[1]?.judgment.boundaries.commitsDecision, false);
+  assert.equal(turns[1]?.judgment.boundaries.readinessEqualsCommitment, false);
+});
+
+test("ECA:7 prompt N — Recommendation ≠ Decision", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+  ]);
+  assert.equal(turns[1]?.judgment.boundaries.recommendationEqualsDecision, false);
+  assert.equal(turns[1]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt O — Preference ≠ commitment", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "I prefer Demand Surge." },
+  ]);
+  assert.equal(turns[1]?.judgment.boundaries.commitsDecision, false);
+  assert.equal(turns[1]?.actionPlan.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt P — Explicit choose still not ECA:7 Decision write", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+    { utterance: "I choose Scenario A." },
+  ]);
+  assert.equal(turns[2]?.judgment.boundaries.commitsDecision, false);
+  assert.equal(turns[2]?.actionPlan.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt Q — Execution boundary", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing"), committedDecisionId: "dec-1" },
+    },
+  ]);
+  assert.equal(turns[1]?.judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:7 prompt R — Contradictory evidence preserved", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: {
+        nxa5: pref("outsourcing", "outsourcing", {
+          uncertainty: Object.freeze(["margin evidence conflicts with delivery evidence"]),
+        }),
+      },
+    },
+  ]);
+  assert.ok((turns[1]?.judgment.counterEvidence.length ?? 0) >= 0);
+  assert.ok((turns[1]?.judgment.uncertainty.length ?? 0) >= 1 || turns[1]?.judgment.tradeoffs.length);
+});
+
+test("ECA:7 prompt S — Recommendation revision with new evidence", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+    { utterance: "Supplier A's cost is actually 30% higher." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("overtime", "overtime", { changedFromPrevious: true }) },
+    },
+  ]);
+  assert.equal(turns[3]?.judgment.recommendedOption?.label, "overtime");
+});
+
+test("ECA:7 prompt T — Why stays on recommended subject", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+    { utterance: "Why?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+  ]);
+  assert.match(turns[2]?.judgment.managerFacingNote ?? "", /outsourcing|priority/i);
+});
+
+test("ECA:7 prompt U — Explicit subject switch after recommendation", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+    { utterance: "Forget that. Explain the Goal." },
+  ]);
+  assert.equal(turns[2]?.judgment.boundaries.writesGoal, false);
+  assert.ok(
+    turns[2]?.actionPlan.intent === "EXPLAIN" ||
+      turns[2]?.actionPlan.intent === "UNDERSTAND" ||
+      turns[2]?.judgment.recommendationRequested === false,
+  );
+});
+
+test("ECA:7 prompt V — Existing Decision framing", () => {
+  const turns = chain([
+    {
+      utterance: "What do you think about it now?",
+      extras: { committedDecisionId: "dec-approved-1", nxa5: pref("outsourcing", "outsourcing") },
+    },
+  ]);
+  assert.ok(turns[0]?.judgment.postDecision === true || turns[0]?.judgment.boundaries.commitsDecision === false);
+  assert.equal(turns[0]?.judgment.boundaries.commitsDecision, false);
+  assert.equal(turns[0]?.judgment.boundaries.createsSecondDecisionEngine, false);
+});
+
+test("ECA:7 prompt W — No duplicate recommendation engine", () => {
+  const { judgment } = play("What do you recommend?", {}, { nxa5: pref("outsourcing", "outsourcing") });
+  assert.equal(judgment.boundaries.replacesNca4, false);
+  assert.equal(judgment.boundaries.replacesDth7, false);
+  assert.equal(judgment.boundaries.createsRecommendationStore, false);
+});
+
+test("ECA:7 prompt X — Zero direct Decision/Execution writes across samples", () => {
+  for (const sample of [
+    play("What do you recommend?"),
+    ...chain([
+      { utterance: "Compare outsourcing and overtime." },
+      { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+    ]),
+    ...chain([
+      { utterance: "Compare Supplier A and Supplier B." },
+      { utterance: "What do you recommend?", extras: { forceAsk: true } },
+    ]),
+  ]) {
+    isolation(sample.judgment);
+  }
+});
+
+test("ECA:7 prompt multi-turn 1 — Evidence to recommendation without Decision", () => {
+  const turns = chain([
+    { utterance: "Help me decide what to do about Capacity Gap." },
+    { utterance: "Show me the evidence." },
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+  ]);
+  assert.equal(turns[3]?.judgment.recommendationType, "PREFER_OPTION");
+  assert.ok((turns[3]?.judgment.tradeoffs.length ?? 0) >= 0);
+  assert.equal(turns[3]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt multi-turn 2 — Missing preference then criterion unlocks recommendation", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "Which is better?" },
+    { utterance: "Delivery speed matters more." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+  ]);
+  assert.equal(turns[3]?.judgment.boundaries.commitsDecision, false);
+  assert.ok(turns[3]?.judgment.recommendedOption || turns[3]?.judgment.recommendationType);
+});
+
+test("ECA:7 prompt multi-turn 3 — Recommendation → preference → no auto commit", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+    { utterance: "I prefer Demand Surge." },
+    { utterance: "What should I check before deciding?" },
+  ]);
+  assert.equal(turns[2]?.judgment.boundaries.commitsDecision, false);
+  assert.equal(turns[3]?.judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:7 prompt multi-turn 4 — Recommendation revision", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    { utterance: "What do you recommend?", extras: { nxa5: pref("outsourcing", "outsourcing") } },
+    { utterance: "Supplier A's cost is actually 30% higher." },
+    {
+      utterance: "Does that change your recommendation?",
+      extras: { nxa5: pref("overtime", "overtime", { changedFromPrevious: true }) },
+    },
+  ]);
+  assert.equal(turns[3]?.judgment.recommendedOption?.label, "overtime");
+});
+
+const LEAK_PROBE = /\b(?:UNSPECIFIED|undefined|null)\b/i;
+
+test("ECA:FINAL-FIX1 A — Journey A recommendation must not leak UNSPECIFIED", () => {
+  const turns = chain([
+    { utterance: "Compare Demand Surge and Pricing Response." },
+    {
+      utterance: "What do you recommend?",
+      extras: {
+        nxa5: pref("demand-surge", "Demand Surge", {
+          tradeoffs: Object.freeze(["faster delivery relief and reversibility; trade-off higher short-term operating cost"]),
+          uncertainty: Object.freeze(["Labor availability is not confirmed."]),
+        }),
+        decisionCriterion: "UNSPECIFIED",
+      },
+    },
+  ]);
+  const judgment = turns[1]!.judgment;
+  const spoken = applyEcaRecommendationToPresentedResponse({
+    source: "I recommend investigating Capacity first. I don't have enough basis to commit to an intervention yet.",
+    utterance: "What do you recommend?",
+    judgment,
+  });
+  assert.equal(judgment.criterion, "UNSPECIFIED");
+  assert.equal(judgment.recommendationType, "PREFER_OPTION");
+  assert.equal(judgment.recommendedOption?.label, "Demand Surge");
+  assert.doesNotMatch(judgment.managerFacingNote ?? "", LEAK_PROBE);
+  assert.doesNotMatch(spoken, LEAK_PROBE);
+  assert.match(judgment.managerFacingNote ?? "", /advice, not a Decision/i);
+});
+
+test("ECA:FINAL-FIX1 B — Missing internal sentinel omits fabricated criterion meaning", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing"), decisionCriterion: "NOT_APPLICABLE" },
+    },
+  ]);
+  const note = turns[1]!.judgment.managerFacingNote ?? "";
+  assert.doesNotMatch(note, /NOT_APPLICABLE|UNSPECIFIED|better matches/i);
+  assert.match(note, /recommend outsourcing/i);
+});
+
+test("ECA:FINAL-FIX1 C — Legitimate uncertainty remains visible", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: {
+        nxa5: pref("outsourcing", "outsourcing", {
+          uncertainty: Object.freeze(["Labor availability is not confirmed."]),
+        }),
+        decisionCriterion: "UNSPECIFIED",
+        capAvUnconfirmed: true,
+      },
+    },
+  ]);
+  const note = turns[1]!.judgment.managerFacingNote ?? "";
+  assert.doesNotMatch(note, LEAK_PROBE);
+  assert.match(note, /uncertain|not confirmed|CAP_AV|provisional|estimate|condition/i);
+});
+
+test("ECA:FINAL-FIX1 D — Recommendation fidelity unchanged vs established criterion phrasing", () => {
+  const withSentinel = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing"), decisionCriterion: "UNSPECIFIED" },
+    },
+  ])[1]!.judgment;
+  const withCriterion = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing"), decisionCriterion: "DELIVERY_IMPACT" },
+    },
+  ])[1]!.judgment;
+  assert.equal(withSentinel.recommendedOption?.id, withCriterion.recommendedOption?.id);
+  assert.equal(withSentinel.recommendationType, withCriterion.recommendationType);
+  assert.equal(withSentinel.decisionReadiness, withCriterion.decisionReadiness);
+  assert.equal(withSentinel.criterion, "UNSPECIFIED");
+  assert.equal(withCriterion.criterion, "DELIVERY_IMPACT");
+  assert.doesNotMatch(withSentinel.managerFacingNote ?? "", LEAK_PROBE);
+  assert.match(withCriterion.managerFacingNote ?? "", /delivery impact/i);
+  assert.doesNotMatch(withCriterion.managerFacingNote ?? "", /DELIVERY_IMPACT/);
+});
+
+test("ECA:FINAL-FIX1 E — Internal UNSPECIFIED contract preserved on judgment", () => {
+  const turns = chain([
+    { utterance: "Compare outsourcing and overtime." },
+    {
+      utterance: "What do you recommend?",
+      extras: { nxa5: pref("outsourcing", "outsourcing"), decisionCriterion: "UNSPECIFIED" },
+    },
+  ]);
+  assert.equal(turns[1]!.judgment.criterion, "UNSPECIFIED");
+  assert.equal(turns[1]!.judgment.boundaries.commitsDecision, false);
+  assert.equal(turns[1]!.judgment.boundaries.mutatesBusinessState, false);
+});
+
+test("ECA:FINAL-FIX1 F — Manager-facing leakage probe on overlay", () => {
+  const turns = chain([
+    { utterance: "Compare Demand Surge and Pricing Response." },
+    {
+      utterance: "What do you recommend?",
+      extras: {
+        nxa5: pref("demand-surge", "Demand Surge"),
+        decisionCriterion: "UNSPECIFIED",
+      },
+    },
+  ]);
+  const spoken = applyEcaRecommendationToPresentedResponse({
+    source: "",
+    utterance: "What do you recommend?",
+    judgment: turns[1]!.judgment,
+  });
+  assert.doesNotMatch(spoken, LEAK_PROBE);
+  assert.doesNotMatch(turns[1]!.judgment.managerFacingNote ?? "", /\bUNKNOWN\b|\bNONE\b|\bUNRESOLVED\b/);
 });

@@ -388,3 +388,353 @@ test("ECA:11 overlay replaces generic command failure", () => {
   assert.doesNotMatch(overlay, /couldn[’']t complete that request/i);
   assert.match(overlay, /2 percentage points below/);
 });
+
+test("ECA:11 prompt A — No Outcome evidence", () => {
+  const { judgment } = play("What was the result?");
+  assert.ok(judgment.observationState === "NOT_YET_OBSERVED" || judgment.observationState === "UNKNOWN");
+  assert.equal(judgment.boundaries.writesOutcome, false);
+});
+
+test("ECA:11 prompt B — COMPLETED ≠ SUCCESS", () => {
+  const { judgment } = play("Did it work?", {
+    evidence: evidence({
+      primary: { measure: "Delivery", observed: null, baseline: null, target: null, unit: "%", source: "UNKNOWN" },
+      executionStatus: "completed",
+    }),
+  });
+  assert.equal(judgment.observationState, "NOT_YET_OBSERVED");
+  assert.doesNotMatch(judgment.managerFacingNote ?? "", /\bsucceeded\b|\bsuccessful\b/i);
+});
+
+test("ECA:11 prompt C — Interim observation while ACTIVE", () => {
+  const { judgment } = play("What was the result?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96, executionStatus: "in-progress" }),
+  });
+  assert.equal(judgment.observationState, "PARTIALLY_OBSERVED");
+  assert.equal(judgment.boundaries.writesOutcome, false);
+});
+
+test("ECA:11 prompt D — FAVORABLE 91→94", () => {
+  const { judgment } = play("What happened?", { evidence: evidence({ observed: 94, baseline: 91 }) });
+  assert.equal(judgment.baselineComparison, "IMPROVED");
+  assert.equal(judgment.overallInterpretation, "FAVORABLE");
+});
+
+test("ECA:11 prompt E — UNFAVORABLE 91→88", () => {
+  const { judgment } = play("What happened?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) });
+  assert.equal(judgment.baselineComparison, "DETERIORATED");
+  assert.equal(judgment.overallInterpretation, "UNFAVORABLE");
+});
+
+test("ECA:11 prompt F — MIXED delivery up margin down", () => {
+  const { judgment } = play("Was it successful?", {
+    evidence: evidence({
+      observed: 94,
+      baseline: 91,
+      target: 96,
+      secondary: { measure: "Margin", observed: 8, baseline: 12, target: null, unit: "%", source: "CONFIRMED" },
+    }),
+  });
+  assert.equal(judgment.overallInterpretation, "MIXED");
+});
+
+test("ECA:11 prompt G — INCONCLUSIVE conflicted evidence", () => {
+  const { judgment } = play("What’s the result?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96, conflicted: true }),
+    conflict: "VALUE_CONFLICT",
+  });
+  assert.equal(judgment.observationState, "CONFLICTED");
+  assert.equal(judgment.overallInterpretation, "INCONCLUSIVE");
+});
+
+test("ECA:11 prompt H — NOT_YET_ASSESSABLE", () => {
+  const { judgment } = play("Did it work?", {
+    evidence: evidence({
+      primary: { measure: "Delivery", observed: null, baseline: null, target: null, unit: "%", source: "UNKNOWN" },
+      executionStatus: "in-progress",
+    }),
+  });
+  assert.equal(judgment.observationState, "NOT_YET_OBSERVED");
+});
+
+test("ECA:11 prompt I — Deterministic +3 percentage points", () => {
+  const { judgment } = play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.match(judgment.managerFacingNote ?? "", /3 percentage points/);
+  assert.equal(formatOutcomePercentagePointDelta(91, 94).delta, 3);
+});
+
+test("ECA:11 prompt J — Improved but Goal not achieved", () => {
+  const { judgment } = play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.equal(judgment.baselineComparison, "IMPROVED");
+  assert.equal(judgment.targetComparison, "NOT_MET");
+  assert.match(judgment.managerFacingNote ?? "", /2 points below/i);
+});
+
+test("ECA:11 prompt K — Goal attainment, no Goal mutation", () => {
+  const { judgment } = play("Did we hit the Goal?", { evidence: evidence({ observed: 96, baseline: 91, target: 96 }) });
+  assert.equal(judgment.targetComparison, "MET");
+  assert.equal(judgment.boundaries.writesGoal, false);
+});
+
+test("ECA:11 prompt L — Delay days lower-is-better FAVORABLE", () => {
+  const { judgment } = play("What happened?", {
+    evidence: evidence({
+      primary: { measure: "Average delay days", observed: 3, baseline: 5, target: null, unit: "days", source: "CONFIRMED" },
+    }),
+  });
+  assert.equal(judgment.baselineComparison, "IMPROVED");
+  assert.equal(judgment.overallInterpretation, "FAVORABLE");
+});
+
+test("ECA:11 prompt M — Unknown directionality does not invent judgment", () => {
+  const { judgment } = play("Did we improve?", { evidence: evidence({ observed: 94 }) });
+  assert.equal(judgment.baselineComparison, "UNKNOWN");
+  assert.notEqual(judgment.overallInterpretation, "FAVORABLE");
+  assert.notEqual(judgment.overallInterpretation, "UNFAVORABLE");
+});
+
+test("ECA:11 prompt N — Multiple measures preserve tradeoff", () => {
+  const { judgment } = play("Was it successful?", {
+    evidence: evidence({
+      observed: 94,
+      baseline: 91,
+      target: 96,
+      secondary: { measure: "Cost", observed: 112, baseline: 100, target: null, unit: "%", source: "CONFIRMED" },
+    }),
+  });
+  assert.equal(judgment.overallInterpretation, "MIXED");
+  assert.match(judgment.managerFacingNote ?? "", /mixed/i);
+});
+
+test("ECA:11 prompt O — Execution complete vs unfavorable Outcome", () => {
+  const { judgment } = play("Did it work?", {
+    evidence: evidence({ observed: 88, baseline: 91, target: 96, executionStatus: "completed" }),
+  });
+  assert.equal(judgment.baselineComparison, "DETERIORATED");
+  assert.doesNotMatch(judgment.managerFacingNote ?? "", /Decision failed|Execution failed/i);
+});
+
+test("ECA:11 prompt P — On-track Execution without Outcome", () => {
+  const { judgment } = play("Did it work?", {
+    evidence: evidence({
+      primary: { measure: "Delivery", observed: null, baseline: null, target: null, unit: "%", source: "UNKNOWN" },
+      executionStatus: "in-progress",
+    }),
+  });
+  assert.equal(judgment.observationState, "NOT_YET_OBSERVED");
+  assert.doesNotMatch(judgment.managerFacingNote ?? "", /\bsuccessful\b|\bsucceeded\b/i);
+});
+
+test("ECA:11 prompt Q — Manager report ≠ Outcome write", () => {
+  const { judgment } = play("Delivery seems better.", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+    answerType: "ESTIMATE",
+  });
+  assert.equal(judgment.boundaries.writesOutcome, false);
+  assert.equal(judgment.boundaries.writesDataTruth, false);
+});
+
+test("ECA:11 prompt R — Unresolved Data semantic", () => {
+  const { judgment } = play("Did capacity cause the improvement?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+    capAvUnconfirmed: true,
+  });
+  assert.equal(judgment.attribution, "NOT_ESTABLISHED");
+  assert.equal(judgment.boundaries.writesDataTruth, false);
+  assert.doesNotMatch(judgment.managerFacingNote ?? "", /capacity caused/i);
+});
+
+test("ECA:11 prompt S — After ≠ caused by", () => {
+  const { judgment } = play("Did our Decision cause it?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+  });
+  assert.equal(judgment.attribution, "NOT_ESTABLISHED");
+  assert.equal(judgment.causalityInflation, false);
+});
+
+test("ECA:11 prompt T — Possible contributor only", () => {
+  const { judgment } = play("Why did it improve?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+  });
+  assert.match(judgment.managerFacingNote ?? "", /may have contributed|doesn[’']t establish/i);
+  assert.equal(judgment.boundaries.infersCausality, false);
+});
+
+test("ECA:11 prompt U — Alternative explanations preserved", () => {
+  const { judgment } = play("Did this Decision cause the improvement?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+  });
+  assert.match(judgment.managerFacingNote ?? "", /other factors|doesn[’']t establish/i);
+});
+
+test("ECA:11 prompt V — Unfavorable Outcome does not mutate Decision", () => {
+  const { judgment } = play("What happened?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) });
+  assert.equal(judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:11 prompt W — Goal missed does not mutate Goal", () => {
+  const { judgment } = play("Did we achieve the Goal?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.equal(judgment.targetComparison, "NOT_MET");
+  assert.equal(judgment.boundaries.writesGoal, false);
+});
+
+test("ECA:11 prompt X — Risk not mutated", () => {
+  const { judgment } = play("What happened?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) });
+  assert.equal(judgment.boundaries.writesRisk, false);
+});
+
+test("ECA:11 prompt Y — Learning writes = 0", () => {
+  const { judgment } = play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.equal(judgment.boundaries.writesLearning, false);
+  assert.equal(judgment.boundaries.createsLearningEngine, false);
+});
+
+test("ECA:11 prompt Z — Reassessment advised only", () => {
+  const { judgment } = play("What should we do now?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) });
+  assert.equal(judgment.managerIntent, "NEXT");
+  assert.equal(judgment.boundaries.commitsDecision, false);
+  assert.equal(judgment.boundaries.writesLearning, false);
+  assert.match(judgment.managerFacingNote ?? "", /reassess|review/i);
+});
+
+test("ECA:11 prompt AA — Did it work?", () => {
+  const { judgment } = play("Did it work?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.equal(judgment.baselineComparison, "IMPROVED");
+  assert.equal(judgment.targetComparison, "NOT_MET");
+  assert.equal(judgment.attribution, "NOT_ESTABLISHED");
+});
+
+test("ECA:11 prompt AB — Was it successful?", () => {
+  const { judgment } = play("Was it successful?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.ok(judgment.overallInterpretation === "INCONCLUSIVE" || judgment.targetComparison === "NOT_MET");
+  assert.doesNotMatch(judgment.managerFacingNote ?? "", /Decision success score/i);
+});
+
+test("ECA:11 prompt AC — What was the result?", () => {
+  const { judgment } = play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.match(judgment.managerFacingNote ?? "", /91%|94%|3 percentage points/i);
+});
+
+test("ECA:11 prompt AD — Did it cause it?", () => {
+  const { judgment } = play("Did our decision cause the improvement?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+  });
+  assert.equal(judgment.attribution, "NOT_ESTABLISHED");
+});
+
+test("ECA:11 prompt AE — Why did it fail?", () => {
+  const { judgment } = play("Why did it fail?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) });
+  assert.equal(judgment.attribution, "NOT_ESTABLISHED");
+  assert.equal(judgment.boundaries.infersCausality, false);
+});
+
+test("ECA:11 prompt AF — What changed requires history", () => {
+  const { judgment } = play("Did we improve?", { evidence: evidence({ observed: 94 }) });
+  assert.equal(judgment.baselineComparison, "UNKNOWN");
+  assert.match(judgment.managerFacingNote ?? "", /baseline/i);
+});
+
+test("ECA:11 prompt AG — What should we do now?", () => {
+  const { judgment } = play("What should we do now?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) });
+  assert.equal(judgment.boundaries.writesOutcome, false);
+  assert.equal(judgment.boundaries.writesExecution, false);
+  assert.equal(judgment.boundaries.writesGoal, false);
+  assert.equal(judgment.boundaries.writesLearning, false);
+});
+
+test("ECA:11 prompt AH — Current Outcome subject fidelity", () => {
+  const { judgment } = play("What was the result?", {
+    evidence: evidence({
+      decisionId: "decision-demand",
+      executionId: "execution-demand",
+      observed: 94,
+      baseline: 91,
+      target: 96,
+    }),
+  });
+  assert.equal(judgment.boundaries.writesScenario, false);
+  assert.ok(judgment.primaryResult || judgment.managerFacingNote);
+});
+
+test("ECA:11 prompt AI — Refresh fidelity", () => {
+  const first = play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  const second = play("What was the result?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+    session: first.session,
+  });
+  assert.equal(second.judgment.baselineComparison, "IMPROVED");
+  assert.equal(second.judgment.targetComparison, "NOT_MET");
+  assert.equal(second.judgment.boundaries.writesOutcome, false);
+});
+
+test("ECA:11 prompt AJ — Duplicate Outcome protection", () => {
+  const { judgment } = play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.equal(judgment.boundaries.createsSecondOutcomeWriter, false);
+  assert.equal(judgment.boundaries.writesOutcome, false);
+});
+
+test("ECA:11 prompt AK — Writer protection across samples", () => {
+  for (const sample of [
+    play("Did it work?"),
+    play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) }),
+    play("What should we do now?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) }),
+  ]) {
+    isolation(sample.judgment);
+  }
+});
+
+test("ECA:11 prompt AL — No duplicate Outcome/KPI/causal/Learning authority", () => {
+  const { judgment } = play("Did our Decision cause it?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+  });
+  assert.equal(judgment.boundaries.replacesDth11, false);
+  assert.equal(judgment.boundaries.replacesDth12, false);
+  assert.equal(judgment.boundaries.replacesCoreOut, false);
+  assert.equal(judgment.boundaries.createsLearningEngine, false);
+  assert.equal(judgment.boundaries.infersCausality, false);
+  assert.equal(judgment.boundaries.writesKpi, false);
+});
+
+test("ECA:11 prompt multi-turn 1 — Result assessment 91→94 Goal 96", () => {
+  const { judgment } = play("What was the result?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  assert.equal(judgment.baselineComparison, "IMPROVED");
+  assert.equal(judgment.targetComparison, "NOT_MET");
+  assert.match(judgment.managerFacingNote ?? "", /3 percentage points/);
+  assert.equal(judgment.attribution, "NOT_ESTABLISHED");
+});
+
+test("ECA:11 prompt multi-turn 2 — Did it work → cause", () => {
+  const worked = play("Did it work?", { evidence: evidence({ observed: 94, baseline: 91, target: 96 }) });
+  const cause = play("Did our decision cause the improvement?", {
+    evidence: evidence({ observed: 94, baseline: 91, target: 96 }),
+    session: worked.session,
+  });
+  assert.equal(worked.judgment.baselineComparison, "IMPROVED");
+  assert.equal(cause.judgment.attribution, "NOT_ESTABLISHED");
+  assert.match(cause.judgment.managerFacingNote ?? "", /doesn[’']t establish/i);
+});
+
+test("ECA:11 prompt multi-turn 3 — Mixed success", () => {
+  const { judgment } = play("Was it successful?", {
+    evidence: evidence({
+      observed: 94,
+      baseline: 91,
+      target: 96,
+      secondary: { measure: "Cost", observed: 112, baseline: 100, target: null, unit: "%", source: "CONFIRMED" },
+    }),
+  });
+  assert.equal(judgment.overallInterpretation, "MIXED");
+});
+
+test("ECA:11 prompt multi-turn 4 — Unfavorable → next step", () => {
+  const happened = play("What happened?", { evidence: evidence({ observed: 88, baseline: 91, target: 96 }) });
+  const next = play("What should we do now?", {
+    evidence: evidence({ observed: 88, baseline: 91, target: 96 }),
+    session: happened.session,
+  });
+  assert.equal(happened.judgment.baselineComparison, "DETERIORATED");
+  assert.equal(next.judgment.boundaries.commitsDecision, false);
+  assert.equal(next.judgment.boundaries.writesExecution, false);
+  assert.equal(next.judgment.boundaries.writesGoal, false);
+  assert.equal(next.judgment.boundaries.writesLearning, false);
+});

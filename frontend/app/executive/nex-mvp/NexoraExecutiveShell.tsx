@@ -52,7 +52,6 @@ import { answerCsvSemanticInquiry } from "@/app/lib/data-reality/csvSemanticUnde
 import {
   answerAdvisorDataInquiry,
   applyAdvisorDataSemanticClarification,
-  assistantIntroducedDataSourceIds,
   classifyAdvisorDataConversation,
   emptyAdvisorDataDialogue,
   type AdvisorDataInquiryDiagnostics,
@@ -253,18 +252,29 @@ import { projectManagerObjectConversationalSubjects } from "@/app/lib/manager-ob
 import {
   activateManagerObjectFromClick,
   createEmptyManagerObjectSession,
-  freezeManagerObjectSession,
   type ManagerObjectSession,
 } from "@/app/lib/manager-object/managerObjectActive";
-import { applyAssistantIntroducedReferent } from "@/app/lib/manager-object/nexoraMvpFinal62ConversationContinuity";
 import { createEmptyNexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
 import type { NexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
 import { createEmptyNexoraExecutiveDecisionSession } from "@/app/lib/conversational-control/executiveDecisionAuthority";
 import type { NexoraExecutiveDecisionSession } from "@/app/lib/conversational-control/executiveDecisionAuthority";
-import { createNexoraCanonicalDecisionRuntime } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
+import {
+  createNexoraCanonicalDecisionRuntime,
+  hydrateNexoraCanonicalDecisionRuntimeRecords,
+  NEXORA_CANONICAL_DECISION_RUNTIME_SESSION_KEY,
+  serializeNexoraCanonicalDecisionRuntimeState,
+} from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
 import type { NexoraCanonicalDecisionRuntime } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
-import { createNexoraCanonicalExecutionRuntime } from "@/app/lib/conversational-control/executiveExecutionRuntimeAdapter";
-import type { NexoraExecutionRuntimeAdapter } from "@/app/lib/conversational-control/executiveExecutionRuntimeAdapter";
+import {
+  createNexoraCanonicalExecutionRuntime,
+  hydrateNexoraCanonicalExecutionRuntimeRecords,
+  NEXORA_CANONICAL_EXECUTION_RUNTIME_SESSION_KEY,
+  serializeNexoraCanonicalExecutionRuntimeState,
+} from "@/app/lib/conversational-control/executiveExecutionRuntimeAdapter";
+import type {
+  NexoraCanonicalExecution,
+  NexoraCanonicalExecutionRuntimeAdapter,
+} from "@/app/lib/conversational-control/executiveExecutionRuntimeAdapter";
 import { bootstrapCanonicalDecisionsFromFlowFixtures } from "@/app/lib/conversational-control/executiveDecisionStatusProjection";
 import { createInitialNexoraMVPFlowDecisionRecords } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlowFixtures";
 import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
@@ -648,7 +658,8 @@ export function NexoraExecutiveShell({
     });
   }
   const decisionRuntime = decisionRuntimeRef.current;
-  const executionRuntimeRef = useRef<NexoraExecutionRuntimeAdapter | null>(null);
+  const executionRuntimeRef =
+    useRef<NexoraCanonicalExecutionRuntimeAdapter | null>(null);
   if (executionRuntimeRef.current == null) {
     executionRuntimeRef.current = createNexoraCanonicalExecutionRuntime({
       decisionRuntime: decisionRuntime.adapter,
@@ -656,6 +667,77 @@ export function NexoraExecutiveShell({
     });
   }
   const executionRuntime = executionRuntimeRef.current;
+  useEffect(() => {
+    const fixtures = bootstrapCanonicalDecisionsFromFlowFixtures(
+      createInitialNexoraMVPFlowDecisionRecords(),
+    );
+    let hydrated = fixtures;
+    try {
+      hydrated = hydrateNexoraCanonicalDecisionRuntimeRecords(
+        window.sessionStorage.getItem(
+          NEXORA_CANONICAL_DECISION_RUNTIME_SESSION_KEY,
+        ),
+        fixtures,
+      );
+    } catch {
+      // Browser storage may be unavailable; the canonical Runtime remains valid.
+    }
+    decisionRuntime.hydrateDecisions(hydrated);
+
+    const syncDecisionProjection = () => {
+      setFlowDomain((current) =>
+        projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
+          current,
+          decisionRuntime.adapter,
+        ),
+      );
+      setDecisionRevision((revision) => revision + 1);
+      try {
+        window.sessionStorage.setItem(
+          NEXORA_CANONICAL_DECISION_RUNTIME_SESSION_KEY,
+          serializeNexoraCanonicalDecisionRuntimeState(
+            decisionRuntime.getState(),
+          ),
+        );
+      } catch {
+        // Persistence availability does not change Decision semantics.
+      }
+    };
+
+    syncDecisionProjection();
+    return decisionRuntime.subscribe(syncDecisionProjection);
+  }, [decisionRuntime]);
+  useEffect(() => {
+    let hydrated: readonly NexoraCanonicalExecution[] = Object.freeze([]);
+    try {
+      hydrated = hydrateNexoraCanonicalExecutionRuntimeRecords(
+        window.sessionStorage.getItem(
+          NEXORA_CANONICAL_EXECUTION_RUNTIME_SESSION_KEY,
+        ),
+        [],
+      );
+    } catch {
+      // Browser storage may be unavailable; the canonical Runtime remains valid.
+    }
+    executionRuntime.hydrateExecutions(hydrated);
+
+    const persistExecutionProjection = () => {
+      setExecutionRevision((revision) => revision + 1);
+      try {
+        window.sessionStorage.setItem(
+          NEXORA_CANONICAL_EXECUTION_RUNTIME_SESSION_KEY,
+          serializeNexoraCanonicalExecutionRuntimeState(
+            executionRuntime.getState(),
+          ),
+        );
+      } catch {
+        // Persistence availability does not change Execution semantics.
+      }
+    };
+
+    persistExecutionProjection();
+    return executionRuntime.subscribe(persistExecutionProjection);
+  }, [executionRuntime]);
   const executiveContextRef = useRef(executiveContext);
   executiveContextRef.current = executiveContext;
   const [conversationalProcessing, setConversationalProcessing] =
@@ -1473,161 +1555,32 @@ export function NexoraExecutiveShell({
             return;
           }
         }
-        const dataLibraryAnswer = answerAdvisorDataInquiry({
-          workspaceId: interactionRef.current.workspace,
-          utterance: trimmed,
-          dialogue: advisorDataDialogueRef.current,
-          focusedObjectLabel: interactionRef.current.focusedSubject?.label ?? null,
-          conversationContinuity: managerObjectSessionRef.current.conversationContinuity ?? null,
-        });
-        if (dataLibraryAnswer) {
-          advisorDataDialogueRef.current = dataLibraryAnswer.dialogue;
-          setDataAdvDiagnostics(dataLibraryAnswer.diagnostics ?? null);
-          const introducedIds = assistantIntroducedDataSourceIds(dataLibraryAnswer);
-          const withDialogue = freezeManagerObjectSession({
-            ...managerObjectSessionRef.current,
-            advisorDataDialogue: dataLibraryAnswer.dialogue,
-            conversationContinuity:
-              introducedIds.length > 0
-                ? applyAssistantIntroducedReferent({
-                    previous: managerObjectSessionRef.current.conversationContinuity,
-                    subjectId: introducedIds.length === 1 ? introducedIds[0] ?? null : null,
-                    subjectKind: "data",
-                    presentedIds: introducedIds,
-                  })
-                : managerObjectSessionRef.current.conversationContinuity,
-          });
-          setManagerObjectSession(withDialogue);
-          managerObjectSessionRef.current = withDialogue;
-          if (dataLibraryAnswer.clarification) {
-            const need = dataLibraryAnswer.clarification;
-            csvSemanticResolverRef.current = (nextUtterance) => applyAdvisorDataSemanticClarification(
-              interactionRef.current.workspace,
-              need.sourceContextId,
-              need.fieldId,
-              nextUtterance,
-            );
-            const nextSession = beginNcaCsvSemanticClarification(managerObjectSessionRef.current, need);
-            setManagerObjectSession(nextSession);
-            managerObjectSessionRef.current = nextSession;
-          }
-          setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
-            id: `${seed}-nexora`,
-            role: "nexora" as const,
-            text: dataLibraryAnswer.text,
-            status: dataLibraryAnswer.clarification ? "confirmation-required" as const : "no-op" as const,
-          })]).slice(-20));
-          if (ecaWorkingContextRef.current) {
-            const plan = planEcaExecutiveConversationAction({
-              utterance: trimmed,
-              workingContext: ecaWorkingContextRef.current,
-            });
-            setEcaActionPlan(plan);
-            setEcaInitiativeJudgment(
-              judgeEcaExecutiveInitiative({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                session: managerObjectSessionRef.current.ecaInitiativeSession ?? null,
-              }),
-            );
-            setEcaInformationNeedJudgment(
-              judgeEcaExecutiveInformationNeed({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                session: managerObjectSessionRef.current.ecaInformationNeedSession ?? null,
-              }),
-            );
-            setEcaAnswerIntakeJudgment(
-              judgeEcaExecutiveAnswerIntake({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                informationNeed: null,
-                informationNeedSession: managerObjectSessionRef.current.ecaInformationNeedSession ?? null,
-                intakeSession: managerObjectSessionRef.current.ecaAnswerIntakeSession ?? null,
-                semanticConfirmationPending: true,
-              }),
-            );
-            setEcaDialogueStrategy(
-              judgeEcaExecutiveDialogueStrategy({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                session: managerObjectSessionRef.current.ecaDialogueStrategySession ?? null,
-              }),
-            );
-            const csvRecommendation = judgeEcaExecutiveRecommendation({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                session: managerObjectSessionRef.current.ecaRecommendationSession ?? null,
-              });
-            setEcaRecommendationJudgment(csvRecommendation);
-            const csvCommitment = judgeEcaExecutiveCommitment({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                recommendation: csvRecommendation,
-                session: managerObjectSessionRef.current.ecaCommitmentSession ?? null,
-              });
-            setEcaCommitmentJudgment(csvCommitment);
-            setEcaExecutionReadinessJudgment(
-              judgeEcaExecutiveExecutionReadiness({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                recommendation: csvRecommendation,
-                commitment: csvCommitment,
-                session: managerObjectSessionRef.current.ecaExecutionReadinessSession ?? null,
-              }),
-            );
-            setEcaLiveExecutionJudgment(
-              judgeEcaLiveExecution({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                session: managerObjectSessionRef.current.ecaLiveExecutionSession ?? null,
-              }),
-            );
-            const csvOutcome = judgeEcaExecutiveOutcome({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                session: managerObjectSessionRef.current.ecaOutcomeSession ?? null,
-              });
-            setEcaOutcomeJudgment(csvOutcome);
-            setEcaLearningClosureJudgment(
-              judgeEcaExecutiveLearningClosure({
-                utterance: trimmed,
-                workingContext: ecaWorkingContextRef.current,
-                actionPlan: plan,
-                outcome: csvOutcome,
-                session: managerObjectSessionRef.current.ecaLearningClosureSession ?? null,
-              }),
-            );
-          }
-          lastManagerUtteranceRef.current = trimmed;
-          return;
-        }
+        // DATA-ADV and CSV field Q&A are owned by CC:5 (same as isolated).
+        // A live-only early return skipped NCA / continuity / executive writes
+        // and let an older Scenario referent outrank a newer explicit Problem.
         if (activeCsvImport) {
-          const semanticAnswer = answerCsvSemanticInquiry({
-            review: activeCsvImport.prepared.mapping,
-            fileName: activeCsvImport.prepared.fileName,
-            utterance: trimmed,
-            priorFieldId: csvSemanticConversationFieldRef.current,
-          });
-          if (semanticAnswer) {
-            csvSemanticConversationFieldRef.current = semanticAnswer.fieldId;
-            setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
-              id: `${seed}-nexora`,
-              role: "nexora" as const,
-              text: semanticAnswer.text,
-              status: "no-op" as const,
-            })]).slice(-20));
-            lastManagerUtteranceRef.current = trimmed;
-            return;
+          const libraryClass = classifyAdvisorDataConversation(trimmed);
+          const deicticFollowUp =
+            /\b(?:it|that|this)\b/i.test(trimmed) &&
+            !/\b(?:csv|file|source|data|field|column)\b/i.test(trimmed);
+          if (!libraryClass && !deicticFollowUp) {
+            const semanticAnswer = answerCsvSemanticInquiry({
+              review: activeCsvImport.prepared.mapping,
+              fileName: activeCsvImport.prepared.fileName,
+              utterance: trimmed,
+              priorFieldId: csvSemanticConversationFieldRef.current,
+            });
+            if (semanticAnswer) {
+              csvSemanticConversationFieldRef.current = semanticAnswer.fieldId;
+              setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
+                id: `${seed}-nexora`,
+                role: "nexora" as const,
+                text: semanticAnswer.text,
+                status: "no-op" as const,
+              })]).slice(-20));
+              lastManagerUtteranceRef.current = trimmed;
+              return;
+            }
           }
         }
         // Let the restrained sending state paint before deterministic CC work.
@@ -1721,21 +1674,37 @@ export function NexoraExecutiveShell({
         setEcaExecutionReadinessJudgment(result.ecaExecutionReadinessJudgment ?? null);
         setEcaLiveExecutionJudgment(result.ecaLiveExecutionJudgment ?? null);
         setEcaOutcomeJudgment(result.ecaOutcomeJudgment ?? null);
-        setDataAdvDiagnostics(
-          answerAdvisorDataInquiry({
-            workspaceId: previous.workspace,
-            utterance: trimmed,
-            dialogue: result.managerObjectTurn.session.advisorDataDialogue ?? advisorDataDialogueRef.current,
-            focusedObjectLabel: previous.focusedSubject?.label ?? null,
-            conversationContinuity: result.managerObjectTurn.session.conversationContinuity ?? null,
-          })?.diagnostics ?? null,
-        );
+        const dataInquiryAfter = answerAdvisorDataInquiry({
+          workspaceId: previous.workspace,
+          utterance: trimmed,
+          dialogue: result.managerObjectTurn.session.advisorDataDialogue ?? advisorDataDialogueRef.current,
+          focusedObjectLabel: previous.focusedSubject?.label ?? null,
+          conversationContinuity: result.managerObjectTurn.session.conversationContinuity ?? null,
+        });
+        setDataAdvDiagnostics(dataInquiryAfter?.diagnostics ?? null);
         if (result.managerObjectTurn.session.advisorDataDialogue) {
           advisorDataDialogueRef.current = result.managerObjectTurn.session.advisorDataDialogue;
         }
         setEcaLearningClosureJudgment(result.ecaLearningClosureJudgment ?? null);
         ecaWorkingContextRef.current = result.ecaWorkingContext ?? null;
         setManagerObjectSession(result.managerObjectTurn.session);
+        if (dataInquiryAfter?.clarification) {
+          const need = dataInquiryAfter.clarification;
+          csvSemanticResolverRef.current = (nextUtterance) => applyAdvisorDataSemanticClarification(
+            interactionRef.current.workspace,
+            need.sourceContextId,
+            need.fieldId,
+            nextUtterance,
+          );
+          if (result.managerObjectTurn.session.ncaConversationState?.pendingQuestion?.purpose !== "csv-semantic-clarification") {
+            const nextSession = beginNcaCsvSemanticClarification(
+              result.managerObjectTurn.session,
+              need,
+            );
+            setManagerObjectSession(nextSession);
+            managerObjectSessionRef.current = nextSession;
+          }
+        }
         if (
           result.ncaPost4Comparison &&
           result.ncaPost4Comparison.candidateSet.candidateIds.length >= 2

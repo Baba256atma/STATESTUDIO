@@ -71,8 +71,80 @@ export type NexoraCanonicalDecisionRuntimeState = {
 export type NexoraCanonicalDecisionRuntime = {
   readonly getState: () => NexoraCanonicalDecisionRuntimeState;
   readonly subscribe: (listener: () => void) => () => void;
+  /** Hydrates this authority from its persisted snapshot; never a second store. */
+  readonly hydrateDecisions: (
+    decisions: readonly NexoraCanonicalDecisionRecord[],
+  ) => void;
   readonly adapter: NexoraDecisionRuntimeAdapter;
 };
+
+export const NEXORA_CANONICAL_DECISION_RUNTIME_SESSION_KEY =
+  "nexora.executive-shell.canonical-decision-runtime.v1" as const;
+
+const DECISION_STATUSES = new Set<NexoraExecutiveDecisionStatus>([
+  "Draft",
+  "Under Review",
+  "Approved",
+  "Rejected",
+  "Archived",
+]);
+
+function isCanonicalDecisionRecord(
+  value: unknown,
+): value is NexoraCanonicalDecisionRecord {
+  if (value == null || typeof value !== "object") return false;
+  const candidate = value as Partial<NexoraCanonicalDecisionRecord>;
+  return (
+    typeof candidate.decisionId === "string" &&
+    candidate.decisionId.length > 0 &&
+    typeof candidate.title === "string" &&
+    typeof candidate.status === "string" &&
+    DECISION_STATUSES.has(candidate.status as NexoraExecutiveDecisionStatus) &&
+    typeof candidate.locked === "boolean" &&
+    Array.isArray(candidate.subjectIds) &&
+    Array.isArray(candidate.evidenceRefs) &&
+    Array.isArray(candidate.uncertaintyRefs)
+  );
+}
+
+/** Pure serialization for the existing canonical Runtime persistence boundary. */
+export function serializeNexoraCanonicalDecisionRuntimeState(
+  state: NexoraCanonicalDecisionRuntimeState,
+): string {
+  return JSON.stringify({
+    version: 1,
+    decisions: Object.values(state.decisionsById),
+  });
+}
+
+/**
+ * Validates and merges a persisted Runtime snapshot over fixture bootstrap data.
+ * The returned records are inputs to the same canonical Runtime authority.
+ */
+export function hydrateNexoraCanonicalDecisionRuntimeRecords(
+  serialized: string | null,
+  fallback: readonly NexoraCanonicalDecisionRecord[],
+): readonly NexoraCanonicalDecisionRecord[] {
+  if (!serialized) return Object.freeze([...fallback]);
+  try {
+    const parsed = JSON.parse(serialized) as {
+      readonly version?: unknown;
+      readonly decisions?: unknown;
+    };
+    if (parsed.version !== 1 || !Array.isArray(parsed.decisions)) {
+      return Object.freeze([...fallback]);
+    }
+    const persisted = parsed.decisions.filter(isCanonicalDecisionRecord);
+    if (persisted.length !== parsed.decisions.length) {
+      return Object.freeze([...fallback]);
+    }
+    const byId = new Map(fallback.map((decision) => [decision.decisionId, decision]));
+    for (const decision of persisted) byId.set(decision.decisionId, decision);
+    return Object.freeze([...byId.values()]);
+  } catch {
+    return Object.freeze([...fallback]);
+  }
+}
 
 function withLock(status: NexoraExecutiveDecisionStatus): boolean {
   return status === "Approved";
@@ -214,6 +286,18 @@ export function createNexoraCanonicalDecisionRuntime(options?: {
       return () => {
         listeners.delete(listener);
       };
+    },
+    hydrateDecisions: (decisions) => {
+      state = Object.freeze({
+        decisionsById: Object.freeze(
+          Object.fromEntries(decisions.map((decision) => [decision.decisionId, decision])),
+        ),
+        currentDecisionId:
+          decisions.find((decision) => decision.status === "Approved")?.decisionId ??
+          decisions[0]?.decisionId ??
+          null,
+      });
+      notify();
     },
     adapter,
   });

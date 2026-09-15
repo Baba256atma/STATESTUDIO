@@ -9,6 +9,7 @@
  */
 
 import {
+  executiveAdvisoryPurposeOf,
   isNexoraCanonicalDefinitionInquiry,
   resolveNexoraConversationalIntent,
 } from "./conversationalIntentResolver.ts";
@@ -20,6 +21,7 @@ import { resolveNexoraExecutiveConversationalContext } from "./conversationalCon
 import {
   isInvestigateNowUtterance,
   isInvestigationOptionsUtterance,
+  isTargetedDeicticInvestigationUtterance,
   classifyExecutiveInvestigationAsk,
   normalizeNexoraConversationalUtterance,
 } from "./conversationalIntentNormalization.ts";
@@ -53,6 +55,15 @@ import {
   resolveManagerObjectTurn,
 } from "@/app/lib/manager-object/managerObjectInteraction.ts";
 import { isExecutiveAttentionUtterance } from "@/app/lib/manager-object/managerObjectAttentionEngine.ts";
+import {
+  decideSubjectCompositionFidelity,
+  isDeicticSubjectExplain,
+  isDeicticSubjectFollowUpUtterance,
+  isScenarioAssessmentFollowUpOperation,
+  isSubjectPreservingAnalyticalFollowUpOperation,
+  resolveConversationalCompositionSubject,
+  staleScenarioAssessmentWouldCaptureComposition,
+} from "./subjectCompositionFidelity.ts";
 import { composeExecutiveManagerExperience } from "@/app/lib/manager-object/managerObjectExperienceComposer.ts";
 import {
   composeExecutiveInvestigationAnswer,
@@ -75,6 +86,8 @@ import {
 import { shouldNexoraExecutionPlanningOwnUtterance } from "@/app/lib/nexora-entrance/nexoraExecutionPlanning.ts";
 import { shouldNexoraOutcomeMonitoringOwnUtterance } from "@/app/lib/nexora-entrance/nexoraOutcomeMonitoring.ts";
 import { shouldNexoraLearningReassessmentOwnUtterance } from "@/app/lib/nexora-entrance/nexoraLearningReassessment.ts";
+import { shouldNexoraObjectEducationOwnUtterance } from "@/app/lib/nexora-entrance/nexoraObjectEducationExperience.ts";
+import { shouldNexoraTrustReviewOwnUtterance } from "@/app/lib/nexora-entrance/nexoraTrustReviewExperience.ts";
 import { resolveExecutiveExperienceContext } from "@/app/lib/nexora-entrance/nexoraExecutiveExperienceContext.ts";
 import type { NexoraConversationalExperienceContextResolution } from "./conversationalExperienceContext.ts";
 import type { NexoraRegisteredExecutiveExperience } from "./conversationalExperienceRegistry.ts";
@@ -298,6 +311,36 @@ import {
   judgeEcaExecutiveLearningClosure,
   nextEcaLearningClosureSession,
 } from "@/app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts";
+import {
+  applyNpsUnderstandingToPresentedResponse,
+  composeNpsRuntimeProblemUnderstanding,
+} from "@/app/lib/nexora-problem-solving/npsProblemUnderstandingRuntime.ts";
+import {
+  applyNpsEvidenceCauseToPresentedResponse,
+  composeNpsRuntimeEvidenceCauseAnalysis,
+} from "@/app/lib/nexora-problem-solving/npsEvidenceCauseAnalysisRuntime.ts";
+import {
+  applyNpsOptionGenerationToPresentedResponse,
+  composeNpsRuntimeOptionGeneration,
+  resolveNpsRuntimeFocusedOptionId,
+} from "@/app/lib/nexora-problem-solving/npsOptionGenerationRuntime.ts";
+import {
+  applyNpsComparisonRecommendationToPresentedResponse,
+  composeNpsRuntimeComparisonRecommendation,
+} from "@/app/lib/nexora-problem-solving/npsComparisonRecommendationRuntime.ts";
+import {
+  applyNpsDecisionCommitmentToPresentedResponse,
+  composeNpsRuntimeDecisionCommitment,
+  npsComparedOptionRefs,
+} from "@/app/lib/nexora-problem-solving/npsDecisionCommitmentRuntime.ts";
+import {
+  applyNpsExecutionMonitoringToPresentedResponse,
+  composeNpsRuntimeExecutionMonitoring,
+} from "@/app/lib/nexora-problem-solving/npsExecutionMonitoringRuntime.ts";
+import {
+  applyNpsOutcomeLearningToPresentedResponse,
+  composeNpsRuntimeOutcomeLearning,
+} from "@/app/lib/nexora-problem-solving/npsOutcomeLearningRuntime.ts";
 import {
   applyNca3StrategyToResponse,
   buildNca3ComparisonCriterionClarification,
@@ -1312,6 +1355,7 @@ export function executeNexoraConversationalExperience(
       theatreProposedCandidateId: input.theatreProposedCandidateId,
       decisionRuntime: args.decisionRuntime ?? boundDecisionRuntime,
       executionRuntime: args.executionRuntime ?? boundExecutionRuntime,
+      canonicalExecutionRuntimeProvided: input.executionRuntime != null,
       guidedAttention,
       visualView,
     });
@@ -1778,6 +1822,21 @@ export function executeNexoraConversationalExperience(
       utterance: managerOverrideSemanticUtterance(utterance),
       subjects: input.executiveSubjects,
     });
+    if (
+      !pendingCriterion &&
+      intentResult.intent.kind === "unknown" &&
+      naturalLanguageUnderstanding.requestedOperation === "FOCUS" &&
+      naturalLanguageUnderstanding.objectReference?.canonicalName &&
+      !/\b(?:problems|risks|opportunities|scenarios|decisions|executions|goals)\b/i.test(
+        utterance,
+      ) &&
+      isExplicitPresentationRequest(utterance, "focus")
+    ) {
+      intentResult = resolveIntentForTurn(
+        utterance,
+        `Focus on ${naturalLanguageUnderstanding.objectReference.canonicalName}`,
+      );
+    }
     const contextualManagerMeaning = interpretContextualManagerTurn({
       turnMeaning: naturalLanguageUnderstanding,
       subjects: input.executiveSubjects,
@@ -1821,12 +1880,26 @@ export function executeNexoraConversationalExperience(
       Boolean(input.previousManagerObjectSession?.ncaConversationState?.lastAdvisoryPosition);
     const clarificationOwnedByStageMeta =
       classifyNexoraSemanticScope(utterance) === "CURRENT_WORKSPACE";
+    const clarificationOwnedByCurrentSubject =
+      !pendingCriterion &&
+      Boolean(
+        input.previousManagerObjectSession?.conversationContinuity
+          ?.activeSubjectId ?? previousContext.currentSubjectId,
+      ) &&
+      isSubjectPreservingAnalyticalFollowUpOperation(
+        intentResult.intent.kind,
+        normalizeNexoraConversationalUtterance(utterance),
+      ) &&
+      !isDeicticSubjectFollowUpUtterance(
+        normalizeNexoraConversationalUtterance(utterance),
+      );
     const clarification: ClarificationTurnResult = situationResolvesClarification ||
       (clarificationRaw.action === "clarify" && clarificationOwnedByCanonicalIntent) ||
       clarificationOwnedByResolvedAction ||
       clarificationOwnedByMultiEntitySemantics ||
       clarificationOwnedByAdvisoryDialogue ||
       clarificationOwnedByStageMeta ||
+      clarificationOwnedByCurrentSubject ||
       Boolean(dataLibraryAnswer)
       ? Object.freeze({
           ...clarificationRaw,
@@ -1969,22 +2042,76 @@ export function executeNexoraConversationalExperience(
         intent,
       });
     }
+    const normalizedManagerUtterance =
+      normalizeNexoraConversationalUtterance(utterance);
+    const hasEstablishedConversationSubject = Boolean(
+      input.previousManagerObjectSession?.conversationContinuity
+        ?.activeSubjectId,
+    );
+    const activeScenarioOwnsFollowUp =
+      !hasEstablishedConversationSubject &&
+      hasActiveScenarioAssessment(
+        previousExecutiveContext,
+        input.scenarioSession ?? null,
+      ) &&
+      isScenarioAssessmentFollowUpOperation(
+        intent.kind,
+        normalizedManagerUtterance,
+      );
+    const resolvedCompositionSubject = resolveConversationalCompositionSubject({
+      continuityId:
+        input.previousManagerObjectSession?.conversationContinuity
+          ?.activeSubjectId ?? null,
+      continuityKind:
+        input.previousManagerObjectSession?.conversationContinuity
+          ?.activeSubjectKind ?? null,
+      currentSubjectId: activeScenarioOwnsFollowUp
+        ? previousExecutiveContext.currentScenario?.subjectId ?? null
+        : previousExecutiveContext.currentSubject?.subjectId ?? null,
+      currentSubjectKind: activeScenarioOwnsFollowUp
+        ? previousExecutiveContext.currentScenario?.subjectKind ?? "scenario"
+        : previousExecutiveContext.currentSubject?.subjectKind ?? null,
+    });
+    const hasPrimaryTargetHint = intent.targetHints.some(
+      (hint) => hint.role === "primary",
+    );
+    const blockStaleScenarioAssessment =
+      staleScenarioAssessmentWouldCaptureComposition({
+        hasActiveScenarioAssessment: hasActiveScenarioAssessment(
+          previousExecutiveContext,
+          input.scenarioSession ?? null,
+        ),
+        hasEstablishedConversationSubject,
+        hasPrimaryTargetHint,
+        resolvedSubjectKind: resolvedCompositionSubject.kind,
+        intentKind: intent.kind,
+        normalizedUtterance: normalizedManagerUtterance,
+      });
     if (
       hasActiveScenarioAssessment(
         previousExecutiveContext,
         input.scenarioSession ?? null,
       ) &&
       intent.kind === "explain" &&
-      !intent.targetHints.some((hint) => hint.role === "primary") &&
+      !hasPrimaryTargetHint &&
       input.previousManagerObjectSession?.attentionPrompted !== true &&
-      !isExecutiveAttentionUtterance(utterance)
+      !isExecutiveAttentionUtterance(utterance) &&
+      !blockStaleScenarioAssessment
     ) {
+      const describeResolvedScenario =
+        resolvedCompositionSubject.kind === "scenario" &&
+        (isDeicticSubjectExplain(intent.kind, intent.normalizedUtterance) ||
+          isDeicticSubjectFollowUpUtterance(intent.normalizedUtterance));
       intent = Object.freeze({
         ...intent,
         kind: "explain-scenario" as const,
         requiresTarget: false,
         requiresContext: true,
-        scenarioPayload: Object.freeze({ operation: "impact-why" as const }),
+        scenarioPayload: Object.freeze({
+          operation: describeResolvedScenario
+            ? ("describe" as const)
+            : ("impact-why" as const),
+        }),
       });
       intentResult = Object.freeze({
         ...intentResult,
@@ -2026,8 +2153,10 @@ export function executeNexoraConversationalExperience(
     if (
       actionInvocation.matchedUtterance &&
       actionInvocation.status !== "resolved" &&
+      !isDeicticSubjectFollowUpUtterance(intent.normalizedUtterance) &&
       !contextualManagerMeaning.objectReference?.subjectId &&
-      !input.previousManagerObjectSession?.ncaConversationState?.activeSubject?.id
+      !input.previousManagerObjectSession?.ncaConversationState?.activeSubject?.id &&
+      !input.previousManagerObjectSession?.conversationContinuity?.activeSubjectId
     ) {
       const status = "clarification-required" as const;
       return finish({
@@ -2111,6 +2240,7 @@ export function executeNexoraConversationalExperience(
       pendingTurnResolution?.status === "answered" &&
       pendingTurnResolution.expectation.questionKind === "review-subject" &&
       pendingTurnResolution.subjectId != null &&
+      !isTargetedDeicticInvestigationUtterance(intent.normalizedUtterance) &&
       input.runtimeState.focusedSubject?.id === pendingTurnResolution.subjectId
     ) {
       const recommendationResult = resolveRecommendationForTurn({
@@ -2661,8 +2791,11 @@ export function executeNexoraConversationalExperience(
     const isReviewConfirmation =
       pendingTurnResolution?.status === "answered" &&
       pendingTurnResolution.expectation.questionKind === "review-subject";
+    const targetedDeicticInvestigation =
+      isTargetedDeicticInvestigationUtterance(intent.normalizedUtterance);
     const isSafeActionNavigation =
       intent.kind === "focus" &&
+      !targetedDeicticInvestigation &&
       (actionInvocation.status === "resolved" ||
         /^(?:review|investigate)\b/i.test(utterance.trim()));
 
@@ -2671,6 +2804,7 @@ export function executeNexoraConversationalExperience(
     let decisionCommitmentResult: NexoraDecisionCommitmentResult | null = null;
 
     if (
+      !targetedDeicticInvestigation &&
       (isRecommendation || isReviewConfirmation || isSafeActionNavigation) &&
       (applied.result.status === "applied" ||
         applied.result.status === "no-op")
@@ -2709,7 +2843,13 @@ export function executeNexoraConversationalExperience(
       (intent.kind === "evidence" ||
         intent.kind === "risk" ||
         (intent.kind === "explain" &&
-          !(intent.targetHints ?? []).some((hint) => hint.role === "primary")))
+          !hasPrimaryTargetHint &&
+          !blockStaleScenarioAssessment &&
+          !isDeicticSubjectExplain(
+            intent.kind,
+            intent.normalizedUtterance,
+          ) &&
+          !isDeicticSubjectFollowUpUtterance(intent.normalizedUtterance)))
     ) {
       scenarioResult = resolveScenarioForTurn({
         intent: Object.freeze({
@@ -2732,6 +2872,29 @@ export function executeNexoraConversationalExperience(
         scenarioSession: input.scenarioSession ?? null,
         utterance,
       });
+    }
+    const scenarioCandidateSubject = Object.freeze({
+      id: scenarioResult?.scenario?.scenarioId ??
+        previousExecutiveContext.currentScenario?.subjectId ??
+        null,
+      kind: scenarioResult || previousExecutiveContext.currentScenario
+        ? ("scenario" as const)
+        : null,
+    });
+    const subjectCompositionFidelity = decideSubjectCompositionFidelity({
+      resolvedSubject: resolvedCompositionSubject,
+      candidateSubject: scenarioCandidateSubject,
+      candidateSource: scenarioResult
+        ? (intent.kind === "explain-scenario" || isScenario
+            ? "scenario-assessment"
+            : "scenario-follow-up")
+        : null,
+      intentKind: intent.kind,
+      normalizedUtterance: normalizedManagerUtterance,
+      blockedStaleScenarioAssessment: blockStaleScenarioAssessment,
+    });
+    if (blockStaleScenarioAssessment || !subjectCompositionFidelity.compatible) {
+      scenarioResult = null;
     }
 
     if (isDecisionCommitment && applied.result.status === "applied") {
@@ -2796,7 +2959,9 @@ export function executeNexoraConversationalExperience(
 
     const focusMutationMatchesManagerNeed =
       commandResult.command.kind !== "focus-subject" ||
-      naturalLanguageUnderstanding.requestedOperation === "FOCUS";
+      (naturalLanguageUnderstanding.requestedOperation === "FOCUS" &&
+        !(pendingCriterion &&
+          isExecutiveComparisonCriterionAnswer(utterance)));
     const shouldCommitRuntime =
       applied.result.status === "applied" &&
       !isRecommendation &&
@@ -2837,7 +3002,12 @@ export function executeNexoraConversationalExperience(
         trustedDecisionSuccess,
       pendingTurnResolution,
       preservePresentedResponse: Boolean(scenarioResult) || Boolean(dataLibraryAnswer),
-      lockPresentedResponse: Boolean(dataLibraryAnswer),
+      subjectCompositionFidelity,
+      // The resolved conversational subject owns a targeted deictic
+      // investigation through final presentation; advisory layers may add
+      // context on selection turns but must not replace this answer's subject.
+      lockPresentedResponse:
+        Boolean(dataLibraryAnswer) || targetedDeicticInvestigation,
       dataLibraryResponse: dataLibraryAnswer?.text ?? null,
       dataLibraryDialogue: dataLibraryAnswer?.dialogue ?? null,
       clarificationTurn: clarification,
@@ -2913,6 +3083,8 @@ function finalize(args: {
   readonly previousManagerObjectSession?: import("@/app/lib/manager-object/managerObjectActive.ts").ManagerObjectSession | null;
   readonly decisionRuntime?: import("./executiveDecisionRuntimeAdapter.ts").NexoraDecisionRuntimeAdapter | null;
   readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
+  /** True only when the host supplied the canonical CC:11 Runtime. */
+  readonly canonicalExecutionRuntimeProvided?: boolean;
   readonly preservePresentedResponse?: boolean;
   readonly lockPresentedResponse?: boolean;
   readonly dataLibraryResponse?: string | null;
@@ -2939,6 +3111,7 @@ function finalize(args: {
   readonly visualViewRequest?: NexoraVisualView | null;
   readonly dismissVisualView?: boolean;
   readonly visualView?: NexoraVisualViewRuntime | null;
+  readonly subjectCompositionFidelity?: import("./subjectCompositionFidelity.ts").SubjectCompositionFidelityDecision | null;
 }): NexoraConversationalExperienceResult & {
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
 } {
@@ -3160,10 +3333,17 @@ function finalize(args: {
     createdAt: undefined,
   });
 
+  const normalizedUtterance = normalizeNexoraConversationalUtterance(
+    args.utterance,
+  );
+  const targetedDeicticInvestigation =
+    isTargetedDeicticInvestigationUtterance(normalizedUtterance);
   const deicticUtterance =
-    /^(?:explain|investigate|why|what about|tell me about|open|review)?\s*(?:it|this|that)(?:\s+(?:problem|scenario|one))?[.!?]?$/i.test(
-      args.utterance.trim(),
-    ) && !/\bits\b/i.test(args.utterance);
+    (isDeicticSubjectFollowUpUtterance(normalizedUtterance) ||
+      /^(?:why|what about|open|review)?\s*(?:it|this|that)(?:\s+(?:problem|scenario|one))?[.!?]?$/i.test(
+        args.utterance.trim(),
+      )) &&
+    !/\bits\b/i.test(args.utterance);
   const hasNamedHint =
     !deicticUtterance &&
     !/\bits\b/i.test(args.utterance) &&
@@ -3175,6 +3355,40 @@ function finalize(args: {
       ),
   );
   const comparativeFollowUp = /^\s*what about\b/i.test(args.utterance);
+  const preProjectionExecutionRequest = resolveNexoraExecutionFollowUpRequest(
+    args.utterance,
+  );
+  const preProjectionApprovedDecision =
+    (args.decisionRuntime?.listDecisions() ?? []).find(
+      (decision) => decision.status === "Approved",
+    ) ?? null;
+  if (
+    preProjectionExecutionRequest?.action === "start" &&
+    preProjectionApprovedDecision &&
+    args.executionRuntime &&
+    args.decisionRuntime &&
+    args.canonicalExecutionRuntimeProvided === true &&
+    !shouldNexoraExecutionPlanningOwnUtterance(
+      args.nextEntranceSession,
+      args.utterance,
+    )
+  ) {
+    resolveNexoraExecutiveExecutionFollowUp({
+      action: "start",
+      decisionId: preProjectionApprovedDecision.decisionId,
+      executionRuntime: args.executionRuntime,
+      decisionRuntime: args.decisionRuntime,
+    });
+  }
+  const canonicalExecutionStates = Object.freeze(
+    Object.fromEntries(
+      (args.executionRuntime?.listExecutions() ?? []).map((execution) => [
+        execution.executionId,
+        mapCanonicalExecutionJourneyState(execution.status),
+      ]),
+    ),
+  );
+  const entranceExecution = args.nextEntranceSession?.executionPlanning ?? null;
   const managerObjectTurnRaw = resolveManagerObjectTurn({
     utterance: args.utterance,
     conversationalKind: args.intentResult.intent.kind,
@@ -3201,8 +3415,15 @@ function finalize(args: {
       (comparativeFollowUp
         ? args.previousManagerObjectSession?.activeObjectId ?? null
         : deicticUtterance
-          ? args.previousManagerObjectSession?.ncaConversationState?.activeSubject
-              ?.id ?? nextExecutiveContext.currentSubject?.subjectId
+          ? targetedDeicticInvestigation
+            ? args.previousManagerObjectSession?.conversationContinuity
+                ?.activeSubjectId ??
+              nextExecutiveContext.currentSubject?.subjectId ??
+              args.previousManagerObjectSession?.ncaConversationState
+                ?.activeSubject?.id
+            : args.previousManagerObjectSession?.ncaConversationState
+                ?.activeSubject?.id ??
+              nextExecutiveContext.currentSubject?.subjectId
           : hasNamedHint
             ? args.contextResult.context.primarySubject?.subjectId ??
               nextExecutiveContext.currentSubject?.subjectId
@@ -3213,51 +3434,39 @@ function finalize(args: {
       null,
     catalog: args.catalog,
     subjects: args.executiveSubjects,
-    activation:
-      deicticUtterance &&
-      !hasNamedHint &&
-      (args.runtimeStateBeforeTurn ?? args.nextRuntimeState).focusedSubject?.id !=
-        null &&
-      (args.runtimeStateBeforeTurn ?? args.nextRuntimeState).focusedSubject?.id !==
-        (args.previousManagerObjectSession?.activeObjectId ?? null)
-        ? "click"
-        : undefined,
-    clickedObjectId:
-      (args.runtimeStateBeforeTurn ?? args.nextRuntimeState).focusedSubject?.id ??
-      null,
     managerGoal:
       args.previousManagerObjectSession?.goalContext?.title ??
       nextExecutiveContext.currentGoal?.canonicalName ??
       args.previousExecutiveContext.currentGoal?.canonicalName ??
       null,
-    committedDecisionIds: args.nextEntranceSession?.decisionExperience
-      ?.canonicalRecord?.status === "Approved" &&
-      args.nextEntranceSession.decisionExperience.canonicalRecord.decisionId
-      ? [
-          args.nextEntranceSession.decisionExperience.canonicalRecord
-            .decisionId,
-        ]
-      : undefined,
-    journeyFacts: args.nextEntranceSession?.executionPlanning
-      ?.canonicalExecutionId
+    committedDecisionIds: Object.freeze(
+      (args.decisionRuntime?.listDecisions() ?? [])
+        .filter((decision) => decision.status === "Approved")
+        .map((decision) => decision.decisionId),
+    ),
+    journeyFacts:
+      Object.keys(canonicalExecutionStates).length > 0 ||
+      entranceExecution?.canonicalExecutionId
       ? {
           executionStates: Object.freeze({
-            [args.nextEntranceSession.executionPlanning.canonicalExecutionId]:
-              args.nextEntranceSession.executionPlanning.canonicalStatus ===
-              "in-progress"
-                ? ("ACTIVE" as const)
-                : args.nextEntranceSession.executionPlanning.canonicalStatus ===
-                    "blocked"
-                  ? ("BLOCKED" as const)
-                  : args.nextEntranceSession.executionPlanning
-                        .canonicalStatus === "completed"
-                    ? ("COMPLETED" as const)
-                    : ("NOT_STARTED" as const),
+            ...(entranceExecution?.canonicalExecutionId
+              ? {
+                  [entranceExecution.canonicalExecutionId]:
+                    mapCanonicalExecutionJourneyState(
+                      entranceExecution.canonicalStatus,
+                    ),
+                }
+              : {}),
+            ...canonicalExecutionStates,
           }),
-          outcomeStates: Object.freeze({
-            [args.nextEntranceSession.executionPlanning.canonicalExecutionId]:
-              mapOutcomeJourneyState(args.nextEntranceSession.outcomeMonitoring),
-          }),
+          outcomeStates: entranceExecution?.canonicalExecutionId
+            ? Object.freeze({
+                [entranceExecution.canonicalExecutionId]:
+                  mapOutcomeJourneyState(
+                    args.nextEntranceSession?.outcomeMonitoring,
+                  ),
+              })
+            : undefined,
           learningState:
             args.nextEntranceSession?.learningReassessment?.context
               ?.supportedLearnings.length
@@ -3430,9 +3639,16 @@ function finalize(args: {
       managerObjectTurn.context.objectKind.value ??
       null,
     investigationSubjectId:
-      managerObjectTurn.session.investigationSubjectId ??
-      managerObjectTurn.exploration.recommendedPaths[0]?.targetObjectId ??
-      null,
+      isTargetedDeicticInvestigationUtterance(
+        normalizeNexoraConversationalUtterance(args.utterance),
+      )
+        ? managerObjectTurn.activeObjectId ??
+          args.contextResult.context.primarySubject?.subjectId ??
+          contextualManagerMeaning.objectReference?.subjectId ??
+          null
+        : managerObjectTurn.session.investigationSubjectId ??
+          managerObjectTurn.exploration.recommendedPaths[0]?.targetObjectId ??
+          null,
     presentedIds:
       nextExecutiveContext.presentedSet?.subjectIds ??
       managerObjectTurn.session.investigationCandidateIds,
@@ -3755,15 +3971,40 @@ function finalize(args: {
     stageSnapshot: incomingStage.snapshot ?? stageSnapshot,
     presentationOnlyChange: /\b(?:shown|view|filter|focus)\b/i.test(args.utterance),
   });
+  const canonicalFocusName =
+    naturalLanguageUnderstanding.objectReference?.canonicalName
+      ?.toLowerCase()
+      .trim() ?? null;
+  const canonicalFocusIsExplicit = Boolean(
+    naturalLanguageUnderstanding.requestedOperation === "FOCUS" &&
+      naturalLanguageUnderstanding.objectReference?.subjectId &&
+      stageRelationship !== "STAGE_GROUNDED" &&
+      (isExplicitPresentationRequest(args.utterance, "focus") ||
+        (canonicalFocusName != null &&
+          normalizeNexoraConversationalUtterance(args.utterance) ===
+            canonicalFocusName)),
+  );
+  const canonicalSingleSubjectHandoff = Boolean(
+    canonicalFocusIsExplicit ||
+      (clarificationTurn.correctionDetected &&
+        clarificationTurn.correctionAfterId),
+  );
   const explicitSingularFocus =
-    args.intentResult.intent.kind === "focus" &&
-    nxaResponseContract.navigationAllowed &&
-    semanticTurn.owner === "BUSINESS" &&
+    (canonicalSingleSubjectHandoff ||
+      (args.intentResult.intent.kind === "focus" &&
+        nxaResponseContract.navigationAllowed &&
+        semanticTurn.owner === "BUSINESS")) &&
     !/\b(?:problems|risks|opportunities|scenarios|decisions|executions|goals)\b/i.test(args.utterance) &&
-    (isExplicitPresentationRequest(args.utterance, args.intentResult.intent.kind) ||
+    (canonicalSingleSubjectHandoff ||
+      isExplicitPresentationRequest(args.utterance, args.intentResult.intent.kind) ||
       incomingStage.visibleMembers.some(
         (member) => member.id === args.contextResult.context.primarySubject?.subjectId,
       ));
+  const singleSubjectInvestigationTurn =
+    explicitSingularFocus ||
+    isTargetedDeicticInvestigationUtterance(
+      normalizeNexoraConversationalUtterance(args.utterance),
+    );
   const collectionAlreadyPresented =
     (Boolean(collectionQuery?.countRequested) || isCollectionConfirmation(args.utterance)) &&
     Boolean(args.runtimeStateBeforeTurn?.collectionContext?.category) &&
@@ -3813,6 +4054,10 @@ function finalize(args: {
     args.intentResult.intent.kind !== "explain-scenario" &&
     semanticTurn.owner === "BUSINESS" &&
     !args.nextEntranceSession &&
+    // Goal/next-action lanes answer from manager goal context; do not replace
+    // them with catalog Goal-object explanation when the word "goal" resolves.
+    managerExperience.lane !== "goal" &&
+    managerExperience.lane !== "next-action" &&
     (args.contextResult.context.resolutionStatus === "resolved" ||
       args.contextResult.context.resolutionStatus === "not-required")
   ) {
@@ -3875,6 +4120,7 @@ function finalize(args: {
     intentKind: args.intentResult.intent.kind,
     activeComparison: previousNcaState?.activeComparison ?? null,
     activeCollectionPresent: Boolean(incomingStage.collection || previousNcaState?.lastCollection),
+    singleSubjectFocus: explicitSingularFocus,
   });
   if (comparisonMeaning.active) {
     // Comparison/judgment is knowledge work, not navigation. Preserve the
@@ -4314,6 +4560,11 @@ function finalize(args: {
           collectionOrdinal < 0 ? collectionMembers.length - 1 : collectionOrdinal
         ] ?? null
       : null;
+  const handedOffSubject = explicitSingularFocus
+    ? args.contextResult.context.primarySubject ??
+      contextualManagerMeaning.objectReference ??
+      null
+    : null;
   const nextNcaState = freezeNcaConversationState({
     ...baseNextNcaState,
     lastCollection:
@@ -4335,8 +4586,16 @@ function finalize(args: {
             .toLowerCase()
             .replace(/s$/, ""),
         })
+      : handedOffSubject
+        ? Object.freeze({
+            id: handedOffSubject.subjectId,
+            name: handedOffSubject.canonicalName,
+            kind: handedOffSubject.subjectKind,
+          })
       : baseNextNcaState.activeSubject,
-    activeComparison: ncaPost4Comparison && ncaPost4Comparison.candidateSet.candidateIds.length >= 2
+    activeComparison: singleSubjectInvestigationTurn
+      ? null
+      : ncaPost4Comparison && ncaPost4Comparison.candidateSet.candidateIds.length >= 2
       ? Object.freeze({
           candidateIds: ncaPost4Comparison.candidateSet.candidateIds,
           candidateKind: ncaPost4Comparison.candidateSet.collectionKind,
@@ -4561,6 +4820,22 @@ function finalize(args: {
     nxaRole: nxaAdvisorContract.role,
     nxaNeed: nxaAdvisorContract.need,
     nxaReferent: nxaAdvisorContract.referentName,
+    compositionResolvedSubjectId:
+      args.subjectCompositionFidelity?.resolvedSubject.id ?? null,
+    compositionResolvedSubjectKind:
+      args.subjectCompositionFidelity?.resolvedSubject.kind ?? null,
+    compositionCandidateSubjectId:
+      args.subjectCompositionFidelity?.candidateSubject.id ?? null,
+    compositionCandidateSubjectKind:
+      args.subjectCompositionFidelity?.candidateSubject.kind ?? null,
+    compositionSelectedSubjectId:
+      args.subjectCompositionFidelity?.selectedSubject.id ?? null,
+    compositionSelectedSubjectKind:
+      args.subjectCompositionFidelity?.selectedSubject.kind ?? null,
+    compositionFidelityCompatible:
+      args.subjectCompositionFidelity?.compatible ?? null,
+    compositionStaleScenarioBlocked:
+      args.subjectCompositionFidelity?.blockedStaleScenarioAssessment ?? null,
     nxaReferentSource: nxaAdvisorContract.referentSource,
     nxaNavigationAllowed: nxaAdvisorContract.navigationAllowed,
     nxaEvidenceRequired: nxaAdvisorContract.evidenceRequired,
@@ -4604,10 +4879,13 @@ function finalize(args: {
         : "I can compare those options once two comparable scenarios exist. That comparison would be a trade-off against evidence, not a Decision.";
   }
 
-  const skipTheatreCopy =
+  const entranceOwnsCurrentUtterance =
     shouldNexoraExecutionPlanningOwnUtterance(args.nextEntranceSession, args.utterance) ||
     shouldNexoraOutcomeMonitoringOwnUtterance(args.nextEntranceSession, args.utterance) ||
-    shouldNexoraLearningReassessmentOwnUtterance(args.nextEntranceSession, args.utterance);
+    shouldNexoraLearningReassessmentOwnUtterance(args.nextEntranceSession, args.utterance) ||
+    shouldNexoraObjectEducationOwnUtterance(args.nextEntranceSession, args.utterance) ||
+    shouldNexoraTrustReviewOwnUtterance(args.nextEntranceSession, args.utterance);
+  const skipTheatreCopy = entranceOwnsCurrentUtterance;
   const outcomeCollectionQuery =
     /^(?:show(?: me)?(?: all)? outcomes|how many outcomes(?: do we have)?)\??$/i.test(
       args.utterance.trim(),
@@ -4885,7 +5163,10 @@ function finalize(args: {
     presentedResponse = theatreComparison.advisorReadable.uncertainty;
   }
   const theatreCommitment = decisionTheatre.decisionCommitment;
-  if (/have i already made the decision/i.test(args.utterance)) {
+  if (
+    args.intentResult.intent.kind === "decision-status" ||
+    /have i already made the decision/i.test(args.utterance)
+  ) {
     presentedResponse = theatreCommitment?.advisorReadable.haveIDecided
       ?? "No. You have not made a Decision yet.";
   }
@@ -4915,7 +5196,11 @@ function finalize(args: {
     executionRequest?.action === "start" &&
     approvedDecision
   ) {
-    if (args.executionRuntime && args.decisionRuntime) {
+    if (
+      args.canonicalExecutionRuntimeProvided === true &&
+      args.executionRuntime &&
+      args.decisionRuntime
+    ) {
       const followUp = resolveNexoraExecutiveExecutionFollowUp({
         action: "start",
         decisionId: approvedDecision.decisionId,
@@ -4949,6 +5234,26 @@ function finalize(args: {
     presentedResponse = theatreReadiness.advisorReadable.scene;
   }
   const theatreLive = skipTheatreCopy ? null : decisionTheatre.liveExecution;
+  if (!skipTheatreCopy && args.intentResult.intent.kind === "execution-status") {
+    const executionProgressQuestion =
+      /(?:going\s+according\s+to\s+plan|on\s+track|how\s+far\s+along|what(?:'s|\s+is)\s+the\s+progress|show\s+progress)/i.test(
+        args.utterance,
+      );
+    const executionExistenceQuestion =
+      /(?:has|did|have)\s+(?:the\s+)?execution\s+started|did\s+(?:it|this|that)\s+start/i.test(
+        args.utterance,
+      );
+    presentedResponse = theatreLive
+      ? executionProgressQuestion
+        ? theatreLive.advisorReadable.progress
+        : theatreLive.advisorReadable.happeningNow
+      : executionProgressQuestion
+        ? "Execution has not started, so progress against plan cannot be evaluated."
+        : theatreReadiness?.advisorReadable.hasStarted ??
+          (executionExistenceQuestion
+            ? "No. Execution has not started."
+            : "No Execution is currently active.");
+  }
   if (theatreLive && /what is happening now|what is on stage now/i.test(args.utterance)) {
     presentedResponse = theatreLive.advisorReadable.happeningNow;
   }
@@ -5314,6 +5619,23 @@ function finalize(args: {
     session: args.previousManagerObjectSession?.ecaCommitmentSession ?? null,
     committedDecisionId: approvedDecision?.decisionId ?? null,
     decisionCommitmentStatus: decisionCommitmentResult?.status ?? null,
+    decisionCandidate:
+      decisionTheatre.decisionCommitment?.candidateId &&
+      decisionTheatre.decisionCommitment.candidateLabel
+        ? {
+            id: decisionTheatre.decisionCommitment.candidateId,
+            label: decisionTheatre.decisionCommitment.candidateLabel,
+          }
+        : null,
+    candidateChoices: Object.freeze([
+      ...(decisionTheatre.decisionCommitment?.candidateChoices ?? []),
+      ...(args.previousManagerObjectSession?.npsComparedOptions ?? []),
+    ]),
+    decisionNeeded: managerObjectTurn.journey.journeyState === "AWAITING_DECISION",
+    decisionNeededSubjectLabel:
+      ecaWorkingContext.activeSubject?.label ??
+      managerObjectTurn.context.identity.value ??
+      null,
   });
   const nextEcaCommitment = nextEcaCommitmentSession(
     args.previousManagerObjectSession?.ecaCommitmentSession ?? null,
@@ -5510,67 +5832,353 @@ function finalize(args: {
         : `Which item should I ${proposal.operation.toLowerCase()}?`;
     nextEcaProposal = null;
   }
+  const normalizedFinalUtterance =
+    normalizeNexoraConversationalUtterance(args.utterance);
+  const explicitAdvisoryPurpose = executiveAdvisoryPurposeOf(
+    normalizedFinalUtterance,
+  );
+  const decisionRelativeChangeRequest =
+    args.intentResult.intent.kind === "change" &&
+    /^what\s+changed\s+(?:since|after)\s+we\s+(?:made|approved|committed)\s+(?:a|the)\s+decision$/.test(
+      normalizedFinalUtterance,
+    );
+  const relevantDecisions = args.decisionRuntime?.listDecisions() ?? [];
+  if (decisionRelativeChangeRequest) {
+    presentedResponse =
+      relevantDecisions.length > 1
+        ? `I have ${relevantDecisions.length} relevant Decisions. Which one do you mean?`
+        : relevantDecisions.length === 1
+          ? `The current evidence does not establish a validated change since ${relevantDecisions[0]?.title ?? "that Decision"} was decided.`
+          : "There is no recorded Decision to compare against yet.";
+  }
+  // Certified Entrance modules already own these turns. Do not overwrite their
+  // manager-facing copy with generic executive-advisory purpose responses.
+  if (entranceOwnsCurrentUtterance || args.lockPresentedResponse) {
+    // keep presentedResponse from Entrance / locked authority
+  } else if (explicitAdvisoryPurpose === "execution-readiness") {
+    presentedResponse =
+      ecaExecutionReadinessJudgment.managerFacingNote ??
+      "Execution readiness cannot be established until an approved Decision and its known blockers, ownership, and evidence are available. Nothing has been started.";
+  } else if (explicitAdvisoryPurpose === "execution-monitoring") {
+    const available: string[] = [];
+    if (relatedExecution) {
+      available.push(`the canonical Execution status (${relatedExecution.status})`);
+      if (relatedExecution.blockers.length > 0) available.push("recorded blockers");
+      if (relatedExecution.risks.length > 0) available.push("recorded risks");
+      if (relatedExecution.progress != null) available.push("recorded progress");
+    }
+    if (ecaOutcomeEvidence?.primary?.observed != null) {
+      available.push(`the recorded ${ecaOutcomeEvidence.primary.measure} observation`);
+    }
+    const availableText = available.length > 0
+      ? `Available now: ${available.join(", ")}.`
+      : "Available now: no active Execution telemetry or validated Outcome observation is recorded.";
+    presentedResponse = `${availableText} Useful to collect while execution is running: progress against the approved plan, blockers and risks, and Outcome observations against a confirmed baseline and target. Unknown or unconfirmed data meanings must stay unresolved rather than being treated as KPIs.`;
+  } else if (explicitAdvisoryPurpose === "outcome-assessment") {
+    presentedResponse =
+      ecaOutcomeJudgment.managerFacingNote ??
+      "To know whether the Decision is working, compare validated post-start observations with the confirmed baseline and intended target, while checking material trade-offs. Improvement can support an Outcome assessment but does not by itself prove causality.";
+  } else if (explicitAdvisoryPurpose === "causal-assessment") {
+    presentedResponse =
+      ecaOutcomeJudgment.managerFacingNote ??
+      "No. An observed KPI improvement is an observation and may show association or plausible contribution, but it does not by itself prove the Decision caused it. Confirmed causality requires the existing evidence standard to rule out credible alternative explanations.";
+  } else if (explicitAdvisoryPurpose === "historical-review") {
+    const priorContinuity = args.previousManagerObjectSession?.conversationContinuity;
+    const issueIds = [...new Set(
+      (priorContinuity?.thread ?? [])
+        .filter((frame) => args.executiveSubjects.find((subject) => subject.subjectId === frame.subjectId)?.subjectKind === "problem")
+        .map((frame) => frame.subjectId),
+    )];
+    const asksForBeginning = /\b(?:beginning|start)\b/.test(normalizedFinalUtterance);
+    if (!asksForBeginning && issueIds.length > 1) {
+      const labels = issueIds
+        .map((id) => args.executiveSubjects.find((subject) => subject.subjectId === id)?.canonicalName)
+        .filter((label): label is string => Boolean(label));
+      presentedResponse = `Which earlier issue do you mean: ${labels.join(" or ")}?`;
+    } else {
+      const historicalSubject =
+        contextualManagerMeaning.objectReference?.canonicalName ??
+        args.executiveSubjects.find((subject) => subject.subjectId === issueIds[0])?.canonicalName ??
+        null;
+      presentedResponse = historicalSubject
+        ? `Returning to ${historicalSubject}. I do not have new validated evidence in this conversation that establishes a changed view.`
+        : "Which earlier issue do you mean?";
+    }
+  } else if (explicitAdvisoryPurpose === "executive-summary") {
+    const points: string[] = [];
+    const focus = executiveSituation.focus.label;
+    const unresolved = executiveSituation.strongestUnresolvedIssue;
+    if (focus || unresolved) {
+      points.push(
+        unresolved
+          ? `Current condition: ${focus ?? "the current issue"}. ${unresolved}`
+          : `Current condition: ${focus}.`,
+      );
+    }
+    if (approvedDecision || relatedExecution) {
+      points.push(
+        `Lifecycle: ${approvedDecision ? `${approvedDecision.title} is approved` : "no Decision is approved"}; ${relatedExecution ? `its Execution is ${relatedExecution.status}` : "Execution has not started"}.`,
+      );
+    } else {
+      points.push("Lifecycle: no approved Decision or active canonical Execution is recorded.");
+    }
+    const evidencePoint = ecaOutcomeEvidence?.primary?.observed != null
+      ? `Evidence: ${ecaOutcomeEvidence.primary.measure} has a recorded observation, but causality remains unconfirmed.`
+      : "Evidence: no validated Outcome observation is available yet, so uncertainty remains the next management attention.";
+    points.push(evidencePoint);
+    presentedResponse = points.slice(0, 3).map((point, index) => `${index + 1}. ${point}`).join(" ");
+  }
+  const explicitManagerIntentOwnsFinalAnswer =
+    args.intentResult.intent.kind === "execution-status" ||
+    managerExperience.lane === "goal" ||
+    managerExperience.lane === "next-action" ||
+    decisionRelativeChangeRequest ||
+    explicitAdvisoryPurpose != null;
   presentedResponse = applyEcaInformationNeedToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaInformationNeedJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
     nca3ShouldAsk: nca3Strategy.shouldAsk,
   });
   presentedResponse = applyEcaAnswerIntakeToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaAnswerIntakeJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
   });
   presentedResponse = applyEcaDialogueStrategyToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaDialogueStrategy,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
   });
   presentedResponse = applyEcaRecommendationToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaRecommendationJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
   });
   presentedResponse = applyEcaCommitmentToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaCommitmentJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
   });
   presentedResponse = applyEcaExecutionReadinessToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaExecutionReadinessJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
   });
   presentedResponse = applyEcaLiveExecutionToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaLiveExecutionJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || ecaOutcomeJudgment.speak,
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || ecaOutcomeJudgment.speak,
   });
   presentedResponse = applyEcaOutcomeToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaOutcomeJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || ecaLearningClosureJudgment.speak,
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || ecaLearningClosureJudgment.speak,
   });
   presentedResponse = applyEcaLearningClosureToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaLearningClosureJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
   });
   presentedResponse = applyEcaInformationNeedToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
     judgment: ecaInformationNeedJudgment,
-    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+    locked: explicitManagerIntentOwnsFinalAnswer || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
     nca3ShouldAsk: nca3Strategy.shouldAsk,
+  });
+  const npsRuntime = composeNpsRuntimeProblemUnderstanding({
+    utterance: args.utterance,
+    previousProblemId: args.previousManagerObjectSession?.npsProblemId ?? null,
+    turn: managerObjectTurn,
+    investigationThread: threadFromSession(managerObjectTurn.session),
+    nluProblemId:
+      naturalLanguageUnderstanding.subject?.subjectKind === "problem"
+        ? naturalLanguageUnderstanding.subject.subjectId
+        : null,
+    stageFocus: ecaWorkingContext.stageContext.focus,
+    conversationSubject: ecaWorkingContext.activeSubject,
+  });
+  presentedResponse = applyNpsUnderstandingToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    understanding: npsRuntime.understanding,
+    ecaAlreadyAsking: ecaInformationNeedJudgment.shouldAsk === true,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  const npsEvidenceCause = composeNpsRuntimeEvidenceCauseAnalysis({
+    path: npsRuntime.path,
+    pathFacts: npsRuntime.pathFacts,
+    understanding: npsRuntime.understanding,
+  });
+  presentedResponse = applyNpsEvidenceCauseToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    analysis: npsEvidenceCause,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  const npsOptionGeneration = composeNpsRuntimeOptionGeneration({
+    path: npsEvidenceCause.path,
+    pathFacts: npsRuntime.pathFacts,
+    analysis: npsEvidenceCause,
+  });
+  presentedResponse = applyNpsOptionGenerationToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    generation: npsOptionGeneration,
+    previousOptionCandidateId: args.previousManagerObjectSession?.npsOptionCandidateId ?? null,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  const npsComparisonRecommendation = composeNpsRuntimeComparisonRecommendation({
+    pathFacts: npsRuntime.pathFacts,
+    options: npsOptionGeneration,
+    utterance: args.utterance,
+  });
+  presentedResponse = applyNpsComparisonRecommendationToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    comparison: npsComparisonRecommendation,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  const previousPending = args.previousManagerObjectSession?.ecaCommitmentSession?.pendingTargetId ?? null;
+  const npsDecisionCommitment = composeNpsRuntimeDecisionCommitment({
+    pathFacts: npsRuntime.pathFacts,
+    comparison: npsComparisonRecommendation,
+    eca: ecaCommitmentJudgment,
+    cc10: {
+      approvedDecisionId:
+        decisionCommitmentResult?.status === "applied" || decisionCommitmentResult?.status === "already-committed"
+          ? decisionCommitmentResult.decision?.decisionId ?? approvedDecision?.decisionId ?? null
+          : approvedDecision?.decisionId ?? null,
+      status:
+        decisionCommitmentResult?.status === "applied" ||
+        decisionCommitmentResult?.status === "already-committed" ||
+        decisionCommitmentResult?.status === "failed" ||
+        decisionCommitmentResult?.status === "confirmation-required" ||
+        decisionCommitmentResult?.status === "preference-only"
+          ? decisionCommitmentResult.status
+          : "none",
+      pendingConfirmation: decisionCommitmentResult?.status === "confirmation-required" || ecaCommitmentJudgment.confirmationRequired,
+      pendingTargetId: ecaCommitmentJudgment.target?.id ?? previousPending,
+      pendingTargetLabel: ecaCommitmentJudgment.target?.label ?? null,
+      topicChanged:
+        npsRuntime.understanding.problemId != null &&
+        args.previousManagerObjectSession?.npsProblemId != null &&
+        npsRuntime.understanding.problemId !== args.previousManagerObjectSession.npsProblemId,
+      recommendationInvalidated: false,
+    },
+  });
+  presentedResponse = applyNpsDecisionCommitmentToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    commitment: npsDecisionCommitment,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  const npsExecutionFacts = Object.freeze({
+    ...npsRuntime.pathFacts,
+    problem: npsDecisionCommitment.problemId
+      ? Object.freeze({
+          problemId: npsDecisionCommitment.problemId,
+          problemLabel: npsDecisionCommitment.problemTitle,
+          confidence: "HIGH" as const,
+          observedFrom: npsRuntime.pathFacts.problem.observedFrom,
+        })
+      : npsRuntime.pathFacts.problem,
+    approvedDecisionId: npsDecisionCommitment.approvedDecisionId ?? npsRuntime.pathFacts.approvedDecisionId,
+    awaitingCommitment: npsDecisionCommitment.path.currentState === "AWAITING_COMMITMENT",
+    comparisonAvailable:
+      npsRuntime.pathFacts.comparisonAvailable || Boolean(npsComparisonRecommendation.comparedOptions.length),
+    recommendationReady:
+      npsRuntime.pathFacts.recommendationReady || Boolean(npsComparisonRecommendation.nexoraRecommendation),
+    scenarioIds:
+      npsRuntime.pathFacts.scenarioIds.length > 0
+        ? npsRuntime.pathFacts.scenarioIds
+        : Object.freeze(
+            npsComparisonRecommendation.comparedOptions.map((item) => item.canonicalScenarioId ?? item.optionId),
+          ),
+  });
+  const startUtterance = args.utterance.trim();
+  const npsExecutionMonitoring = composeNpsRuntimeExecutionMonitoring({
+    pathFacts: npsExecutionFacts,
+    commitment: npsDecisionCommitment,
+    ecaReadiness: ecaExecutionReadinessJudgment,
+    ecaLive: ecaLiveExecutionJudgment,
+    cc11: {
+      executionId: relatedExecution?.executionId ?? null,
+      decisionId: relatedExecution?.decisionId ?? npsDecisionCommitment.approvedDecisionId ?? null,
+      title: relatedExecution?.title ?? npsDecisionCommitment.committedOption ?? null,
+      status: relatedExecution?.status ?? null,
+      progress: relatedExecution?.progress ?? null,
+      ownerIds: relatedExecution?.ownerIds ?? [],
+      blockers: relatedExecution?.blockers ?? [],
+      risks: relatedExecution?.risks ?? [],
+      milestones: relatedExecution?.milestones ?? [],
+      resultStatus: relatedExecution ? "reused" : "none",
+      managerStartIntent:
+        ecaExecutionReadinessJudgment.managerIntent === "START" ||
+        /^(?:start it|start execution|execute it)\.?$/i.test(startUtterance),
+      ambiguousStartLanguage: /^(?:okay|sounds good|let'?s see|fine|continue)\.?$/i.test(startUtterance),
+      doItLanguage: /^(?:do it)\.?$/i.test(startUtterance),
+    },
+  });
+  presentedResponse = applyNpsExecutionMonitoringToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    execution: npsExecutionMonitoring,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  const npsOutcomeLearning = composeNpsRuntimeOutcomeLearning({
+    pathFacts: npsExecutionFacts,
+    commitment: npsDecisionCommitment,
+    execution: npsExecutionMonitoring,
+    ecaOutcome: ecaOutcomeJudgment,
+    ecaLearning: ecaLearningClosureJudgment,
+    evidence: ecaOutcomeEvidence,
+    observation: {
+      decisionId:
+        npsExecutionMonitoring.outcomeHandoff.decisionId ??
+        npsDecisionCommitment.approvedDecisionId ??
+        relatedExecution?.decisionId ??
+        ecaOutcomeEvidence?.decisionId ??
+        null,
+      decisionTitle: npsDecisionCommitment.committedOption ?? relatedExecution?.title ?? null,
+      executionId: npsExecutionMonitoring.outcomeHandoff.executionId ?? relatedExecution?.executionId ?? ecaOutcomeEvidence?.executionId ?? null,
+      executionStatus:
+        npsExecutionMonitoring.outcomeHandoff.executionStatus ??
+        relatedExecution?.status ??
+        ecaOutcomeEvidence?.executionStatus ??
+        null,
+      executionTitle: relatedExecution?.title ?? null,
+    },
+  });
+  presentedResponse = applyNpsOutcomeLearningToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    outcome: npsOutcomeLearning,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
   });
   presentedResponse = applyNca6StrategyToResponse({
     source: presentedResponse,
@@ -5618,6 +6226,13 @@ function finalize(args: {
       ecaOutcomeSession: nextEcaOutcome,
       ecaLearningClosureSession: nextEcaLearningClosure,
       advisorDataDialogue: persistedDataDialogue,
+      npsProblemId: npsRuntime.understanding.problemId,
+      npsOptionCandidateId: resolveNpsRuntimeFocusedOptionId({
+        utterance: args.utterance,
+        generation: npsOptionGeneration,
+        previousOptionCandidateId: args.previousManagerObjectSession?.npsOptionCandidateId ?? null,
+      }),
+      npsComparedOptions: npsComparedOptionRefs(npsComparisonRecommendation),
     }),
   });
   const nexoraAdvisorMessage =
@@ -5705,6 +6320,21 @@ function finalize(args: {
     ecaLiveExecutionJudgment,
     ecaOutcomeJudgment,
     ecaLearningClosureJudgment,
+    npsPath:
+      npsOutcomeLearning.path.currentState === "OUTCOME_REVIEW" ||
+      npsOutcomeLearning.path.currentState === "REASSESSMENT" ||
+      npsOutcomeLearning.path.currentState === "RESOLVED"
+        ? npsOutcomeLearning.path
+        : npsExecutionMonitoring.path.currentState
+          ? npsExecutionMonitoring.path
+          : npsDecisionCommitment.path,
+    npsUnderstanding: npsRuntime.understanding,
+    npsEvidenceCause,
+    npsOptionGeneration,
+    npsComparisonRecommendation,
+    npsDecisionCommitment,
+    npsExecutionMonitoring,
+    npsOutcomeLearning,
     decisionRuntime: args.decisionRuntime ?? null,
     executionRuntime: args.executionRuntime ?? null,
   });
@@ -5782,6 +6412,18 @@ function mapOutcomeJourneyState(
   if (impact === "WORSENING") return "DEGRADED";
   if (impact === "UNKNOWN" || impact === "MIXED") return "UNKNOWN";
   return "OBSERVED";
+}
+
+function mapCanonicalExecutionJourneyState(
+  status: string | null | undefined,
+): "NOT_STARTED" | "ACTIVE" | "BLOCKED" | "COMPLETED" | "UNKNOWN" {
+  if (status === "in-progress" || status === "at-risk") return "ACTIVE";
+  if (status === "blocked") return "BLOCKED";
+  if (status === "completed") return "COMPLETED";
+  if (status === "planned" || status === "ready" || status === "cancelled") {
+    return "NOT_STARTED";
+  }
+  return "UNKNOWN";
 }
 
 export const submitExecutiveUtterance = executeNexoraConversationalExperience;
