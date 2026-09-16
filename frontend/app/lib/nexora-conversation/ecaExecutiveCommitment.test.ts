@@ -1021,3 +1021,34 @@ test("ECA:MAINT-1 J — Mutation safety on commitment review", () => {
   assert.equal(judgment.boundaries.writesLearning, false);
   assert.equal(judgment.canonicalHandoffAllowed, false);
 });
+
+test("ECA:8 SYS:1-FIX2 — deictic proceed binds pending preference, not the recommendation", () => {
+  const recPatch = {
+    recommendedOption: { id: "opt-internal-capacity", label: "Temporarily increase internal capacity" },
+    consideredOptions: Object.freeze([
+      { id: "opt-internal-capacity", label: "Temporarily increase internal capacity" },
+      { id: "opt-external-capacity", label: "Use external capacity for overflow" },
+    ]),
+  };
+  const turns = chain([
+    {
+      utterance: "I prefer External Capacity.",
+      extras: {
+        recPatch,
+        candidateChoices: recPatch.consideredOptions,
+      },
+    },
+    {
+      utterance: "Let's proceed with it.",
+      extras: {
+        recPatch,
+        candidateChoices: recPatch.consideredOptions,
+      },
+    },
+  ]);
+  assert.equal(turns[0]?.judgment.commitmentState, "PREFERENCE");
+  assert.equal(turns[0]?.judgment.target?.id, "opt-external-capacity");
+  assert.equal(turns[1]?.judgment.target?.id, "opt-external-capacity");
+  assert.doesNotMatch(turns[1]?.judgment.managerFacingNote ?? "", /Temporarily increase internal capacity/i);
+  assert.equal(turns[1]?.judgment.boundaries.commitsDecision, false);
+});

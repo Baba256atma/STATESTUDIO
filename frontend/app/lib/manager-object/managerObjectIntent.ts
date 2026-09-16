@@ -114,7 +114,7 @@ function mapIntent(
     return "RISK";
   }
   if (
-    /what\s+(?:is|are)\s+connected|what\s+is\s+connected\s+to|what\s+does\s+(?:it|this)\s+affect|what\s+is\s+affected|show\s+(?:me\s+)?(?:the\s+)?related/.test(
+    /what\s+(?:is|are)\s+connected|what\s+is\s+connected\s+to|what\s+is\s+related(?:\s+to\s+(?:it|this|that))?|what\s+does\s+(?:it|this)\s+affect|what\s+is\s+affected|show\s+(?:me\s+)?(?:the\s+)?related/.test(
       normalized,
     ) ||
     kind === "show-related"

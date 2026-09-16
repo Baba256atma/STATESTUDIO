@@ -482,7 +482,12 @@ export function isExplicitPresentationRequest(utterance: string, intentKind: str
     "",
   );
   if (/^(?:what|which|why|how|explain)\b/.test(text)) return false;
-  if (/^(?:show|open|focus(?: on)?|bring up|go to|take me to|go back|look at)\b/.test(text)) return true;
+  if (
+    /^(?:show|open|focus(?: on)?|bring up|go to|take me to|go back|look at|lets work on|let s work on|let us work on|how about)\b/.test(
+      text,
+    )
+  )
+    return true;
   return /^(?:show-|open-|overview)/.test(intentKind);
 }
 

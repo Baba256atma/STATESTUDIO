@@ -152,7 +152,7 @@ function matchNamedSubjectInquiry(normalized: string): MatchResult | null {
   const raw = (named[1] ?? "").trim();
   if (!raw || isAmbiguousConversationalReference(raw)) return null;
   if (
-    /^(?:going\s+on|happening|different|predicted|unknown|the\s+evidence|the\s+risk|the\s+constraint|the\s+priority|the\s+downside|(?:the\s+)?decision\s+status|(?:the\s+)?execution\s+status|being\s+executed|still\s+uncertain|connected(?:\s+to\s+(?:this|it|that))?|related)$/.test(
+    /^(?:going\s+on|happening|different|predicted|unknown|the\s+evidence|the\s+risk|the\s+constraint|the\s+priority|the\s+downside|(?:the\s+)?decision\s+status|(?:the\s+)?execution\s+status|being\s+executed|still\s+uncertain|connected(?:\s+to\s+(?:this|it|that))?|related(?:\s+to\s+(?:it|this|that|this one|that one))?)$/.test(
       raw,
     )
   ) {
@@ -200,6 +200,7 @@ function matchAmbiguous(normalized: string): MatchResult | null {
   // Deictic / underspecified references — never invent a target.
   const ambiguousPatterns: readonly RegExp[] = [
     /^(?:show|open|focus(?:\s+on)?|look\s+at|what\s+about)\s+(this|that|it|them|these|those)$/,
+    /^(?:lets|let\s+s|let\s+us)\s+(?:work\s+on|investigate|look\s+at|focus\s+on)\s+(this|that|it)$/,
     /^what\s+about\s+(this|that|it)$/,
     /^open\s+it$/,
     /^show\s+me\s+(this|that|it)$/,
@@ -582,7 +583,7 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:what\s+is\s+connected(?:\s+to\s+(?:this|it|that))?|what(?:\s+is|s)\s+related|what\s+does\s+(?:it|this)\s+affect|what\s+is\s+affected)$/.test(
+    /^(?:what\s+is\s+connected(?:\s+to\s+(?:this|it|that|this one|that one))?|what(?:\s+is|s)\s+related(?:\s+to\s+(?:it|this|that|this one|that one))?|what\s+does\s+(?:it|this)\s+affect|what\s+is\s+affected)$/.test(
       normalized,
     )
   ) {
@@ -1215,8 +1216,9 @@ function matchFocusOrOpen(normalized: string): MatchResult | null {
   // This is a knowledge follow-up on the established conversational subject,
   // not permission to navigate to a ranked attention target.
   if (isTargetedDeicticInvestigationUtterance(normalized)) return null;
+  // Apostrophes become spaces: "let's work on" → "let s work on".
   const focus = normalized.match(
-    /^(?:focus(?:\s+on)?|look\s+at|go\s+to|take\s+me\s+to|review|investigate)\s+(.+)$/,
+    /^(?:(?:(?:lets|let\s+s|let\s+us)\s+)?(?:work\s+on|focus(?:\s+on)?|look\s+at|go\s+to|take\s+me\s+to|review|investigate)|how\s+about|i\s+want\s+to\s+look\s+at)\s+(.+)$/,
   );
   const showOpen = normalized.match(
     /^(?:show|open)(?:\s+me)?\s+(.+)$/,

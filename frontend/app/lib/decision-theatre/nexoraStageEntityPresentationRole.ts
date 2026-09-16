@@ -18,6 +18,7 @@ export const NEXORA_STAGE_ENTITY_PRESENTATION_ROLES = Object.freeze([
   "DATA_OBJECT",
   "EDUCATIONAL_ACTOR",
   "ICONIC_ENTITY",
+  "ANALYTICAL_SYMBOL",
 ] as const);
 
 export type NexoraStageEntityPresentationRole =
@@ -126,6 +127,9 @@ export function resolveStageEntityPresentationRole(input: {
   if (visualFamily === "DATA_OBJECT") {
     presentationRole = "DATA_OBJECT";
     applicableSections = DATA_SECTIONS;
+  } else if (visualFamily === "VARIABLE_SYMBOL") {
+    presentationRole = "ANALYTICAL_SYMBOL";
+    applicableSections = ICONIC_SECTIONS;
   } else if (visualFamily === "ICONIC_OBJECT") {
     presentationRole = "ICONIC_ENTITY";
     applicableSections = ICONIC_SECTIONS;

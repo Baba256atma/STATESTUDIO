@@ -124,10 +124,20 @@ export function isDeicticSubjectExplainUtterance(
   );
 }
 
+export function isDeicticRelatedObjectUtterance(
+  normalizedUtterance: string,
+): boolean {
+  return /^(?:what is related(?: to (?:it|this|that|this one|that one))?|what is connected(?: to (?:it|this|that|this one|that one))?)$/.test(
+    normalizedUtterance,
+  );
+}
+
 export function isDeicticSubjectFollowUpUtterance(
   normalizedUtterance: string,
 ): boolean {
   if (isDeicticSubjectExplainUtterance(normalizedUtterance)) return true;
+  if (isDeicticRelatedObjectUtterance(normalizedUtterance)) return true;
+  if (/^why(?: is (?:it|this|that) important)?$/.test(normalizedUtterance)) return true;
   return isTargetedDeicticInvestigationUtterance(normalizedUtterance);
 }
 

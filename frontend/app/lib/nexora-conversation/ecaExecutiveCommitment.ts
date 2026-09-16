@@ -120,6 +120,8 @@ export type EcaCommitmentInput = Readonly<{
   decisionNeeded?: boolean;
   /** Manager-facing subject label when decision is needed (e.g. Capacity). */
   decisionNeededSubjectLabel?: string | null;
+  /** Read-only analytical unknowns from VAI what-if. ECA owns the challenge. */
+  analyticalUncertainty?: readonly string[];
 }>;
 
 function freeze<T>(value: T): T {
@@ -206,6 +208,12 @@ function namedTarget(
   if (labeled) return freeze({ id: labeled.id, label: labeled.label, kind: "option" });
   if (/external capacity/i.test(text)) {
     const hit = options.find((item) => /external/i.test(item.label));
+    if (hit) return freeze({ id: hit.id, label: hit.label, kind: "option" });
+  }
+  if (/internal capacity/i.test(text)) {
+    const hit =
+      options.find((item) => /internal/i.test(item.label)) ??
+      options.find((item) => /expansion/i.test(item.label) && !/external/i.test(item.label));
     if (hit) return freeze({ id: hit.id, label: hit.label, kind: "option" });
   }
   if (/capacity expansion plan/i.test(text)) {
@@ -414,6 +422,13 @@ export function judgeEcaExecutiveCommitment(
       if (!target && rec?.consideredOptions.length === 1) {
         target = asSubject(rec.consideredOptions[0]);
       }
+      if (!target && previous.pendingTargetId) {
+        target = freeze({
+          id: previous.pendingTargetId,
+          label: previous.pendingTargetLabel ?? previous.pendingTargetId,
+          kind: "option",
+        });
+      }
       if (!target && rec?.recommendedOption) {
         target = asSubject(rec.recommendedOption);
       }
@@ -483,6 +498,18 @@ export function judgeEcaExecutiveCommitment(
     if (extra && !acknowledge) {
       note = `${note} ${target.label} was not Nexora’s recommendation. ${extra}`;
     }
+  }
+
+  const vaiUnknown = input.analyticalUncertainty?.[0];
+  if (
+    vaiUnknown
+    && (state === "PREFERENCE" || state === "INTENT" || state === "EXPLICIT_COMMITMENT")
+    && !acknowledge
+    && challenge === "NONE"
+  ) {
+    challenge = "CHALLENGE_CRITICAL_UNKNOWN";
+    speak = true;
+    note = `Before approving this, ${vaiUnknown.replace(/\.$/, "")}. Do you want to proceed with that uncertainty?`;
   }
 
   const challengeRequired = challenge !== "NONE" && !acknowledge && previous.acknowledgedChallenge !== challenge;

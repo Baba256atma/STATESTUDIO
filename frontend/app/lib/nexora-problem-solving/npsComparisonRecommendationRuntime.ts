@@ -17,7 +17,36 @@ function freeze<T>(value: T): T {
   return Object.freeze(value);
 }
 
-function factsFromUtterance(utterance: string, previous?: Partial<NpsComparisonFacts>): NpsComparisonFacts {
+function preferenceOptionIdFromUtterance(
+  utterance: string,
+  options: NpsOptionGeneration | undefined,
+): string | null {
+  if (!/\bi prefer\b|\bmy preference is\b/i.test(utterance)) return null;
+  const candidates = options?.optionCandidates ?? [];
+  const text = utterance.toLowerCase();
+  const titled = candidates.find((item) => item.title && text.includes(item.title.toLowerCase()));
+  if (titled) return titled.candidateId;
+  if (/external capacity/i.test(utterance)) {
+    const hit = candidates.find((item) => /external/i.test(item.title) || item.intent === "TRANSFER");
+    if (hit) return hit.candidateId;
+  }
+  if (/internal capacity/i.test(utterance)) {
+    const hit = candidates.find(
+      (item) =>
+        /internal/i.test(item.title) ||
+        item.intent === "ABSORB" ||
+        item.candidateId === "opt-internal-capacity",
+    );
+    if (hit) return hit.candidateId;
+  }
+  return null;
+}
+
+function factsFromUtterance(
+  utterance: string,
+  previous?: Partial<NpsComparisonFacts>,
+  options?: NpsOptionGeneration,
+): NpsComparisonFacts {
   const text = utterance.toLowerCase();
   let managerPriority: NpsManagerPriority = previous?.managerPriority ?? null;
   if (/within 30 days|fastest|restore capacity|fast recovery/i.test(text)) managerPriority = "FAST_RECOVERY";
@@ -27,9 +56,10 @@ function factsFromUtterance(utterance: string, previous?: Partial<NpsComparisonF
     supplierAvailability = "UNAVAILABLE";
   }
   if (/supplier (?:capacity )?(?:is |was )?confirm/i.test(text)) supplierAvailability = "CONFIRMED";
+  const spokenPreference = preferenceOptionIdFromUtterance(utterance, options);
   return freeze({
     managerPriority,
-    managerPreferenceOptionId: previous?.managerPreferenceOptionId ?? null,
+    managerPreferenceOptionId: spokenPreference ?? previous?.managerPreferenceOptionId ?? null,
     supplierAvailability,
     criticalInformationMissing: previous?.criticalInformationMissing === true,
     requireManagerPriority: false,
@@ -46,7 +76,7 @@ export function composeNpsRuntimeComparisonRecommendation(input: {
   return composeNpsComparisonRecommendation({
     pathFacts: input.pathFacts,
     options: input.options,
-    facts: factsFromUtterance(input.utterance, input.previousFacts),
+    facts: factsFromUtterance(input.utterance, input.previousFacts, input.options),
   });
 }
 
@@ -60,7 +90,7 @@ export function applyNpsComparisonRecommendationToPresentedResponse(input: {
   const utterance = input.utterance.trim();
   const asksCompare = /^(?:compare them|compare these|how do they compare|compare the options)\??$/i.test(utterance) ||
     /\bcompare (?:them|these options|the options)\b/i.test(utterance);
-  const asksChoose = /which one should we choose|which (?:option )?should we (?:choose|pick|select)|what do you recommend|which is (?:best|better)/i.test(
+  const asksChoose = /which one should we choose|which (?:option )?should we (?:choose|pick|select)|which one do you recommend|what do you recommend|which is (?:best|better)/i.test(
     utterance,
   );
   const asksDecision = /so that(?:'s| is) our decision|is that (?:our |the )?decision|have we (?:chosen|decided)/i.test(utterance);

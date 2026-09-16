@@ -27,7 +27,12 @@ import {
 } from "./conversationalIntentNormalization.ts";
 import { mapNexoraConversationalCommand } from "./conversationalCommandMapper.ts";
 import { resolveNexoraConversationalExperienceContext } from "./conversationalExperienceContextResolver.ts";
-import { buildNexoraConversationalExperienceResponse } from "./conversationalExperienceResponse.ts";
+import { applyVaiAdvisorToPresentedResponse } from "@/app/lib/vai/vaiAdvisorComposer.ts";
+import { projectVaiTheatreSymbols } from "@/app/lib/vai/vaiTheatreProjector.ts";
+import { composeVaiImpactScene } from "@/app/lib/vai/vaiImpactComposer.ts";
+import { applyVaiWhatIfToPresentedResponse } from "@/app/lib/vai/vaiWhatIfAdvisor.ts";
+import { projectVaiWhatIfTheatre } from "@/app/lib/vai/vaiWhatIfTheatre.ts";
+import { applyVai8ToPresentedResponse, vai8UncertaintyNotes } from "@/app/lib/vai/vaiExperimentDecisionResolver.ts";
 import { answerNexoraExiUtterance } from "@/app/lib/nex-mvp/nexoraExecutiveIntelligenceExperience.ts";
 import {
   type NexoraConversationalExperienceResult,
@@ -36,6 +41,7 @@ import {
   type NexoraConversationalMessage,
   type NexoraConversationalExperienceTrace,
 } from "./conversationalExperience.ts";
+import { buildNexoraConversationalExperienceResponse } from "./conversationalExperienceResponse.ts";
 import type {
   NexoraActiveStageContextSnapshot,
   NexoraConversationContextSnapshot,
@@ -460,6 +466,14 @@ export type NexoraConversationalExperienceInput = {
   /** DTH:8 UI review — Advisor consumes Theatre review without owning Decision truth. */
   readonly theatreDecisionReviewOpen?: boolean | null;
   readonly theatreProposedCandidateId?: string | null;
+  /** NPA-T VAI:4 read-only Advisor Variable analysis bundle. Optional. */
+  readonly vaiAdvisorBundle?: import("@/app/lib/vai/vaiAdvisorContract.ts").VaiAdvisorBundle | null;
+  readonly previousVaiAdvisorSession?: import("@/app/lib/vai/vaiAdvisorContract.ts").VaiAdvisorSession | null;
+  /** NPA-A VAI:7 session-scoped what-if overlay. Optional. */
+  readonly previousVaiWhatIfSession?: import("@/app/lib/vai/vaiWhatIfContract.ts").VaiWhatIfSession | null;
+  readonly vaiTrustedModels?: readonly import("@/app/lib/vai/vaiWhatIfContract.ts").VaiTrustedQuantitativeModel[];
+  readonly vaiWhatIfRequestedScope?: { readonly businessContext?: string | null };
+  readonly previousVai8PromotionSession?: import("@/app/lib/vai/vaiExperimentDecisionContract.ts").Vai8PromotionSession | null;
 };
 
 function freezeMessage(
@@ -1343,6 +1357,7 @@ export function executeNexoraConversationalExperience(
     });
     return finalize({
       ...args,
+      previousUtterance: input.previousUtterance ?? args.previousUtterance ?? null,
       runtimeStateBeforeTurn: input.runtimeState,
       nextEntranceSession:
         args.nextEntranceSession !== undefined
@@ -1353,6 +1368,12 @@ export function executeNexoraConversationalExperience(
       managerCommunicationContext: input.managerCommunicationContext,
       theatreDecisionReviewOpen: input.theatreDecisionReviewOpen,
       theatreProposedCandidateId: input.theatreProposedCandidateId,
+      vaiAdvisorBundle: input.vaiAdvisorBundle ?? null,
+      previousVaiAdvisorSession: input.previousVaiAdvisorSession ?? null,
+      previousVaiWhatIfSession: input.previousVaiWhatIfSession ?? null,
+      vaiTrustedModels: input.vaiTrustedModels,
+      vaiWhatIfRequestedScope: input.vaiWhatIfRequestedScope,
+      previousVai8PromotionSession: input.previousVai8PromotionSession ?? null,
       decisionRuntime: args.decisionRuntime ?? boundDecisionRuntime,
       executionRuntime: args.executionRuntime ?? boundExecutionRuntime,
       canonicalExecutionRuntimeProvided: input.executionRuntime != null,
@@ -3081,6 +3102,7 @@ function finalize(args: {
   readonly catalog?: NexoraMVPObjectInteractionCatalog;
   readonly executiveSubjects: readonly NexoraConversationalSubjectRecord[];
   readonly previousManagerObjectSession?: import("@/app/lib/manager-object/managerObjectActive.ts").ManagerObjectSession | null;
+  readonly previousUtterance?: string | null;
   readonly decisionRuntime?: import("./executiveDecisionRuntimeAdapter.ts").NexoraDecisionRuntimeAdapter | null;
   readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
   /** True only when the host supplied the canonical CC:11 Runtime. */
@@ -3098,6 +3120,12 @@ function finalize(args: {
   readonly managerCommunicationContext?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").Nca6ManagerContextInput | null;
   readonly theatreDecisionReviewOpen?: boolean | null;
   readonly theatreProposedCandidateId?: string | null;
+  readonly vaiAdvisorBundle?: import("@/app/lib/vai/vaiAdvisorContract.ts").VaiAdvisorBundle | null;
+  readonly previousVaiAdvisorSession?: import("@/app/lib/vai/vaiAdvisorContract.ts").VaiAdvisorSession | null;
+  readonly previousVaiWhatIfSession?: import("@/app/lib/vai/vaiWhatIfContract.ts").VaiWhatIfSession | null;
+  readonly vaiTrustedModels?: readonly import("@/app/lib/vai/vaiWhatIfContract.ts").VaiTrustedQuantitativeModel[];
+  readonly vaiWhatIfRequestedScope?: { readonly businessContext?: string | null };
+  readonly previousVai8PromotionSession?: import("@/app/lib/vai/vaiExperimentDecisionContract.ts").Vai8PromotionSession | null;
   readonly suggestedActions?: readonly {
     readonly id: string;
     readonly label: string;
@@ -3344,6 +3372,24 @@ function finalize(args: {
         args.utterance.trim(),
       )) &&
     !/\bits\b/i.test(args.utterance);
+  const focusedBeforeTurnId =
+    (args.runtimeStateBeforeTurn ?? args.nextRuntimeState).focusedSubject?.id ??
+    null;
+  const priorSession = args.previousManagerObjectSession;
+  const failedUnresolvedReference =
+    priorSession?.ncaConversationState?.lastFailedTurn?.failureKind ===
+    "UNRESOLVED_REFERENCE";
+  const namedOwnsSingularDeictic =
+    deicticUtterance &&
+    priorSession?.activationSource === "conversation-named" &&
+    priorSession.activeObjectId != null;
+  const stageClickOwnsSingularDeictic =
+    deicticUtterance &&
+    isDeicticSubjectFollowUpUtterance(normalizedUtterance) &&
+    priorSession?.activationSource !== "conversation-named" &&
+    priorSession?.activeObjectId != null &&
+    focusedBeforeTurnId != null &&
+    priorSession.activeObjectId === focusedBeforeTurnId;
   const hasNamedHint =
     !deicticUtterance &&
     !/\bits\b/i.test(args.utterance) &&
@@ -3412,26 +3458,35 @@ function finalize(args: {
       }),
     stageFocusedId: (args.runtimeStateBeforeTurn ?? args.nextRuntimeState).focusedSubject?.id ?? null,
     conversationSubjectId:
-      (comparativeFollowUp
-        ? args.previousManagerObjectSession?.activeObjectId ?? null
-        : deicticUtterance
-          ? targetedDeicticInvestigation
-            ? args.previousManagerObjectSession?.conversationContinuity
-                ?.activeSubjectId ??
-              nextExecutiveContext.currentSubject?.subjectId ??
-              args.previousManagerObjectSession?.ncaConversationState
-                ?.activeSubject?.id
-            : args.previousManagerObjectSession?.ncaConversationState
-                ?.activeSubject?.id ??
+      failedUnresolvedReference && deicticUtterance && !namedOwnsSingularDeictic
+        ? null
+        : (comparativeFollowUp
+          ? args.previousManagerObjectSession?.activeObjectId ?? null
+          : stageClickOwnsSingularDeictic
+            ? focusedBeforeTurnId ??
+              args.previousManagerObjectSession?.activeObjectId ??
               nextExecutiveContext.currentSubject?.subjectId
-          : hasNamedHint
-            ? args.contextResult.context.primarySubject?.subjectId ??
-              nextExecutiveContext.currentSubject?.subjectId
-            : nextExecutiveContext.currentSubject?.subjectId) ??
-      args.previousExecutiveContext.currentSubject?.subjectId ??
-      args.previousManagerObjectSession?.ncaConversationState?.activeSubject
-        ?.id ??
-      null,
+            : deicticUtterance
+              ? args.previousManagerObjectSession?.activationSource === "conversation-named" &&
+                args.previousManagerObjectSession.activeObjectId
+                ? args.previousManagerObjectSession.activeObjectId
+                : targetedDeicticInvestigation
+                ? args.previousManagerObjectSession?.conversationContinuity
+                    ?.activeSubjectId ??
+                  nextExecutiveContext.currentSubject?.subjectId ??
+                  args.previousManagerObjectSession?.ncaConversationState
+                    ?.activeSubject?.id
+                : args.previousManagerObjectSession?.ncaConversationState
+                    ?.activeSubject?.id ??
+                  nextExecutiveContext.currentSubject?.subjectId
+              : hasNamedHint
+                ? args.contextResult.context.primarySubject?.subjectId ??
+                  nextExecutiveContext.currentSubject?.subjectId
+                : nextExecutiveContext.currentSubject?.subjectId) ??
+          args.previousExecutiveContext.currentSubject?.subjectId ??
+          args.previousManagerObjectSession?.ncaConversationState?.activeSubject
+            ?.id ??
+          null,
     catalog: args.catalog,
     subjects: args.executiveSubjects,
     managerGoal:
@@ -4129,6 +4184,22 @@ function finalize(args: {
     nextExecutiveContext = args.previousExecutiveContext;
     executiveContextUpdate = null;
   }
+  const previousOptionMembers = Object.freeze(
+    (args.previousManagerObjectSession?.npsComparedOptions ?? [])
+      .filter((item) => item.id && item.label)
+      .map((item) => Object.freeze({ id: item.id, name: item.label, kind: "OPTION" })),
+  );
+  const offeredOptionMembers = Object.freeze(
+    (previousNcaState?.lastOfferedOptions ?? [])
+      .filter((label) => label.trim().length > 0 && !/capacity gap|margin pressure/i.test(label))
+      .map((label) => Object.freeze({ id: label, name: label, kind: "OPTION" })),
+  );
+  const optionComparisonMembers =
+    previousOptionMembers.length >= 2
+      ? previousOptionMembers
+      : offeredOptionMembers.length >= 2
+        ? offeredOptionMembers
+        : Object.freeze([]);
   const comparisonCandidateSet = resolveExecutiveComparisonCandidateSet({
     meaning: comparisonMeaning,
     explicitReferences: semanticTurn.references.references,
@@ -4142,6 +4213,19 @@ function finalize(args: {
     activeComparison: previousNcaState?.activeComparison ?? null,
     catalogReferences,
     turn: (previousNcaState?.turnIndex ?? 0) + 1,
+    utterance: args.utterance,
+    optionCollection:
+      optionComparisonMembers.length >= 2
+        ? Object.freeze({
+            kind: "OPTION",
+            members: optionComparisonMembers,
+            establishedAtTurn: previousNcaState?.turnIndex ?? 0,
+          })
+        : null,
+    optionSetActive:
+      (previousNcaState?.lastOfferedOptions.length ?? 0) >= 2 ||
+      /option|scenario/i.test(previousNcaState?.activeComparison?.candidateKind ?? "") ||
+      /\boptions?\b/i.test(args.previousUtterance ?? ""),
   });
   const comparisonCriterionClarification =
     comparisonMeaning.active &&
@@ -4263,7 +4347,8 @@ function finalize(args: {
   const nxa5JudgmentType: Nxa5JudgmentType =
     ncaPost4Comparison?.candidateSet.collectionKind?.toLowerCase().includes("risk") ? "RISK_PRIORITY" :
     ncaPost4Comparison?.candidateSet.collectionKind?.toLowerCase().includes("opportun") ? "OPPORTUNITY_PRIORITY" :
-    ncaPost4Comparison?.candidateSet.collectionKind?.toLowerCase().includes("scenario") ? "SCENARIO" :
+    ncaPost4Comparison?.candidateSet.collectionKind?.toLowerCase().includes("scenario") ||
+    ncaPost4Comparison?.candidateSet.collectionKind?.toLowerCase().includes("option") ? "SCENARIO" :
     ncaPost4Comparison?.criterion === "INVESTIGATION_PRIORITY" ? "INVESTIGATION_PRIORITY" : "ATTENTION";
   const nxa5Candidates: readonly Nxa5JudgmentCandidate[] = Object.freeze(
     (ncaPost4Comparison?.candidateSet.candidates ?? []).map((candidate) => {
@@ -5467,19 +5552,44 @@ function finalize(args: {
   const ecaWorkingContext = composeEcaWorkingConversationContext({
     utterance: args.utterance,
     meaning: naturalLanguageUnderstanding,
-    conversationState: nextNcaState,
+    conversationState:
+      failedUnresolvedReference && deicticUtterance && !namedOwnsSingularDeictic
+        ? Object.freeze({
+            ...nextNcaState,
+            lastFailedTurn:
+              nextNcaState.lastFailedTurn ??
+              args.previousManagerObjectSession?.ncaConversationState?.lastFailedTurn ??
+              null,
+          })
+        : nextNcaState,
     working:
       args.nextEntranceSession?.guidedIntroduction?.conversationContinuity?.working ??
       null,
     stage: ecaStage,
     subjects: Object.freeze(
-      args.executiveSubjects.map((subject) =>
-        Object.freeze({
-          id: subject.subjectId,
-          label: subject.canonicalName,
-          kind: subject.subjectKind,
-        }),
-      ),
+      [
+        ...args.executiveSubjects.map((subject) =>
+          Object.freeze({
+            id: subject.subjectId,
+            label: subject.canonicalName,
+            kind: subject.subjectKind,
+          }),
+        ),
+        ...(ncaPost4Comparison?.candidateSet.candidates ?? []).map((candidate) =>
+          Object.freeze({
+            id: candidate.id,
+            label: candidate.label,
+            kind: candidate.kind ?? "option",
+          }),
+        ),
+        ...(args.previousManagerObjectSession?.npsComparedOptions ?? []).map((option) =>
+          Object.freeze({
+            id: option.id,
+            label: option.label,
+            kind: "option",
+          }),
+        ),
+      ].filter((subject, index, all) => all.findIndex((item) => item.id === subject.id) === index),
     ),
     recentSubjects: Object.freeze(
       nextNcaState.recentSubjects
@@ -5491,6 +5601,13 @@ function finalize(args: {
           Object.freeze({ id: subject.id, label: subject.name, kind: subject.kind }),
         ),
     ),
+    priorActivationSource:
+      args.previousManagerObjectSession?.activationSource === "conversation-named"
+        ? "conversation-named"
+        : stageClickOwnsSingularDeictic ||
+            args.previousManagerObjectSession?.activationSource === "click"
+          ? "click"
+          : args.previousManagerObjectSession?.activationSource ?? null,
   });
   const pendingEcaProposal =
     args.previousManagerObjectSession?.ecaMutationProposal ?? null;
@@ -5636,6 +5753,11 @@ function finalize(args: {
       ecaWorkingContext.activeSubject?.label ??
       managerObjectTurn.context.identity.value ??
       null,
+    analyticalUncertainty: vai8UncertaintyNotes(
+      args.previousVaiWhatIfSession?.activeExperimentId
+        ? args.previousVaiWhatIfSession.experimentsById[args.previousVaiWhatIfSession.activeExperimentId] ?? null
+        : null,
+    ),
   });
   const nextEcaCommitment = nextEcaCommitmentSession(
     args.previousManagerObjectSession?.ecaCommitmentSession ?? null,
@@ -5802,7 +5924,11 @@ function finalize(args: {
     }
     }
   }
+  const learningOwnsGoalQuestion = Boolean(
+    theatreLearning && /should we change the goal/i.test(args.utterance),
+  );
   if (
+    !learningOwnsGoalQuestion &&
     ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" &&
     ecaWorkingContext.mutationProposal?.status === "PROPOSED"
   ) {
@@ -5822,6 +5948,7 @@ function finalize(args: {
       nextEcaProposal = proposal;
     }
   } else if (
+    !learningOwnsGoalQuestion &&
     ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" &&
     ecaWorkingContext.mutationProposal?.status === "NEEDS_CLARIFICATION"
   ) {
@@ -5998,13 +6125,18 @@ function finalize(args: {
   });
   const npsRuntime = composeNpsRuntimeProblemUnderstanding({
     utterance: args.utterance,
-    previousProblemId: args.previousManagerObjectSession?.npsProblemId ?? null,
+    previousProblemId:
+      failedUnresolvedReference && deicticUtterance && !namedOwnsSingularDeictic
+        ? null
+        : args.previousManagerObjectSession?.npsProblemId ?? null,
     turn: managerObjectTurn,
     investigationThread: threadFromSession(managerObjectTurn.session),
     nluProblemId:
-      naturalLanguageUnderstanding.subject?.subjectKind === "problem"
-        ? naturalLanguageUnderstanding.subject.subjectId
-        : null,
+      failedUnresolvedReference && deicticUtterance && !namedOwnsSingularDeictic
+        ? null
+        : naturalLanguageUnderstanding.subject?.subjectKind === "problem"
+          ? naturalLanguageUnderstanding.subject.subjectId
+          : null,
     stageFocus: ecaWorkingContext.stageContext.focus,
     conversationSubject: ecaWorkingContext.activeSubject,
   });
@@ -6048,6 +6180,10 @@ function finalize(args: {
     pathFacts: npsRuntime.pathFacts,
     options: npsOptionGeneration,
     utterance: args.utterance,
+    previousFacts: Object.freeze({
+      managerPreferenceOptionId:
+        args.previousManagerObjectSession?.ecaCommitmentSession?.pendingTargetId ?? null,
+    }),
   });
   presentedResponse = applyNpsComparisonRecommendationToPresentedResponse({
     source: presentedResponse,
@@ -6185,6 +6321,62 @@ function finalize(args: {
     strategy: nca6Strategy,
     locked: true,
   });
+  const focusedSubject = args.nextRuntimeState.focusedSubject ?? args.runtimeStateBeforeTurn?.focusedSubject ?? null;
+  const vaiAdvisorOverlay = applyVaiAdvisorToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    bundle: args.vaiAdvisorBundle ?? null,
+    previousSession: args.previousVaiAdvisorSession ?? null,
+    focalOverride: focusedSubject
+      ? { id: focusedSubject.id, label: focusedSubject.label }
+      : null,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = vaiAdvisorOverlay.source;
+  const vaiAdvisorAnalysis = vaiAdvisorOverlay.composition.apply ? vaiAdvisorOverlay.composition : null;
+  const vaiWhatIfOverlay = applyVaiWhatIfToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    bundle: args.vaiAdvisorBundle ?? null,
+    session: args.previousVaiWhatIfSession ?? null,
+    models: args.vaiTrustedModels,
+    requestedScope: args.vaiWhatIfRequestedScope,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = vaiWhatIfOverlay.source;
+  const vaiTheatreProjection = projectVaiTheatreSymbols({
+    bundle: args.vaiAdvisorBundle ?? null,
+    inspectedSymbolId: null,
+  });
+  const vaiImpactScene = composeVaiImpactScene({
+    bundle: args.vaiAdvisorBundle ?? null,
+  });
+  const vaiWhatIfTheatre = projectVaiWhatIfTheatre({
+    experiment: vaiWhatIfOverlay.result.experiment,
+    scene: vaiImpactScene,
+  });
+  const whatIfSession = vaiWhatIfOverlay.result.apply
+    ? vaiWhatIfOverlay.result.session
+    : args.previousVaiWhatIfSession ?? null;
+  const vai8Experiment =
+    vaiWhatIfOverlay.result.experiment
+    ?? (whatIfSession?.activeExperimentId ? whatIfSession.experimentsById[whatIfSession.activeExperimentId] ?? null : null);
+  const vai8Overlay = applyVai8ToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    experiment: vai8Experiment,
+    session: args.previousVai8PromotionSession ?? null,
+    scenarioSession: scenarioResult?.nextSession ?? null,
+    currentReferentId: focusedSubject?.id ?? args.vaiAdvisorBundle?.focalObject.id ?? null,
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = vai8Overlay.source;
   const explicitBusinessReferent =
     contextualManagerMeaning.provenance === "EXPLICIT_CURRENT_TURN" &&
     Boolean(contextualManagerMeaning.objectReference?.subjectId) &&
@@ -6251,7 +6443,7 @@ function finalize(args: {
     recommendationResult,
     scenarioResult,
     decisionCommitmentResult,
-    nextScenarioSession: scenarioResult?.nextSession ?? null,
+    nextScenarioSession: vai8Overlay.result.scenarioSession ?? scenarioResult?.nextSession ?? null,
     nextDecisionSession:
       args.nextDecisionSession !== undefined
         ? args.nextDecisionSession
@@ -6335,6 +6527,15 @@ function finalize(args: {
     npsDecisionCommitment,
     npsExecutionMonitoring,
     npsOutcomeLearning,
+    vaiAdvisorAnalysis,
+    vaiTheatreProjection: vaiTheatreProjection.apply ? vaiTheatreProjection : null,
+    vaiImpactScene: vaiImpactScene.apply ? vaiImpactScene : null,
+    vaiWhatIfExperiment: vaiWhatIfOverlay.result.experiment,
+    vaiWhatIfSession: vaiWhatIfOverlay.result.apply ? vaiWhatIfOverlay.result.session : args.previousVaiWhatIfSession ?? null,
+    vaiWhatIfTheatre: vaiWhatIfTheatre.apply ? vaiWhatIfTheatre : null,
+    vaiWhatIfScenarioProposal: vaiWhatIfOverlay.result.proposal,
+    vai8Handoff: vai8Overlay.result.apply ? vai8Overlay.result : null,
+    vai8PromotionSession: vai8Overlay.result.apply ? vai8Overlay.result.session : args.previousVai8PromotionSession ?? null,
     decisionRuntime: args.decisionRuntime ?? null,
     executionRuntime: args.executionRuntime ?? null,
   });

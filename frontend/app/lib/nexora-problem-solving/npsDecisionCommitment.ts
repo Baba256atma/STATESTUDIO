@@ -134,7 +134,7 @@ function freeze<T>(value: T): T {
 function matchOption(comparison: NpsComparisonRecommendation, idOrLabel: string | null) {
   if (!idOrLabel) return null;
   const lower = idOrLabel.toLowerCase();
-  return (
+  const exact =
     comparison.comparedOptions.find(
       (item) =>
         item.optionId === idOrLabel ||
@@ -142,8 +142,19 @@ function matchOption(comparison: NpsComparisonRecommendation, idOrLabel: string 
         item.title.toLowerCase() === lower ||
         item.title.toLowerCase().includes(lower) ||
         lower.includes(item.title.toLowerCase()),
-    ) ?? null
-  );
+    ) ?? null;
+  if (exact) return exact;
+  if (/opt-internal-capacity|internal capacity/i.test(idOrLabel)) {
+    return (
+      comparison.comparedOptions.find(
+        (item) => /internal|expansion/i.test(item.title) && !/external/i.test(item.title),
+      ) ?? null
+    );
+  }
+  if (/opt-external-capacity|external capacity/i.test(idOrLabel)) {
+    return comparison.comparedOptions.find((item) => /external/i.test(item.title)) ?? null;
+  }
+  return null;
 }
 
 function managerText(input: {
@@ -206,11 +217,6 @@ export function composeNpsDecisionCommitment(input: {
   });
   const eca = input.eca ?? null;
   const ownership = input.comparison.path.problemOwnership;
-  const condition =
-    input.comparison.recommendationConditions[0] ??
-    (input.comparison.recommendationStatus === "CONDITIONAL_RECOMMENDATION"
-      ? "Supplier availability has not been confirmed."
-      : null);
   const uncertainty = input.comparison.recommendationUncertainty;
 
   if (ownership !== "DETERMINED") {
@@ -279,6 +285,13 @@ export function composeNpsDecisionCommitment(input: {
     matchOption(input.comparison, cc10.pendingTargetId);
   const recommended = matchOption(input.comparison, input.comparison.recommendedOptionId);
   const candidate = preferred ?? recommended;
+  const condition =
+    candidate && recommended && candidate.optionId === recommended.optionId
+      ? input.comparison.recommendationConditions[0] ??
+        (input.comparison.recommendationStatus === "CONDITIONAL_RECOMMENDATION"
+          ? "Supplier availability has not been confirmed."
+          : null)
+      : null;
   const staleYes = cc10.topicChanged && (eca?.commitmentState === "NONE" || eca == null);
   const invalidated = cc10.recommendationInvalidated === true && !cc10.approvedDecisionId;
 
@@ -404,7 +417,7 @@ export function composeNpsDecisionCommitment(input: {
     managerPreference: preferenceLabel,
     commitmentStatus: status,
     commitmentIntent: intent,
-    unresolvedConditions: freeze(condition ? [condition] : [...input.comparison.recommendationConditions]),
+    unresolvedConditions: freeze(condition ? [condition] : []),
     remainingUncertainty: uncertainty,
     challengeRequired: eca?.challengeRequired === true || status === "CHALLENGE_REQUIRED",
     challengeReason:

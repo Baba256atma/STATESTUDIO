@@ -337,6 +337,23 @@ test("invariant B: normalization variants preserve intent kind", () => {
   assert.ok(hints.every((h) => h === "capacity"));
 });
 
+test("PRE-RMS:FIX1 — Let's work on a named Problem is existing focus, not unknown", () => {
+  for (const utterance of [
+    "Let's work on Capacity Gap.",
+    "Let us work on Capacity Gap.",
+    "How about Capacity Gap?",
+    "I want to look at Capacity Gap.",
+  ]) {
+    const intent = resolve(utterance).intent;
+    assert.equal(intent.kind, "focus", utterance);
+    assert.match(intent.targetHints[0]?.raw ?? "", /capacity gap/i, utterance);
+  }
+  const ambiguous = resolve("Let's work on it.").intent;
+  assert.equal(ambiguous.kind, "focus");
+  assert.equal(ambiguous.targetHints.length, 0);
+  assert.equal(ambiguous.requiresContext, true);
+});
+
 test("invariant F: does not resolve canonical object IDs", () => {
   const intent = resolve("Focus on Revenue").intent;
   assert.equal(intent.targetHints[0]?.raw, "revenue");

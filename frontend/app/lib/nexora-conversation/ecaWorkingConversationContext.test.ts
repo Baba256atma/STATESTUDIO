@@ -136,6 +136,66 @@ describe("NPA-T ECA:1 working conversation context", () => {
     assert.equal(result.interactionMode, "READ");
   });
 
+  it("SYS:1-FIX1 — after explicit click, Explain it prefers Stage focus over stale recent collection member", () => {
+    const result = composeEcaWorkingConversationContext({
+      utterance: "Explain it.",
+      meaning: meaning({
+        objectReference: { subjectId: null, canonicalName: null, lexicalHint: "it", subjectKind: null },
+        subject: null,
+      }),
+      stage,
+      subjects,
+      recentSubjects: [subjects[1]],
+      priorActivationSource: "click",
+    });
+    assert.equal(result.activeSubject?.id, "capacity-gap");
+    assert.equal(result.interactionMode, "READ");
+  });
+
+  it("PRE-RMS:FIX1 — named conversational subject outranks stale recent collection member without a click", () => {
+    const result = composeEcaWorkingConversationContext({
+      utterance: "Investigate it.",
+      meaning: meaning({
+        objectReference: { subjectId: null, canonicalName: null, lexicalHint: "it", subjectKind: null },
+        subject: null,
+      }),
+      stage: { ...stage, focus: null },
+      subjects,
+      recentSubjects: [subjects[1]],
+      priorActivationSource: "conversation-named",
+      conversationState: {
+        activeSubject: { id: "capacity-gap", name: "Capacity Gap", kind: "problem" },
+      } as never,
+    });
+    assert.equal(result.activeSubject?.id, "capacity-gap");
+  });
+
+  it("PRE-RMS:FIX1 — failed unresolved named lookup does not keep a stale collection member for Investigate it", () => {
+    const result = composeEcaWorkingConversationContext({
+      utterance: "Investigate it.",
+      meaning: meaning({
+        objectReference: { subjectId: null, canonicalName: null, lexicalHint: "it", subjectKind: null },
+        subject: null,
+      }),
+      stage: { ...stage, focus: null },
+      subjects,
+      recentSubjects: [subjects[1]],
+      conversationState: {
+        activeSubject: { id: "demand-surge", name: "Demand Surge", kind: "scenario" },
+        lastFailedTurn: {
+          managerMessage: "Let's work on Unknown Problem.",
+          attemptedNeed: "LOCATE",
+          attemptedReference: "problem",
+          failureKind: "UNRESOLVED_REFERENCE",
+          candidates: [],
+          response: "I couldn't find a clear match",
+          recoverable: true,
+        },
+      } as never,
+    });
+    assert.notEqual(result.activeSubject?.id, "demand-surge");
+  });
+
   it("B. pronoun evidence follows Delivery Risk, not Stage focus", () => {
     const result = composeEcaWorkingConversationContext({
       utterance: "What evidence supports it?",

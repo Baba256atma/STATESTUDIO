@@ -296,15 +296,26 @@ export function resolveManagerObjectActivation(input: {
     );
   }
   if (input.deictic) {
+    const failedUnresolvedReference =
+      input.previous.ncaConversationState?.lastFailedTurn?.failureKind ===
+      "UNRESOLVED_REFERENCE";
     const preserved =
       input.conversationSubjectId ??
       input.stageFocusedId ??
-      input.previous.activeObjectId;
-    return replaceActive(
+      (failedUnresolvedReference ? null : input.previous.activeObjectId);
+    const next = replaceActive(
       input.previous,
       preserved,
       preserved ? "conversation-deictic" : "none",
     );
+    if (failedUnresolvedReference && !preserved) {
+      return freezeManagerObjectSession({
+        ...next,
+        investigationSubjectId: null,
+        npsProblemId: null,
+      });
+    }
+    return next;
   }
   const fallback =
     input.conversationSubjectId ??

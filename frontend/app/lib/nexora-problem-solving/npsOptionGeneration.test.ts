@@ -271,7 +271,6 @@ test("I — Distinct bounded options become READY_FOR_COMPARISON", () => {
   assert.equal(result.readyForComparison, true);
   assert.equal(result.path.currentState, "OPTIONS_AVAILABLE");
   assert.ok(result.path.availableNextStates.includes("COMPARING_OPTIONS"));
-  assert.equal(result.path.currentState === "COMPARING_OPTIONS", false);
 });
 
 test("J — Option generation does not recommend a winner", () => {

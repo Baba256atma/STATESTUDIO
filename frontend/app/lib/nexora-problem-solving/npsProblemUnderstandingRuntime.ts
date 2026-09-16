@@ -79,12 +79,22 @@ export function resolveNpsRuntimeProblemAnchor(input: {
     });
   }
   if (followUpPreservesProblem(input.utterance) && isProblemId(input.previousProblemId)) {
-    const previous = problemRecord(input.previousProblemId);
+    const conversationalProblem = [input.conversationSubjectId, input.activeObjectId].find((id) =>
+      isProblemId(id),
+    );
+    const chosenId =
+      conversationalProblem && conversationalProblem !== input.previousProblemId
+        ? conversationalProblem
+        : input.previousProblemId;
+    const previous = problemRecord(chosenId);
     return freeze({
       problemId: previous!.id,
       problemLabel: previous!.label,
       confidence: "HIGH",
-      observedFrom: "NPS:1 preserved Problem ownership",
+      observedFrom:
+        conversationalProblem && conversationalProblem !== input.previousProblemId
+          ? "conversation-resolved Problem"
+          : "NPS:1 preserved Problem ownership",
     });
   }
   const candidates = [
@@ -110,15 +120,6 @@ export function resolveNpsRuntimeProblemAnchor(input: {
       confidence: "LOW",
       observedFrom: "conflicting Problem candidates",
       candidateProblemIds: freeze(unique),
-    });
-  }
-  if (isProblemId(input.previousProblemId) && followUpPreservesProblem(input.utterance)) {
-    const previous = problemRecord(input.previousProblemId)!;
-    return freeze({
-      problemId: previous.id,
-      problemLabel: previous.label,
-      confidence: "HIGH",
-      observedFrom: "NPS:1 preserved Problem ownership",
     });
   }
   return freeze({

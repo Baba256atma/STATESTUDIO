@@ -167,6 +167,43 @@ function ref(value: ManagerReference): ExecutiveComparisonReference {
   return Object.freeze({ id: value.id, label: value.name, kind: value.kind });
 }
 
+function collectionKindToken(kind: string | null | undefined): string {
+  return (kind ?? "").toLowerCase().replace(/s$/, "");
+}
+
+function isProblemCollectionKind(kind: string | null | undefined): boolean {
+  return collectionKindToken(kind) === "problem";
+}
+
+function isOptionCollectionKind(kind: string | null | undefined): boolean {
+  const token = collectionKindToken(kind);
+  return token === "option" || token === "scenario";
+}
+
+/** Explicit type language for comparison domain. Recency of lastCollection is not enough. */
+export function requestedExecutiveComparisonDomain(utterance: string): "problem" | "option" | null {
+  const text = normalized(utterance);
+  const asksProblems = /\bproblems?\b/.test(text);
+  const asksOptions = /\boptions?\b/.test(text) || /\bscenarios?\b/.test(text);
+  if (asksOptions && !asksProblems) return "option";
+  if (asksProblems && !asksOptions) return "problem";
+  return null;
+}
+
+function utterancePrefersOptionComparisonSet(utterance: string, optionSetActive: boolean): boolean {
+  const domain = requestedExecutiveComparisonDomain(utterance);
+  if (domain === "option") return true;
+  if (domain === "problem") return false;
+  if (!optionSetActive) return false;
+  const text = normalized(utterance);
+  if (/\bproblems?\b/.test(text)) return false;
+  if (/^(?:compare them|compare these)\b/.test(text)) return true;
+  if (/\bwhich one do you recommend\b/.test(text) || /\bwhat do you recommend\b/.test(text)) return true;
+  if (/\bwhich one would you (?:choose|pick|select)\b/.test(text)) return true;
+  if (/\bwhich (?:one |option )?is better\b/.test(text)) return true;
+  return false;
+}
+
 export function resolveExecutiveComparisonCandidateSet(input: {
   meaning: ReturnType<typeof interpretExecutiveComparisonMeaning>;
   explicitReferences: readonly ManagerReference[];
@@ -174,6 +211,9 @@ export function resolveExecutiveComparisonCandidateSet(input: {
   activeComparison: ActiveComparisonContext | null;
   catalogReferences: readonly ManagerReference[];
   turn: number;
+  utterance?: string;
+  optionCollection?: Readonly<{ kind: string; members: readonly ManagerReference[]; establishedAtTurn: number }> | null;
+  optionSetActive?: boolean;
 }): ExecutiveComparisonCandidateSet {
   const explicit = input.explicitReferences.filter((item, index, all) =>
     all.findIndex((candidate) => candidate.id === item.id) === index,
@@ -182,9 +222,52 @@ export function resolveExecutiveComparisonCandidateSet(input: {
   let candidates: readonly ManagerReference[] = Object.freeze([]);
   let kind: string | null = null;
   let resolvedFromTurn: number | null = null;
+  const optionSet =
+    input.optionCollection && input.optionCollection.members.length >= 2 ? input.optionCollection : null;
+  const preferOptions =
+    Boolean(optionSet) && utterancePrefersOptionComparisonSet(input.utterance ?? "", input.optionSetActive === true);
+  const requestedDomain = requestedExecutiveComparisonDomain(input.utterance ?? "");
+  const problemCollection =
+    input.activeCollection && isProblemCollectionKind(input.activeCollection.kind)
+      ? input.activeCollection
+      : null;
+  const preferProblems =
+    requestedDomain === "problem" && Boolean(problemCollection ?? input.activeCollection);
   if (explicit.length >= 2) {
     source = "EXPLICIT_REFERENCES";
     candidates = explicit;
+  } else if (preferOptions && optionSet) {
+    source = "CONVERSATION_CONTEXT";
+    candidates = optionSet.members;
+    kind = optionSet.kind;
+    resolvedFromTurn = optionSet.establishedAtTurn;
+  } else if (preferProblems && (problemCollection ?? input.activeCollection)) {
+    const chosen = problemCollection ?? input.activeCollection!;
+    source = "ACTIVE_COLLECTION";
+    candidates = chosen.members;
+    kind = chosen.kind;
+    resolvedFromTurn = chosen.establishedAtTurn;
+  } else if (
+    input.activeComparison &&
+    input.activeComparison.candidateIds.length > 0 &&
+    optionSet &&
+    isOptionCollectionKind(input.activeComparison.candidateKind) &&
+    requestedDomain !== "problem"
+  ) {
+    source = "ACTIVE_COMPARISON";
+    candidates = optionSet.members.filter((item) => input.activeComparison!.candidateIds.includes(item.id));
+    if (candidates.length < 2) {
+      candidates = input.activeComparison.candidateIds
+        .map(
+          (id) =>
+            optionSet.members.find((item) => item.id === id) ??
+            input.catalogReferences.find((item) => item.id === id) ??
+            null,
+        )
+        .filter((item): item is ManagerReference => item != null);
+    }
+    kind = input.activeComparison.candidateKind;
+    resolvedFromTurn = input.activeComparison.establishedAtTurn;
   } else if (input.activeCollection) {
     source = "ACTIVE_COLLECTION";
     candidates = input.activeCollection.members;
@@ -205,7 +288,12 @@ export function resolveExecutiveComparisonCandidateSet(input: {
     candidates: Object.freeze(candidates.map(ref)),
     requestedRelation: input.meaning.mode,
     criterion: input.meaning.criterion,
-    confidence: source === "EXPLICIT_REFERENCES" || source === "ACTIVE_COLLECTION" ? "HIGH" : source === "ACTIVE_COMPARISON" ? "MODERATE" : "LOW",
+    confidence:
+      source === "EXPLICIT_REFERENCES" || source === "ACTIVE_COLLECTION" || source === "CONVERSATION_CONTEXT"
+        ? "HIGH"
+        : source === "ACTIVE_COMPARISON"
+          ? "MODERATE"
+          : "LOW",
     resolvedFromTurn,
   });
 }

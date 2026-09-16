@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   interpretExecutiveComparisonMeaning,
   isExecutiveComparisonCriterionAnswer,
+  requestedExecutiveComparisonDomain,
   resolveCollectionComparison,
   resolveExecutiveComparisonCandidateSet,
   type ActiveComparisonContext,
@@ -14,10 +15,14 @@ const demand = Object.freeze({ id: "ctx-scenario-demand", name: "Demand Surge", 
 const pricing = Object.freeze({ id: "ctx-scenario-pricing", name: "Pricing Response", kind: "SCENARIO" });
 const catalog = Object.freeze([capacity, margin, demand, pricing]);
 
+const internal = Object.freeze({ id: "opt-internal-capacity", name: "Temporarily increase internal capacity", kind: "OPTION" });
+const external = Object.freeze({ id: "opt-external-capacity", name: "Use external capacity for overflow", kind: "OPTION" });
+
 function candidates(utterance: string, options: {
   explicit?: typeof catalog;
-  collection?: { kind: string; members: typeof catalog; establishedAtTurn: number } | null;
+  collection?: { kind: string; members: readonly { id: string; name: string; kind: string }[]; establishedAtTurn: number } | null;
   comparison?: ActiveComparisonContext | null;
+  optionCollection?: { kind: string; members: readonly { id: string; name: string; kind: string }[]; establishedAtTurn: number } | null;
 } = {}) {
   const meaning = interpretExecutiveComparisonMeaning({
     utterance, intentKind: "compare", activeComparison: options.comparison ?? null,
@@ -26,6 +31,9 @@ function candidates(utterance: string, options: {
     meaning, explicitReferences: options.explicit ?? Object.freeze([]),
     activeCollection: options.collection ?? null, activeComparison: options.comparison ?? null,
     catalogReferences: catalog, turn: 5,
+    utterance,
+    optionCollection: options.optionCollection ?? null,
+    optionSetActive: Boolean(options.optionCollection),
   });
 }
 
@@ -250,4 +258,51 @@ test("explicit single-subject handoff exits comparison after contextual intent r
     singleSubjectFocus: true,
   });
   assert.equal(meaning.active, false);
+});
+
+test("explicit option language outranks a stale Problems collection", () => {
+  assert.equal(requestedExecutiveComparisonDomain("Compare the options."), "option");
+  assert.equal(requestedExecutiveComparisonDomain("Compare the problems."), "problem");
+  const set = candidates("Compare the options.", {
+    collection: { kind: "PROBLEM", members: Object.freeze([capacity, margin]), establishedAtTurn: 3 },
+    optionCollection: { kind: "OPTION", members: Object.freeze([internal, external]), establishedAtTurn: 5 },
+  });
+  assert.equal(set.source, "CONVERSATION_CONTEXT");
+  assert.equal(set.collectionKind, "OPTION");
+  assert.deepEqual(set.candidateIds, [internal.id, external.id]);
+});
+
+test("explicit problem language outranks a valid Option set", () => {
+  const set = candidates("Compare the problems.", {
+    collection: { kind: "PROBLEM", members: Object.freeze([capacity, margin]), establishedAtTurn: 3 },
+    optionCollection: { kind: "OPTION", members: Object.freeze([internal, external]), establishedAtTurn: 5 },
+  });
+  assert.equal(set.source, "ACTIVE_COLLECTION");
+  assert.equal(set.collectionKind, "PROBLEM");
+  assert.deepEqual(set.candidateIds, [capacity.id, margin.id]);
+});
+
+test("deictic compare them uses the active Option set when one exists", () => {
+  const set = candidates("Compare them.", {
+    collection: { kind: "PROBLEM", members: Object.freeze([capacity, margin]), establishedAtTurn: 3 },
+    optionCollection: { kind: "OPTION", members: Object.freeze([internal, external]), establishedAtTurn: 5 },
+  });
+  assert.deepEqual(set.candidateIds, [internal.id, external.id]);
+});
+
+test("which-one-do-you-recommend uses Options when an Option set is active", () => {
+  const set = candidates("Which one do you recommend?", {
+    collection: { kind: "PROBLEM", members: Object.freeze([capacity, margin]), establishedAtTurn: 3 },
+    optionCollection: { kind: "OPTION", members: Object.freeze([internal, external]), establishedAtTurn: 5 },
+  });
+  assert.deepEqual(set.candidateIds, [internal.id, external.id]);
+});
+
+test("severity ranking still uses Problems when Options exist but the utterance is not option-directed", () => {
+  const set = candidates("which one is more serious for the company?", {
+    collection: { kind: "PROBLEM", members: Object.freeze([capacity, margin]), establishedAtTurn: 4 },
+    optionCollection: { kind: "OPTION", members: Object.freeze([internal, external]), establishedAtTurn: 5 },
+  });
+  assert.equal(set.source, "ACTIVE_COLLECTION");
+  assert.deepEqual(set.candidateIds, [capacity.id, margin.id]);
 });

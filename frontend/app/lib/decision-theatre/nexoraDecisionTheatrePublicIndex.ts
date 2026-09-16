@@ -23,6 +23,7 @@ export {
   isNexoraDecisionTheatreIconicPresentationId,
   NEXORA_DECISION_THEATRE_ICONIC_ID_PREFIX,
   NEXORA_DECISION_THEATRE_DATA_ID_PREFIX,
+  NEXORA_DECISION_THEATRE_VARIABLE_SYMBOL_ID_PREFIX,
   NEXORA_DECISION_THEATRE_VISUAL_FAMILIES,
   nexoraDecisionTheatreVisualLanguageIdentity,
   nexoraDecisionTheatreVisualLanguageVersion,

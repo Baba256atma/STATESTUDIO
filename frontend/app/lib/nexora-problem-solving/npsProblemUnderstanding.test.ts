@@ -41,14 +41,14 @@ function understanding(overrides: Partial<NpsUnderstandingFacts> = {}): NpsUnder
     knownFacts: Object.freeze([
       {
         text: "Available capacity is below required demand.",
-        epistemic: "FACT",
+        epistemic: "FACT" as const,
         observedFrom: "MO presentation / KPI",
       },
     ]),
     knownSymptoms: Object.freeze([
       {
         text: "Delivery performance is constrained.",
-        epistemic: "SYMPTOM",
+        epistemic: "SYMPTOM" as const,
         observedFrom: "Problem summary",
       },
     ]),
@@ -56,14 +56,14 @@ function understanding(overrides: Partial<NpsUnderstandingFacts> = {}): NpsUnder
     unknowns: Object.freeze([
       {
         text: "Whether the gap is temporary or persistent.",
-        epistemic: "UNKNOWN",
+        epistemic: "UNKNOWN" as const,
         observedFrom: "missing duration evidence",
       },
     ]),
     assumptions: Object.freeze([
       {
         text: "The gap will continue without intervention.",
-        epistemic: "ASSUMPTION",
+        epistemic: "ASSUMPTION" as const,
         observedFrom: "unverified projection",
       },
     ]),
@@ -73,7 +73,7 @@ function understanding(overrides: Partial<NpsUnderstandingFacts> = {}): NpsUnder
       {
         id: null,
         label: "Recent capacity and demand history",
-        trust: "UNAVAILABLE",
+        trust: "UNAVAILABLE" as const,
         observedFrom: "Data Reality",
       },
     ]),
@@ -213,7 +213,7 @@ test("F — Required evidence unavailable → WAIT_FOR_EVIDENCE with no invented
       unknowns: Object.freeze([
         {
           text: "Required operational delay evidence is not available.",
-          epistemic: "UNKNOWN",
+          epistemic: "UNKNOWN" as const,
           observedFrom: "Data Reality",
         },
       ]),

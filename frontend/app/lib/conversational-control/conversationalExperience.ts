@@ -468,6 +468,20 @@ export type NexoraConversationalExperienceResult = {
   readonly npsExecutionMonitoring?: import("@/app/lib/nexora-problem-solving/npsExecutionMonitoring.ts").NpsExecutionMonitoring | null;
   /** NPA-T NPS:8 read-only Outcome/Learning/Reassessment path; never an Outcome or Learning writer. */
   readonly npsOutcomeLearning?: import("@/app/lib/nexora-problem-solving/npsOutcomeLearning.ts").NpsOutcomeLearning | null;
+  /** NPA-T VAI:4 read-only Advisor Variable analysis projection. */
+  readonly vaiAdvisorAnalysis?: import("@/app/lib/vai/vaiAdvisorComposer.ts").VaiAdvisorComposition | null;
+  /** NPA-T VAI:5 read-only Theatre Variable Symbol projection. */
+  readonly vaiTheatreProjection?: import("@/app/lib/vai/vaiTheatreProjector.ts").VaiTheatreProjection | null;
+  /** NPA-T VAI:6 read-only Director Impact Scene projection. */
+  readonly vaiImpactScene?: import("@/app/lib/vai/vaiImpactComposer.ts").VaiImpactScene | null;
+  /** NPA-A VAI:7 session-scoped what-if overlay. Not a Scenario. */
+  readonly vaiWhatIfExperiment?: import("@/app/lib/vai/vaiWhatIfContract.ts").VaiWhatIfExperiment | null;
+  readonly vaiWhatIfSession?: import("@/app/lib/vai/vaiWhatIfContract.ts").VaiWhatIfSession | null;
+  readonly vaiWhatIfTheatre?: import("@/app/lib/vai/vaiWhatIfTheatre.ts").VaiWhatIfTheatreProjection | null;
+  readonly vaiWhatIfScenarioProposal?: import("@/app/lib/vai/vaiWhatIfContract.ts").VaiWhatIfScenarioProposal | null;
+  /** NPA-A VAI:8 experiment-to-Scenario handoff. Not a Scenario Object. */
+  readonly vai8Handoff?: import("@/app/lib/vai/vaiExperimentDecisionResolver.ts").Vai8HandoffResult | null;
+  readonly vai8PromotionSession?: import("@/app/lib/vai/vaiExperimentDecisionContract.ts").Vai8PromotionSession | null;
   /** CC:10R adapter used this turn. Isolated sequential callers must pass it back. */
   readonly decisionRuntime?: import("./executiveDecisionRuntimeAdapter.ts").NexoraDecisionRuntimeAdapter | null;
   /** CC:11 adapter used this turn. Isolated sequential callers must pass it back. */

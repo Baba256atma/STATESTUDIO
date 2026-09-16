@@ -1,6 +1,11 @@
 import type { CanonicalManagerMeaning } from "../manager-object/canonicalManagerMeaning.ts";
+import type { ManagerObjectActivationSource } from "../manager-object/managerObjectInteractionFoundation.ts";
 import type { NexoraConversationState } from "../manager-object/nexoraNca2ConversationStateTypes.ts";
 import { collectionOrdinalIndex } from "../manager-object/nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
+import {
+  isDeicticSubjectFollowUpUtterance,
+} from "../conversational-control/subjectCompositionFidelity.ts";
+import { normalizeNexoraConversationalUtterance } from "../conversational-control/conversationalIntentNormalization.ts";
 import type { NexoraConversationWorkingContext } from "./nexoraConversationWorkingContext.ts";
 
 export const ECA_WORKING_CONTEXT_IDENTITY = "NPA-T ECA:1/WorkingConversationContext" as const;
@@ -136,6 +141,8 @@ export type EcaWorkingContextInput = Readonly<{
   dataContext?: EcaDataContext | null;
   recentSubjects?: readonly EcaSubject[];
   explicitAmbiguity?: boolean;
+  /** Prior MO activation. Click is strong singular evidence; not a permanent lock. */
+  priorActivationSource?: ManagerObjectActivationSource | null;
 }>;
 
 function freeze<T>(value: T): T {
@@ -382,32 +389,60 @@ export function composeEcaWorkingConversationContext(
   const knowledgeFollowUp =
     /^(?:explain|what is|why|tell me about)\s+(?:it|this|that)\b/i.test(input.utterance.trim()) ||
     /^(?:it|this|that)(?:\s+problem)?[.!?]?$/i.test(input.utterance.trim());
+  const singularClickDeictic =
+    isDeicticSubjectFollowUpUtterance(
+      normalizeNexoraConversationalUtterance(input.utterance),
+    ) && !/\bthem\b|\bthese\b|\bthose\b|\bcompare\b/i.test(input.utterance);
+  const stageClickReferent =
+    singularClickDeictic &&
+    !spokenExplicit &&
+    input.priorActivationSource === "click" &&
+    input.stage.focus
+      ? input.stage.focus
+      : null;
+  const failedUnresolvedReference =
+    input.conversationState?.lastFailedTurn?.failureKind === "UNRESOLVED_REFERENCE";
+  const namedConversationalReferent =
+    singularClickDeictic &&
+    !spokenExplicit &&
+    !failedUnresolvedReference &&
+    input.priorActivationSource !== "click" &&
+    (confirmed ?? threadSubject)
+      ? (confirmed ?? threadSubject)
+      : null;
   const stageNamed = ordinalSubject ?? letterSubject ?? (pronounFollowUp || knowledgeFollowUp ? null : uniqueVisible);
   const conversational =
     confirmed ?? threadSubject ?? input.recentSubjects?.[input.recentSubjects.length - 1] ?? null;
   const knowledgeRecent =
-    knowledgeFollowUp || pronounFollowUp
+    !failedUnresolvedReference && (knowledgeFollowUp || pronounFollowUp)
       ? input.recentSubjects?.[input.recentSubjects.length - 1] ?? conversational
       : null;
   // Preserve a valid meaning-carried subject across compatible operation changes
   // when the manager did not name a different subject and continuity is unambiguous.
   const continuityFromMeaning =
+    !failedUnresolvedReference &&
     !ambiguous &&
     !spokenExplicit &&
     meaningCarriedSubject &&
     (uniqueVisible == null || uniqueVisible.id === meaningCarriedSubject.id)
       ? meaningCarriedSubject
       : null;
-  const active =
-    ordinalSubject ??
-    explicit ??
-    letterSubject ??
-    knowledgeRecent ??
-    (knowledgeFollowUp || pronounFollowUp ? conversational : stageNamed) ??
-    conversational ??
-    continuityFromMeaning ??
-    (knowledgeFollowUp ? null : uniqueVisible) ??
-    null;
+  const blockedByFailedTurn =
+    failedUnresolvedReference &&
+    (knowledgeFollowUp || pronounFollowUp || singularClickDeictic);
+  const active = blockedByFailedTurn
+    ? ordinalSubject ?? explicit ?? letterSubject ?? stageClickReferent ?? namedConversationalReferent ?? null
+    : ordinalSubject ??
+      explicit ??
+      letterSubject ??
+      stageClickReferent ??
+      namedConversationalReferent ??
+      knowledgeRecent ??
+      (knowledgeFollowUp || pronounFollowUp ? conversational : stageNamed) ??
+      conversational ??
+      continuityFromMeaning ??
+      (knowledgeFollowUp ? null : uniqueVisible) ??
+      null;
   const explicitCandidates = (meaning?.ambiguity.candidates ?? [])
     .map((candidate) => subjectFromRecord(candidate, input.subjects))
     .filter((candidate): candidate is EcaSubject => candidate != null);
@@ -416,7 +451,9 @@ export function composeEcaWorkingConversationContext(
     : input.stage.visible.filter((subject) => subject.id !== active?.id);
   const references: EcaReference[] = [];
   if (explicit) references.push(freeze({ subject: explicit, role: "EXPLICIT", confidence: "HIGH", source: "NCA canonical meaning" }));
-  else if (stageNamed) references.push(freeze({ subject: stageNamed, role: ordinalSubject ? "EXPLICIT" : "STAGE_CANDIDATE", confidence: "HIGH", source: "NXA:5-FIX4 Stage presentation read model" }));
+    else if (stageClickReferent) references.push(freeze({ subject: stageClickReferent, role: "ACTIVE_SUBJECT", confidence: "HIGH", source: "explicit Stage member click" }));
+    else if (namedConversationalReferent) references.push(freeze({ subject: namedConversationalReferent, role: "ACTIVE_SUBJECT", confidence: "HIGH", source: "explicit named conversational subject" }));
+    else if (stageNamed) references.push(freeze({ subject: stageNamed, role: ordinalSubject ? "EXPLICIT" : "STAGE_CANDIDATE", confidence: "HIGH", source: "NXA:5-FIX4 Stage presentation read model" }));
   else if (confirmed) references.push(freeze({ subject: confirmed, role: "CONFIRMED", confidence: "HIGH", source: "NCA conversation state" }));
   else if (threadSubject) references.push(freeze({ subject: threadSubject, role: "ACTIVE_SUBJECT", confidence: "MEDIUM", source: "NEX-CONV thread" }));
   else if (input.recentSubjects?.[0]) references.push(freeze({ subject: input.recentSubjects[0], role: "RECENT_SUBJECT", confidence: "LOW", source: "ECA input recent subjects" }));
