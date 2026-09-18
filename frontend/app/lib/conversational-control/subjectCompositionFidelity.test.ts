@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   decideSubjectCompositionFidelity,
   isDeicticSubjectExplain,
+  isDeicticSubjectFollowUpUtterance,
   isScenarioAssessmentFollowUpOperation,
   resolveConversationalCompositionSubject,
   staleScenarioAssessmentWouldCaptureComposition,
@@ -159,4 +160,11 @@ test("incompatible Scenario candidate cannot be the composition subject", () => 
   assert.equal(decision.compatible, false);
   assert.equal(decision.selectedSubject.id, "ctx-problem-capacity");
   assert.equal(isDeicticSubjectExplain("explain", "explain it"), true);
+});
+
+test("this-problem management follow-ups remain deictic, not a new Problem name", () => {
+  assert.equal(isDeicticSubjectFollowUpUtterance("where are we with this problem"), true);
+  assert.equal(isDeicticSubjectFollowUpUtterance("why is this in attention"), true);
+  assert.equal(isDeicticSubjectFollowUpUtterance("where is this in my business"), true);
+  assert.equal(isDeicticSubjectFollowUpUtterance("explain margin pressure"), false);
 });

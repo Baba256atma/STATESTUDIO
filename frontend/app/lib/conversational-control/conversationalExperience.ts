@@ -470,6 +470,8 @@ export type NexoraConversationalExperienceResult = {
   readonly npsOutcomeLearning?: import("@/app/lib/nexora-problem-solving/npsOutcomeLearning.ts").NpsOutcomeLearning | null;
   /** NPA-T VAI:4 read-only Advisor Variable analysis projection. */
   readonly vaiAdvisorAnalysis?: import("@/app/lib/vai/vaiAdvisorComposer.ts").VaiAdvisorComposition | null;
+  /** NPA-T NMI:7 read-only management intelligence overlay. Not a second Advisor. */
+  readonly nmiAdvisorComposition?: import("@/app/lib/nmi/nmiAdvisorCompose.ts").NmiAdvisorComposition | null;
   /** NPA-T VAI:5 read-only Theatre Variable Symbol projection. */
   readonly vaiTheatreProjection?: import("@/app/lib/vai/vaiTheatreProjector.ts").VaiTheatreProjection | null;
   /** NPA-T VAI:6 read-only Director Impact Scene projection. */

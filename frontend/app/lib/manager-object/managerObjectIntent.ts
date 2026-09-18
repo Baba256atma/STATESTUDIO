@@ -49,6 +49,14 @@ export function findMentionedManagerObjectId(
     for (const name of names) {
       const key = normalizeNexoraConversationalUtterance(name);
       if (!key) continue;
+      if (
+        /^(?:problem|the problem|scenario|the scenario|decision|the decision|execution|the execution|goal|the goal|risk|the risk)$/.test(
+          key,
+        ) &&
+        new RegExp(`\\b(?:this|that)\\s+${escapeRegExp(key)}\\b`).test(normalized)
+      ) {
+        continue;
+      }
       const bounded = new RegExp(`(?:^|\\s)${escapeRegExp(key)}(?:$|\\s)`);
       if (!bounded.test(normalized)) continue;
       if (best == null || key.length > best.length) {

@@ -136,7 +136,9 @@ import { NexoraPresentationStateSelector } from "../presentation/NexoraPresentat
 import { NexoraSubjectOperation } from "../presentation/NexoraSubjectOperation";
 import { NexoraSubjectReport } from "../presentation/NexoraSubjectReport";
 import { NexoraStageInteractionBreadcrumb } from "./NexoraStageInteractionBreadcrumb";
-import { NexoraExecutiveQueueOverlay } from "./NexoraExecutiveQueueOverlay";
+import { NexoraExecutiveQueueOverlay, type NexoraExecutiveQueueOverlayMapNode } from "./NexoraExecutiveQueueOverlay";
+import type { ManagementMap } from "@/app/lib/nmi/nmiManagementMapContract.ts";
+import { composeNmiStageProjection } from "@/app/lib/nmi/nmiStageProjectionCompose.ts";
 import { NexoraStageRenderedBoundsTruthOverlay } from "./NexoraStageRenderedBoundsTruthOverlay";
 
 const NexoraStageCanvas = dynamic(
@@ -177,6 +179,8 @@ export type Nexora3DExecutiveStageProps = {
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
+  readonly nmiManagementMap?: ManagementMap | null;
+  readonly nmiMapNodes?: readonly NexoraExecutiveQueueOverlayMapNode[];
 };
 
 const EMPTY_DATA_OBJECT_STAGE = projectNexoraDecisionTheatreDataObjectsToStage({
@@ -343,6 +347,8 @@ export function Nexora3DExecutiveStage({
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
   backGuidedAttentionCue = null,
+  nmiManagementMap = null,
+  nmiMapNodes = [],
 }: Nexora3DExecutiveStageProps) {
   const identity = getNexora3DExecutiveStageIdentity();
   const [webglSupported] = useState(() => {
@@ -1365,6 +1371,23 @@ export function Nexora3DExecutiveStage({
       <NexoraExecutiveQueueOverlay
         entries={interaction.queueEntries ?? []}
         collectionHeaderLabel={interaction.collectionHeader?.label ?? null}
+        projectionAnchorId={
+          interaction.focusedSubjectId ?? interaction.selectedSubjectId ?? null
+        }
+        mapNodes={nmiMapNodes}
+        onSelectCanonicalId={(canonicalId) => {
+          if (nmiManagementMap) {
+            const projection = composeNmiStageProjection({
+              projectionId: `nmi8:live:${canonicalId}`,
+              selectedCanonicalId: canonicalId,
+              source: "MANAGEMENT_MAP",
+              map: nmiManagementMap,
+            });
+            onSelectSubject(projection.projectionAnchorId);
+            return;
+          }
+          onSelectSubject(canonicalId);
+        }}
         onSelectCategory={(category) => {
           onSelectQueueCategory?.(category);
         }}

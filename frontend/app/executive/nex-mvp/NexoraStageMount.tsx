@@ -21,6 +21,8 @@ import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision
 import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
 import { Nexora3DExecutiveStage } from "./stage/Nexora3DExecutiveStage";
+import type { ManagementMap } from "@/app/lib/nmi/nmiManagementMapContract.ts";
+import type { NexoraExecutiveQueueOverlayMapNode } from "./stage/NexoraExecutiveQueueOverlay";
 import { NexoraDecisionTheatreInvestigationSurface } from "./stage/NexoraDecisionTheatreInvestigationSurface";
 import { NexoraDecisionTheatreComparisonSurface } from "./stage/NexoraDecisionTheatreComparisonSurface";
 import { NexoraDecisionTheatreCommitmentSurface } from "./stage/NexoraDecisionTheatreCommitmentSurface";
@@ -88,6 +90,8 @@ type Props = {
   readonly onOpenDataRail: () => void;
   readonly onAskDataObject: (question: string) => void;
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
+  readonly nmiManagementMap?: ManagementMap | null;
+  readonly nmiMapNodes?: readonly NexoraExecutiveQueueOverlayMapNode[];
 };
 
 /**
@@ -138,6 +142,8 @@ export function NexoraStageMount({
   onOpenDataRail,
   onAskDataObject,
   backGuidedAttentionCue = null,
+  nmiManagementMap = null,
+  nmiMapNodes = [],
 }: Props) {
   const atmosphereMode = warRoomAtmosphere?.mode ?? "none";
   const atmosphereIntensity = warRoomAtmosphere?.intensity ?? "none";
@@ -244,6 +250,8 @@ export function NexoraStageMount({
         dataObjectStage={dataObjectStage}
         onSelectDataObject={onSelectDataObject}
         backGuidedAttentionCue={backGuidedAttentionCue}
+        nmiManagementMap={nmiManagementMap}
+        nmiMapNodes={nmiMapNodes}
       />
       {dataObjectStage.participants.find((entry) => entry.dataObject.id === dataObjectStage.diagnostics.selectedDataObjectId) ? (
         <NexoraStageDataObjectInspection

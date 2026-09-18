@@ -50,6 +50,46 @@ export {
   inspectRmsGroundTruth,
   observeRmsSession,
   readRmsNexoraKnowledge,
+  applyRmsGroundTruthEvents,
+  pauseRmsGroundTruth,
+  readRmsOperatorOperationalView,
+  runRmsOperatorObservation,
+  publishRmsOperatorObservableData,
+  inspectRmsOperatorLedger,
+  prepareRmsManagerConversation,
+  runRmsManagerConversationTurn,
+  inspectRmsManagerConversation,
+  measureRmsObserverIntelligence,
+  inspectRmsObserverReport,
+  loadRmsEventSchedule,
+  stepRmsEventSchedule,
+  inspectRmsEventSchedule,
   rmsActorContracts,
 } from "./rmsSession.ts";
+export { RMS_3_BOUNDARY } from "./rmsOperatorContract.ts";
+export { verifyRmsOperatorObservable } from "./rmsOperatorRuntime.ts";
+export { RMS_4_BOUNDARY } from "./rmsManagerContract.ts";
+export { verifyRmsManagerConversation } from "./rmsManagerRuntime.ts";
+export { RMS_5_BOUNDARY } from "./rmsObserverContract.ts";
+export { verifyRmsObserverIntelligence } from "./rmsObserverMeasurement.ts";
+export { RMS_6_BOUNDARY } from "./rmsEventContract.ts";
+export { verifyRmsEventsDisturbances } from "./rmsEventRuntime.ts";
+export { RMS_7_BOUNDARY } from "./rmsScenarioContract.ts";
+export { verifyRmsScenarioLibrary } from "./rmsScenarioValidation.ts";
+export { listRmsScenarios, getRmsScenario, filterRmsScenarios } from "./rmsScenarioRegistry.ts";
+export { runRmsScenario } from "./rmsScenarioRunner.ts";
+export { RMS_8_BOUNDARY } from "./rmsWatchContract.ts";
+export { verifyRmsWatchExperience } from "./rmsWatchProjection.ts";
+export { startRmsWatchSession } from "./rmsWatchSession.ts";
+export { listRmsWatchScenarioCards } from "./rmsWatchCatalog.ts";
+export { RMS_9_BOUNDARY } from "./rmsHandoffContract.ts";
+export { verifyRmsTakeControl, requestRmsTakeControl } from "./rmsHandoffRuntime.ts";
+export { RMS_10_BOUNDARY } from "./rmsExperimentContract.ts";
+export { verifyRmsExperiment, startRmsExperiment } from "./rmsExperimentRuntime.ts";
 export { nexoraKnowledgeExposesGroundTruth, projectRmsNexoraKnowledgeView } from "./rmsGroundTruth.ts";
+export { RMS_2_BOUNDARY } from "./rmsWorldContract.ts";
+export { instantiateRmsGroundTruth, applyRmsWorldEvents, verifyRmsGroundTruthWorld } from "./rmsWorldEngine.ts";
+export {
+  createNorthstarManufacturingWorld,
+  createWarehouseExpansionWorld,
+} from "./rmsWorldFixtures.ts";

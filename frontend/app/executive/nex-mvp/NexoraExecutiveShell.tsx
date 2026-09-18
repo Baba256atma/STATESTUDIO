@@ -312,6 +312,7 @@ import { NexoraExecutiveFlowContextIndicator } from "./flow/NexoraExecutiveFlowC
 import { NexoraFlowFloatingContent } from "./flow/NexoraFlowFloatingContent";
 import { NexoraFlowJournalExplorer } from "./flow/NexoraFlowJournalExplorer";
 import { NexoraStageMount } from "./NexoraStageMount";
+import { hostNmiLiveManagementIntelligence } from "@/app/lib/nmi/nmiLivePipeline";
 import {
   presentationByParticipantId,
   mapCapturedObservationsForTheatre,
@@ -1018,6 +1019,24 @@ export function NexoraExecutiveShell({
   ]);
   canStepBackRef.current = stageInteraction.canStepBack === true;
 
+  const nmiLive = useMemo(
+    () =>
+      hostNmiLiveManagementIntelligence({
+        catalog: dataRealityExperience.catalog,
+        queueEntries: stageInteraction.queueEntries ?? [],
+        focusedSubjectId:
+          stageInteraction.focusedSubjectId ?? stageInteraction.selectedSubjectId ?? null,
+      }),
+    [
+      dataRealityExperience.catalog,
+      stageInteraction.queueEntries,
+      stageInteraction.focusedSubjectId,
+      stageInteraction.selectedSubjectId,
+    ],
+  );
+  const nmiLiveRef = useRef(nmiLive);
+  nmiLiveRef.current = nmiLive;
+
   const dataObjectStage = useMemo(
     () => projectNexoraDecisionTheatreDataObjectsToStage({
       dataObjects: csvDataObjects,
@@ -1630,6 +1649,7 @@ export function NexoraExecutiveShell({
             window.matchMedia("(prefers-reduced-motion: reduce)").matches,
           theatreDecisionReviewOpen: decisionReviewOpen,
           theatreProposedCandidateId: proposedCandidateId,
+          nmiAdvisorBundle: nmiLiveRef.current.advisorBundle,
         });
 
         lastManagerUtteranceRef.current = trimmed;
@@ -3110,6 +3130,8 @@ export function NexoraExecutiveShell({
                   ? guidedAttention.presentation.cue
                   : null
               }
+              nmiManagementMap={nmiLive.map}
+              nmiMapNodes={nmiLive.overlayMapNodes}
               sceneIntentKind={theatreProjection.sceneIntent.intentKind}
               sceneScriptId={theatreProjection.sceneScript.scriptId}
               objectInvestigation={theatreProjection.objectInvestigation}

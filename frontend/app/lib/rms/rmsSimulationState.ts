@@ -9,7 +9,7 @@ import type { RmsInteractionMode, RmsSimulationLifecycle } from "./rmsFoundation
 import type { RmsActorIdentity } from "./rmsActorContracts.ts";
 import type { RmsNexoraKnowledgeView, RmsObservableDataEnvelope } from "./rmsGroundTruth.ts";
 
-export type RmsHostKind = "BUSINESS" | "PROJECT";
+export type RmsHostKind = "BUSINESS" | "PROJECT" | "HYBRID";
 
 export type RmsHostIdentity = {
   readonly hostKind: RmsHostKind;

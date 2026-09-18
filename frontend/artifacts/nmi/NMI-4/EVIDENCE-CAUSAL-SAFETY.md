@@ -1,0 +1,9 @@
+# NPA-T NMI:4 — Evidence / causal safety
+
+Roadmap elements carry `knowledgeKind`:
+
+KNOWN_FACT, OBSERVED_EVIDENCE, CALCULATED_METRIC, MANAGER_CONFIRMED, HYPOTHESIS, ANALYTICAL_RELATIONSHIP, SUPPORTED_CAUSAL_RELATIONSHIP, DECISION, EXECUTION, OBSERVED_OUTCOME, UNKNOWN.
+
+ANALYSIS with VAI `affects` / ASSOCIATION is ANALYTICAL_RELATIONSHIP, not confirmed cause.
+
+Unresolved Data Reality remains UNRESOLVED. Simulation is not observed Outcome.

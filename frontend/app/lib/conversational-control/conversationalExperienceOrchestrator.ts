@@ -28,6 +28,7 @@ import {
 import { mapNexoraConversationalCommand } from "./conversationalCommandMapper.ts";
 import { resolveNexoraConversationalExperienceContext } from "./conversationalExperienceContextResolver.ts";
 import { applyVaiAdvisorToPresentedResponse } from "@/app/lib/vai/vaiAdvisorComposer.ts";
+import { applyNmiAdvisorToPresentedResponse } from "@/app/lib/nmi/nmiAdvisorCompose.ts";
 import { projectVaiTheatreSymbols } from "@/app/lib/vai/vaiTheatreProjector.ts";
 import { composeVaiImpactScene } from "@/app/lib/vai/vaiImpactComposer.ts";
 import { applyVaiWhatIfToPresentedResponse } from "@/app/lib/vai/vaiWhatIfAdvisor.ts";
@@ -474,6 +475,8 @@ export type NexoraConversationalExperienceInput = {
   readonly vaiTrustedModels?: readonly import("@/app/lib/vai/vaiWhatIfContract.ts").VaiTrustedQuantitativeModel[];
   readonly vaiWhatIfRequestedScope?: { readonly businessContext?: string | null };
   readonly previousVai8PromotionSession?: import("@/app/lib/vai/vaiExperimentDecisionContract.ts").Vai8PromotionSession | null;
+  /** NPA-T NMI:7 read-only management intelligence for existing Advisor composition. Optional. */
+  readonly nmiAdvisorBundle?: import("@/app/lib/nmi/nmiAdvisorContract.ts").NmiAdvisorBundle | null;
 };
 
 function freezeMessage(
@@ -1374,6 +1377,7 @@ export function executeNexoraConversationalExperience(
       vaiTrustedModels: input.vaiTrustedModels,
       vaiWhatIfRequestedScope: input.vaiWhatIfRequestedScope,
       previousVai8PromotionSession: input.previousVai8PromotionSession ?? null,
+      nmiAdvisorBundle: input.nmiAdvisorBundle ?? null,
       decisionRuntime: args.decisionRuntime ?? boundDecisionRuntime,
       executionRuntime: args.executionRuntime ?? boundExecutionRuntime,
       canonicalExecutionRuntimeProvided: input.executionRuntime != null,
@@ -3126,6 +3130,7 @@ function finalize(args: {
   readonly vaiTrustedModels?: readonly import("@/app/lib/vai/vaiWhatIfContract.ts").VaiTrustedQuantitativeModel[];
   readonly vaiWhatIfRequestedScope?: { readonly businessContext?: string | null };
   readonly previousVai8PromotionSession?: import("@/app/lib/vai/vaiExperimentDecisionContract.ts").Vai8PromotionSession | null;
+  readonly nmiAdvisorBundle?: import("@/app/lib/nmi/nmiAdvisorContract.ts").NmiAdvisorBundle | null;
   readonly suggestedActions?: readonly {
     readonly id: string;
     readonly label: string;
@@ -6336,6 +6341,27 @@ function finalize(args: {
   });
   presentedResponse = vaiAdvisorOverlay.source;
   const vaiAdvisorAnalysis = vaiAdvisorOverlay.composition.apply ? vaiAdvisorOverlay.composition : null;
+  const nmiAdvisorOverlay = applyNmiAdvisorToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    resolvedCanonicalId:
+      ncaTurn.reference.resolvedId ??
+      nextNcaState.activeSubject?.id ??
+      ncaDialogue.state.activeSubject?.id ??
+      ncaTurn.reference.resolvedName ??
+      focusedSubject?.id ??
+      null,
+    bundle: args.nmiAdvisorBundle ?? null,
+    vaiCausalOwnsResponse:
+      vaiAdvisorOverlay.composition.apply === true &&
+      (vaiAdvisorOverlay.composition.intent === "CAUSAL" ||
+        vaiAdvisorOverlay.composition.intent === "FOLLOWUP_CAUSE"),
+    locked:
+      explicitManagerIntentOwnsFinalAnswer ||
+      ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = nmiAdvisorOverlay.source;
+  const nmiAdvisorComposition = nmiAdvisorOverlay.composition.apply ? nmiAdvisorOverlay.composition : null;
   const vaiWhatIfOverlay = applyVaiWhatIfToPresentedResponse({
     source: presentedResponse,
     utterance: args.utterance,
@@ -6528,6 +6554,7 @@ function finalize(args: {
     npsExecutionMonitoring,
     npsOutcomeLearning,
     vaiAdvisorAnalysis,
+    nmiAdvisorComposition,
     vaiTheatreProjection: vaiTheatreProjection.apply ? vaiTheatreProjection : null,
     vaiImpactScene: vaiImpactScene.apply ? vaiImpactScene : null,
     vaiWhatIfExperiment: vaiWhatIfOverlay.result.experiment,

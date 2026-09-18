@@ -414,15 +414,24 @@ function preferNestedRegisteredName(
   return Object.freeze(pool);
 }
 
+function isDeicticKindAlias(key: string, prepared: string): boolean {
+  if (!/^(?:the )?(?:problem|scenario|decision|execution|goal|risk)s?$/.test(key)) {
+    return false;
+  }
+  return new RegExp(`\\b(?:this|that)\\s+${escapeRegExp(key)}\\b`).test(` ${prepared} `);
+}
+
 function findObjectMentions(
   prepared: string,
   subjects: readonly NexoraConversationalSubjectRecord[],
+  deicticSource: string = prepared,
 ): readonly CanonicalManagerObjectReference[] {
   const index = buildNexoraConversationalSubjectMatchIndex(subjects);
   const found: CanonicalManagerObjectReference[] = [];
   const seen = new Set<string>();
   for (const subject of index.subjects) {
     for (const key of keysForSubject(subject)) {
+      if (isDeicticKindAlias(key, deicticSource)) continue;
       const bounded = new RegExp(`(?:^|\\s)${escapeRegExp(key)}(?:$|\\s)`);
       if (!bounded.test(` ${prepared} `)) continue;
       if (seen.has(subject.subjectId)) continue;
@@ -434,6 +443,12 @@ function findObjectMentions(
   if (found.length > 1) {
     const resolved = preferNestedRegisteredName(found);
     found.splice(0, found.length, ...resolved);
+  }
+  if (
+    found.length === 0 &&
+    /\b(?:this|that)\s+(?:problem|scenario|decision|execution|goal|risk)s?\b/.test(` ${deicticSource} `)
+  ) {
+    return Object.freeze(found);
   }
   if (found.length === 0) {
     const catalog = index.subjects.map((subject) =>
@@ -776,6 +791,7 @@ export function interpretCanonicalManagerMeaning(
   const objects = findObjectMentions(
     objectSearchText || preparedUtterance,
     input.subjects ?? [],
+    preparedUtterance,
   );
   const kindCompound = objects.some((item) =>
     objects.some((other) => {

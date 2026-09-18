@@ -138,6 +138,13 @@ export function isDeicticSubjectFollowUpUtterance(
   if (isDeicticSubjectExplainUtterance(normalizedUtterance)) return true;
   if (isDeicticRelatedObjectUtterance(normalizedUtterance)) return true;
   if (/^why(?: is (?:it|this|that) important)?$/.test(normalizedUtterance)) return true;
+  if (
+    /^(?:where is this in (?:my )?business|why is this (?:in attention|here)|where are we with this(?: problem)?|what is missing)$/.test(
+      normalizedUtterance,
+    )
+  ) {
+    return true;
+  }
   return isTargetedDeicticInvestigationUtterance(normalizedUtterance);
 }
 

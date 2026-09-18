@@ -1,10 +1,14 @@
 /**
- * NPA-T RMS:1 — Simulation World / Ground Truth.
+ * NPA-T RMS:1/2 — Simulation World / Ground Truth.
  *
  * Reality ≠ Data ≠ Nexora Knowledge.
- * Operator may later emit observable data from this world.
+ * RMS:2 instantiates structured Business/Project world state inside this seal.
  * Observer may inspect it. Nexora must not receive it automatically.
  */
+
+import type { RmsGroundTruthSeed } from "./rmsWorldEngine.ts";
+import { instantiateRmsGroundTruth } from "./rmsWorldEngine.ts";
+import type { RmsStructuredGroundTruth, RmsWorldFact } from "./rmsWorldContract.ts";
 
 export const RMS_KNOWLEDGE_PLANES = Object.freeze([
   "GROUND_TRUTH",
@@ -14,16 +18,9 @@ export const RMS_KNOWLEDGE_PLANES = Object.freeze([
 
 export type RmsKnowledgePlane = (typeof RMS_KNOWLEDGE_PLANES)[number];
 
-export type RmsWorldFact = {
-  readonly factId: string;
-  readonly key: string;
-  readonly value: string | number | boolean;
-};
+export type { RmsWorldFact };
 
-export type RmsGroundTruth = {
-  readonly worldId: string;
-  readonly facts: readonly RmsWorldFact[];
-};
+export type RmsGroundTruth = RmsStructuredGroundTruth;
 
 export type RmsObservableDataEnvelope = {
   readonly envelopeId: string;
@@ -47,11 +44,11 @@ export type RmsNexoraKnowledgeView = {
   readonly facts: readonly never[];
 };
 
-export function freezeRmsGroundTruth(input: RmsGroundTruth): RmsGroundTruth {
-  return Object.freeze({
-    worldId: input.worldId,
-    facts: Object.freeze(input.facts.map((fact) => Object.freeze({ ...fact }))),
-  });
+export function freezeRmsGroundTruth(input: RmsGroundTruthSeed | RmsStructuredGroundTruth): RmsGroundTruth {
+  if ("identity" in input && input.identity === "NPA-T RMS:2/BusinessProjectGroundTruth") {
+    return input;
+  }
+  return instantiateRmsGroundTruth(input);
 }
 
 export function createEmptyObservableData(): readonly RmsObservableDataEnvelope[] {
