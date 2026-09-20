@@ -1,0 +1,52 @@
+{
+  "phase": "NPA-T STAGE-PROD:5",
+  "identity": "NPA-T STAGE-PROD:5/LiveExecutiveInteractionProof",
+  "url": "http://localhost:3000/executive",
+  "http": 200,
+  "visibleCanonicalId": "ctx-problem-capacity",
+  "keyboardActivation": true,
+  "focusProof": {
+    "active": true,
+    "outlineStyle": "auto",
+    "outlineWidth": "1px"
+  },
+  "disclosed": {
+    "selected": "ctx-problem-capacity",
+    "focused": "ctx-problem-capacity",
+    "sceneScript": "dth5-script:1.0.0:dth5-intent:1.0.0:REVIEW_FOCAL_OBJECT:stage:context-focused:none:ctx-problem-capacity:none:none:ctx-problem-capacity:none:none:none:none:none:ctx-problem-capacity:ctx-problem-capacity:ANCHOR,ctx-problem-capacity:PRIMARY_ACTOR,obj-capacity:SUPPORTING_ACTOR,obj-customer:ATTENTION_ACTOR,obj-customer:CONTEXT_ACTOR,obj-delivery:SUPPORTING_ACTOR:link-capacity-gap,link-delivery-capacity-gap:none",
+    "compositionSource": "DTH:5/SceneScript",
+    "compositionObjectIds": [
+      "ctx-problem-capacity",
+      "obj-capacity",
+      "obj-customer",
+      "obj-delivery"
+    ],
+    "disclosureStatus": "disclosed",
+    "mountDisclosedObjectId": "ctx-problem-capacity",
+    "disclosureId": "ctx-problem-capacity",
+    "disclosureText": "problemCapacity GapCloseCapacity Gap is a problem.Current state: watch.Organizes the current scene.UnderstandWhat is related to it?What should I investigate next?",
+    "disclosureWrites": "false",
+    "mountWrites": "false"
+  },
+  "dismissed": {
+    "selected": "ctx-problem-capacity",
+    "focused": "ctx-problem-capacity",
+    "sceneScript": "dth5-script:1.0.0:dth5-intent:1.0.0:REVIEW_FOCAL_OBJECT:stage:context-focused:none:ctx-problem-capacity:none:none:ctx-problem-capacity:none:none:none:none:none:ctx-problem-capacity:ctx-problem-capacity:ANCHOR,ctx-problem-capacity:PRIMARY_ACTOR,obj-capacity:SUPPORTING_ACTOR,obj-customer:ATTENTION_ACTOR,obj-customer:CONTEXT_ACTOR,obj-delivery:SUPPORTING_ACTOR:link-capacity-gap,link-delivery-capacity-gap:none",
+    "compositionSource": "DTH:5/SceneScript",
+    "compositionObjectIds": [
+      "ctx-problem-capacity",
+      "obj-capacity",
+      "obj-customer",
+      "obj-delivery"
+    ],
+    "disclosureStatus": "dismissed",
+    "mountDisclosedObjectId": "none",
+    "disclosureId": "none",
+    "disclosureText": "",
+    "disclosureWrites": "none",
+    "mountWrites": "false"
+  },
+  "zeroConsoleErrors": true,
+  "errors": [],
+  "pass": true
+}

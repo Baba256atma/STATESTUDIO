@@ -10,7 +10,6 @@ import { useFrame } from "@react-three/fiber";
 import type { NexoraMVPStageObjectPresentation } from "@/app/lib/nex-mvp/nexora3DExecutiveStage";
 import type { NexoraMVPContextNodePresentation } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import {
-  type ExecutiveStageMotionTargetEntry,
   setExecutiveStageMotionReducedMotion,
   setExecutiveStageMotionDebugTrace,
   syncExecutiveStageMotionTargets,
@@ -18,7 +17,11 @@ import {
   writeExecutiveStageMotionObservabilityToHost,
   registerExecutiveStageMotionLivePositionReader,
 } from "@/app/lib/spatial-presentation/executiveStageMotion";
-import { readExecutiveStage2DLivePosition } from "./executiveStage2DLivePositions";
+import { projectStageProdSceneMotion } from "@/app/lib/stage-prod/stageProdSceneMotion.ts";
+import {
+  readExecutiveStage2DLivePosition,
+  readExecutiveStageMotionLiveSamples,
+} from "./executiveStage2DLivePositions";
 
 type Props = {
   readonly objects: readonly NexoraMVPStageObjectPresentation[];
@@ -58,73 +61,30 @@ export function NexoraStageMotionController({
     return () => registerExecutiveStageMotionLivePositionReader(null);
   }, []);
 
-  const targetMap = useMemo(() => {
-    const map = new Map<string, ExecutiveStageMotionTargetEntry>();
-    for (const object of objects) {
-      const visible =
-        object.disclosureState !== "hidden" && object.opacity > 0.04;
-      map.set(
-        object.id,
-        Object.freeze({
-          position: Object.freeze([
-            object.targetPosition[0],
-            object.targetPosition[1],
-            object.targetPosition[2],
-          ] as const),
-          visible,
-          opacity: visible ? object.opacity : 0,
-          scale: object.scale,
-        }),
-      );
-    }
-    for (const node of contextNodes) {
-      const visible = node.opacity > 0.04;
-      map.set(
-        node.id,
-        Object.freeze({
-          position: Object.freeze([
-            node.targetPosition[0],
-            node.targetPosition[1],
-            node.targetPosition[2],
-          ] as const),
-          visible,
-          opacity: node.opacity,
-          scale: node.scale,
-        }),
-      );
-      if (node.subjectId !== node.id) {
-        map.set(
-          node.subjectId,
-          Object.freeze({
-            position: Object.freeze([
-              node.targetPosition[0],
-              node.targetPosition[1],
-              node.targetPosition[2],
-            ] as const),
-            visible,
-            opacity: node.opacity,
-            scale: node.scale,
-          }),
-        );
-      }
-    }
-    return map;
+  const sceneMotion = useMemo(() => {
+    return projectStageProdSceneMotion({ objects, contextNodes });
   }, [objects, contextNodes]);
 
   useLayoutEffect(() => {
     syncExecutiveStageMotionTargets({
-      targets: targetMap,
+      targets: sceneMotion.targets,
       anchorObjectId,
       nowMs: typeof performance !== "undefined" ? performance.now() : Date.now(),
     });
-    writeExecutiveStageMotionObservabilityToHost(resolveHost());
-  }, [targetMap, anchorObjectId]);
+    writeExecutiveStageMotionObservabilityToHost(
+      resolveHost(),
+      readExecutiveStageMotionLiveSamples(),
+    );
+  }, [sceneMotion, anchorObjectId]);
 
   useFrame(() => {
     const now =
       typeof performance !== "undefined" ? performance.now() : Date.now();
     advanceExecutiveStageMotion(now);
-    writeExecutiveStageMotionObservabilityToHost(resolveHost());
+    writeExecutiveStageMotionObservabilityToHost(
+      resolveHost(),
+      readExecutiveStageMotionLiveSamples(),
+    );
   });
 
   return null;

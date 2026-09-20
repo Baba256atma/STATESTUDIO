@@ -1,0 +1,84 @@
+{
+  "identity": "NPA-T STAGE-PROD:8A/BrowserPerformanceMeasurement",
+  "measuredAt": "2026-09-19",
+  "environment": {
+    "browser": "Chrome",
+    "browserVersion": "unavailable from browser-control surface",
+    "mode": "headed",
+    "viewport": {
+      "width": 1352,
+      "height": 848
+    },
+    "platform": "unavailable from browser-control surface",
+    "reducedMotion": false,
+    "runtime": "Next.js 16.0.10 optimized production build",
+    "observedRefreshCadenceHz": 120
+  },
+  "path": "/executive -> ExecutiveShell -> ExecutiveCockpit -> NexoraExecutiveShell -> NexoraStageMount -> Nexora3DExecutiveStage",
+  "journey": {
+    "investigationSubjectId": "ctx-problem-capacity",
+    "comparisonParticipantIds": [
+      "ctx-scenario-pricing",
+      "ctx-scenario-demand"
+    ],
+    "interactionSubjectId": "ctx-scenario-pricing"
+  },
+  "sampleWindowMs": 1500,
+  "idle": {
+    "observationMs": 1508.3,
+    "frameCount": 182,
+    "averageFrameIntervalMs": 8.333,
+    "fps": 120.003,
+    "p95FrameIntervalMs": 9.2,
+    "maxFrameIntervalMs": 9.4,
+    "framesOver33_4Ms": 0,
+    "framesOver50Ms": 0,
+    "motionAttributeWrites": 2353,
+    "motionAttributeWritesPerSecond": 1560.7
+  },
+  "motion": {
+    "observationMs": 475,
+    "frameCount": 57,
+    "averageFrameIntervalMs": 8.482,
+    "fps": 117.895,
+    "p95FrameIntervalMs": 8.8,
+    "maxFrameIntervalMs": 16.1,
+    "framesOver33_4Ms": 0,
+    "framesOver50Ms": 0,
+    "animationCompleted": true
+  },
+  "postMotion": {
+    "observationMs": 1500,
+    "frameCount": 181,
+    "averageFrameIntervalMs": 8.333,
+    "fps": 120,
+    "p95FrameIntervalMs": 9.1,
+    "maxFrameIntervalMs": 9.4,
+    "framesOver33_4Ms": 0,
+    "framesOver50Ms": 0,
+    "motionAttributeWrites": 2340,
+    "motionAttributeWritesPerSecond": 1560
+  },
+  "interaction": {
+    "kind": "canonical Stage Object selection",
+    "latencyMs": 5.1,
+    "visibleFocusedObjectId": "ctx-scenario-pricing",
+    "advisorObjectId": "ctx-scenario-pricing"
+  },
+  "browserRuntimeErrors": [],
+  "correctness": {
+    "capacityGapIdentityExact": true,
+    "comparisonIdentitiesExact": true,
+    "animationReachedFinalComposition": true,
+    "stageRemainedInteractive": true,
+    "writesCanonicalManagementState": false
+  },
+  "idleWork": {
+    "unexpectedContinuousMotionObservabilityWrites": true,
+    "classification": "STAGE-MOTION:1 DOM observability writes",
+    "evidence": "Settled idle windows continued writing approximately 13 motion attributes per observed frame."
+  },
+  "result": "OPTIMIZATION INDICATED",
+  "performanceDebt": "OPEN",
+  "stageProd8BRequired": true
+}

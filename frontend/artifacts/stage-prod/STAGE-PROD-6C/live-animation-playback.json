@@ -1,0 +1,809 @@
+{
+  "phase": "NPA-T STAGE-PROD:6C",
+  "identity": "NPA-T STAGE-PROD:6C/LiveAnimationPlaybackCertification",
+  "url": "http://localhost:3000/executive",
+  "standard": {
+    "reducedMotion": false,
+    "http": 200,
+    "sceneA": {
+      "family": "investigation",
+      "ids": [
+        "ctx-problem-capacity",
+        "obj-capacity",
+        "obj-customer",
+        "obj-delivery"
+      ],
+      "signature": "investigation:ctx-problem-capacity@0.00,0.45:focused|obj-capacity@-1.80,-1.15:peripheral|obj-customer@1.80,-1.15:peripheral|obj-delivery@0.00,-1.15:peripheral:rel=link-capacity-gap,link-delivery-capacity-gap,rel-capacity-delivery,rel-delivery-customer",
+      "motion": {
+        "contract": "stage-motion-1",
+        "phase": "complete",
+        "transitionId": 2,
+        "anchor": "ctx-problem-capacity",
+        "progress": "1.000",
+        "targetCount": 4,
+        "interrupted": false,
+        "settled": true,
+        "authority": "stage-motion-1",
+        "easing": "easeOutCubic",
+        "durationMs": 450
+      },
+      "samples": {
+        "transitionId": 2,
+        "from": {
+          "ctx-problem-capacity": {
+            "position": [
+              0,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          },
+          "obj-capacity": {
+            "position": [
+              -0.267178,
+              0.515865,
+              0
+            ],
+            "opacity": 1,
+            "scale": 0.828
+          },
+          "obj-customer": {
+            "position": [
+              -1.571138,
+              0.515865,
+              0
+            ],
+            "opacity": 1,
+            "scale": 0.828
+          },
+          "obj-delivery": {
+            "position": [
+              1.079125,
+              0.129566,
+              0
+            ],
+            "opacity": 0,
+            "scale": 1.07
+          }
+        },
+        "live": {
+          "ctx-problem-capacity": {
+            "position": [
+              0,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          },
+          "obj-capacity": {
+            "position": [
+              -1.799994710910402,
+              -1.149994251837954,
+              0
+            ],
+            "opacity": 0,
+            "scale": 0.48,
+            "visible": false
+          },
+          "obj-customer": {
+            "position": [
+              1.7999883676963604,
+              -1.149994251837954,
+              0
+            ],
+            "opacity": 0,
+            "scale": 0.48,
+            "visible": false
+          },
+          "obj-delivery": {
+            "position": [
+              0.0000037235822636372262,
+              -1.1499955847846515,
+              0
+            ],
+            "opacity": 0,
+            "scale": 0.4800020358285978,
+            "visible": false
+          }
+        },
+        "target": {
+          "ctx-problem-capacity": {
+            "position": [
+              0,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          },
+          "obj-capacity": {
+            "position": [
+              -1.8,
+              -1.15,
+              0
+            ],
+            "visible": false,
+            "opacity": 0,
+            "scale": 0.48
+          },
+          "obj-customer": {
+            "position": [
+              1.8,
+              -1.15,
+              0
+            ],
+            "visible": false,
+            "opacity": 0,
+            "scale": 0.48
+          },
+          "obj-delivery": {
+            "position": [
+              0,
+              -1.15,
+              0
+            ],
+            "visible": false,
+            "opacity": 0,
+            "scale": 0.48
+          }
+        }
+      },
+      "controls": [
+        "ctx-problem-capacity",
+        "obj-capacity",
+        "obj-customer",
+        "obj-delivery"
+      ],
+      "selected": "ctx-problem-capacity",
+      "focused": "ctx-problem-capacity",
+      "disclosureStatus": "disclosed",
+      "disclosed": "ctx-problem-capacity",
+      "disclosureObject": "ctx-problem-capacity",
+      "stageWrites": "false",
+      "compositionWrites": "false"
+    },
+    "transitionTrigger": "Compare Demand Surge and Pricing Response.",
+    "intermediate": {
+      "id": "ctx-scenario-demand",
+      "progress": 0.012,
+      "from": {
+        "position": [
+          1.2,
+          0.45,
+          0
+        ],
+        "opacity": 0.12,
+        "scale": 0.9936000000000001
+      },
+      "live": {
+        "position": [
+          1.2,
+          0.45,
+          0
+        ],
+        "opacity": 0.1368625604316566,
+        "scale": 0.995255596842381,
+        "visible": true
+      },
+      "target": {
+        "position": [
+          1.2,
+          0.45,
+          0
+        ],
+        "visible": true,
+        "opacity": 1,
+        "scale": 1.08
+      }
+    },
+    "timelineObservationCount": 38,
+    "sceneB": {
+      "family": "comparison",
+      "ids": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "signature": "comparison:ctx-scenario-demand@1.20,0.45:related|ctx-scenario-pricing@-1.20,0.45:related:rel=",
+      "motion": {
+        "contract": "stage-motion-1",
+        "phase": "complete",
+        "transitionId": 3,
+        "anchor": "ctx-problem-capacity",
+        "progress": "1.000",
+        "targetCount": 2,
+        "interrupted": false,
+        "settled": true,
+        "authority": "stage-motion-1",
+        "easing": "easeOutCubic",
+        "durationMs": 450
+      },
+      "samples": {
+        "transitionId": 3,
+        "from": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          }
+        },
+        "live": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          }
+        },
+        "target": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          }
+        }
+      },
+      "controls": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "selected": "ctx-problem-capacity",
+      "focused": "ctx-problem-capacity",
+      "disclosureStatus": "stale",
+      "disclosed": "none",
+      "disclosureObject": "none",
+      "stageWrites": "false",
+      "compositionWrites": "false"
+    },
+    "interactive": {
+      "family": "comparison",
+      "ids": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "signature": "comparison:ctx-scenario-demand@1.20,0.45:related|ctx-scenario-pricing@-1.20,0.45:focused:rel=",
+      "motion": {
+        "contract": "stage-motion-1",
+        "phase": "complete",
+        "transitionId": 3,
+        "anchor": "ctx-problem-capacity",
+        "progress": "1.000",
+        "targetCount": 2,
+        "interrupted": false,
+        "settled": true,
+        "authority": "stage-motion-1",
+        "easing": "easeOutCubic",
+        "durationMs": 450
+      },
+      "samples": {
+        "transitionId": 3,
+        "from": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          }
+        },
+        "live": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          }
+        },
+        "target": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          }
+        }
+      },
+      "controls": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "selected": "ctx-scenario-pricing",
+      "focused": "ctx-scenario-pricing",
+      "disclosureStatus": "disclosed",
+      "disclosed": "ctx-scenario-pricing",
+      "disclosureObject": "ctx-scenario-pricing",
+      "stageWrites": "false",
+      "compositionWrites": "false"
+    },
+    "errors": [],
+    "pass": true
+  },
+  "reduced": {
+    "reducedMotion": true,
+    "http": 200,
+    "sceneA": {
+      "family": "investigation",
+      "ids": [
+        "ctx-problem-capacity",
+        "obj-capacity",
+        "obj-customer",
+        "obj-delivery"
+      ],
+      "signature": "investigation:ctx-problem-capacity@0.00,0.45:focused|obj-capacity@-1.80,-1.15:peripheral|obj-customer@1.80,-1.15:peripheral|obj-delivery@0.00,-1.15:peripheral:rel=link-capacity-gap,link-delivery-capacity-gap,rel-capacity-delivery,rel-delivery-customer",
+      "motion": {
+        "contract": "stage-motion-1",
+        "phase": "complete",
+        "transitionId": 2,
+        "anchor": "ctx-problem-capacity",
+        "progress": "1.000",
+        "targetCount": 4,
+        "interrupted": false,
+        "settled": true,
+        "authority": "stage-motion-1",
+        "easing": "easeOutCubic",
+        "durationMs": 80
+      },
+      "samples": {
+        "transitionId": 2,
+        "from": {
+          "ctx-problem-capacity": {
+            "position": [
+              0,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          },
+          "obj-capacity": {
+            "position": [
+              -0.267178,
+              0.515865,
+              0
+            ],
+            "opacity": 1,
+            "scale": 0.828
+          },
+          "obj-customer": {
+            "position": [
+              -1.571138,
+              0.515865,
+              0
+            ],
+            "opacity": 1,
+            "scale": 0.828
+          },
+          "obj-delivery": {
+            "position": [
+              1.079125,
+              0.129566,
+              0
+            ],
+            "opacity": 0,
+            "scale": 1.07
+          }
+        },
+        "live": {
+          "ctx-problem-capacity": {
+            "position": [
+              0,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          },
+          "obj-capacity": {
+            "position": [
+              -1.8,
+              -1.15,
+              0
+            ],
+            "opacity": 0,
+            "scale": 0.48,
+            "visible": false
+          },
+          "obj-customer": {
+            "position": [
+              1.8,
+              -1.15,
+              0
+            ],
+            "opacity": 0,
+            "scale": 0.48,
+            "visible": false
+          },
+          "obj-delivery": {
+            "position": [
+              0,
+              -1.15,
+              0
+            ],
+            "opacity": 0,
+            "scale": 0.48,
+            "visible": false
+          }
+        },
+        "target": {
+          "ctx-problem-capacity": {
+            "position": [
+              0,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          },
+          "obj-capacity": {
+            "position": [
+              -1.8,
+              -1.15,
+              0
+            ],
+            "visible": false,
+            "opacity": 0,
+            "scale": 0.48
+          },
+          "obj-customer": {
+            "position": [
+              1.8,
+              -1.15,
+              0
+            ],
+            "visible": false,
+            "opacity": 0,
+            "scale": 0.48
+          },
+          "obj-delivery": {
+            "position": [
+              0,
+              -1.15,
+              0
+            ],
+            "visible": false,
+            "opacity": 0,
+            "scale": 0.48
+          }
+        }
+      },
+      "controls": [
+        "ctx-problem-capacity",
+        "obj-capacity",
+        "obj-customer",
+        "obj-delivery"
+      ],
+      "selected": "ctx-problem-capacity",
+      "focused": "ctx-problem-capacity",
+      "disclosureStatus": "disclosed",
+      "disclosed": "ctx-problem-capacity",
+      "disclosureObject": "ctx-problem-capacity",
+      "stageWrites": "false",
+      "compositionWrites": "false"
+    },
+    "transitionTrigger": "Compare Demand Surge and Pricing Response.",
+    "intermediate": {
+      "id": "ctx-scenario-demand",
+      "progress": 0.075,
+      "from": {
+        "position": [
+          1.2,
+          0.45,
+          0
+        ],
+        "opacity": 0.12,
+        "scale": 0.9936000000000001
+      },
+      "live": {
+        "position": [
+          1.2,
+          0.45,
+          0
+        ],
+        "opacity": 0.19062180134301304,
+        "scale": 1.0005337768591323,
+        "visible": true
+      },
+      "target": {
+        "position": [
+          1.2,
+          0.45,
+          0
+        ],
+        "visible": true,
+        "opacity": 1,
+        "scale": 1.08
+      }
+    },
+    "timelineObservationCount": 19,
+    "sceneB": {
+      "family": "comparison",
+      "ids": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "signature": "comparison:ctx-scenario-demand@1.20,0.45:related|ctx-scenario-pricing@-1.20,0.45:related:rel=",
+      "motion": {
+        "contract": "stage-motion-1",
+        "phase": "complete",
+        "transitionId": 3,
+        "anchor": "ctx-problem-capacity",
+        "progress": "1.000",
+        "targetCount": 2,
+        "interrupted": false,
+        "settled": true,
+        "authority": "stage-motion-1",
+        "easing": "easeOutCubic",
+        "durationMs": 80
+      },
+      "samples": {
+        "transitionId": 3,
+        "from": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          }
+        },
+        "live": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.9999882110936391,
+            "scale": 1.0799988425437392,
+            "visible": true
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.9999862500000001,
+            "scale": 1.07999865,
+            "visible": true
+          }
+        },
+        "target": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          }
+        }
+      },
+      "controls": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "selected": "ctx-problem-capacity",
+      "focused": "ctx-problem-capacity",
+      "disclosureStatus": "stale",
+      "disclosed": "none",
+      "disclosureObject": "none",
+      "stageWrites": "false",
+      "compositionWrites": "false"
+    },
+    "interactive": {
+      "family": "comparison",
+      "ids": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "signature": "comparison:ctx-scenario-demand@1.20,0.45:related|ctx-scenario-pricing@-1.20,0.45:focused:rel=",
+      "motion": {
+        "contract": "stage-motion-1",
+        "phase": "complete",
+        "transitionId": 3,
+        "anchor": "ctx-problem-capacity",
+        "progress": "1.000",
+        "targetCount": 2,
+        "interrupted": false,
+        "settled": true,
+        "authority": "stage-motion-1",
+        "easing": "easeOutCubic",
+        "durationMs": 80
+      },
+      "samples": {
+        "transitionId": 3,
+        "from": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 0.12,
+            "scale": 0.9936000000000001
+          }
+        },
+        "live": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "opacity": 1,
+            "scale": 1.08,
+            "visible": true
+          }
+        },
+        "target": {
+          "ctx-scenario-demand": {
+            "position": [
+              1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          },
+          "ctx-scenario-pricing": {
+            "position": [
+              -1.2,
+              0.45,
+              0
+            ],
+            "visible": true,
+            "opacity": 1,
+            "scale": 1.08
+          }
+        }
+      },
+      "controls": [
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "selected": "ctx-scenario-pricing",
+      "focused": "ctx-scenario-pricing",
+      "disclosureStatus": "disclosed",
+      "disclosed": "ctx-scenario-pricing",
+      "disclosureObject": "ctx-scenario-pricing",
+      "stageWrites": "false",
+      "compositionWrites": "false"
+    },
+    "errors": [],
+    "pass": true
+  },
+  "relationshipRevealHide": "DEFERRED",
+  "liveAnimationPlaybackDebt": "CLOSED",
+  "measuredPerformance": "NOT_RUN",
+  "pass": true
+}

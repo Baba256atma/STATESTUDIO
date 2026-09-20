@@ -310,19 +310,20 @@ export function syncExecutiveStageMotionTargets(
 
     const liveOp = input.liveOpacity?.get(id);
     const liveSc = input.liveScale?.get(id);
+    const previousTarget = active?.targets.get(id);
     fromOpacity.set(
       id,
       liveOp ??
         (enterIds.has(id)
           ? EXECUTIVE_STAGE_MOTION.enterOpacityFrom
-          : entry.opacity),
+          : previousTarget?.opacity ?? entry.opacity),
     );
     fromScale.set(
       id,
       liveSc ??
         (enterIds.has(id)
           ? EXECUTIVE_STAGE_MOTION.enterScaleFrom * entry.scale
-          : entry.scale),
+          : previousTarget?.scale ?? entry.scale),
     );
   }
 
@@ -497,44 +498,10 @@ export function sampleExecutiveStageMotionObject(
   const isEnter = active.enterIds.has(objectId);
   const isExit = active.exitIds.has(objectId);
 
-  let t = easeOutCubic(active.progress);
-  if (isExit) {
-    const exitT =
-      active.durationMs <= 0
-        ? 1
-        : Math.min(
-            1,
-            Math.max(
-              0,
-              (nowMs - active.startedAt) /
-                (prefersReducedMotion
-                  ? EXECUTIVE_STAGE_MOTION.reducedMotionDurationMs
-                  : EXECUTIVE_STAGE_MOTION.exitDurationMs),
-            ),
-          );
-    t = easeOutCubic(Math.max(active.progress, exitT));
-  } else if (isEnter) {
-    const enterT =
-      active.durationMs <= 0
-        ? 1
-        : Math.min(
-            1,
-            Math.max(
-              0,
-              (nowMs - active.startedAt) /
-                (prefersReducedMotion
-                  ? EXECUTIVE_STAGE_MOTION.reducedMotionDurationMs
-                  : EXECUTIVE_STAGE_MOTION.enterDurationMs),
-            ),
-          );
-    // Enter opacity/scale may finish slightly ahead; position still uses topology t.
-    void enterT;
-  }
-
   const near =
     distance2(from, target.position) < EXECUTIVE_STAGE_MOTION.settleEpsilon;
-  const settled = active.settled || near;
-  const position = settled
+  const settled = active.settled;
+  const position = settled || near
     ? target.position
     : lerpVec3(from, target.position, easeOutCubic(active.progress));
 
@@ -618,13 +585,34 @@ export function getExecutiveStageMotionObservability(): ExecutiveStageMotionObse
   });
 }
 
+function writeExecutiveStageMotionAttribute(
+  host: Element,
+  name: string,
+  value: string,
+): void {
+  if (host.getAttribute(name) === value) return;
+  host.setAttribute(name, value);
+}
+
 export function writeExecutiveStageMotionObservabilityToHost(
   host: Element | null | undefined,
+  liveSamples?: Readonly<
+    Record<
+      string,
+      Readonly<{
+        position: ExecutiveStageMotionVec3;
+        opacity: number;
+        scale: number;
+        visible: boolean;
+      }>
+    >
+  >,
 ): void {
   if (!host) return;
   const obs = getExecutiveStageMotionObservability();
   // Single atomic bundle first so readers never observe a torn multi-attr write.
-  host.setAttribute(
+  writeExecutiveStageMotionAttribute(
+    host,
     "data-stage-motion-bundle",
     JSON.stringify({
       contract: obs.contract,
@@ -640,31 +628,72 @@ export function writeExecutiveStageMotionObservabilityToHost(
       durationMs: obs.durationMs,
     }),
   );
-  host.setAttribute("data-stage-motion-contract", obs.contract);
-  host.setAttribute("data-stage-motion-phase", obs.phase);
-  host.setAttribute(
+  writeExecutiveStageMotionAttribute(
+    host,
+    "data-stage-motion-contract",
+    obs.contract,
+  );
+  writeExecutiveStageMotionAttribute(host, "data-stage-motion-phase", obs.phase);
+  writeExecutiveStageMotionAttribute(
+    host,
     "data-stage-motion-transition-id",
     String(obs.transitionId),
   );
-  host.setAttribute("data-stage-motion-anchor", obs.anchor);
-  host.setAttribute("data-stage-motion-progress", obs.progress);
-  host.setAttribute(
+  writeExecutiveStageMotionAttribute(host, "data-stage-motion-anchor", obs.anchor);
+  writeExecutiveStageMotionAttribute(
+    host,
+    "data-stage-motion-progress",
+    obs.progress,
+  );
+  writeExecutiveStageMotionAttribute(
+    host,
     "data-stage-motion-target-count",
     String(obs.targetCount),
   );
-  host.setAttribute(
+  writeExecutiveStageMotionAttribute(
+    host,
     "data-stage-motion-interrupted",
     obs.interrupted ? "true" : "false",
   );
-  host.setAttribute(
+  writeExecutiveStageMotionAttribute(
+    host,
     "data-stage-motion-settled",
     obs.settled ? "true" : "false",
   );
-  host.setAttribute("data-stage-motion-authority", obs.authority);
-  host.setAttribute("data-stage-motion-easing", obs.easing);
-  host.setAttribute(
+  writeExecutiveStageMotionAttribute(
+    host,
+    "data-stage-motion-authority",
+    obs.authority,
+  );
+  writeExecutiveStageMotionAttribute(host, "data-stage-motion-easing", obs.easing);
+  writeExecutiveStageMotionAttribute(
+    host,
     "data-stage-motion-duration-ms",
     String(obs.durationMs),
+  );
+  const ids = active ? [...active.targets.keys()].sort() : [];
+  writeExecutiveStageMotionAttribute(
+    host,
+    "data-stage-motion-samples-bundle",
+    JSON.stringify({
+      transitionId: obs.transitionId,
+      from: Object.fromEntries(
+        ids.map((id) => [
+          id,
+          {
+            position: active?.fromPositions.get(id) ?? null,
+            opacity: active?.fromOpacity.get(id) ?? null,
+            scale: active?.fromScale.get(id) ?? null,
+          },
+        ]),
+      ),
+      live: Object.fromEntries(
+        ids.map((id) => [id, liveSamples?.[id] ?? null]),
+      ),
+      target: Object.fromEntries(
+        ids.map((id) => [id, active?.targets.get(id) ?? null]),
+      ),
+    }),
   );
 }
 

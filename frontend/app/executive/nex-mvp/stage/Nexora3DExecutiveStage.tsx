@@ -29,6 +29,13 @@ import { NexoraDecisionTheatreIconicSatellite } from "./NexoraDecisionTheatreIco
 import type { NexoraDecisionTheatreAtmosphereMode } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import { NEXORA_DECISION_THEATRE_ATMOSPHERE_MODES } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import type { NexoraDecisionTheatreAtmosphereProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
+import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
+import { projectStageProdDirectorComposition } from "@/app/lib/stage-prod/stageProdDirectorComposition.ts";
+import { projectStageProdContextualVisuals } from "@/app/lib/stage-prod/stageProdVisualSpecification.ts";
+import type { NexoraVisualView } from "@/app/lib/director/nexoraVisualIntelligence.ts";
+import { NexoraStageContextualVisual } from "./NexoraStageContextualVisual";
+import { NexoraStagePerformanceProbe } from "./NexoraStagePerformanceProbe";
+import { projectStageProdObjectMotion } from "@/app/lib/stage-prod/stageProdObjectMotion.ts";
 import {
   projectNexoraDecisionTheatreDataObjectsToStage,
   type NexoraDecisionTheatreDataObjectStageProjection,
@@ -176,6 +183,9 @@ export type Nexora3DExecutiveStageProps = {
   >;
   readonly atmosphereMode?: string;
   readonly warRoomAtmosphere?: NexoraDecisionTheatreAtmosphereProjection | null;
+  readonly theatreComposition?: NexoraDecisionTheatreFoundation | null;
+  readonly requestedVisual?: NexoraVisualView | null;
+  readonly onDismissVisual?: () => void;
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
@@ -344,6 +354,9 @@ export function Nexora3DExecutiveStage({
   visualPresentations = {},
   atmosphereMode = "none",
   warRoomAtmosphere = null,
+  theatreComposition = null,
+  requestedVisual = null,
+  onDismissVisual,
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
   backGuidedAttentionCue = null,
@@ -419,7 +432,7 @@ export function Nexora3DExecutiveStage({
   }, [interaction.scene]);
 
   /** STAGE-2D:2 flatten → STAGE-2D:3/4 recomposition → STAGE-LABEL:1 → STAGE-2D:1 camera. */
-  const fixedCameraInteraction = useMemo(() => {
+  const directorComposition = useMemo(() => {
     const flattened =
       applyExecutiveStage2DTopologyPlaneToStagePresentation(interaction);
     const recomposed =
@@ -428,8 +441,22 @@ export function Nexora3DExecutiveStage({
       applyExecutiveStageObjectLabelTerritoryToStagePresentation(recomposed, {
         presentationLevel: presentationViewModel.state,
       });
-    return applyExecutiveStageFixedCameraToStagePresentation(withLabels);
-  }, [interaction, presentationViewModel.state]);
+    const fixed = applyExecutiveStageFixedCameraToStagePresentation(withLabels);
+    return projectStageProdDirectorComposition({
+      presentation: fixed,
+      theatre: theatreComposition,
+    });
+  }, [interaction, presentationViewModel.state, theatreComposition]);
+  const fixedCameraInteraction = directorComposition.presentation;
+  const contextualVisuals = useMemo(
+    () =>
+      projectStageProdContextualVisuals({
+        theatre: theatreComposition,
+        composition: directorComposition,
+        requestedVisual,
+      }),
+    [directorComposition, requestedVisual, theatreComposition],
+  );
 
   const readabilityObservability =
     getNexoraMVPExecutiveStage2DReadabilityObservability(
@@ -907,6 +934,23 @@ export function Nexora3DExecutiveStage({
       data-nex-mvp-presentation="6"
       data-stage-identity={identity.id}
       data-stage-version={identity.version}
+      data-stage-prod-composition={directorComposition.identity}
+      data-stage-prod-composition-status={directorComposition.status}
+      data-stage-prod-scene-family={directorComposition.family}
+      data-stage-prod-scene-intent={directorComposition.sceneIntentKind ?? "none"}
+      data-stage-prod-scene-script={directorComposition.sceneScriptId ?? "none"}
+      data-stage-prod-composition-object-ids={
+        directorComposition.canonicalObjectIds.join("|") || "none"
+      }
+      data-stage-prod-composition-signature={
+        directorComposition.structuralSignature
+      }
+      data-stage-prod-composition-writes="false"
+      data-stage-prod-visual={contextualVisuals.identity}
+      data-stage-prod-visual-status={contextualVisuals.status}
+      data-stage-prod-visual-count={String(contextualVisuals.specs.length)}
+      data-stage-prod-visual-family={contextualVisuals.specs[0]?.family ?? "none"}
+      data-stage-prod-visual-writes="false"
       data-presentation-state={interaction.scene.presentationState}
       data-environment-intent={interaction.scene.environmentIntent}
       data-environment-treatment={environment.objectSurfaceTreatment}
@@ -1308,6 +1352,7 @@ export function Nexora3DExecutiveStage({
         outline: "none",
       }}
     >
+      <NexoraStagePerformanceProbe />
       <div
         data-testid="nexora-stage-atmosphere-overlay"
         aria-hidden="true"
@@ -1427,15 +1472,20 @@ export function Nexora3DExecutiveStage({
             fontFamily: "inherit",
           }}
         >
-          Objects · {interaction.scene.objects.length}
+          Objects · {fixedCameraInteraction.scene.objects.length}
         </summary>
-        {interaction.scene.objects.map((object) => {
+        {fixedCameraInteraction.scene.objects.map((object) => {
           const showKpi =
             object.focused &&
             presentationViewModel.state === "minimum" &&
             presentationViewModel.primaryKpi &&
             presentationViewModel.subjectId === object.id;
           const visual = visualPresentations[object.id];
+          const objectMotion = projectStageProdObjectMotion({
+            canonicalObjectId: object.id,
+            focused: object.focused,
+            selected: object.selected,
+          });
           return (
             <div key={object.id}>
             <button
@@ -1444,6 +1494,8 @@ export function Nexora3DExecutiveStage({
               data-visual-family="executive-object"
               data-role={object.role}
               data-canonical-id={object.id}
+              data-object-type={object.kind}
+              data-stage-position={object.targetPosition.join(",")}
               data-status={object.status}
               data-attention={object.attention}
               data-focused={object.focused ? "true" : "false"}
@@ -1455,7 +1507,7 @@ export function Nexora3DExecutiveStage({
               data-nexograph-opacity={visual?.opacityToken ?? "opacity-full"}
               data-nexograph-focus={object.focused ? "true" : "false"}
               data-nexograph-selection={object.selected ? "true" : "false"}
-              aria-description={visual?.accessibilityDescription}
+              aria-label={visual?.accessibilityDescription ?? object.label}
               data-opacity={String(object.opacity)}
               data-scale={String(object.scale)}
               data-label-prominence={object.labelProminence}
@@ -1465,6 +1517,15 @@ export function Nexora3DExecutiveStage({
               data-state-marker={object.stateMarker ?? "none"}
               data-rim-intensity={String(object.rimIntensity ?? 0)}
               data-visual-audit="stage-object"
+              data-stage-prod-activation="canonical-id"
+              data-stage-prod-activation-writes="false"
+              data-stage-prod-object-motion={objectMotion.identity}
+              data-stage-prod-motion-state={objectMotion.state}
+              data-stage-prod-motion-reason={objectMotion.reason}
+              data-stage-prod-motion-treatment={objectMotion.treatment}
+              data-stage-prod-motion-object-id={objectMotion.canonicalObjectId}
+              data-stage-prod-motion-writes="false"
+              className="nexora-stage-object-motion"
               aria-pressed={object.focused}
               onClick={() => onSelectSubject(object.id)}
               style={{
@@ -1540,6 +1601,7 @@ export function Nexora3DExecutiveStage({
                 data-role={node.role}
                 data-kind={node.kind}
                 data-canonical-id={node.id}
+                data-object-type={node.kind}
                 data-context-subject={node.subjectId}
                 data-gateway-mode={node.gatewayMode ?? undefined}
                 data-gateway-count={
@@ -1559,6 +1621,8 @@ export function Nexora3DExecutiveStage({
                       ? "stage-thread-collapse"
                       : "stage-context"
                 }
+                data-stage-prod-activation="canonical-id"
+                data-stage-prod-activation-writes="false"
                 aria-pressed={node.focused}
                 aria-expanded={
                   node.role === "collapsed-thread"
@@ -1650,6 +1714,13 @@ export function Nexora3DExecutiveStage({
         viewModel={presentationViewModel}
         onAction={onPresentationAction}
       />
+
+      {contextualVisuals.specs[0] ? (
+        <NexoraStageContextualVisual
+          spec={contextualVisuals.specs[0]}
+          onDismiss={requestedVisual ? onDismissVisual : undefined}
+        />
+      ) : null}
 
       {/* STAGE-2D:1 — SP:1.3 camera navigation controls intentionally unmounted. */}
 

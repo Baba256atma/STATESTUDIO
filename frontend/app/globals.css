@@ -188,6 +188,32 @@ html[data-theme] body {
   color: var(--nx-text);
 }
 
+/* STAGE-PROD:6A — bounded semantic emphasis for Stage Object companion controls. */
+.nexora-stage-object-motion {
+  transform: translateY(0) scale(1);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.nexora-stage-object-motion[data-stage-prod-motion-state="EMPHASIZED"] {
+  transform: translateY(-1px) scale(1.015);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--nx-accent) 24%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexora-stage-object-motion {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .nexora-stage-object-motion[data-stage-prod-motion-state="EMPHASIZED"] {
+    outline: 2px solid var(--nx-focus-ring);
+    outline-offset: 1px;
+  }
+}
+
 /* Nexora command console: focus ring + placeholder tone (keeps input logic unchanged). */
 .nexora-command-console {
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;

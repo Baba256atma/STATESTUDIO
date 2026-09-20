@@ -119,7 +119,7 @@ export function isSubjectPreservingAnalyticalFollowUpOperation(
 export function isDeicticSubjectExplainUtterance(
   normalizedUtterance: string,
 ): boolean {
-  return /^(?:explain(?: it| this| that)?|tell me about (?:it|this|that)|tell me more(?: about (?:it|this|that|this one|that one))?|what is (?:it|this|that))$/.test(
+  return /^(?:explain(?: it| this| that| (?:this|that|the) (?:problem|issue|risk|scenario|option|goal|decision|execution|outcome))?|tell me about (?:it|this|that|(?:this|that|the) (?:problem|issue|risk|scenario|option|goal|decision|execution|outcome))|tell me more(?: about (?:it|this|that|this one|that one|(?:this|that|the) (?:problem|issue|risk|scenario|option|goal|decision|execution|outcome)))?|what is (?:it|this|that|(?:this|that|the) (?:problem|issue|risk|scenario|option|goal|decision|execution|outcome)))$/.test(
     normalizedUtterance,
   );
 }

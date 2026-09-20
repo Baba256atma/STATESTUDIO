@@ -1,0 +1,124 @@
+{
+  "identity": "NPA-T STAGE-PROD:8B/SettledMotionObservabilityOptimization",
+  "measuredAt": "2026-09-20",
+  "environment": {
+    "browser": "Chrome",
+    "mode": "headed",
+    "viewport": {
+      "width": 1352,
+      "height": 848
+    },
+    "reducedMotion": false,
+    "runtime": "Next.js 16.0.10 optimized production build",
+    "observedRefreshCadenceHz": 120,
+    "url": "http://127.0.0.1:3001/executive?stagePerfProbe=1",
+    "portNote": "Port 3000 was occupied by a process outside this task; the task-owned production server used port 3001."
+  },
+  "path": "/executive -> ExecutiveShell -> ExecutiveCockpit -> NexoraExecutiveShell -> NexoraStageMount -> Nexora3DExecutiveStage",
+  "rootCause": {
+    "caller": "NexoraStageMotionController useFrame",
+    "owner": "writeExecutiveStageMotionObservabilityToHost",
+    "behavior": "The existing writer called Element.setAttribute for all 13 motion observability attributes on every render frame even when every exposed string was unchanged.",
+    "preRepairFocusedReproduction": {
+      "firstCallWrites": 13,
+      "secondIdenticalCallWrites": 13,
+      "valuesChanged": false
+    },
+    "probeCausedWrites": false
+  },
+  "optimization": {
+    "rule": "Read the current exposed attribute string and skip Element.setAttribute when it is identical to the next string.",
+    "changesMotionClock": false,
+    "changesInterpolation": false,
+    "changesFrameLoop": false,
+    "removesObservability": false,
+    "writesCanonicalManagementState": false
+  },
+  "before": {
+    "source": "STAGE-PROD:8A certified baseline",
+    "idle": {
+      "motionAttributeWrites": 2353,
+      "motionAttributeWritesPerSecond": 1560.7,
+      "motionAttributeWritesPerFrame": 12.929
+    },
+    "postMotion": {
+      "motionAttributeWrites": 2340,
+      "motionAttributeWritesPerSecond": 1560,
+      "motionAttributeWritesPerFrame": 12.928
+    }
+  },
+  "after": {
+    "sampleWindowMs": 1500,
+    "idle": {
+      "observationMs": 1507.8,
+      "frameCount": 176,
+      "averageFrameIntervalMs": 8.616,
+      "fps": 116.063,
+      "p95FrameIntervalMs": 9.2,
+      "maxFrameIntervalMs": 41.7,
+      "framesOver33_4Ms": 1,
+      "framesOver50Ms": 0,
+      "motionAttributeWrites": 176,
+      "motionAttributeWritesPerSecond": 116.726,
+      "motionAttributeWritesPerFrame": 1
+    },
+    "motion": {
+      "observationMs": 475.2,
+      "frameCount": 57,
+      "averageFrameIntervalMs": 8.486,
+      "fps": 117.845,
+      "p95FrameIntervalMs": 9,
+      "maxFrameIntervalMs": 17,
+      "framesOver33_4Ms": 0,
+      "framesOver50Ms": 0,
+      "animationCompleted": true,
+      "genuineIntermediateObservations": 11
+    },
+    "postMotion": {
+      "observationMs": 1508.4,
+      "frameCount": 182,
+      "averageFrameIntervalMs": 8.334,
+      "fps": 119.995,
+      "p95FrameIntervalMs": 9.1,
+      "maxFrameIntervalMs": 9.3,
+      "framesOver33_4Ms": 0,
+      "framesOver50Ms": 0,
+      "motionAttributeWrites": 0,
+      "motionAttributeWritesPerSecond": 0,
+      "motionAttributeWritesPerFrame": 0
+    },
+    "combinedSettledWindows": {
+      "motionAttributeWritesPerSecond": 58.352,
+      "motionAttributeWritesPerFrame": 0.492,
+      "writeRateReductionPercent": 96.26,
+      "writesPerFrameReductionPercent": 96.197,
+      "note": "The initial settled investigation window retained one genuinely changing live-samples bundle update per frame while rendered values converged. The stable post-motion window produced zero mutations."
+    }
+  },
+  "interaction": {
+    "probePointerSelectionLatencyMs": 305.4,
+    "browserControlNote": "The headed browser control click includes pointer-down-to-click automation dwell; canonical keyboard selection commands completed in 51 ms and 37 ms on the same page.",
+    "selectedObjectId": "ctx-scenario-pricing",
+    "focusedObjectId": "ctx-scenario-pricing",
+    "advisorObjectId": "ctx-scenario-pricing"
+  },
+  "correctness": {
+    "investigationObjectId": "ctx-problem-capacity",
+    "comparisonObjectIds": [
+      "ctx-scenario-pricing",
+      "ctx-scenario-demand"
+    ],
+    "finalSceneFamily": "comparison",
+    "finalMotionPhase": "complete",
+    "finalMotionProgress": "1.000",
+    "animationReachedFinalComposition": true,
+    "intermediatePlaybackObserved": true,
+    "stageAdvisorSynchronizationExact": true,
+    "writesCanonicalManagementState": false
+  },
+  "browserRuntimeErrors": [],
+  "result": "CERTIFIED",
+  "performanceDebt": "OPEN",
+  "stageProd8CMayStart": true,
+  "stageProd8CStarted": false
+}

@@ -1,0 +1,114 @@
+{
+  "identity": "NPA-T STAGE-PROD:8C/ProductionPerformanceCertification",
+  "measuredAt": "2026-09-20",
+  "environment": {
+    "browser": "Chrome",
+    "browserVersion": "unavailable from browser-control surface",
+    "mode": "headed",
+    "viewport": {
+      "width": 1352,
+      "height": 848
+    },
+    "platform": "unavailable from browser-control surface",
+    "reducedMotion": false,
+    "runtime": "Next.js 16.0.10 optimized production build",
+    "observedRefreshCadenceHz": 120,
+    "url": "http://127.0.0.1:3001/executive?stagePerfProbe=1",
+    "portNote": "The task-owned production server used port 3001 because port 3000 was occupied by a process outside this task."
+  },
+  "productionPath": "/executive -> production shell -> Director/Theatre -> Stage composition -> STAGE-MOTION:1 -> production Stage Objects",
+  "method": {
+    "sampleWindowMs": 1500,
+    "stabilityQuietMs": 300,
+    "stableWindowQualification": "No motion-observability mutation for 300 ms before starting each settled sample.",
+    "interaction": "Pointer-down on the already-visible ctx-scenario-pricing Stage control to the first requestAnimationFrame observing a changed canonical Stage signature.",
+    "probeIdentity": "NPA-T STAGE-PROD:8A/BrowserPerformanceMeasurement",
+    "probeReadOnly": true
+  },
+  "journey": {
+    "investigationSubjectId": "ctx-problem-capacity",
+    "comparisonCommand": "Compare Demand Surge and Pricing Response.",
+    "comparisonParticipantIds": [
+      "ctx-scenario-demand",
+      "ctx-scenario-pricing"
+    ],
+    "interactionSubjectId": "ctx-scenario-pricing"
+  },
+  "stableIdle": {
+    "observationMs": 1500,
+    "frameCount": 181,
+    "averageFrameIntervalMs": 8.333,
+    "fps": 120,
+    "p95FrameIntervalMs": 9.2,
+    "maxFrameIntervalMs": 9.4,
+    "framesOver33_4Ms": 0,
+    "framesOver50Ms": 0,
+    "motionAttributeWrites": 0,
+    "motionAttributeWritesPerSecond": 0,
+    "motionAttributeWritesPerFrame": 0
+  },
+  "activeAnimation": {
+    "observationMs": 474.2,
+    "frameCount": 56,
+    "averageFrameIntervalMs": 8.622,
+    "fps": 115.985,
+    "p95FrameIntervalMs": 9.1,
+    "maxFrameIntervalMs": 25,
+    "framesOver33_4Ms": 0,
+    "framesOver50Ms": 0,
+    "genuineIntermediateObservations": 13,
+    "animationCompleted": true
+  },
+  "stablePostAnimation": {
+    "observationMs": 1500.1,
+    "frameCount": 181,
+    "averageFrameIntervalMs": 8.334,
+    "fps": 119.992,
+    "p95FrameIntervalMs": 9.2,
+    "maxFrameIntervalMs": 9.3,
+    "framesOver33_4Ms": 0,
+    "framesOver50Ms": 0,
+    "motionAttributeWrites": 0,
+    "motionAttributeWritesPerSecond": 0,
+    "motionAttributeWritesPerFrame": 0
+  },
+  "settledWriteComparison": {
+    "stageProd8ABaselineWritesPerSecond": 1560,
+    "stageProd8ABaselineWritesPerFrame": 13,
+    "stageProd8CFinalWritesPerSecond": 0,
+    "stageProd8CFinalWritesPerFrame": 0,
+    "writeRateReductionPercent": 100,
+    "writesPerFrameReductionPercent": 100
+  },
+  "interaction": {
+    "latencyMs": 5.4,
+    "startMarker": "pointerdown captured on the already-visible ctx-scenario-pricing Stage control",
+    "completionMarker": "first probe requestAnimationFrame with changed composition/focus signature",
+    "selectedObjectId": "ctx-scenario-pricing",
+    "focusedObjectId": "ctx-scenario-pricing",
+    "advisorObjectId": "ctx-scenario-pricing"
+  },
+  "correctness": {
+    "investigationIdentityExact": true,
+    "comparisonIdentitiesExact": true,
+    "finalSceneFamily": "comparison",
+    "finalMotionPhase": "complete",
+    "finalMotionProgress": "1.000",
+    "intermediatePlaybackObserved": true,
+    "stageAdvisorSynchronizationExact": true,
+    "stageRemainedInteractive": true,
+    "writesCanonicalManagementState": false
+  },
+  "probeIsolation": {
+    "queryGatedRouteEnabled": true,
+    "normalExecutiveProbeAttribute": null,
+    "normalExecutiveProbeStatusAttribute": null,
+    "createsTelemetryBackend": false
+  },
+  "browserRuntimeErrors": [],
+  "result": "CERTIFIED",
+  "performanceDebt": "CLOSED",
+  "stageProd8Status": "CLOSED",
+  "stageProdFinalMayStart": true,
+  "stageProdFinalStarted": false
+}

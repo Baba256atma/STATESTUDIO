@@ -118,7 +118,7 @@ export const NLU_CERTIFICATION_CORPUS: readonly NluCorpusCase[] = Object.freeze(
   c("obs1", "Delivery was around 91% last month.", "observation", { observation: true, subjectName: "Delivery" }),
   c("obs2", "We have a backlog.", "observation", { observation: true, mustNotCommit: true }),
   c("obs3", "Capacity feels constrained.", "observation", { observation: true, subjectName: "Capacity" }),
-  c("obs4", "I don’t think this risk is serious.", "observation", { subjectName: "Risk" }),
+  c("obs4", "I don’t think this risk is serious.", "observation", { unknown: true, mustNotFabricateObject: true }),
   c("obs5", "The target is 96%.", "observation", { observation: true }),
   c("obs6", "Capacity seems tight.", "observation", { observation: true, subjectName: "Capacity" }),
   c("ch1", "Are you sure?", "challenge", { challenge: true }),

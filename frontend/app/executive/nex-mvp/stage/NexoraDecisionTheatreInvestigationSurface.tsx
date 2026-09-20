@@ -36,6 +36,12 @@ export function NexoraDecisionTheatreInvestigationSurface({
       data-theatre-investigation-object-type={investigation.canonicalObjectType}
       data-theatre-investigation-level={investigation.level}
       data-theatre-investigation-open="true"
+      data-stage-prod-disclosure="NPA-T STAGE-PROD:5/InteractiveDisclosure"
+      data-stage-prod-disclosed-object-id={investigation.objectId}
+      data-stage-prod-disclosure-scene-role={investigation.sceneRole ?? "none"}
+      data-stage-prod-disclosure-provenance={investigation.provenance.join("|") || "none"}
+      data-stage-prod-disclosure-evidence={investigation.evidence.map((item) => item.epistemicStatus).join("|") || "none"}
+      data-stage-prod-disclosure-writes="false"
       data-nex-stage-card-role={investigation.presentationRole}
       data-nex-stage-card-status-source={investigation.statusSource}
       data-nex-stage-card-evidence={investigation.evidenceApplicability}
@@ -74,6 +80,7 @@ export function NexoraDecisionTheatreInvestigationSurface({
         <button
           type="button"
           data-testid="nexora-theatre-investigation-close"
+          aria-label={`Close ${investigation.managerReadableName} disclosure`}
           onClick={onClose}
           style={{
             border: "none",
@@ -109,7 +116,13 @@ export function NexoraDecisionTheatreInvestigationSurface({
       {showInvestigate ? (
         <div style={{ overflow: "auto", minHeight: 0 }}>
           {investigation.relationships.map((item) => (
-            <div key={`${item.id}:${item.relation}`} style={{ fontSize: typeScale.caption.size, color: cockpit.textSoft }}>
+            <div
+              key={`${item.id}:${item.relation}`}
+              data-stage-prod-related-object-id={item.id}
+              data-stage-prod-relationship={item.relation}
+              data-stage-prod-causal-status={item.causalStatus}
+              style={{ fontSize: typeScale.caption.size, color: cockpit.textSoft }}
+            >
               {investigation.managerReadableName} {item.relation} {item.label}
             </div>
           ))}

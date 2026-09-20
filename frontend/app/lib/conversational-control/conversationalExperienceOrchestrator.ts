@@ -4044,8 +4044,15 @@ function finalize(args: {
           normalizeNexoraConversationalUtterance(args.utterance) ===
             canonicalFocusName)),
   );
+  const canonicalAdvisorSubjectIsExplicit = Boolean(
+    naturalLanguageUnderstanding.requestedOperation === "EXPLAIN" &&
+      naturalLanguageUnderstanding.objectReference?.subjectId &&
+      semanticTurn.references.primary?.id ===
+        naturalLanguageUnderstanding.objectReference.subjectId,
+  );
   const canonicalSingleSubjectHandoff = Boolean(
     canonicalFocusIsExplicit ||
+      canonicalAdvisorSubjectIsExplicit ||
       (clarificationTurn.correctionDetected &&
         clarificationTurn.correctionAfterId),
   );
@@ -4309,8 +4316,9 @@ function finalize(args: {
     ? args.nextRuntimeState
     : (
     comparisonMeaning.active ||
-    stageRelationship === "STAGE_META" ||
-    stageRelationship === "STAGE_COMPATIBLE" ||
+    ((stageRelationship === "STAGE_META" ||
+      stageRelationship === "STAGE_COMPATIBLE") &&
+      !explicitSingularFocus) ||
     isCollectionConfirmation(args.utterance)
   )
     ? (args.runtimeStateBeforeTurn ?? args.nextRuntimeState)
@@ -6490,7 +6498,7 @@ function finalize(args: {
         ? false
         : consentReply === "yes"
           ? true
-          : stageRelationship === "STAGE_META" || stageRelationship === "STAGE_COMPATIBLE" || isCollectionConfirmation(args.utterance)
+          : ((stageRelationship === "STAGE_META" || stageRelationship === "STAGE_COMPATIBLE") && !explicitSingularFocus) || isCollectionConfirmation(args.utterance)
             ? false
             : args.shouldCommitRuntime || directorPlan.mutationRequired,
     nextRuntimeState: directorRuntimeState,

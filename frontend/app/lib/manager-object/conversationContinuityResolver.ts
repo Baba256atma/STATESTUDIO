@@ -141,6 +141,19 @@ function kindCompatible(expected: string | null, actual: string | null): boolean
   return false;
 }
 
+function typedReferenceCompatible(
+  expected: string | null,
+  candidate: ContextualReferentCandidate,
+): boolean {
+  if (expected === "risk") {
+    return (
+      candidate.subjectKind === "risk" ||
+      /\brisk\b/i.test(candidate.canonicalName ?? "")
+    );
+  }
+  return kindCompatible(expected, candidate.subjectKind);
+}
+
 function isWeakLexicalHint(turnMeaning: CanonicalManagerMeaning): boolean {
   const hint = (turnMeaning.objectReference?.lexicalHint ?? "").trim();
   const name = prepareManagerUtterance(turnMeaning.objectReference?.canonicalName ?? "");
@@ -169,14 +182,6 @@ function pickContextRankedCandidate(
       )
     : inContext;
   return kindMatched[0] ?? inContext[0] ?? null;
-}
-
-function pickByKind(
-  expected: string | null,
-  pool: readonly ContextualReferentCandidate[],
-): ContextualReferentCandidate | null {
-  if (!expected) return pool[0] ?? null;
-  return pool.find((item) => kindCompatible(expected, item.subjectKind)) ?? null;
 }
 
 function nextPresented(
@@ -447,13 +452,23 @@ export function resolveContextualManagerMeaning(
       : "UNRESOLVED";
     if (operation === "NONE" && selected) operation = "EXPLAIN";
   } else if (move === "typed-reference") {
-    const typedPool = pool.filter((item) =>
-      kindCompatible(classified.expectedKind, item.subjectKind),
+    const typedPool = pool.filter(
+      (item) =>
+        item.provenance !== "NLU_CURRENT_TURN" &&
+        item.provenance !== "CONTEXT_PREVIOUS_SUBJECT" &&
+        item.provenance !== "CONTEXT_PRESENTED_SET" &&
+        item.provenance !== "CONTEXT_RECENT_SUBJECT" &&
+        typedReferenceCompatible(classified.expectedKind, item),
     );
     selected =
       typedPool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
       typedPool.find((item) => item.provenance === "CONTEXT_CORRECTION") ??
-      pickByKind(classified.expectedKind, typedPool);
+      typedPool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT") ??
+      typedPool.find(
+        (item) => item.provenance === "CONTEXT_ACTIVE_INVESTIGATION",
+      ) ??
+      typedPool.find((item) => item.provenance === "CONTEXT_TYPED_REFERENCE") ??
+      null;
     provenance = selected ? "CONTEXT_TYPED_REFERENCE" : "UNRESOLVED";
     if (operation === "NONE") operation = "EXPLAIN";
   } else if (
@@ -591,7 +606,9 @@ export function resolveContextualManagerMeaning(
 
   const objectReference = selected
     ? toRef(recordOf(selected.subjectId, subjects))
-    : turnMeaning.objectReference;
+    : move === "typed-reference"
+      ? null
+      : turnMeaning.objectReference;
 
   return Object.freeze({
     identity: "NEX-MVP-FINAL:6.2/ConversationContextContinuity",

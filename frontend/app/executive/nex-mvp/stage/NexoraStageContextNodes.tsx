@@ -251,6 +251,7 @@ function ContextNodeMesh({
           <div
             data-testid={`nexora-thread-gateway-${node.subjectId}`}
             data-canonical-id={node.id}
+            data-object-type={node.kind}
             data-context-subject={node.subjectId}
             data-kind={node.kind}
             data-role={node.role}
@@ -376,6 +377,7 @@ function ContextNodeMesh({
           <span
             data-testid={`nexora-context-label-${node.subjectId}`}
             data-canonical-id={node.id}
+            data-object-type={node.kind}
             data-context-subject={node.subjectId}
             data-kind={node.kind}
             data-role={node.role}

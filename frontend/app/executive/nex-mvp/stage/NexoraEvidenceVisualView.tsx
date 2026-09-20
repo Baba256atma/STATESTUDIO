@@ -7,10 +7,16 @@ export function NexoraEvidenceVisualView({
   view,
   reducedMotion,
   onDismiss,
+  inspection,
 }: Readonly<{
   readonly view: NexoraVisualView;
   readonly reducedMotion: boolean;
-  readonly onDismiss: () => void;
+  readonly onDismiss?: () => void;
+  readonly inspection?: Readonly<{
+    readonly canonicalObjectIds: readonly string[];
+    readonly sourceIds: readonly string[];
+    readonly evidenceStates: readonly string[];
+  }>;
 }>) {
   const points = view.series.flatMap((series, seriesIndex) =>
     series.points.map((point, pointIndex) => ({
@@ -77,7 +83,7 @@ export function NexoraEvidenceVisualView({
             {view.title}
           </h2>
         </div>
-        <button
+        {onDismiss ? <button
           type="button"
           data-testid="nexora-evidence-visual-dismiss"
           onClick={onDismiss}
@@ -91,7 +97,7 @@ export function NexoraEvidenceVisualView({
           }}
         >
           Close
-        </button>
+        </button> : null}
       </header>
       <svg
         role="img"
@@ -112,6 +118,24 @@ export function NexoraEvidenceVisualView({
         {view.provenance.fieldLabels.join(", ")} · {view.provenance.periodLabel}.
         Color here is presentation, not a business status.
       </p>
+      {inspection ? (
+        <details
+          data-testid="nexora-stage-visual-inspection"
+          data-stage-visual-inspection-writes="false"
+          style={{ color: cockpit.muted, fontSize: "0.66rem" }}
+        >
+          <summary style={{ cursor: "pointer" }}>Inspect source</summary>
+          <div data-stage-visual-inspection-object-ids={inspection.canonicalObjectIds.join("|") || "none"}>
+            Objects: {inspection.canonicalObjectIds.join(", ") || "none"}
+          </div>
+          <div data-stage-visual-inspection-source-ids={inspection.sourceIds.join("|") || "none"}>
+            Sources: {inspection.sourceIds.join(", ") || "none"}
+          </div>
+          <div data-stage-visual-inspection-evidence={inspection.evidenceStates.join("|") || "none"}>
+            Evidence: {inspection.evidenceStates.join(", ") || "none"}
+          </div>
+        </details>
+      ) : null}
     </aside>
   );
 }

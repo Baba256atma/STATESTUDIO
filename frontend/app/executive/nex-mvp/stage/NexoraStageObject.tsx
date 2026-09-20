@@ -42,8 +42,10 @@ import {
 import {
   clearExecutiveStage2DLivePosition,
   publishExecutiveStage2DLivePosition,
+  publishExecutiveStageMotionLiveSample,
 } from "./executiveStage2DLivePositions";
 import { sampleExecutiveStageMotionObject } from "@/app/lib/spatial-presentation/executiveStageMotion";
+import { projectStageProdObjectMotion } from "@/app/lib/stage-prod/stageProdObjectMotion.ts";
 
 type Props = {
   readonly presentation: NexoraMVPStageObjectPresentation;
@@ -79,6 +81,15 @@ export function NexoraStageObject({
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
   const hovered = hoveredId === presentation.id;
+  const objectMotion = useMemo(
+    () =>
+      projectStageProdObjectMotion({
+        canonicalObjectId: presentation.id,
+        focused: presentation.focused,
+        selected: presentation.selected,
+      }),
+    [presentation.focused, presentation.id, presentation.selected],
+  );
 
   // Seed once from targetPosition so first paint is not at world origin.
   // Subsequent motion is owned exclusively by STAGE-MOTION:1.
@@ -395,7 +406,6 @@ export function NexoraStageObject({
     presentation.focused,
     presentation.selected,
     presentation.role,
-    presentation.role,
     presentation.status,
     presentationLevel,
   ]);
@@ -428,6 +438,12 @@ export function NexoraStageObject({
       sample.position[1],
       sample.position[2],
     ]);
+    publishExecutiveStageMotionLiveSample(presentation.id, {
+      position: sample.position,
+      opacity: sample.opacity,
+      scale: sample.scale,
+      visible: sample.visible,
+    });
     group.scale.setScalar(sample.scale);
     group.visible = sample.visible;
 
@@ -462,6 +478,7 @@ export function NexoraStageObject({
       userData={{
         objectId: presentation.id,
         canonicalId: presentation.id,
+        canonicalType: presentation.kind,
         visualAudit: "stage-object",
         status: presentation.status,
         attention: presentation.attention,
@@ -495,6 +512,10 @@ export function NexoraStageObject({
         connectionAnchorRadius: visual.connectionAnchor.radius,
         layoutTargetPosition: presentation.targetPosition,
         stageMotionAuthority: "stage-motion-1",
+        stageProdObjectMotion: objectMotion.identity,
+        stageProdMotionState: objectMotion.state,
+        stageProdMotionReason: objectMotion.reason,
+        stageProdMotionWrites: objectMotion.writesCanonicalManagementState,
       }}
     >
       <ExecutiveObjectGeometryRenderer
@@ -665,6 +686,7 @@ export function NexoraStageObject({
         testId={`nexora-stage-object-label-${presentation.id}`}
         auditAttributes={{
           "data-canonical-id": presentation.id,
+          "data-object-type": presentation.kind,
           "data-status": presentation.status,
           "data-attention": presentation.attention,
           "data-role": presentation.role,

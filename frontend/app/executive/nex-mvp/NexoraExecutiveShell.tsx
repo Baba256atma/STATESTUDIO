@@ -96,6 +96,7 @@ import {
   mapNexoraMVPInteractionStateToApplicationSubjects,
   openNexoraMVPExecutiveChangeCollection,
   openNexoraMVPExecutiveQueueCollection,
+  resetNexoraMVPObjectInteractionOverview,
   acknowledgeNexoraMVPExecutiveChanges,
   beginNexoraMVPDailyPreparation,
   beginNexoraMVPMeetingPreparation,
@@ -238,7 +239,6 @@ import {
   emptyNexoraVisualViewRuntime,
   type NexoraVisualViewRuntime,
 } from "@/app/lib/director/nexoraVisualIntelligence";
-import { NexoraEvidenceVisualView } from "@/app/executive/nex-mvp/stage/NexoraEvidenceVisualView";
 import type {
   NexoraConversationalAdvisorGrounding,
   NexoraConversationalExperienceTrace,
@@ -313,6 +313,7 @@ import { NexoraFlowFloatingContent } from "./flow/NexoraFlowFloatingContent";
 import { NexoraFlowJournalExplorer } from "./flow/NexoraFlowJournalExplorer";
 import { NexoraStageMount } from "./NexoraStageMount";
 import { hostNmiLiveManagementIntelligence } from "@/app/lib/nmi/nmiLivePipeline";
+import { projectStageProdLiveFoundation } from "@/app/lib/stage-prod/stageProdPublicIndex";
 import {
   presentationByParticipantId,
   mapCapturedObservationsForTheatre,
@@ -1142,6 +1143,23 @@ export function NexoraExecutiveShell({
     [interaction, stageInteraction],
   );
 
+  const liveStageFoundation = useMemo(
+    () =>
+      projectStageProdLiveFoundation({
+        theatre: theatreProjection,
+        nmi: nmiLive,
+        focusedCanonicalObjectId:
+          interaction.focusedSubject?.id ??
+          interaction.selectedSubject?.id ??
+          null,
+        conversationalReferentId:
+          advisorBridge.advisorSubjectId ??
+          advisorBridge.focusedSubject?.id ??
+          null,
+      }),
+    [advisorBridge, interaction, nmiLive, theatreProjection],
+  );
+
   const timelineBridge = useMemo(
     () => buildNexoraMVPTimelineContextBridge(interaction),
     [interaction],
@@ -1742,7 +1760,22 @@ export function NexoraExecutiveShell({
           setComparisonLevel("choice");
         }
 
-        if (result.shouldCommitRuntime) {
+        const activeComparison =
+          result.managerObjectTurn.session.ncaConversationState
+            ?.activeComparison;
+        const comparisonRequiresStageReferentRelease =
+          activeComparison != null &&
+          activeComparison.candidateIds.length >= 2;
+
+        if (comparisonRequiresStageReferentRelease) {
+          const comparisonState = resetNexoraMVPObjectInteractionOverview(
+            result.nextRuntimeState,
+          );
+          setInteraction(comparisonState);
+          setApplication((app) =>
+            applyInteractionToApplication(app, comparisonState),
+          );
+        } else if (result.shouldCommitRuntime) {
           lastConversationalCommandIdRef.current =
             result.commandResult?.command?.commandId ??
             lastConversationalCommandIdRef.current;
@@ -3078,18 +3111,6 @@ export function NexoraExecutiveShell({
                 ? guidedAttention.presentation.cue
                 : null
             }
-            overlay={
-              visualView.view ? (
-                <NexoraEvidenceVisualView
-                  view={visualView.view}
-                  reducedMotion={
-                    typeof window !== "undefined" &&
-                    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                  }
-                  onDismiss={() => setVisualView(emptyNexoraVisualViewRuntime())}
-                />
-              ) : null
-            }
             stageControls={
               <><NexoraStageDataControl open={explorerKind === "data"} attention={false} guidedAttentionCue={
                 guidedAttention.presentation?.target === "DATA_ENTRY"
@@ -3102,6 +3123,7 @@ export function NexoraExecutiveShell({
             }
           >
             <NexoraStageMount
+              liveFoundation={liveStageFoundation}
               workspaceLabel={workspaceLabel}
               interaction={stageInteraction}
               environment={environmentVisual}
@@ -3134,6 +3156,11 @@ export function NexoraExecutiveShell({
               nmiMapNodes={nmiLive.overlayMapNodes}
               sceneIntentKind={theatreProjection.sceneIntent.intentKind}
               sceneScriptId={theatreProjection.sceneScript.scriptId}
+              theatreComposition={theatreProjection}
+              requestedVisual={visualView.view}
+              onDismissVisual={() =>
+                setVisualView(emptyNexoraVisualViewRuntime())
+              }
               objectInvestigation={theatreProjection.objectInvestigation}
               investigationVisible={
                 theatreProjection.objectInvestigation != null &&

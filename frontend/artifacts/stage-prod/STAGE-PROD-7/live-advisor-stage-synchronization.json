@@ -1,0 +1,36 @@
+{
+  "route": "/executive",
+  "conversationToStage": {
+    "utterance": "Explain Capacity Gap.",
+    "canonicalId": "ctx-problem-capacity",
+    "shellFocused": "ctx-problem-capacity",
+    "stageAdvisorSubject": "ctx-problem-capacity",
+    "advisorSubject": "ctx-problem-capacity",
+    "sceneFamily": "investigation"
+  },
+  "stageToConversation": {
+    "activation": "ctx-problem-capacity",
+    "followUp": "Explain it.",
+    "canonicalId": "ctx-problem-capacity",
+    "sceneFamily": "investigation"
+  },
+  "namedSwitch": {
+    "utterance": "Explain Margin Pressure.",
+    "canonicalId": "ctx-problem-margin",
+    "sceneFamily": "investigation"
+  },
+  "comparison": {
+    "utterance": "Compare Demand Surge and Pricing Response.",
+    "focused": "none",
+    "selected": "none",
+    "advisorSubject": "none",
+    "disclosure": "dismissed",
+    "sceneFamily": "comparison",
+    "canonicalObjectIds": [
+      "ctx-scenario-pricing",
+      "ctx-scenario-demand"
+    ]
+  },
+  "writesCanonicalManagementState": false,
+  "browserErrors": []
+}

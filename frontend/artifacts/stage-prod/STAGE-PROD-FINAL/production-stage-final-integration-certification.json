@@ -1,0 +1,117 @@
+{
+  "identity": "NPA-T STAGE-PROD:FINAL/ProductionStageFinalIntegrationCertification",
+  "certifiedAt": "2026-09-20",
+  "result": "CERTIFIED",
+  "programStatus": "PRODUCTION-CERTIFIED",
+  "implementationChanges": false,
+  "productionPath": "/executive -> ExecutiveShell -> ExecutiveCockpit -> NexoraExecutiveShell -> NexoraStageMount -> Nexora3DExecutiveStage",
+  "authorityAudit": {
+    "canonicalObjects": "existing MO/NMI/business-project authorities",
+    "conversationReferent": "existing FINAL:6.2/MO/CC:5/ECA/NCA authorities",
+    "director": "DIR:1",
+    "theatre": "existing DTH/DTH-EXP authorities",
+    "stageInteraction": "NEX-MVP:4",
+    "stageComposition": "existing STAGE-PROD projection/composition path",
+    "motion": "STAGE-MOTION:1",
+    "advisorSynchronization": "existing STAGE-PROD:7 composition of certified authorities",
+    "performanceInstrumentation": "query-gated STAGE-PROD:8 measurement probe",
+    "duplicateAuthoritiesFound": []
+  },
+  "certificationAudit": {
+    "stageProd1": "CERTIFIED",
+    "stageProd2": "CERTIFIED",
+    "stageProd3": "CERTIFIED",
+    "stageProd4": "CERTIFIED",
+    "stageProd5": "CERTIFIED",
+    "stageProd6A": "CERTIFIED",
+    "stageProd6B": "CERTIFIED",
+    "stageProd6C": "CERTIFIED",
+    "stageProd7": "RECERTIFIED by current FIX1 guard and FINAL evidence",
+    "stageProd7HistoricalArtifact": "documentation drift: the pre-FIX1 NOT CERTIFIED record is retained as historical evidence",
+    "stageProd7Fix1": "PASS",
+    "stageProd7Recert": "PASS",
+    "stageProd8A": "CERTIFIED measurement foundation",
+    "stageProd8B": "CERTIFIED optimization evidence",
+    "stageProd8C": "CERTIFIED"
+  },
+  "focusedTests": {
+    "passed": 103,
+    "failed": 0,
+    "skipped": 0
+  },
+  "repositoryGates": {
+    "eslint": "PASS",
+    "typecheck": "PASS",
+    "optimizedProductionBuild": "PASS",
+    "diffCheck": "PASS",
+    "requiredLevel1Funnel": "PASS"
+  },
+  "browserJourney": {
+    "route": "/executive",
+    "optimizedProductionBuild": true,
+    "stageHostCount": 1,
+    "investigation": {
+      "utterance": "Explain Capacity Gap.",
+      "canonicalId": "ctx-problem-capacity",
+      "sceneFamily": "investigation",
+      "disclosure": "disclosed"
+    },
+    "stageFollowUp": {
+      "activation": "ctx-problem-capacity",
+      "utterance": "Explain it.",
+      "canonicalId": "ctx-problem-capacity"
+    },
+    "comparison": {
+      "utterance": "Compare Demand Surge and Pricing Response.",
+      "sceneFamily": "comparison",
+      "canonicalObjectIds": [
+        "ctx-scenario-pricing",
+        "ctx-scenario-demand"
+      ],
+      "motionPhase": "complete",
+      "motionProgress": "1.000",
+      "motionSettled": true,
+      "staleDisclosure": "dismissed"
+    },
+    "scenarioInteraction": {
+      "canonicalId": "ctx-scenario-pricing",
+      "stageSelected": "ctx-scenario-pricing",
+      "stageFocused": "ctx-scenario-pricing",
+      "advisorReferent": "ctx-scenario-pricing",
+      "disclosure": "disclosed"
+    },
+    "stageRemainedInteractive": true,
+    "normalRoutePerformanceProbeAttributes": null,
+    "browserRuntimeErrors": []
+  },
+  "performanceEvidence": {
+    "source": "STAGE-PROD-8C/production-performance-certification.json",
+    "stableIdleFps": 120,
+    "stableIdleMotionWritesPerSecond": 0,
+    "activeAnimationFps": 115.985,
+    "activeAnimationIntermediateObservations": 13,
+    "activeAnimationFramesOver33_4Ms": 0,
+    "stablePostAnimationFps": 119.992,
+    "stablePostAnimationMotionWritesPerSecond": 0,
+    "interactionLatencyMs": 5.4,
+    "preserved": true
+  },
+  "readWriteSafety": {
+    "stageWritesCanonicalManagementState": false,
+    "compositionWritesCanonicalManagementState": false,
+    "visualWritesCanonicalManagementState": false,
+    "disclosureWritesCanonicalManagementState": false
+  },
+  "debt": {
+    "interactiveDisclosure": "CLOSED",
+    "liveAnimationPlayback": "CLOSED",
+    "realMeasuredBrowserPerformance": "CLOSED",
+    "relationshipRevealHideAnimation": "DEFERRED",
+    "managerScenes": "DEFERRED",
+    "warRoom": "DEFERRED",
+    "pointerDepthAndRicher3D": "DEFERRED",
+    "advancedChartAndWhatIfInteraction": "DEFERRED"
+  },
+  "architectureViolations": [],
+  "nextProgramRecommendation": "Plan deferred Stage capabilities under a separately authorized program; do not extend STAGE-PROD inside FINAL."
+}

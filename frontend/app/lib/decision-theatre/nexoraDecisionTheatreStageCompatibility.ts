@@ -8,6 +8,7 @@
 
 import type { NexoraDirectorPlan } from "@/app/lib/director/nexoraSemanticPresentationDirector.ts";
 import type { NexoraExecutiveContextSnapshot } from "@/app/lib/conversational-control/executiveContextSnapshot.ts";
+import type { ExecutiveComparisonCriterion } from "@/app/lib/manager-object/nexoraNcaPost4CollectionComparison.ts";
 import {
   deriveNexoraMVPStageInteractionPresentation,
   getDefaultNexoraMVPObjectInteractionCatalog,
@@ -175,6 +176,41 @@ function reconstructSceneSemanticFromStage(
           })
         : input.sceneSemanticInput.comparison,
       namedSubject: overlaySubject ?? input.sceneSemanticInput.namedSubject,
+    });
+  }
+  const activeComparison = input.ncaActiveComparison;
+  if (
+    overlayJourney == null &&
+    activeComparison != null &&
+    activeComparison.candidateIds.length >= 2
+  ) {
+    const criterion = activeComparison.criterion as
+      | ExecutiveComparisonCriterion
+      | null;
+    return emptyNexoraDecisionTheatreSceneSemanticInput({
+      canonicalSemanticResultRef: [
+        "nca-active-comparison",
+        ...activeComparison.candidateIds,
+        criterion ?? "UNSPECIFIED",
+      ].join(":"),
+      activeExecutiveContextRef:
+        input.executiveContext?.currentSubject?.subjectId ??
+        input.stageState.focusedSubject?.id ??
+        null,
+      conversationIntentKind: "compare-scenarios",
+      canonicalOperation: "COMPARE",
+      comparison: Object.freeze({
+        active: true,
+        memberIds: Object.freeze([...activeComparison.candidateIds]),
+        criterion,
+        criterionAmbiguous:
+          criterion == null || criterion === "UNSPECIFIED",
+        criterionResolution: null,
+      }),
+      deixis: Object.freeze({
+        pronoun: "them" as const,
+        resolvedIds: Object.freeze([...activeComparison.candidateIds]),
+      }),
     });
   }
   const focused = input.stageState.focusedSubject;
