@@ -1,16 +1,16 @@
 "use client";
 
-import type { NexoraMVPJournalEntryView } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
+import type { SceneOrgActivityEntry } from "@/app/lib/scene-org/sceneOrgActivityWorkspaceContract";
 import { cockpit } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
-  readonly entries: readonly NexoraMVPJournalEntryView[];
+  readonly entries: readonly SceneOrgActivityEntry[];
   readonly selectedId: string | null;
   readonly onSelect: (entryId: string, subjectId: string) => void;
 };
 
 /**
- * Journal explorer list — Pack presentation, not a second persistence store.
+ * Manager Activity — read-only presentation of existing linked flow records.
  */
 export function NexoraFlowJournalExplorer({
   entries,
@@ -19,9 +19,9 @@ export function NexoraFlowJournalExplorer({
 }: Props) {
   return (
     <div
-      data-testid="nexora-flow-journal"
+      data-testid="nexora-manager-activity"
       data-nex-mvp="8"
-      aria-label="Executive Journal"
+      aria-label="Manager Activity"
       style={{ padding: "0.75rem" }}
     >
       <p
@@ -33,14 +33,14 @@ export function NexoraFlowJournalExplorer({
           color: cockpit.lowMuted,
         }}
       >
-        Journal Packs
+        Recent Activity
       </p>
       {entries.length === 0 ? (
         <p
-          data-testid="nexora-flow-journal-empty"
+          data-testid="nexora-manager-activity-empty"
           style={{ margin: 0, fontSize: "0.72rem", color: cockpit.muted }}
         >
-          No journal packs recorded for the current executive context.
+          No recorded activity is available for the current executive context.
         </p>
       ) : (
         <ul
@@ -59,9 +59,9 @@ export function NexoraFlowJournalExplorer({
               <li key={entry.id}>
                 <button
                   type="button"
-                  data-testid={`nexora-journal-entry-${entry.id}`}
+                  data-testid={`nexora-activity-entry-${entry.id}`}
                   aria-pressed={selected}
-                  onClick={() => onSelect(entry.id, entry.subjectId)}
+                  onClick={() => onSelect(entry.id, entry.canonicalSubjectId)}
                   style={{
                     width: "100%",
                     textAlign: "left",
@@ -87,7 +87,7 @@ export function NexoraFlowJournalExplorer({
                       color: cockpit.lowMuted,
                     }}
                   >
-                    {entry.packKind}
+                    {entry.eventType.replaceAll("-", " ")} · {new Date(entry.occurredAt).toLocaleDateString()}
                   </span>
                   <span
                     style={{
@@ -108,7 +108,7 @@ export function NexoraFlowJournalExplorer({
                       lineHeight: 1.4,
                     }}
                   >
-                    {entry.summary}
+                    {entry.description}
                   </span>
                 </button>
               </li>

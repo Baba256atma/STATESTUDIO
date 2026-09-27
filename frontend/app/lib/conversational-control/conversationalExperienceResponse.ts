@@ -81,6 +81,27 @@ export function buildNexoraConversationalExperienceResponse(input: {
     return withPeriod(exiAnswer);
   }
 
+  if (
+    status === "applied" &&
+    command?.kind === "workspace-presentation" &&
+    command.workspaceAction
+  ) {
+    const sceneName = command.workspaceAction.sceneName
+      ? titleCase(command.workspaceAction.sceneName)
+      : null;
+    switch (command.workspaceAction.action) {
+      case "OPEN_DETAIL": return "Opened Detail Workspace for the current context.";
+      case "CLOSE_DETAIL": return "Closed Detail Workspace.";
+      case "SHOW_RIGHT_DETAILS": return "Showing contextual details.";
+      case "OPEN_ADVISOR": return "Opened Advisor.";
+      case "COLLAPSE_RIGHT": return "Collapsed the right panel.";
+      case "SHOW_ACTIVITY": return "Showing recent recorded activity.";
+      case "SAVE_SCENE": return sceneName ? `Saved ${sceneName} as view metadata.` : "Saved the current scene as view metadata.";
+      case "OPEN_SCENE": return sceneName ? `Opened ${sceneName} using current live content.` : "Opened the saved scene using current live content.";
+      case "MAKE_DEFAULT_SCENE": return "Made the current saved scene the default view.";
+    }
+  }
+
   if (intent.kind === "greet" || intent.kind === "help") {
     const attention =
       recommendationResult?.assessment.issues[0]?.summary ??

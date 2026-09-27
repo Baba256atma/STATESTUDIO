@@ -1,0 +1,23 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "http": 200,
+  "live": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "ovs1Enabled": "true",
+    "ovs3Enabled": "false",
+    "ovs3Family": "none",
+    "ovs3Scene": "unavailable",
+    "ovs3Data": "precision-2d",
+    "ovs3Structures": "0",
+    "ovs3Roadmap": "none",
+    "composition": "NPA-T STAGE-PROD:3/DirectorStageComposition",
+    "sceneFamily": "orientation",
+    "focusedSubject": "none",
+    "objectCount": 10,
+    "kinds": [
+      "object"
+    ]
+  },
+  "ok": true
+}

@@ -1,0 +1,72 @@
+{
+  "recovery": "B-C-FPS",
+  "journeyB": {
+    "canvasCount": 1,
+    "ovs3": {
+      "enabled": "true",
+      "family": "NEXO_RISK",
+      "scene": "available",
+      "data": "isometric-2_5d",
+      "structures": "1",
+      "roadmap": "none"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "risk",
+      "primitive": "diamond"
+    },
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "focusedSubject": "obj-risk",
+    "advisorSubject": "obj-risk",
+    "advisorBridge": "object · Risk",
+    "uniqueObjectCount": 4,
+    "risk": {
+      "id": "obj-risk",
+      "status": "unresolved",
+      "visual": "unresolved",
+      "focused": "true",
+      "selected": "true"
+    },
+    "connections": 0,
+    "reducedMotion": false
+  },
+  "fps": {
+    "durationMs": 1500,
+    "frameCount": 90,
+    "fps": 60,
+    "meanIntervalMs": 16.666,
+    "maxIntervalMs": 16.8,
+    "framesOver33_4Ms": 0
+  },
+  "journeyC": {
+    "canvasCount": 1,
+    "ovs3": {
+      "enabled": "false",
+      "family": "none",
+      "scene": "unavailable",
+      "data": "precision-2d",
+      "structures": "0",
+      "roadmap": "none"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "sceneIntent": "ORIENT_TO_STAGE",
+    "focusedSubject": "none",
+    "advisorSubject": "none",
+    "advisorBridge": "overview · Executive Overview",
+    "uniqueObjectCount": 8,
+    "risk": {
+      "id": "obj-risk",
+      "status": "unresolved",
+      "visual": "unresolved",
+      "focused": "false",
+      "selected": "false"
+    },
+    "connections": 0,
+    "reducedMotion": false
+  },
+  "ok": true
+}

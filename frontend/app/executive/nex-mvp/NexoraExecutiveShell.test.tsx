@@ -280,8 +280,9 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
     assert.match(html, /data-ux1-region="nexora-advisor"/);
     assert.match(html, /data-testid="executive-stage-frame"/);
     assert.match(html, /data-testid="nexora-advisor-insight-region"/);
-    assert.match(html, /data-testid="nexora-executive-queue"/);
-    assert.match(html, /data-queue-compact="true"/);
+    assert.match(html, /data-testid="executive-nav-nmi"/);
+    assert.match(html, /data-nmi-panel-open="false"/);
+    assert.match(html, /<aside[^>]*hidden=""[^>]*data-testid="nexora-executive-queue"/);
     assert.match(html, /data-timeline-collapsed="true"/);
     assert.match(html, /data-manager-visible="false"/);
     assert.match(html, /data-testid="nexora-conversational-input"/);

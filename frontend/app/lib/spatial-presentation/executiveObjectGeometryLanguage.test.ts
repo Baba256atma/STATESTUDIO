@@ -263,7 +263,10 @@ test("10. label anchors remain valid across families", () => {
       labelProminence: "full",
     });
     assert.equal(visual.labelAnchor.faceCamera, true);
-    assert.equal(visual.labelAnchor.position, "above");
+    assert.ok(
+      visual.labelAnchor.position === "above" ||
+        visual.labelAnchor.position === "top",
+    );
     assert.ok(visual.labelAnchor.offset > visual.dimensions.height * 0.5);
     assert.ok(Number.isFinite(visual.labelAnchor.offset));
   }
@@ -427,8 +430,10 @@ test("17. renderer is dumb — no kind switching in Stage JSX", () => {
   assert.match(stageObjectSource, /ExecutiveObjectGeometryRenderer/);
   assert.doesNotMatch(stageObjectSource, /if\s*\(\s*object\.kind/);
   assert.doesNotMatch(stageObjectSource, /kind\s*===\s*["']problem["']/);
-  assert.doesNotMatch(geometryRendererSource, /objectKind/);
+  assert.doesNotMatch(geometryRendererSource, /if\s*\(\s*objectKind\s*===/);
+  assert.doesNotMatch(geometryRendererSource, /switch\s*\(\s*objectKind/);
   assert.doesNotMatch(geometryRendererSource, /semanticFamily/);
+  assert.match(geometryRendererSource, /resolveExecutiveOvsObjectVisualLanguage/);
   assert.match(geometryRendererSource, /family === "rounded"/);
   assert.match(geometryRendererSource, /family === "cylindrical"/);
   assert.match(geometryRendererSource, /family === "orbital"/);

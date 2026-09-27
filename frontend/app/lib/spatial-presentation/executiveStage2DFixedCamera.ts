@@ -18,11 +18,12 @@
  *     > scene choreography camera behavior
  *     > fallback camera behavior
  *
- * Object moves. Camera does not.
+ * Object moves. Camera does not chase.
  */
 
 import {
   EXECUTIVE_CAMERA_PROJECTION,
+  mapExecutiveCameraSphericalToPosition,
   stabilizeExecutiveCameraScalar,
   stabilizeExecutiveCameraVector,
   toExecutiveCameraTuplePresentation,
@@ -70,7 +71,7 @@ export function getExecutiveStage2DFixedCameraIdentity(): ExecutiveStage2DFixedC
 
 export const EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY = Object.freeze({
   architecturalRole: executiveStage2DFixedCameraArchitecturalRole,
-  cameraMode: "fixed-2d" as const,
+  cameraMode: "fixed-executive-perspective" as const,
   ownsBusinessTruth: false as const,
   ownsDataReality: false as const,
   ownsAttentionTruth: false as const,
@@ -83,6 +84,8 @@ export const EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY = Object.freeze({
   allowsPan: false as const,
   allowsZoom: false as const,
   allowsAutoRotate: false as const,
+  allowsPointerParallax: false as const,
+  pointerOffset: 0 as const,
   introducesOrbitControls: false as const,
   retargetsOnObjectFocus: false as const,
   /** Projection remains PerspectiveCamera for STAGE-2D:1 (stable, localized). */
@@ -93,7 +96,7 @@ export const EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY = Object.freeze({
  * Authority law — fixed Stage camera outranks every competing camera writer.
  */
 export const EXECUTIVE_STAGE_2D_CAMERA_AUTHORITY = Object.freeze({
-  statement: "Object moves. Camera does not.",
+  statement: "Object moves. Camera does not chase.",
   rank: Object.freeze([
     "fixed-stage-camera",
     "focus-driven-camera",
@@ -131,27 +134,70 @@ export const EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE = 11 as const;
 export const EXECUTIVE_STAGE_FIXED_CAMERA_FOV =
   EXECUTIVE_CAMERA_PROJECTION.defaultFov;
 
+const DEG = Math.PI / 180;
+
+/** STAGE-SPATIAL:2 — restrained off-axis pose (degrees). */
+export const EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG = 8 as const;
+export const EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG = 10 as const;
+
+export const EXECUTIVE_STAGE_FIXED_CAMERA_POSE_BOUNDS = Object.freeze({
+  azimuthDeg: Object.freeze({ min: 0, max: 12 }),
+  elevationDeg: Object.freeze({ min: 6, max: 14 }),
+  distance: Object.freeze({ min: 10.5, max: 11.5 }),
+  fov: Object.freeze({ min: 40, max: 42 }),
+});
+
+function clampStagePoseScalar(
+  value: number,
+  min: number,
+  max: number,
+): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+const STAGE_FIXED_AZIMUTH_RAD =
+  clampStagePoseScalar(
+    EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG,
+    EXECUTIVE_STAGE_FIXED_CAMERA_POSE_BOUNDS.azimuthDeg.min,
+    EXECUTIVE_STAGE_FIXED_CAMERA_POSE_BOUNDS.azimuthDeg.max,
+  ) * DEG;
+const STAGE_FIXED_ELEVATION_RAD =
+  clampStagePoseScalar(
+    EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG,
+    EXECUTIVE_STAGE_FIXED_CAMERA_POSE_BOUNDS.elevationDeg.min,
+    EXECUTIVE_STAGE_FIXED_CAMERA_POSE_BOUNDS.elevationDeg.max,
+  ) * DEG;
+const STAGE_FIXED_DISTANCE = clampStagePoseScalar(
+  EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
+  EXECUTIVE_STAGE_FIXED_CAMERA_POSE_BOUNDS.distance.min,
+  EXECUTIVE_STAGE_FIXED_CAMERA_POSE_BOUNDS.distance.max,
+);
+
+const STAGE_FIXED_POSITION = mapExecutiveCameraSphericalToPosition({
+  target: EXECUTIVE_STAGE_2D_CENTER,
+  distance: STAGE_FIXED_DISTANCE,
+  azimuth: STAGE_FIXED_AZIMUTH_RAD,
+  elevation: STAGE_FIXED_ELEVATION_RAD,
+});
+
 /**
- * Fixed Executive Stage camera — front-facing view of the X/Y presentation plane.
- *
- * World convention (already established by SP:4.3B):
- *   presentation {x,y} → world {x,y} with z = 0
- * Therefore the camera sits on +Z and looks at the origin (no azimuth / elevation).
+ * Fixed Executive Stage camera — restrained off-axis executive perspective.
+ * Layout remains 2D (semanticZ = 0). Camera reveals existing OVS mesh volume.
+ * No orbit, pan, zoom, pointer parallax, or focus chase.
  */
 export const EXECUTIVE_STAGE_FIXED_CAMERA = Object.freeze({
-  mode: "fixed-2d" as const,
+  mode: "fixed-executive-perspective" as const,
   target: EXECUTIVE_STAGE_2D_CENTER,
-  position: Object.freeze({
-    x: 0,
-    y: 0,
-    z: EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  }) satisfies ExecutiveCameraVector,
-  distance: EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  azimuth: 0 as const,
-  elevation: 0 as const,
+  position: STAGE_FIXED_POSITION,
+  distance: STAGE_FIXED_DISTANCE,
+  azimuth: STAGE_FIXED_AZIMUTH_RAD,
+  elevation: STAGE_FIXED_ELEVATION_RAD,
+  azimuthDeg: EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG,
+  elevationDeg: EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG,
   fov: EXECUTIVE_STAGE_FIXED_CAMERA_FOV,
   near: EXECUTIVE_CAMERA_PROJECTION.near,
   far: EXECUTIVE_CAMERA_PROJECTION.far,
+  pointerOffset: 0 as const,
   orbitEnabled: false as const,
   panEnabled: false as const,
   zoomEnabled: false as const,
@@ -169,6 +215,30 @@ export function resolveExecutiveStageFixedCamera(): ExecutiveStageFixedCameraPre
     fov: stabilizeExecutiveCameraScalar(EXECUTIVE_STAGE_FIXED_CAMERA.fov),
     near: stabilizeExecutiveCameraScalar(EXECUTIVE_STAGE_FIXED_CAMERA.near),
     far: stabilizeExecutiveCameraScalar(EXECUTIVE_STAGE_FIXED_CAMERA.far),
+  });
+}
+
+/**
+ * STAGE-CAMERA:FIX1 — same certified pose character at a derived fit distance.
+ * Azimuth / elevation / FOV / target stay locked. Base resolve remains distance 11.
+ */
+export function resolveExecutiveStageFixedCameraAtDistance(
+  distance: number,
+): ExecutiveStageFixedCameraPresentation & { readonly distance: number } {
+  const clamped = clampStagePoseScalar(distance, 11, 14);
+  const position = mapExecutiveCameraSphericalToPosition({
+    target: EXECUTIVE_STAGE_2D_CENTER,
+    distance: clamped,
+    azimuth: STAGE_FIXED_AZIMUTH_RAD,
+    elevation: STAGE_FIXED_ELEVATION_RAD,
+  });
+  return Object.freeze({
+    position: stabilizeExecutiveCameraVector(position),
+    target: stabilizeExecutiveCameraVector(EXECUTIVE_STAGE_FIXED_CAMERA.target),
+    fov: stabilizeExecutiveCameraScalar(EXECUTIVE_STAGE_FIXED_CAMERA.fov),
+    near: stabilizeExecutiveCameraScalar(EXECUTIVE_STAGE_FIXED_CAMERA.near),
+    far: stabilizeExecutiveCameraScalar(EXECUTIVE_STAGE_FIXED_CAMERA.far),
+    distance: stabilizeExecutiveCameraScalar(clamped),
   });
 }
 
@@ -215,10 +285,15 @@ export function isExecutiveStageFixedCameraPosition(
  * Observability tokens for Stage host diagnostics (dev/test only attributes).
  */
 export const EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY = Object.freeze({
-  cameraMode: "fixed-2d" as const,
+  cameraMode: "fixed-executive-perspective" as const,
   cameraTarget: "0,0,0" as const,
   stageDepth: "0" as const,
   contract: "stage-2d-1" as const,
+  azimuthDeg: String(EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG),
+  elevationDeg: String(EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG),
+  distance: String(STAGE_FIXED_DISTANCE),
+  fov: String(EXECUTIVE_STAGE_FIXED_CAMERA_FOV),
+  pointerOffset: "0" as const,
 });
 
 export function verifyExecutiveStage2DFixedCamera(options?: {
@@ -232,6 +307,7 @@ export function verifyExecutiveStage2DFixedCamera(options?: {
   readonly panDisabled: boolean;
   readonly zoomDisabled: boolean;
   readonly focusCannotRetarget: boolean;
+  readonly pointerParallaxDisabled: boolean;
 }> {
   const identity = getExecutiveStage2DFixedCameraIdentity();
   const camera = resolveExecutiveStageFixedCamera();
@@ -253,6 +329,9 @@ export function verifyExecutiveStage2DFixedCamera(options?: {
   const focusCannotRetarget =
     EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY.retargetsOnObjectFocus === false &&
     EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY.movesCameraOnFocus === false;
+  const pointerParallaxDisabled =
+    EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY.allowsPointerParallax === false &&
+    EXECUTIVE_STAGE_FIXED_CAMERA.pointerOffset === 0;
 
   const ok =
     options?.forceFailure !== true &&
@@ -262,7 +341,8 @@ export function verifyExecutiveStage2DFixedCamera(options?: {
     orbitDisabled &&
     panDisabled &&
     zoomDisabled &&
-    focusCannotRetarget;
+    focusCannotRetarget &&
+    pointerParallaxDisabled;
 
   return Object.freeze({
     ok,
@@ -273,5 +353,6 @@ export function verifyExecutiveStage2DFixedCamera(options?: {
     panDisabled,
     zoomDisabled,
     focusCannotRetarget,
+    pointerParallaxDisabled,
   });
 }

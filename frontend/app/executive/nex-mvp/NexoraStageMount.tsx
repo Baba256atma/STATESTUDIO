@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import type { NexoraMVPPresentationState } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation";
 import type {
   NexoraMVPAdvisorContextBridge,
@@ -10,7 +11,6 @@ import type {
   NexoraMVPPresentationViewModel,
 } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
-import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
 import type { NexoraDecisionTheatreIconicObject } from "@/app/lib/decision-theatre/nexoraDecisionTheatreIconicProjection.ts";
 import type { NexoraDecisionTheatreParticipantVisualPresentation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreVisualProjection.ts";
 import type { NexoraDecisionTheatreAtmosphereProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
@@ -21,8 +21,6 @@ import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision
 import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
 import { Nexora3DExecutiveStage } from "./stage/Nexora3DExecutiveStage";
-import type { ManagementMap } from "@/app/lib/nmi/nmiManagementMapContract.ts";
-import type { NexoraExecutiveQueueOverlayMapNode } from "./stage/NexoraExecutiveQueueOverlay";
 import { NexoraDecisionTheatreInvestigationSurface } from "./stage/NexoraDecisionTheatreInvestigationSurface";
 import { NexoraDecisionTheatreComparisonSurface } from "./stage/NexoraDecisionTheatreComparisonSurface";
 import { NexoraDecisionTheatreCommitmentSurface } from "./stage/NexoraDecisionTheatreCommitmentSurface";
@@ -44,18 +42,18 @@ import {
   projectStageProdInteractiveDisclosure,
   type StageProdLiveFoundationProjection,
 } from "@/app/lib/stage-prod/stageProdPublicIndex";
+import type { ManagementLevelSpatialComposition } from "@/app/lib/nmi/nmiManagementLevelSpatialContract.ts";
+import { resolveNexoraLiveStageDthExpSpatial } from "./resolveNexoraLiveStageDthExpSpatial";
 
 type Props = {
   readonly liveFoundation?: StageProdLiveFoundationProjection | null;
   readonly workspaceLabel: string;
   readonly interaction: NexoraMVPStageInteractionPresentation;
+  readonly managementLevelSpatial?: ManagementLevelSpatialComposition | null;
   readonly environment: NexoraMVPSceneEnvironmentVisualState;
   readonly presentationViewModel: NexoraMVPPresentationViewModel;
   readonly advisorBridge: NexoraMVPAdvisorContextBridge;
   readonly onSelectSubject: (subjectId: string | null) => void;
-  readonly onSelectQueueCategory?: (
-    category: ExecutiveQueueCategory | "changes-since-visit",
-  ) => void;
   readonly onStepBack: () => void;
   readonly onStepForward?: () => void;
   readonly onNavigateTrailIndex?: (index: number) => void;
@@ -102,8 +100,8 @@ type Props = {
   readonly onOpenDataRail: () => void;
   readonly onAskDataObject: (question: string) => void;
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
-  readonly nmiManagementMap?: ManagementMap | null;
-  readonly nmiMapNodes?: readonly NexoraExecutiveQueueOverlayMapNode[];
+  /** STAGE-VISIBILITY:FIX1 — Detail Workspace owns the surface when false. */
+  readonly stageSurfaceActive?: boolean;
 };
 
 /**
@@ -113,11 +111,11 @@ export function NexoraStageMount({
   liveFoundation = null,
   workspaceLabel,
   interaction,
+  managementLevelSpatial = null,
   environment,
   presentationViewModel,
   advisorBridge,
   onSelectSubject,
-  onSelectQueueCategory,
   onStepBack,
   onStepForward,
   onNavigateTrailIndex,
@@ -158,9 +156,12 @@ export function NexoraStageMount({
   onOpenDataRail,
   onAskDataObject,
   backGuidedAttentionCue = null,
-  nmiManagementMap = null,
-  nmiMapNodes = [],
+  stageSurfaceActive = true,
 }: Props) {
+  const dthExpSpatial = useMemo(
+    () => resolveNexoraLiveStageDthExpSpatial(theatreComposition),
+    [theatreComposition],
+  );
   const foundation =
     liveFoundation ??
     projectStageProdLiveFoundation({
@@ -176,6 +177,7 @@ export function NexoraStageMount({
   const disclosureComposition = projectStageProdDirectorComposition({
     presentation: interaction,
     theatre: theatreComposition,
+    spatial: dthExpSpatial,
   });
   const disclosure = projectStageProdInteractiveDisclosure({
     selectedCanonicalObjectId,
@@ -281,6 +283,8 @@ export function NexoraStageMount({
       data-theatre-learning-durable={learningReassessment == null ? "none" : "false"}
       role="region"
       aria-label="Executive Stage"
+      aria-hidden={stageSurfaceActive ? undefined : true}
+      data-stage-surface-active={stageSurfaceActive ? "true" : "false"}
       style={{
         position: "absolute",
         inset: 0,
@@ -289,16 +293,20 @@ export function NexoraStageMount({
         minWidth: 0,
         minHeight: 0,
         overflow: "hidden",
+        isolation: "isolate",
+        zIndex: 0,
+        visibility: stageSurfaceActive ? "visible" : "hidden",
+        pointerEvents: stageSurfaceActive ? "auto" : "none",
       }}
     >
       <Nexora3DExecutiveStage
         workspaceLabel={workspaceLabel}
         interaction={interaction}
+        managementLevelSpatial={managementLevelSpatial}
         environment={environment}
         presentationViewModel={presentationViewModel}
         advisorBridge={advisorBridge}
         onSelectSubject={onSelectSubject}
-        onSelectQueueCategory={onSelectQueueCategory}
         onStepBack={onStepBack}
         onStepForward={onStepForward}
         onNavigateTrailIndex={onNavigateTrailIndex}
@@ -310,13 +318,12 @@ export function NexoraStageMount({
         atmosphereMode={atmosphereMode}
         warRoomAtmosphere={warRoomAtmosphere}
         theatreComposition={theatreComposition}
+        dthExpSpatial={dthExpSpatial}
         requestedVisual={requestedVisual}
         onDismissVisual={onDismissVisual}
         dataObjectStage={dataObjectStage}
         onSelectDataObject={onSelectDataObject}
         backGuidedAttentionCue={backGuidedAttentionCue}
-        nmiManagementMap={nmiManagementMap}
-        nmiMapNodes={nmiMapNodes}
       />
       {dataObjectStage.participants.find((entry) => entry.dataObject.id === dataObjectStage.diagnostics.selectedDataObjectId) ? (
         <NexoraStageDataObjectInspection

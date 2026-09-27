@@ -40,7 +40,8 @@ export function NexoraExecutiveObjectLabel({
       style={{
         pointerEvents: label.pointerEvents,
         userSelect: "none",
-        whiteSpace: "nowrap",
+        whiteSpace: "normal",
+        maxWidth: `${Math.max(label.maxNameCharacters, 16)}ch`,
         fontFamily: '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
         fontSize: `${label.fontSizePx}px`,
         // SP:2.8 — quieter letter-spacing / line height so labels support geometry.
@@ -49,13 +50,17 @@ export function NexoraExecutiveObjectLabel({
         color,
         opacity: label.opacity,
         transform: `translate(${label.anchor.screenOffsetX}px, ${label.anchor.screenOffsetY}px) scale(${label.scale})`,
-        transformOrigin: "center bottom",
+        transformOrigin:
+          (label.anchor.worldOffsetY ?? 0) < -0.05
+            ? "center top"
+            : "center bottom",
         textAlign: "center",
         lineHeight: 1.15,
         textShadow: "0 1px 6px rgba(2, 6, 14, 0.75)",
       }}
     >
       <span
+        data-object-caption="primary"
         data-testid={testId}
         data-label-level={label.level}
         data-label-prominence={label.prominence}

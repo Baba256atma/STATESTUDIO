@@ -5,6 +5,7 @@
 
 import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
 import type { NexoraDecisionTheatreSceneActorRole } from "@/app/lib/decision-theatre/nexoraDecisionTheatreSceneActorRoles.ts";
+import type { DthExpSpatialLayoutProjection } from "@/app/lib/dth-exp/dthExpSpatialLayoutContract.ts";
 import type {
   NexoraMVPStageConnectionPresentation,
   NexoraMVPStageObjectPresentation,
@@ -154,6 +155,24 @@ function actorRoleById(
   return roles;
 }
 
+/**
+ * STAGE-SPATIAL:1A-FIX1 — Stage already composed professional XY.
+ * STAGE-PROD replaces XY only when Theatre/DTH-EXP spatial owns placement.
+ * Explicit `spatial: null` (simple Object focus) preserves incoming XY.
+ * Omitted `spatial` keeps legacy Theatre `positionFor` callers.
+ */
+function stageOwnsComposedPlacement(input: Readonly<{
+  readonly family: StageProdSceneFamily;
+  readonly intentKind: string;
+  readonly spatial?: DthExpSpatialLayoutProjection | null;
+}>): boolean {
+  return (
+    input.spatial === null &&
+    input.family === "investigation" &&
+    input.intentKind === "REVIEW_FOCAL_OBJECT"
+  );
+}
+
 function familyPrimaryIds(
   theatre: NexoraDecisionTheatreFoundation,
   family: StageProdSceneFamily,
@@ -290,6 +309,7 @@ function signature(
 export function projectStageProdDirectorComposition(input: Readonly<{
   presentation: NexoraMVPStageInteractionPresentation;
   theatre?: NexoraDecisionTheatreFoundation | null;
+  spatial?: DthExpSpatialLayoutProjection | null;
 }>): StageProdDirectorComposition {
   const theatre = input.theatre ?? null;
   if (theatre == null) {
@@ -321,7 +341,12 @@ export function projectStageProdDirectorComposition(input: Readonly<{
     family === "preserved" ||
     (family === "orientation" &&
       (theatre.sceneScript.transitionPolicy === "PRESERVE" ||
-        theatre.sceneScript.transitionPolicy === "NO_VISUAL_TRANSITION"));
+        theatre.sceneScript.transitionPolicy === "NO_VISUAL_TRANSITION")) ||
+    stageOwnsComposedPlacement({
+      family,
+      intentKind: theatre.sceneIntent.intentKind,
+      spatial: input.spatial,
+    });
   if (preserve) {
     return Object.freeze({
       identity: stageProdDirectorCompositionIdentity,

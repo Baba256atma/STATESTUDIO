@@ -1,6 +1,7 @@
 /**
  * STAGE-THREAD:1 — Executive Thread Expansion & Decision-Object Projection.
  * STAGE-THREAD:1-FIX — Executive Thread Gateway Discoverability.
+ * STAGE-THREAD:FIX1 — Collapse Thread is a Stage-control, not world/Object chrome.
  *
  * Executive Thread is a presentation/context gateway — never a Business Object.
  * Expansion projects canonical Problem / Scenario / Decision / Execution into
@@ -18,6 +19,9 @@ export const executiveThreadExpansionIdentity =
 
 export const executiveThreadGatewayDiscoverabilityIdentity =
   "STAGE-THREAD:1-FIX/ExecutiveThreadGatewayDiscoverability" as const;
+
+export const executiveThreadCollapseControlPlacementIdentity =
+  "STAGE-THREAD:FIX1/CollapseThreadControlPlacement" as const;
 
 export const executiveThreadExpansionVersion = "5.1.1" as const;
 
@@ -86,6 +90,61 @@ export const EXECUTIVE_THREAD_EXPANSION_BOUNDARY = Object.freeze({
   pushesObjectNavigationHistory: false as const,
   createsSecondLayoutEngine: false as const,
 });
+
+/** STAGE-THREAD:FIX1 — Thread open/collapse lives on existing Stage navigation chrome. */
+export const EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE = Object.freeze({
+  ownerTestId: "nexora-stage-interaction-breadcrumb",
+  controlTestId: "nexora-stage-thread-control",
+  collapseControlTestId: "nexora-stage-collapse-thread",
+  kind: "stage-thread-control" as const,
+  objectAnchored: false as const,
+  worldOccupancy: false as const,
+});
+
+export function getExecutiveThreadCollapseControlPlacementIdentity(): Readonly<{
+  readonly id: typeof executiveThreadCollapseControlPlacementIdentity;
+  readonly ownerTestId: typeof EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE.ownerTestId;
+  readonly controlTestId: typeof EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE.controlTestId;
+  readonly objectAnchored: false;
+  readonly worldOccupancy: false;
+}> {
+  return Object.freeze({
+    id: executiveThreadCollapseControlPlacementIdentity,
+    ownerTestId: EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE.ownerTestId,
+    controlTestId: EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE.controlTestId,
+    objectAnchored: false,
+    worldOccupancy: false,
+  });
+}
+
+export function isExecutiveThreadQuietCollapseNode(node: {
+  readonly role?: string | null;
+  readonly gatewayMode?: string | null;
+}): boolean {
+  return (
+    node.role === "collapsed-thread" && node.gatewayMode === "quiet-collapse"
+  );
+}
+
+export function isExecutiveThreadDiscoverableGatewayNode(node: {
+  readonly role?: string | null;
+  readonly gatewayMode?: string | null;
+}): boolean {
+  return (
+    node.role === "collapsed-thread" &&
+    node.gatewayMode === "discoverable-collapsed"
+  );
+}
+
+export function isExecutiveThreadControlNode(node: {
+  readonly role?: string | null;
+  readonly gatewayMode?: string | null;
+}): boolean {
+  return (
+    isExecutiveThreadQuietCollapseNode(node) ||
+    isExecutiveThreadDiscoverableGatewayNode(node)
+  );
+}
 
 /**
  * STAGE-THREAD:1-FIX — discoverable collapsed gateway footprint (world XY).

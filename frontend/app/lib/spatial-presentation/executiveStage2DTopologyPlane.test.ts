@@ -24,7 +24,7 @@ import {
   syncNexoraMVPObjectInteractionShellContext,
 } from "../nex-mvp/nexoraMVPObjectInteraction.ts";
 import {
-  EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
+  isExecutiveStageFixedCameraPosition,
   resolveExecutiveStageFixedCamera,
 } from "./executiveStage2DFixedCamera.ts";
 import {
@@ -227,14 +227,13 @@ test("Invariant G — Presentation states do not alter semantic Z", () => {
 
 test("Invariant H — STAGE-2D:1 camera regression guard", () => {
   const camera = resolveExecutiveStageFixedCamera();
-  assert.deepEqual(camera.position, {
-    x: 0,
-    y: 0,
-    z: EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  });
+  assert.equal(isExecutiveStageFixedCameraPosition(camera.position), true);
   assert.deepEqual(camera.target, { x: 0, y: 0, z: 0 });
   const presentation = stage2dPipeline("obj-budget");
-  assert.deepEqual(presentation.scene.camera.position, [0, 0, 11]);
+  assert.equal(
+    isExecutiveStageFixedCameraPosition(presentation.scene.camera.position),
+    true,
+  );
   assert.deepEqual(presentation.scene.camera.target, [0, 0, 0]);
 });
 

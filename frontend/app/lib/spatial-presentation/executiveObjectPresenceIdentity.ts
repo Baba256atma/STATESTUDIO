@@ -16,7 +16,7 @@ import type { ExecutiveObject3DShape } from "./executiveObject3DGeometry.ts";
 export const executiveObjectPresenceIdentity =
   "STAGE-OBJ:2/ExecutiveBusinessObjectPresenceIdentity" as const;
 
-export const executiveObjectPresenceVersion = "4.2.0" as const;
+export const executiveObjectPresenceVersion = "4.3.0" as const;
 
 export const executiveObjectPresenceNamespace =
   "nexora.spatial-presentation.executive-object-presence-identity" as const;
@@ -132,13 +132,8 @@ export type ExecutiveObjectPresenceClass =
   | "secondary"
   | "context";
 
-export type ExecutiveObjectTerritoryStyle =
-  | "none"
-  | "quiet"
-  | "active"
-  | "focused"
-  | "attention"
-  | "critical";
+/** STAGE-PRESENCE:FIX1 — visual territory is presence-only. */
+export type ExecutiveObjectTerritoryStyle = "none" | "ground";
 
 export type ExecutiveObjectTerritoryCollisionPolicy =
   | "none"
@@ -274,6 +269,21 @@ export const EXECUTIVE_OBJECT_PRESENCE_DEEP_Z = Object.freeze({
   particleOpacityScale: 0.7,
 } as const);
 
+/**
+ * STAGE-PRESENCE:FIX1 — restrained ground footprint.
+ * Neutral Stage slate (not Watch gold / Critical red / Focus).
+ */
+export const EXECUTIVE_OBJECT_GROUND_PRESENCE = Object.freeze({
+  style: "ground" as const,
+  color: "#64748b",
+  opacityPrimary: 0.09,
+  opacityRelated: 0.06,
+  opacitySecondary: 0.05,
+  innerScale: 0.38,
+  outerScale: 0.52,
+  segments: 48,
+});
+
 function stabilize(value: number): number {
   if (!Number.isFinite(value)) return 0;
   const rounded = Math.round(value * 1e6) / 1e6;
@@ -347,13 +357,16 @@ function resolveTerritory(input: {
   readonly interaction: ExecutiveObjectInteractionPresenceState;
   readonly executiveState: ExecutiveObjectExecutivePresenceState;
   readonly presenceClass: ExecutiveObjectPresenceClass;
+  readonly shapeFamily: ExecutiveObjectSemanticShapeFamily;
 }): {
   readonly style: ExecutiveObjectTerritoryStyle;
   readonly collision: ExecutiveObjectTerritoryCollisionPolicy;
   readonly opacity: number;
   readonly pad: number;
 } {
-  if (input.presenceClass === "context") {
+  void input.executiveState;
+  void input.presenceClass;
+  if (input.shapeFamily === "context") {
     return {
       style: "none",
       collision: "none",
@@ -361,64 +374,29 @@ function resolveTerritory(input: {
       pad: 0,
     };
   }
-  if (input.interaction === "focused") {
+  if (input.interaction === "background") {
     return {
-      style: "focused",
-      collision: "hard-footprint",
-      // STAGE-3DOBJ:2-FIX — support object; do not dominate body.
-      opacity: 0.28,
-      pad: 0.14,
+      style: "none",
+      collision: "none",
+      opacity: 0,
+      pad: 0,
     };
   }
-  if (input.interaction === "selected") {
-    return {
-      style: "active",
-      collision: "hard-footprint",
-      opacity: 0.2,
-      pad: 0.1,
-    };
-  }
-  if (input.executiveState === "critical") {
-    return {
-      style: "critical",
-      collision: "hard-footprint",
-      opacity: 0.24,
-      pad: 0.11,
-    };
-  }
-  if (
-    input.executiveState === "watch" ||
-    input.executiveState === "unresolved"
-  ) {
-    return {
-      style: "attention",
-      collision: "soft-visual",
-      // Watch: edge/face accent carries more; halo quieter.
-      opacity: 0.12,
-      pad: 0.07,
-    };
-  }
-  if (input.executiveState === "recommended") {
-    return {
-      style: "quiet",
-      collision: "soft-visual",
-      opacity: 0.1,
-      pad: 0.04,
-    };
-  }
-  if (input.interaction === "related") {
-    return {
-      style: "quiet",
-      collision: "soft-visual",
-      opacity: 0.08,
-      pad: 0.03,
-    };
-  }
+  const primary =
+    input.interaction === "focused" || input.interaction === "selected";
+  const related = input.interaction === "related";
+  const secondary = input.interaction === "secondary";
   return {
-    style: "none",
-    collision: "none",
-    opacity: 0,
-    pad: 0,
+    style: EXECUTIVE_OBJECT_GROUND_PRESENCE.style,
+    collision: primary ? "hard-footprint" : "soft-visual",
+    opacity: primary
+      ? EXECUTIVE_OBJECT_GROUND_PRESENCE.opacityPrimary
+      : related
+        ? EXECUTIVE_OBJECT_GROUND_PRESENCE.opacityRelated
+        : secondary
+          ? EXECUTIVE_OBJECT_GROUND_PRESENCE.opacitySecondary
+          : EXECUTIVE_OBJECT_GROUND_PRESENCE.opacityPrimary,
+    pad: primary ? 0.08 : related || secondary ? 0.03 : 0.05,
   };
 }
 
@@ -490,11 +468,15 @@ export function resolveExecutiveObjectVisualIdentity(input: {
     interaction,
     executiveState,
     presenceClass,
+    shapeFamily,
   });
   const maxDim = Math.max(width, height) * bodyScale;
-  const territoryInner = stabilize(maxDim * 0.55);
+  const territoryInner = stabilize(
+    maxDim * EXECUTIVE_OBJECT_GROUND_PRESENCE.innerScale,
+  );
   const territoryOuter = stabilize(
-    maxDim * 0.55 + 0.05 + territory.pad * (territory.style === "none" ? 0 : 1),
+    maxDim * EXECUTIVE_OBJECT_GROUND_PRESENCE.outerScale +
+      territory.pad * (territory.style === "none" ? 0 : 1),
   );
 
   let edgeStyle: ExecutiveObjectVisualIdentity["edgeStyle"] = "restrained";
@@ -593,7 +575,7 @@ export function verifyExecutiveObjectPresenceIdentity(): Readonly<{
     ok:
       identity.id ===
         "STAGE-OBJ:2/ExecutiveBusinessObjectPresenceIdentity" &&
-      identity.version === "4.2.0" &&
+      identity.version === "4.3.0" &&
       EXECUTIVE_OBJECT_PRESENCE_BOUNDARY.changesSemanticZ === false &&
       EXECUTIVE_OBJECT_PRESENCE_BOUNDARY.restoresTypeCXzTopology === false,
     identityValid:

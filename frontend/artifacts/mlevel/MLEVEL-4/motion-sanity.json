@@ -1,0 +1,93 @@
+{
+  "drillDown": {
+    "t0": [
+      {
+        "id": "obj-capacity",
+        "kind": "ENTERING_ACTIVE",
+        "role": null,
+        "scale": 0.92
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "PERSISTING_SHIFT",
+        "role": "PARENT",
+        "scale": 0.72
+      },
+      {
+        "id": "obj-inventory",
+        "kind": "PERSISTING_SHIFT",
+        "role": "ACTIVE",
+        "scale": 1
+      },
+      {
+        "id": "obj-revenue",
+        "kind": "EXITING_CONTEXT",
+        "role": "GRANDPARENT",
+        "scale": 0.52
+      }
+    ],
+    "mid": [
+      {
+        "id": "obj-capacity",
+        "kind": "ENTERING_ACTIVE",
+        "scale": 0.99,
+        "y": 0.28
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "PERSISTING_SHIFT",
+        "scale": 0.545,
+        "y": 0.8099999999999999
+      },
+      {
+        "id": "obj-inventory",
+        "kind": "PERSISTING_SHIFT",
+        "scale": 0.755,
+        "y": 0.56
+      },
+      {
+        "id": "obj-revenue",
+        "kind": "EXITING_CONTEXT",
+        "scale": 0.48360000000000003,
+        "y": 0.84
+      }
+    ],
+    "t1": [
+      {
+        "id": "obj-capacity",
+        "kind": "ENTERING_ACTIVE",
+        "role": "ACTIVE",
+        "scale": 1
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "PERSISTING_SHIFT",
+        "role": "GRANDPARENT",
+        "scale": 0.52
+      },
+      {
+        "id": "obj-inventory",
+        "kind": "PERSISTING_SHIFT",
+        "role": "PARENT",
+        "scale": 0.72
+      }
+    ]
+  },
+  "drillUp": [
+    {
+      "id": "obj-delivery",
+      "role": "PARENT",
+      "scale": 0.72
+    },
+    {
+      "id": "obj-inventory",
+      "role": "ACTIVE",
+      "scale": 1
+    },
+    {
+      "id": "obj-revenue",
+      "role": "GRANDPARENT",
+      "scale": 0.52
+    }
+  ]
+}

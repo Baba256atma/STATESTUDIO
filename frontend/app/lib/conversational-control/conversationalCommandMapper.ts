@@ -15,6 +15,7 @@ import {
   type NexoraCommandMappingStatus,
 } from "./conversationalCommand.ts";
 import type { NexoraConversationalExecutionClass } from "./conversationalIntent.ts";
+import type { NexoraConversationalWorkspaceActionPayload } from "./conversationalIntent.ts";
 import type { NexoraConversationalSubjectKind } from "./conversationalContext.ts";
 import {
   findConversationalIntentCommandRule,
@@ -33,6 +34,7 @@ function executionClassForCommand(
     case "navigate-forward":
     case "prepare-executive-context":
     case "switch-workspace":
+    case "workspace-presentation":
       return "navigation";
     case "request-recommendation":
     case "request-explanation":
@@ -100,6 +102,8 @@ function mappedReasonFor(kind: NexoraConversationalCommandKind): string {
     case "prepare-executive-context":
     case "switch-workspace":
       return CONVERSATIONAL_COMMAND_REASON.MAPPED_EXPERIENCE;
+    case "workspace-presentation":
+      return CONVERSATIONAL_COMMAND_REASON.MAPPED_WORKSPACE_PRESENTATION;
     case "request-recommendation":
     case "request-explanation":
     case "request-prioritization":
@@ -134,13 +138,16 @@ export function deriveNexoraConversationalCommandId(input: {
   readonly kind: NexoraConversationalCommandKind;
   readonly primaryTargetId: string | null;
   readonly secondaryTargetIds: readonly string[];
+  readonly workspaceActionKey?: string | null;
 }): string {
   const primary = input.primaryTargetId ?? "-";
   const secondary =
     input.secondaryTargetIds.length === 0
       ? "-"
       : input.secondaryTargetIds.join("+");
-  return `cc3:${input.kind}:${primary}:${secondary}`;
+  return input.workspaceActionKey
+    ? `cc3:${input.kind}:${primary}:${secondary}:${input.workspaceActionKey}`
+    : `cc3:${input.kind}:${primary}:${secondary}`;
 }
 
 function freezeCommand(
@@ -156,6 +163,9 @@ function freezeCommand(
     requiresConfirmation: command.requiresConfirmation,
     executable: command.executable,
     reasons: Object.freeze([...command.reasons]),
+    ...(command.workspaceAction
+      ? { workspaceAction: Object.freeze({ ...command.workspaceAction }) }
+      : {}),
   });
 }
 
@@ -221,12 +231,16 @@ function succeed(args: {
   readonly secondaryTargetIds: readonly string[];
   readonly primarySubjectKind: NexoraConversationalSubjectKind | null;
   readonly extraReasons?: readonly string[];
+  readonly workspaceAction?: NexoraConversationalWorkspaceActionPayload | null;
 }): NexoraConversationalCommandMappingResult {
   const kind = args.rule.commandKind;
   const commandId = deriveNexoraConversationalCommandId({
     kind,
     primaryTargetId: args.primaryTargetId,
     secondaryTargetIds: args.secondaryTargetIds,
+    workspaceActionKey: args.workspaceAction
+      ? `${args.workspaceAction.action}:${args.workspaceAction.sceneName ?? "-"}`
+      : null,
   });
 
   const reasons = Object.freeze([
@@ -252,6 +266,7 @@ function succeed(args: {
     requiresConfirmation: false,
     executable: true,
     reasons,
+    workspaceAction: args.workspaceAction ?? null,
   });
 
   return Object.freeze({
@@ -404,6 +419,21 @@ export function mapNexoraConversationalCommand(
   }
 
   // ── Target requirements ───────────────────────────────────────────────────
+  if (
+    intent.kind === "workspace-action" &&
+    intent.workspaceActionPayload?.useCurrentReferent === false
+  ) {
+    return succeed({
+      rule,
+      intentKind: intent.kind,
+      contextStatus: context.resolutionStatus,
+      primaryTargetId: null,
+      secondaryTargetIds: Object.freeze([]),
+      primarySubjectKind: null,
+      workspaceAction: intent.workspaceActionPayload,
+    });
+  }
+
   if (rule.targetRequirement === "none") {
     return succeed({
       rule,
@@ -412,6 +442,7 @@ export function mapNexoraConversationalCommand(
       primaryTargetId: null,
       secondaryTargetIds: Object.freeze([]),
       primarySubjectKind: null,
+      workspaceAction: intent.workspaceActionPayload ?? null,
     });
   }
 
@@ -447,6 +478,7 @@ export function mapNexoraConversationalCommand(
       primaryTargetId: primarySubjectId,
       secondaryTargetIds: Object.freeze([]),
       primarySubjectKind,
+      workspaceAction: intent.workspaceActionPayload ?? null,
     });
   }
 
@@ -525,6 +557,7 @@ export function mapNexoraConversationalCommand(
       primaryTargetId: null,
       secondaryTargetIds: Object.freeze([]),
       primarySubjectKind: null,
+      workspaceAction: intent.workspaceActionPayload ?? null,
     });
   }
 
@@ -549,6 +582,7 @@ export function mapNexoraConversationalCommand(
       primaryTargetId: primarySubjectId,
       secondaryTargetIds: Object.freeze([]),
       primarySubjectKind,
+      workspaceAction: intent.workspaceActionPayload ?? null,
     });
   }
 
@@ -561,6 +595,7 @@ export function mapNexoraConversationalCommand(
       primaryTargetId: null,
       secondaryTargetIds: Object.freeze([]),
       primarySubjectKind: null,
+      workspaceAction: intent.workspaceActionPayload ?? null,
     });
   }
 

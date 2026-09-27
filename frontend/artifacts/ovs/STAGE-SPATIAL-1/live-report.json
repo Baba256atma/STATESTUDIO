@@ -1,0 +1,86 @@
+{
+  "capacity": {
+    "canvasCount": 1,
+    "hasOrbit": false,
+    "ovs3Enabled": "false",
+    "ovs3Family": "none",
+    "ovs3Scene": "unavailable",
+    "ovs3Structures": "0",
+    "ovs1Family": "operational",
+    "ovs1Primitive": "rounded-block",
+    "focused": [
+      {
+        "id": "obj-capacity",
+        "z": "0",
+        "scale": "1.08",
+        "opacity": "1",
+        "kind": "object",
+        "status": "watch"
+      }
+    ],
+    "objectZs": [
+      {
+        "id": "obj-capacity",
+        "z": "0"
+      },
+      {
+        "id": "obj-budget",
+        "z": "0"
+      },
+      {
+        "id": "obj-delivery",
+        "z": "0"
+      },
+      {
+        "id": "obj-inventory",
+        "z": "0"
+      },
+      {
+        "id": "obj-customer",
+        "z": "0"
+      },
+      {
+        "id": "obj-demand",
+        "z": "0"
+      }
+    ]
+  },
+  "risk": {
+    "canvasCount": 1,
+    "hasOrbit": false,
+    "ovs3Enabled": "true",
+    "ovs3Family": "NEXO_RISK",
+    "ovs3Scene": "available",
+    "ovs3Structures": "3",
+    "ovs1Family": "risk",
+    "ovs1Primitive": "diamond",
+    "focused": [
+      {
+        "id": "obj-risk",
+        "z": "0",
+        "scale": "1.08",
+        "opacity": "1",
+        "kind": "object",
+        "status": "unresolved"
+      }
+    ],
+    "objectZs": [
+      {
+        "id": "obj-risk",
+        "z": "0"
+      },
+      {
+        "id": "obj-delivery",
+        "z": "0"
+      },
+      {
+        "id": "obj-capacity",
+        "z": "0"
+      },
+      {
+        "id": "obj-customer",
+        "z": "0"
+      }
+    ]
+  }
+}

@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ErrorInfo,
   type ReactNode,
@@ -22,7 +23,6 @@ import type {
 } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import type { NexoraMVPPresentationState } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
-import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
 import type { NexoraDecisionTheatreIconicObject } from "@/app/lib/decision-theatre/nexoraDecisionTheatreIconicProjection.ts";
 import type { NexoraDecisionTheatreParticipantVisualPresentation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreVisualProjection.ts";
 import { NexoraDecisionTheatreIconicSatellite } from "./NexoraDecisionTheatreIconicSatellites";
@@ -30,11 +30,24 @@ import type { NexoraDecisionTheatreAtmosphereMode } from "@/app/lib/decision-the
 import { NEXORA_DECISION_THEATRE_ATMOSPHERE_MODES } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import type { NexoraDecisionTheatreAtmosphereProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
+import type { DthExpSpatialLayoutProjection } from "@/app/lib/dth-exp/dthExpSpatialLayoutContract.ts";
+import type { ManagementLevelSpatialComposition } from "@/app/lib/nmi/nmiManagementLevelSpatialContract.ts";
+import { applyManagementLevelSpatialToStagePresentation } from "@/app/lib/nmi/nmiLiveManagementLevelStageAdapter.ts";
 import { projectStageProdDirectorComposition } from "@/app/lib/stage-prod/stageProdDirectorComposition.ts";
+import {
+  applyExecutiveOvsIsometricPlacementToStagePresentation,
+  getExecutiveOvsIsometricTheatreObservability,
+  projectExecutiveOvsIsometricTheatreVisual,
+} from "@/app/lib/spatial-presentation/executiveOvsIsometricTheatreVisual";
 import { projectStageProdContextualVisuals } from "@/app/lib/stage-prod/stageProdVisualSpecification.ts";
 import type { NexoraVisualView } from "@/app/lib/director/nexoraVisualIntelligence.ts";
 import { NexoraStageContextualVisual } from "./NexoraStageContextualVisual";
 import { NexoraStagePerformanceProbe } from "./NexoraStagePerformanceProbe";
+import { useExecutiveStageSafeViewportInsets } from "./useExecutiveStageSafeViewportInsets";
+import {
+  deriveExecutiveStageSafeSceneBounds,
+  resolveExecutiveStageSafeViewportCameraFit,
+} from "@/app/lib/spatial-presentation/executiveStageSafeViewportCameraFit";
 import { projectStageProdObjectMotion } from "@/app/lib/stage-prod/stageProdObjectMotion.ts";
 import {
   projectNexoraDecisionTheatreDataObjectsToStage,
@@ -79,6 +92,12 @@ import {
   isExecutive3DObjectVisualEnabled,
 } from "@/app/lib/spatial-presentation/executive3DObjectVisualProfile";
 import {
+  getExecutiveOvsObjectVisualLanguageIdentity,
+  getExecutiveOvsObjectVisualLanguageObservability,
+  isExecutiveOvsObjectVisualLanguageEnabled,
+} from "@/app/lib/spatial-presentation/executiveOvsObjectVisualLanguage";
+import { projectExecutiveOvsObjectKindHandoff } from "@/app/lib/spatial-presentation/projectExecutiveOvsObjectKindHandoff.ts";
+import {
   getExecutive3DObjectFaceSymbologyObservability,
   isExecutive3DObjectSurfaceEnabled,
 } from "@/app/lib/spatial-presentation/executive3DObjectFaceSymbology";
@@ -121,12 +140,17 @@ import {
   resolveExecutiveStageDisclosure,
 } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
 import {
+  EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE,
+  EXECUTIVE_THREAD_GATEWAY_FOOTPRINT,
+  getExecutiveThreadCollapseControlPlacementIdentity,
   getExecutiveThreadExpansionIdentity,
   getExecutiveThreadExpansionObservability,
   getExecutiveThreadGatewayDiscoverabilityIdentity,
+  isExecutiveThreadControlNode,
+  isExecutiveThreadDiscoverableGatewayNode,
+  isExecutiveThreadQuietCollapseNode,
   measureExecutiveThreadGatewayContainment,
   measureExecutiveThreadGatewayObjectOverlap,
-  EXECUTIVE_THREAD_GATEWAY_FOOTPRINT,
 } from "@/app/lib/spatial-presentation/executiveThreadExpansion";
 import {
   getExecutiveStageObjectLabelTerritoryIdentity,
@@ -143,9 +167,6 @@ import { NexoraPresentationStateSelector } from "../presentation/NexoraPresentat
 import { NexoraSubjectOperation } from "../presentation/NexoraSubjectOperation";
 import { NexoraSubjectReport } from "../presentation/NexoraSubjectReport";
 import { NexoraStageInteractionBreadcrumb } from "./NexoraStageInteractionBreadcrumb";
-import { NexoraExecutiveQueueOverlay, type NexoraExecutiveQueueOverlayMapNode } from "./NexoraExecutiveQueueOverlay";
-import type { ManagementMap } from "@/app/lib/nmi/nmiManagementMapContract.ts";
-import { composeNmiStageProjection } from "@/app/lib/nmi/nmiStageProjectionCompose.ts";
 import { NexoraStageRenderedBoundsTruthOverlay } from "./NexoraStageRenderedBoundsTruthOverlay";
 
 const NexoraStageCanvas = dynamic(
@@ -160,13 +181,11 @@ const NexoraStageCanvas = dynamic(
 export type Nexora3DExecutiveStageProps = {
   readonly workspaceLabel: string;
   readonly interaction: NexoraMVPStageInteractionPresentation;
+  readonly managementLevelSpatial?: ManagementLevelSpatialComposition | null;
   readonly environment: NexoraMVPSceneEnvironmentVisualState;
   readonly presentationViewModel: NexoraMVPPresentationViewModel;
   readonly advisorBridge: NexoraMVPAdvisorContextBridge;
   readonly onSelectSubject: (subjectId: string | null) => void;
-  readonly onSelectQueueCategory?: (
-    category: ExecutiveQueueCategory | "changes-since-visit",
-  ) => void;
   readonly onStepBack: () => void;
   readonly onStepForward?: () => void;
   readonly onNavigateTrailIndex?: (index: number) => void;
@@ -184,13 +203,12 @@ export type Nexora3DExecutiveStageProps = {
   readonly atmosphereMode?: string;
   readonly warRoomAtmosphere?: NexoraDecisionTheatreAtmosphereProjection | null;
   readonly theatreComposition?: NexoraDecisionTheatreFoundation | null;
+  readonly dthExpSpatial?: DthExpSpatialLayoutProjection | null;
   readonly requestedVisual?: NexoraVisualView | null;
   readonly onDismissVisual?: () => void;
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
-  readonly nmiManagementMap?: ManagementMap | null;
-  readonly nmiMapNodes?: readonly NexoraExecutiveQueueOverlayMapNode[];
 };
 
 const EMPTY_DATA_OBJECT_STAGE = projectNexoraDecisionTheatreDataObjectsToStage({
@@ -339,11 +357,11 @@ class StageErrorBoundary extends Component<
 export function Nexora3DExecutiveStage({
   workspaceLabel,
   interaction,
+  managementLevelSpatial = null,
   environment,
   presentationViewModel,
   advisorBridge,
   onSelectSubject,
-  onSelectQueueCategory,
   onStepBack,
   onStepForward,
   onNavigateTrailIndex,
@@ -355,13 +373,12 @@ export function Nexora3DExecutiveStage({
   atmosphereMode = "none",
   warRoomAtmosphere = null,
   theatreComposition = null,
+  dthExpSpatial = null,
   requestedVisual = null,
   onDismissVisual,
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
   backGuidedAttentionCue = null,
-  nmiManagementMap = null,
-  nmiMapNodes = [],
 }: Nexora3DExecutiveStageProps) {
   const identity = getNexora3DExecutiveStageIdentity();
   const [webglSupported] = useState(() => {
@@ -375,6 +392,8 @@ export function Nexora3DExecutiveStage({
       return false;
     }
   });
+  const canvasHostRef = useRef<HTMLDivElement | null>(null);
+  const safeViewportInsets = useExecutiveStageSafeViewportInsets(canvasHostRef);
 
   const stage2dObservability = getNexoraMVPExecutiveStage2DFixedCameraObservability();
   const topologyPlaneObservability =
@@ -445,9 +464,40 @@ export function Nexora3DExecutiveStage({
     return projectStageProdDirectorComposition({
       presentation: fixed,
       theatre: theatreComposition,
+      spatial: dthExpSpatial,
     });
-  }, [interaction, presentationViewModel.state, theatreComposition]);
-  const fixedCameraInteraction = directorComposition.presentation;
+  }, [interaction, presentationViewModel.state, theatreComposition, dthExpSpatial]);
+  const ovs3Visual = useMemo(() => {
+    if (dthExpSpatial == null) return null;
+    return projectExecutiveOvsIsometricTheatreVisual({
+      spatial: dthExpSpatial,
+      objects: directorComposition.presentation.scene.objects,
+      connections: directorComposition.presentation.scene.connections,
+    });
+  }, [dthExpSpatial, directorComposition]);
+  const fixedCameraInteraction = useMemo(() => {
+    const placed =
+      ovs3Visual == null
+        ? directorComposition.presentation
+        : applyExecutiveOvsIsometricPlacementToStagePresentation(
+            directorComposition.presentation,
+            ovs3Visual,
+          );
+    return applyManagementLevelSpatialToStagePresentation(placed, managementLevelSpatial, {
+      theatreActive: theatreComposition != null,
+    });
+  }, [directorComposition, ovs3Visual, managementLevelSpatial, theatreComposition]);
+  const safeViewportFit = useMemo(() => {
+    const sceneBounds = deriveExecutiveStageSafeSceneBounds(
+      fixedCameraInteraction.scene.objects,
+    );
+    return resolveExecutiveStageSafeViewportCameraFit({
+      insets: safeViewportInsets,
+      sceneBounds,
+    });
+  }, [fixedCameraInteraction.scene.objects, safeViewportInsets]);
+  const ovs3Observability =
+    getExecutiveOvsIsometricTheatreObservability(ovs3Visual);
   const contextualVisuals = useMemo(
     () =>
       projectStageProdContextualVisuals({
@@ -494,6 +544,7 @@ export function Nexora3DExecutiveStage({
   const [object3dTerritoryVisible, setObject3dTerritoryVisible] =
     useState(true);
   const [object3dFormOnly, setObject3dFormOnly] = useState(false);
+  const [ovsLanguageEnabled, setOvsLanguageEnabled] = useState(true);
   const [objectPresenceEnabled, setObjectPresenceEnabled] = useState(true);
   const [objectPresenceQuery, setObjectPresenceQuery] = useState("default");
   useEffect(() => {
@@ -507,6 +558,7 @@ export function Nexora3DExecutiveStage({
       setObject3dFormOnly(isExecutive3DObjectFormOnlyMode());
       setObject3dSymbolsVisible(isExecutive3DObjectSymbolVisible());
       setObject3dTerritoryVisible(isExecutive3DObjectTerritoryVisible());
+      setOvsLanguageEnabled(isExecutiveOvsObjectVisualLanguageEnabled());
       bumpExecutive3DObjectFormRuntime();
       const presenceOn = isExecutiveObjectPresenceV2Enabled();
       setObjectPresenceEnabled(presenceOn);
@@ -532,13 +584,10 @@ export function Nexora3DExecutiveStage({
   const focusedObject = fixedCameraInteraction.scene.objects.find(
     (entry) => entry.id === fixedCameraInteraction.scene.focusedObjectId,
   );
-  const focusedKindCue = [
-    focusedObject?.id,
-    focusedObject?.label,
-    focusedObject?.kind,
-  ]
-    .filter(Boolean)
-    .join(" ") || "object";
+  const focusedKindCue = projectExecutiveOvsObjectKindHandoff({
+    id: focusedObject?.id ?? null,
+    kind: focusedObject?.kind ?? null,
+  });
   const presentationLevelForVisual = (presentationViewModel.state ===
   "report" ||
   presentationViewModel.state === "operation"
@@ -548,6 +597,11 @@ export function Nexora3DExecutiveStage({
     enabled: object3dVisualEnabled,
     objectKind: focusedKindCue,
     presentationLevel: presentationLevelForVisual,
+  });
+  const ovsLanguageIdentity = getExecutiveOvsObjectVisualLanguageIdentity();
+  const ovsLanguageObservability = getExecutiveOvsObjectVisualLanguageObservability({
+    enabled: ovsLanguageEnabled,
+    objectKind: focusedKindCue,
   });
   const object3dSurfaceObservability =
     getExecutive3DObjectFaceSymbologyObservability({
@@ -687,22 +741,24 @@ export function Nexora3DExecutiveStage({
     }),
   );
   const gatewayNode = fixedCameraInteraction.contextNodes.find(
-    (node) =>
-      node.role === "collapsed-thread" &&
-      node.gatewayMode === "discoverable-collapsed",
+    isExecutiveThreadDiscoverableGatewayNode,
   );
   const collapseNode = fixedCameraInteraction.contextNodes.find(
-    (node) =>
-      node.role === "collapsed-thread" &&
-      node.gatewayMode === "quiet-collapse",
+    isExecutiveThreadQuietCollapseNode,
   );
-  const activeGateway = gatewayNode ?? collapseNode ?? null;
+  const threadControlNode = collapseNode ?? gatewayNode ?? null;
+  const threadControlAction =
+    collapseNode != null
+      ? ("collapse" as const)
+      : gatewayNode != null
+        ? ("open" as const)
+        : null;
+  const collapsePlacement = getExecutiveThreadCollapseControlPlacementIdentity();
   const gatewayObjects = fixedCameraInteraction.scene.objects
     .filter(
       (object) =>
         object.disclosureState !== "hidden" &&
-        object.opacity > 0.05 &&
-        object.id !== activeGateway?.subjectId,
+        object.opacity > 0.05,
     )
     .map((object) => {
       const classification =
@@ -724,16 +780,10 @@ export function Nexora3DExecutiveStage({
         halfExtent: half,
       });
     });
-  const gatewayX = activeGateway?.targetPosition[0] ?? null;
-  const gatewayY = activeGateway?.targetPosition[1] ?? null;
-  const gatewayHalfWidth =
-    activeGateway?.gatewayMode === "quiet-collapse"
-      ? EXECUTIVE_THREAD_GATEWAY_FOOTPRINT.collapseHalfWidth
-      : EXECUTIVE_THREAD_GATEWAY_FOOTPRINT.halfWidth;
-  const gatewayHalfHeight =
-    activeGateway?.gatewayMode === "quiet-collapse"
-      ? EXECUTIVE_THREAD_GATEWAY_FOOTPRINT.collapseHalfHeight
-      : EXECUTIVE_THREAD_GATEWAY_FOOTPRINT.halfHeight;
+  const gatewayX = null;
+  const gatewayY = null;
+  const gatewayHalfWidth = EXECUTIVE_THREAD_GATEWAY_FOOTPRINT.halfWidth;
+  const gatewayHalfHeight = EXECUTIVE_THREAD_GATEWAY_FOOTPRINT.halfHeight;
   const gatewayOverlapCount =
     gatewayX != null && gatewayY != null
       ? measureExecutiveThreadGatewayObjectOverlap({
@@ -765,7 +815,7 @@ export function Nexora3DExecutiveStage({
     gatewayVisible: gatewayNode != null,
     gatewayX,
     gatewayY,
-    gatewayHitTarget: activeGateway?.interactive !== false,
+    gatewayHitTarget: threadControlNode != null,
     gatewayOverlapCount,
     gatewayClipped: gatewayContainment.clipped,
     gatewayReservedCollisionCount: gatewayContainment.reservedCollisionCount,
@@ -934,6 +984,9 @@ export function Nexora3DExecutiveStage({
       data-nex-mvp-presentation="6"
       data-stage-identity={identity.id}
       data-stage-version={identity.version}
+      data-mlevel-visible-depth={String(managementLevelSpatial?.visibleLevelCount ?? 0)}
+      data-mlevel-second-stage="false"
+      data-mlevel-second-canvas="false"
       data-stage-prod-composition={directorComposition.identity}
       data-stage-prod-composition-status={directorComposition.status}
       data-stage-prod-scene-family={directorComposition.family}
@@ -1040,6 +1093,16 @@ export function Nexora3DExecutiveStage({
       data-camera-navigation="stage-2d-1-disabled"
       data-stage-camera-mode={stage2dObservability.cameraMode}
       data-stage-camera-target={stage2dObservability.cameraTarget}
+      data-stage-camera-azimuth={stage2dObservability.azimuthDeg}
+      data-stage-camera-elevation={stage2dObservability.elevationDeg}
+      data-stage-camera-distance={stage2dObservability.distance}
+      data-stage-camera-base-distance="11"
+      data-stage-camera-effective-distance={String(safeViewportFit.effectiveDistance)}
+      data-stage-camera-fit-reason={safeViewportFit.reason}
+      data-stage-camera-fit-conflict={safeViewportFit.conflict}
+      data-stage-safe-viewport={`${safeViewportInsets.left},${safeViewportInsets.top},${safeViewportInsets.right},${safeViewportInsets.bottom}`}
+      data-stage-camera-fov={stage2dObservability.fov}
+      data-stage-camera-pointer-offset={stage2dObservability.pointerOffset}
       data-stage-depth={stage2dObservability.stageDepth}
       data-stage-camera-contract={stage2dObservability.contract}
       data-stage-plane={topologyPlaneObservability.stagePlane}
@@ -1164,6 +1227,19 @@ export function Nexora3DExecutiveStage({
       data-stage-object-3d-contract={object3dObservability.contract}
       data-stage-object-geometry-origin={object3dObservability.geometryOrigin}
       data-stage-3dobj-contract={object3dVisualObservability.contract}
+      data-ovs-1-contract={ovsLanguageObservability.contract}
+      data-ovs-1-identity={ovsLanguageIdentity.id}
+      data-ovs-1-enabled={ovsLanguageObservability.enabled}
+      data-ovs-1-family={ovsLanguageObservability.family}
+      data-ovs-1-primitive={ovsLanguageObservability.primitive}
+      data-ovs-3-contract={ovs3Observability.contract}
+      data-ovs-3-identity={ovs3Observability.identity}
+      data-ovs-3-enabled={ovs3Observability.enabled}
+      data-ovs-3-family={ovs3Observability.family}
+      data-ovs-3-scene={ovs3Observability.sceneStatus}
+      data-ovs-3-data={ovs3Observability.dataRepresentation}
+      data-ovs-3-structures={ovs3Observability.structureCount}
+      data-ovs-3-roadmap={ovs3Observability.roadmapFamily}
       data-stage-3dobj-enabled={object3dVisualObservability.enabled}
       data-stage-3dobj-kind={object3dVisualObservability.kind}
       data-stage-3dobj-depth={object3dVisualObservability.depth}
@@ -1316,6 +1392,22 @@ export function Nexora3DExecutiveStage({
       data-stage-thread-gateway-reserved-collision-count={
         threadObservability.gatewayReservedCollisionCount
       }
+      data-stage-thread-collapse-identity={collapsePlacement.id}
+      data-stage-thread-collapse-surface={
+        EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE.ownerTestId
+      }
+      data-stage-thread-collapse-control={
+        EXECUTIVE_THREAD_COLLAPSE_CONTROL_SURFACE.controlTestId
+      }
+      data-stage-thread-collapse-available={
+        collapseNode != null ? "true" : "false"
+      }
+      data-stage-thread-collapse-world-occupancy="false"
+      data-stage-thread-control-state={threadControlAction ?? "none"}
+      data-stage-thread-control-available={
+        threadControlNode != null ? "true" : "false"
+      }
+      data-stage-thread-control-world-occupancy="false"
       data-stage-label-territory-contract={labelObservability.contract}
       data-stage-label-territory-identity={labelIdentity.id}
       data-stage-label-territory-version={labelIdentity.version}
@@ -1405,37 +1497,25 @@ export function Nexora3DExecutiveStage({
         onNavigateTrailIndex={onNavigateTrailIndex}
         onOverview={onOverview}
         guidedAttentionCue={backGuidedAttentionCue}
+        threadControlAction={threadControlAction}
+        threadControlSubjectId={threadControlNode?.subjectId ?? null}
+        threadControlLabel={threadControlNode?.label ?? null}
+        threadControlCount={
+          threadControlNode?.gatewayCount ??
+          threadControlNode?.collapsedMemberIds?.length ??
+          null
+        }
+        onThreadControl={
+          threadControlNode != null
+            ? () => onSelectSubject(threadControlNode.subjectId)
+            : undefined
+        }
       />
 
       <NexoraPresentationStateSelector
         activePresentationState={presentationViewModel.state}
         capability={presentationViewModel.capability}
         onPresentationStateChange={onPresentationStateChange}
-      />
-
-      <NexoraExecutiveQueueOverlay
-        entries={interaction.queueEntries ?? []}
-        collectionHeaderLabel={interaction.collectionHeader?.label ?? null}
-        projectionAnchorId={
-          interaction.focusedSubjectId ?? interaction.selectedSubjectId ?? null
-        }
-        mapNodes={nmiMapNodes}
-        onSelectCanonicalId={(canonicalId) => {
-          if (nmiManagementMap) {
-            const projection = composeNmiStageProjection({
-              projectionId: `nmi8:live:${canonicalId}`,
-              selectedCanonicalId: canonicalId,
-              source: "MANAGEMENT_MAP",
-              map: nmiManagementMap,
-            });
-            onSelectSubject(projection.projectionAnchorId);
-            return;
-          }
-          onSelectSubject(canonicalId);
-        }}
-        onSelectCategory={(category) => {
-          onSelectQueueCategory?.(category);
-        }}
       />
 
       <details
@@ -1583,13 +1663,11 @@ export function Nexora3DExecutiveStage({
 
         {interaction.contextNodes
           .filter((node) => node.role !== "source-anchor")
+          .filter((node) => !isExecutiveThreadControlNode(node))
           .map((node) => {
             const isGateway =
               node.role === "collapsed-thread" &&
               node.gatewayMode === "discoverable-collapsed";
-            const isQuietCollapse =
-              node.role === "collapsed-thread" &&
-              node.gatewayMode === "quiet-collapse";
             const gatewayCount =
               node.gatewayCount ?? node.collapsedMemberIds?.length ?? 0;
             return (
@@ -1615,28 +1693,18 @@ export function Nexora3DExecutiveStage({
                   node.opacity >= 0.5 ? "revealed" : "hidden-or-background"
                 }
                 data-visual-audit={
-                  isGateway
-                    ? "stage-thread-gateway"
-                    : isQuietCollapse
-                      ? "stage-thread-collapse"
-                      : "stage-context"
+                  isGateway ? "stage-thread-gateway" : "stage-context"
                 }
                 data-stage-prod-activation="canonical-id"
                 data-stage-prod-activation-writes="false"
                 aria-pressed={node.focused}
                 aria-expanded={
-                  node.role === "collapsed-thread"
-                    ? isQuietCollapse
-                      ? true
-                      : false
-                    : undefined
+                  node.role === "collapsed-thread" ? false : undefined
                 }
                 aria-label={
-                  isQuietCollapse
-                    ? "Collapse Executive Thread"
-                    : isGateway
-                      ? `Open Executive Thread with ${gatewayCount} items`
-                      : undefined
+                  isGateway
+                    ? `Open Executive Thread with ${gatewayCount} items`
+                    : undefined
                 }
                 onClick={(event) => {
                   event.stopPropagation();
@@ -1650,29 +1718,23 @@ export function Nexora3DExecutiveStage({
                       : `1px solid ${cockpit.border}`,
                   background: isGateway
                     ? "rgba(12, 24, 40, 0.88)"
-                    : isQuietCollapse
-                      ? "rgba(10, 18, 30, 0.72)"
-                      : "rgba(8, 14, 24, 0.45)",
+                    : "rgba(8, 14, 24, 0.45)",
                   color: cockpit.textSoft,
-                  fontSize: isGateway
-                    ? "0.68rem"
-                    : isQuietCollapse
-                      ? "0.58rem"
-                      : "0.58rem",
+                  fontSize: isGateway ? "0.68rem" : "0.58rem",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
                   textAlign: "left",
                   padding: isGateway
                     ? "0.42rem 0.72rem"
                     : "0.28rem 0.4rem",
-                  borderRadius: isGateway || isQuietCollapse ? "999px" : "0.3rem",
+                  borderRadius: isGateway ? "999px" : "0.3rem",
                   cursor: "pointer",
                   fontFamily: "inherit",
                   minWidth: isGateway ? "10.5rem" : undefined,
-                  opacity: isQuietCollapse ? 0.82 : 1,
+                  opacity: 1,
                 }}
               >
-                {isGateway || isQuietCollapse
+                {isGateway
                   ? node.label
                   : `${node.kind}: ${node.label}`}
               </button>
@@ -1729,13 +1791,23 @@ export function Nexora3DExecutiveStage({
       ) : (
         <StageErrorBoundary fallback={fallback}>
           <div
+            ref={canvasHostRef}
             data-testid="nexora-stage-canvas-host"
-            style={{ position: "relative", width: "100%", height: "100%" }}
+            style={{
+              position: "relative",
+              width: "100%",
+              height: "100%",
+              isolation: "isolate",
+              zIndex: 0,
+              overflow: "hidden",
+            }}
           >
             <NexoraStageCanvas
               presentation={fixedCameraInteraction}
               environment={environment}
               dataObjectStage={dataObjectStage}
+              isometricVisual={ovs3Visual}
+              fitDistance={safeViewportFit.effectiveDistance}
               onSelectSubject={(id) => onSelectSubject(id)}
               onSelectDataObject={onSelectDataObject}
               onClearSelection={onClearSelection}

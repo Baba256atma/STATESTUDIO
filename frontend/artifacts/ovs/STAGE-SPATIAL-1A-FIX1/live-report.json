@@ -1,0 +1,136 @@
+{
+  "capacity": {
+    "cameraMode": "fixed-executive-perspective",
+    "azimuth": "8",
+    "elevation": "10",
+    "distance": "11",
+    "fov": "42",
+    "ovs3Enabled": "false",
+    "ovs3Family": "none",
+    "ovs3Scene": "unavailable",
+    "ovs3Structures": "0",
+    "objects": [
+      {
+        "id": "obj-revenue",
+        "pos": "2.232822,0.127555,0",
+        "scale": "0.72",
+        "focused": "false",
+        "kind": "object",
+        "status": "stable",
+        "role": "unrelated"
+      },
+      {
+        "id": "obj-capacity",
+        "pos": "0,0,0",
+        "scale": "0.92",
+        "focused": "true",
+        "kind": "object",
+        "status": "watch",
+        "role": "focused"
+      },
+      {
+        "id": "obj-budget",
+        "pos": "2.01916,-0.22,0",
+        "scale": "0.82",
+        "focused": "false",
+        "kind": "object",
+        "status": "unresolved",
+        "role": "related"
+      },
+      {
+        "id": "obj-customer",
+        "pos": "2.58,1.23,0",
+        "scale": "0.7",
+        "focused": "false",
+        "kind": "object",
+        "status": "watch",
+        "role": "peripheral"
+      },
+      {
+        "id": "obj-delivery",
+        "pos": "-1.613593,1.42,0",
+        "scale": "0.82",
+        "focused": "false",
+        "kind": "object",
+        "status": "watch",
+        "role": "related"
+      },
+      {
+        "id": "obj-risk",
+        "pos": "0.360716,0.23,0",
+        "scale": "0.98",
+        "focused": "false",
+        "kind": "object",
+        "status": "unresolved",
+        "role": "unrelated"
+      },
+      {
+        "id": "obj-inventory",
+        "pos": "-1.864114,-1.05,0",
+        "scale": "0.82",
+        "focused": "false",
+        "kind": "object",
+        "status": "watch",
+        "role": "related"
+      },
+      {
+        "id": "obj-demand",
+        "pos": "-1.541224,1.324241,0",
+        "scale": "0.48",
+        "focused": "false",
+        "kind": "object",
+        "status": "unresolved",
+        "role": "unrelated"
+      }
+    ]
+  },
+  "risk": {
+    "cameraMode": "fixed-executive-perspective",
+    "azimuth": "8",
+    "elevation": "10",
+    "distance": "11",
+    "fov": "42",
+    "ovs3Enabled": "true",
+    "ovs3Family": "NEXO_RISK",
+    "ovs3Scene": "available",
+    "ovs3Structures": "3",
+    "objects": [
+      {
+        "id": "obj-risk",
+        "pos": "1.144,0.36,0",
+        "scale": "1.08",
+        "focused": "true",
+        "kind": "object",
+        "status": "unresolved",
+        "role": "focused"
+      },
+      {
+        "id": "obj-delivery",
+        "pos": "-1.8,-1.15,0",
+        "scale": "0.82",
+        "focused": "false",
+        "kind": "object",
+        "status": "watch",
+        "role": "peripheral"
+      },
+      {
+        "id": "obj-capacity",
+        "pos": "0,-1.15,0",
+        "scale": "0.7",
+        "focused": "false",
+        "kind": "object",
+        "status": "watch",
+        "role": "peripheral"
+      },
+      {
+        "id": "obj-customer",
+        "pos": "1.8,-1.15,0",
+        "scale": "0.7",
+        "focused": "false",
+        "kind": "object",
+        "status": "watch",
+        "role": "peripheral"
+      }
+    ]
+  }
+}

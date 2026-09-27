@@ -36,7 +36,7 @@ import {
   buildNexoraMVPAdvisorContextBridge,
 } from "../nex-mvp/nexoraMVPObjectInteraction.ts";
 import {
-  EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
+  isExecutiveStageFixedCameraPosition,
   resolveExecutiveStageFixedCamera,
 } from "./executiveStage2DFixedCamera.ts";
 import {
@@ -233,13 +233,12 @@ test("C/D/E — Anchor center, fixed camera, semantic z=0", () => {
       assert.equal(object.targetPosition[2], 0);
     }
     const camera = resolveExecutiveStageFixedCamera();
-    assert.deepEqual(presentation.scene.camera.position, [
-      0,
-      0,
-      EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-    ]);
+    assert.equal(
+      isExecutiveStageFixedCameraPosition(presentation.scene.camera.position),
+      true,
+    );
     assert.deepEqual(presentation.scene.camera.target, [0, 0, 0]);
-    assert.equal(camera.position.z, 11);
+    assert.equal(isExecutiveStageFixedCameraPosition(camera.position), true);
   }
 });
 

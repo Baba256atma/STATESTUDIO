@@ -153,6 +153,7 @@ export type ExecutiveObjectMaterialInput = {
   readonly recommended?: boolean;
   readonly compositionOpacity?: number;
   readonly compositionEmissiveIntensity?: number;
+  readonly objectKind?: string | null;
 };
 
 export type ExecutiveObjectMaterialSurfacePresentation = {
@@ -188,7 +189,7 @@ export const EXECUTIVE_OBJECT_MATERIAL_DNA = Object.freeze({
   noMirrorChrome: true as const,
   noNeonBody: true as const,
   noCustomShaders: true as const,
-  baseBodyColor: "#536478",
+  baseBodyColor: "#4a5563",
 });
 
 export const EXECUTIVE_OBJECT_MATERIAL_SURFACE_BOUNDS = Object.freeze({
@@ -207,7 +208,7 @@ export const EXECUTIVE_OBJECT_MATERIAL_SURFACE_BOUNDS = Object.freeze({
   maximumEmissive: 0.28,
   minimumEnvMapIntensity: 0.22,
   maximumEnvMapIntensity: 0.52,
-  stateTintMinimum: 0.12,
+  stateTintMinimum: 0.04,
   stateTintMaximum: 0.4,
 });
 
@@ -244,6 +245,8 @@ type MaterialProfile = {
 /**
  * Semantic-family material profiles — subtle variation around shared DNA.
  * Geometry remains the primary family differentiator.
+ * `risk` / `outcome` are identity tints for kinds that share SP:2.2 groups;
+ * they are not new Object families or a second palette authority.
  */
 export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   base: Object.freeze({
@@ -257,7 +260,7 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   }),
   operational: Object.freeze({
     surfaceToken: "object.material.operational",
-    baseColor: "#536478",
+    baseColor: "#4a5563",
     roughness: 0.46,
     metalness: 0.22,
     opacity: 1,
@@ -266,7 +269,7 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   }),
   goal: Object.freeze({
     surfaceToken: "object.material.goal",
-    baseColor: "#5a6d82",
+    baseColor: "#445a72",
     roughness: 0.4,
     metalness: 0.18,
     opacity: 1,
@@ -275,7 +278,7 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   }),
   kpi: Object.freeze({
     surfaceToken: "object.material.metric",
-    baseColor: "#4e6278",
+    baseColor: "#3f5c6e",
     roughness: 0.38,
     metalness: 0.26,
     opacity: 1,
@@ -284,7 +287,16 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   }),
   risk_problem: Object.freeze({
     surfaceToken: "object.material.problem",
-    baseColor: "#4a5564",
+    baseColor: "#5a5248",
+    roughness: 0.54,
+    metalness: 0.14,
+    opacity: 1,
+    envMapIntensity: 0.3,
+    emissiveBase: 0.03,
+  }),
+  risk: Object.freeze({
+    surfaceToken: "object.material.problem",
+    baseColor: "#5a454c",
     roughness: 0.54,
     metalness: 0.14,
     opacity: 1,
@@ -293,7 +305,7 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   }),
   decision: Object.freeze({
     surfaceToken: "object.material.decision",
-    baseColor: "#556878",
+    baseColor: "#3f5868",
     roughness: 0.42,
     metalness: 0.24,
     opacity: 1,
@@ -302,7 +314,7 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   }),
   scenario: Object.freeze({
     surfaceToken: "object.material.scenario",
-    baseColor: "#5b6c7c",
+    baseColor: "#4f4a62",
     roughness: 0.48,
     metalness: 0.16,
     opacity: 0.9,
@@ -311,16 +323,25 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
   }),
   execution: Object.freeze({
     surfaceToken: "object.material.execution",
-    baseColor: "#4f6274",
+    baseColor: "#3f5a58",
     roughness: 0.44,
     metalness: 0.24,
     opacity: 1,
     envMapIntensity: 0.38,
     emissiveBase: 0.03,
   }),
+  outcome: Object.freeze({
+    surfaceToken: "object.material.base",
+    baseColor: "#42564e",
+    roughness: 0.46,
+    metalness: 0.18,
+    opacity: 1,
+    envMapIntensity: 0.34,
+    emissiveBase: 0.03,
+  }),
   context: Object.freeze({
     surfaceToken: "object.material.context",
-    baseColor: "#5e7084",
+    baseColor: "#4e5a66",
     roughness: 0.5,
     metalness: 0.14,
     opacity: 0.86,
@@ -336,7 +357,10 @@ export const EXECUTIVE_OBJECT_MATERIAL_PROFILES = Object.freeze({
     envMapIntensity: 0.38,
     emissiveBase: 0.03,
   }),
-} as const satisfies Record<ExecutiveObjectSemanticVisualFamily | "base", MaterialProfile>);
+} as const satisfies Record<
+  ExecutiveObjectSemanticVisualFamily | "base" | "risk" | "outcome",
+  MaterialProfile
+>);
 
 /**
  * Per-object MeshStandardMaterial instances from immutable resolved values.
@@ -413,9 +437,19 @@ export function resolveExecutiveObjectMaterialSurfaceTone(
 
 function profileForSemanticFamily(
   family: ExecutiveObjectSemanticVisualFamily,
+  objectKind?: string | null,
 ): MaterialProfile {
-  return EXECUTIVE_OBJECT_MATERIAL_PROFILES[family] ??
-    EXECUTIVE_OBJECT_MATERIAL_PROFILES.unknown;
+  const cue = `${objectKind ?? ""}`.toLowerCase();
+  if (cue.includes("risk") && !cue.includes("problem")) {
+    return EXECUTIVE_OBJECT_MATERIAL_PROFILES.risk;
+  }
+  if (cue.includes("outcome") || cue.includes("learning")) {
+    return EXECUTIVE_OBJECT_MATERIAL_PROFILES.outcome;
+  }
+  return (
+    EXECUTIVE_OBJECT_MATERIAL_PROFILES[family] ??
+    EXECUTIVE_OBJECT_MATERIAL_PROFILES.unknown
+  );
 }
 
 /**
@@ -433,7 +467,7 @@ export function resolveExecutiveObjectMaterialPresentation(
   const focused = input.focused === true;
   const hovered = input.hovered === true;
   const selected = input.selected === true;
-  const profile = profileForSemanticFamily(semanticFamily);
+  const profile = profileForSemanticFamily(semanticFamily, input.objectKind);
   const stateVisual = resolveExecutiveObjectStateVisualPresentation({
     status: input.status,
     attention: input.attention,

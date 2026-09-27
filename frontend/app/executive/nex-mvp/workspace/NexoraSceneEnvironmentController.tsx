@@ -2,9 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Color } from "three";
+import { Color, DoubleSide } from "three";
 import type { Fog, MeshStandardMaterial } from "three";
-import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
+import {
+  NEXORA_MVP_STAGE_ATMOSPHERE_FIELD,
+  type NexoraMVPSceneEnvironmentVisualState,
+} from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
 import type { ExecutiveLightingGroundResponse } from "@/app/lib/spatial-presentation/executiveLightingFoundation";
 import { EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION } from "@/app/lib/spatial-presentation/executiveLightingFoundation";
 
@@ -86,18 +89,30 @@ export function NexoraSceneEnvironmentController({
         args={[environment.background, environment.fogNear, environment.fogFar]}
       />
       <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -1.15, 0]}
+        position={[0, 0, -6]}
+        renderOrder={-30}
         castShadow={groundShadow.castShadow}
         receiveShadow={
           groundShadow.receiveShadow && groundResponse.receiveShadows
         }
+        userData={{
+          stageAtmosphereField: "merged-ground",
+          stageVisibilityLayer: "environment-background",
+          retiredFloorY: NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.positionY,
+          visibleCircularBoundary:
+            NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.visibleCircularBoundary,
+        }}
         onClick={(event) => {
           event.stopPropagation();
           onClearSelection();
         }}
       >
-        <circleGeometry args={[9, 64]} />
+        <planeGeometry
+          args={[
+            NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.extent,
+            NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.extent,
+          ]}
+        />
         <meshStandardMaterial
           ref={groundMatRef}
           color={environment.groundColor}
@@ -105,6 +120,10 @@ export function NexoraSceneEnvironmentController({
           opacity={environment.groundOpacity}
           metalness={groundResponse.materialMetalness}
           roughness={groundResponse.materialRoughness}
+          depthWrite={false}
+          depthTest={false}
+          side={DoubleSide}
+          toneMapped={false}
         />
       </mesh>
     </group>

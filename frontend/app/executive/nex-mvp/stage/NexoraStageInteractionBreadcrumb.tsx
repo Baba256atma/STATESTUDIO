@@ -18,6 +18,12 @@ type Props = {
   /** STAGE-2D:5/6 — jump to absolute navigation-trail index. */
   readonly onNavigateTrailIndex?: (index: number) => void;
   readonly guidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
+  /** STAGE-THREAD:FIX1 — one Stage-control for open/collapse (not Object chrome). */
+  readonly threadControlAction?: "open" | "collapse" | null;
+  readonly threadControlSubjectId?: string | null;
+  readonly threadControlLabel?: string | null;
+  readonly threadControlCount?: number | null;
+  readonly onThreadControl?: () => void;
 };
 
 /**
@@ -38,6 +44,11 @@ export function NexoraStageInteractionBreadcrumb({
   onOverview,
   onNavigateTrailIndex,
   guidedAttentionCue = null,
+  threadControlAction = null,
+  threadControlSubjectId = null,
+  threadControlLabel = null,
+  threadControlCount = null,
+  onThreadControl,
 }: Props) {
   const showOverflowBefore =
     breadcrumbHasOverflowBefore ||
@@ -216,6 +227,46 @@ export function NexoraStageInteractionBreadcrumb({
           }}
         >
           Forward
+        </button>
+      ) : null}
+      {threadControlAction && onThreadControl && threadControlLabel ? (
+        <button
+          type="button"
+          data-testid="nexora-stage-thread-control"
+          data-stage-thread-control={threadControlAction}
+          data-stage-thread-control-slot="breadcrumb"
+          data-kind="executive-thread"
+          data-context-subject={threadControlSubjectId ?? undefined}
+          data-gateway-count={
+            threadControlCount != null ? String(threadControlCount) : undefined
+          }
+          aria-label={
+            threadControlAction === "collapse"
+              ? "Collapse Executive Thread"
+              : `Open Executive Thread, ${threadControlCount ?? 0} related objects`
+          }
+          aria-expanded={threadControlAction === "collapse" ? "true" : "false"}
+          onClick={(event) => {
+            event.stopPropagation();
+            onThreadControl();
+          }}
+          style={{
+            marginLeft: "0.25rem",
+            border: `1px solid ${cockpit.border}`,
+            background: "transparent",
+            color: cockpit.muted,
+            fontSize: "0.56rem",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            borderRadius: cockpit.radius.sm,
+            padding: "0.16rem 0.35rem",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            pointerEvents: "auto",
+            flex: "0 0 auto",
+          }}
+        >
+          {threadControlLabel}
         </button>
       ) : null}
     </div>

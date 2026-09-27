@@ -31,6 +31,9 @@ type Props = {
   readonly onSelect: (id: ExecutiveNavId) => void;
   /** UX:1 — primary destinations visible; secondary behind More. */
   readonly compact?: boolean;
+  /** ORG:8 — presentation-only toggle for the existing NMI panel. */
+  readonly nmiOpen?: boolean;
+  readonly onToggleNmi?: () => void;
 };
 
 /**
@@ -41,6 +44,8 @@ export function ExecutiveLeftNav({
   active,
   onSelect,
   compact = false,
+  nmiOpen = false,
+  onToggleNmi,
 }: Props) {
   const items = compact ? PRIMARY_NAV : EXECUTIVE_NAV_ITEMS;
   const secondaryOpen = compact && SECONDARY_NAV.includes(active);
@@ -67,13 +72,35 @@ export function ExecutiveLeftNav({
       }}
     >
       {items.map((id) => (
-        <NavButton
-          key={id}
-          id={id}
-          active={active}
-          compact={compact}
-          onSelect={onSelect}
-        />
+        <span key={id} style={{ display: "contents" }}>
+          <NavButton
+            id={id}
+            active={active}
+            compact={compact}
+            onSelect={onSelect}
+          />
+          {compact && id === "Home" && onToggleNmi ? (
+            <button
+              type="button"
+              data-testid="executive-nav-nmi"
+              aria-label="NMI"
+              aria-pressed={nmiOpen}
+              title={nmiOpen ? "Collapse NMI" : "Open NMI"}
+              onClick={onToggleNmi}
+              style={navButtonStyle(nmiOpen, compact)}
+            >
+              <span
+                style={{
+                  fontSize: "0.62rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                NMI
+              </span>
+            </button>
+          ) : null}
+        </span>
       ))}
 
       {compact ? (

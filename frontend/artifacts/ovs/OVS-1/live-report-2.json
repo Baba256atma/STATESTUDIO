@@ -1,0 +1,27 @@
+{
+  "risk": {
+    "focused": "obj-risk",
+    "ovsFamily": "risk",
+    "ovsPrimitive": "diamond",
+    "advisor": "NEXORA ADVISOR\n\n◀ COLLAPSE\nAdvisor\nDetails\n\nActive context\n\noverview · minimum · neutral\n\nobject · Risk\n\nRecent Change · 2 executive objects changed materially\n\nSubject\n\nProduction Capacity Elevated\n\noverview · Risk · minimum\n\nRisk\n\nNeeds Attention\n\nSituation\n\nRisk currently has "
+  },
+  "capacity": {
+    "focused": "obj-capacity",
+    "ovsFamily": "operational",
+    "ovsPrimitive": "rounded-block"
+  },
+  "nmiNodeCount": 10,
+  "nmi": {
+    "beforeNmi": "obj-capacity",
+    "nodeId": "goal-capacity-availability",
+    "afterPick": {
+      "focused": "obj-capacity",
+      "nmiOpen": "true"
+    },
+    "afterCollapse": {
+      "focused": "obj-capacity",
+      "nmiOpen": "false"
+    }
+  },
+  "ok": true
+}

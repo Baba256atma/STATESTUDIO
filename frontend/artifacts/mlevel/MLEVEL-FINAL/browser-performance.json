@@ -1,0 +1,25 @@
+{
+  "identity": "NPA-T MLEVEL:FINAL/BrowserPerformance",
+  "method": "STAGE-PROD:8A summarizeStageProdFrameTimestamps methodology via requestAnimationFrame timestamps",
+  "thresholdAuthority": "STAGE-PROD:8C",
+  "url": "http://127.0.0.1:3000/executive",
+  "reducedMotion": true,
+  "stableIdle": {
+    "observationMs": 2000.9,
+    "frameCount": 241,
+    "fps": 119.9,
+    "averageFrameIntervalMs": 8.3,
+    "maxFrameIntervalMs": 9.4,
+    "framesOver33_4Ms": 0,
+    "framesOver50Ms": 0
+  },
+  "postSelection": {
+    "observationMs": 1500,
+    "fps": 120,
+    "maxFrameIntervalMs": 9.4,
+    "framesOver33_4Ms": 0
+  },
+  "duplicateStage": 1,
+  "duplicateCanvas": 1,
+  "pass": true
+}

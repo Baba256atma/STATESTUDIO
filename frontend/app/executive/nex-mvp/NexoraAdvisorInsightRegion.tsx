@@ -57,6 +57,12 @@ import type {
   NexoraMVPFlowExecutionRecord,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlowFixtures";
 import type { NexoraDecisionRuntimeAdapter } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
+import {
+  createSceneOrgRightPanelChromeState,
+  projectSceneOrgRightContext,
+  updateSceneOrgRightPanelChrome,
+  type SceneOrgRightPanelChromeState,
+} from "@/app/lib/scene-org/sceneOrgRightContextContract";
 
 type Props = {
   readonly tab: ExecutiveAdvisorTab;
@@ -96,6 +102,8 @@ type Props = {
   readonly flowDecisions?: readonly NexoraMVPFlowDecisionRecord[];
   readonly flowExecutions?: readonly NexoraMVPFlowExecutionRecord[];
   readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
+  readonly panelChrome?: SceneOrgRightPanelChromeState;
+  readonly onPanelChromeChange?: (state: SceneOrgRightPanelChromeState) => void;
 };
 
 function projectConversationalAction(
@@ -170,9 +178,14 @@ export function NexoraAdvisorInsightRegion({
   flowDecisions,
   flowExecutions,
   decisionRuntime,
+  panelChrome: controlledPanelChrome,
+  onPanelChromeChange,
 }: Props) {
-  const [width, setWidth] = useState(320);
-  const [collapsed, setCollapsed] = useState(false);
+  const [internalPanelChrome, setInternalPanelChrome] = useState(() =>
+    createSceneOrgRightPanelChromeState(),
+  );
+  const panelChrome = controlledPanelChrome ?? internalPanelChrome;
+  const { width, collapsed } = panelChrome;
   useSyncExternalStore(
     subscribeProactiveAdvisorDelivery,
     getProactiveAdvisorDeliveryVersion,
@@ -195,8 +208,31 @@ export function NexoraAdvisorInsightRegion({
   }, [conversationalProcessing, proactiveBrief, sourceIntelligenceContext]);
 
   const onToggleCollapse = useCallback(() => {
-    setCollapsed((value) => !value);
-  }, []);
+    const next = updateSceneOrgRightPanelChrome(panelChrome, {
+      kind: "TOGGLE_COLLAPSE",
+    });
+    if (onPanelChromeChange) onPanelChromeChange(next);
+    else setInternalPanelChrome(next);
+  }, [onPanelChromeChange, panelChrome]);
+
+  const onWidthChange = useCallback((nextWidth: number) => {
+    const next = updateSceneOrgRightPanelChrome(panelChrome, {
+      kind: "RESIZE",
+      width: nextWidth,
+    });
+    if (onPanelChromeChange) onPanelChromeChange(next);
+    else setInternalPanelChrome(next);
+  }, [onPanelChromeChange, panelChrome]);
+
+  const rightContext = useMemo(
+    () =>
+      projectSceneOrgRightContext({
+        advisorBridge,
+        focusedSubject,
+        selectedSubject,
+      }),
+    [advisorBridge, focusedSubject, selectedSubject],
+  );
 
   const intelligence = useMemo(() => {
     const narrativeBridge =
@@ -347,7 +383,7 @@ export function NexoraAdvisorInsightRegion({
       maxWidth={cockpit.advisorMax}
       collapsed={collapsed}
       collapsedWidth={cockpit.advisorCollapsedWidth}
-      onWidthChange={setWidth}
+      onWidthChange={onWidthChange}
       testId="executive-advisor-panel"
       style={{
         background: `linear-gradient(180deg, ${cockpit.panel} 0%, ${cockpit.navy} 100%)`,
@@ -362,6 +398,12 @@ export function NexoraAdvisorInsightRegion({
         data-mvp-surface="advisor"
         data-nex-mvp="7"
         data-advisor-tab={tab}
+        data-right-context-key={rightContext.contextKey}
+        data-right-context-kind={rightContext.kind}
+        data-right-context-canonical-id={rightContext.canonicalId ?? "none"}
+        data-right-context-collection={rightContext.collectionCategory ?? "none"}
+        data-right-context-collapsed={collapsed ? "true" : "false"}
+        data-right-context-width={String(width)}
         data-ux3="professional-advisor"
         data-exi="1"
         data-exi2="grounded"
@@ -487,6 +529,43 @@ export function NexoraAdvisorInsightRegion({
                     }`}
               </p>
             </div>
+
+            {rightContext.kind === "COLLECTION" ? (
+              <div
+                data-testid="nexora-right-context-collection"
+                data-collection-category={rightContext.collectionCategory ?? "none"}
+                data-collection-count={String(rightContext.collectionObjectCount)}
+                style={{
+                  padding: "0.55rem 0.65rem",
+                  border: `1px solid ${cockpit.border}`,
+                  borderRadius: cockpit.radius.md,
+                  background: cockpit.panelSoft,
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    color: cockpit.lowMuted,
+                    fontSize: "0.56rem",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Current collection
+                </p>
+                <p
+                  data-testid="nexora-right-context-collection-label"
+                  style={{
+                    margin: "0.3rem 0 0",
+                    color: cockpit.text,
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {rightContext.label}
+                </p>
+              </div>
+            ) : null}
 
             {sourceIntelligenceContext ? (
               <details
@@ -621,6 +700,19 @@ export function NexoraAdvisorInsightRegion({
                 onAction={onIntelligenceAction}
                 onExecuteNextBestAction={onExecuteNextBestAction}
               />
+            ) : rightContext.kind === "COLLECTION" ? (
+              <p
+                data-testid="nexora-right-context-collection-details"
+                style={{
+                  margin: 0,
+                  color: cockpit.textSoft,
+                  fontSize: "0.68rem",
+                  lineHeight: 1.45,
+                }}
+              >
+                {rightContext.collectionObjectCount} live canonical item
+                {rightContext.collectionObjectCount === 1 ? "" : "s"} in this collection.
+              </p>
             ) : (
               <NexoraInsightView viewModel={intelligence.insight} />
             )}
@@ -771,4 +863,3 @@ export function NexoraAdvisorInsightRegion({
     </ExecutiveResizablePanel>
   );
 }
-

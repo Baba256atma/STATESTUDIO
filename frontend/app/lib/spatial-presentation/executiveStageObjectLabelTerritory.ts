@@ -3,6 +3,9 @@
  *
  * Final authority for Stage label placement. Labels adapt to objects;
  * objects never chase labels. No Z, no camera, no topology changes.
+ *
+ * STAGE-LABEL:FIX1 — caption proximity: one primary caption per Object,
+ * name+state in one owned container, association vs neighbor silhouettes.
  */
 
 import {
@@ -11,10 +14,8 @@ import {
 } from "./executiveStage2DHardSeparation.ts";
 import { EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION } from "./executiveStageReservedRegionContainment.ts";
 import {
-  EXECUTIVE_STAGE_LABEL_SECTOR_TO_SIDE,
   formatExecutiveObjectStageLabel,
   resolveExecutiveLabelWorldOffset,
-  resolveExecutiveStageAngularSector,
   type ExecutiveLabelPlacementSide,
 } from "./executiveObjectLabelRelationshipGrammar.ts";
 import { EXECUTIVE_THREAD_GATEWAY_FOOTPRINT } from "./executiveThreadExpansion.ts";
@@ -102,10 +103,12 @@ export type ExecutiveStageObjectLabelOwnership = Readonly<{
 export const EXECUTIVE_STAGE_LABEL_POLICY = Object.freeze({
   ownerGap: 0.12,
   maxOwnerDistanceFactor: 1.55,
+  /** Caption center must be this much closer to owner silhouette than any neighbor. */
+  associationPad: 0.1,
   labelHalf: Object.freeze({
-    full: Object.freeze({ w: 0.55, h: 0.24 }),
-    compact: Object.freeze({ w: 0.46, h: 0.2 }),
-    minimal: Object.freeze({ w: 0.38, h: 0.15 }),
+    full: Object.freeze({ w: 0.55, h: 0.26 }),
+    compact: Object.freeze({ w: 0.46, h: 0.22 }),
+    minimal: Object.freeze({ w: 0.38, h: 0.16 }),
   }),
   sideOrder: Object.freeze([
     "top",
@@ -272,9 +275,7 @@ export function resolveExecutiveStageOwnedLabelContent(input: {
     statusToken === "normal";
 
   let secondary: string | null = null;
-  if (visibility === "minimal") {
-    secondary = null;
-  } else if (isWork) {
+  if (isWork) {
     secondary = kind.charAt(0).toUpperCase() + kind.slice(1);
   } else if (statusLooksLikeState && statusToken.length > 0) {
     if (!primary.toLowerCase().includes(statusToken)) {
@@ -285,10 +286,15 @@ export function resolveExecutiveStageOwnedLabelContent(input: {
   if (visibility === "compact") {
     if (
       secondary != null &&
+      !isWork &&
       primary.toLowerCase().includes(secondary.toLowerCase())
     ) {
       secondary = null;
     }
+  }
+
+  if (visibility === "minimal" && !isWork) {
+    secondary = null;
   }
 
   return Object.freeze({
@@ -304,42 +310,106 @@ export function resolveExecutiveStageLabelPreferredSide(input: {
   readonly role?: string | null;
   readonly nearestForeign?: Readonly<{ readonly x: number; readonly y: number }> | null;
 }): ExecutiveStageLabelSide {
+  void input.objectX;
+  void input.objectY;
+  void input.nearestForeign;
+  // STAGE-LABEL:FIX1 — canonical caption sits above, centered. Collision may
+  // fall back to other sides; Objects never move.
   if (input.focused || input.role === "focused") return "top";
-  if (input.nearestForeign != null) {
-    const dx = input.objectX - input.nearestForeign.x;
-    const dy = input.objectY - input.nearestForeign.y;
-    // Prefer the side pointing away from the nearest foreign body.
-    if (Math.abs(dx) >= Math.abs(dy)) {
-      if (dx >= 0 && dy >= 0) return "top-right";
-      if (dx >= 0 && dy < 0) return "bottom-right";
-      if (dx < 0 && dy >= 0) return "top-left";
-      return "bottom-left";
-    }
-    if (dy >= 0) return dx >= 0 ? "top-right" : "top-left";
-    return dx >= 0 ? "bottom-right" : "bottom-left";
-  }
-  const sector = resolveExecutiveStageAngularSector(
-    input.objectX,
-    input.objectY,
-  );
-  return EXECUTIVE_STAGE_LABEL_SECTOR_TO_SIDE[sector];
+  return "top";
+}
+
+function sideDotTowardNeighbor(
+  side: ExecutiveStageLabelSide,
+  objectX: number,
+  objectY: number,
+  neighborX: number,
+  neighborY: number,
+): number {
+  const offset = resolveExecutiveLabelWorldOffset(side, 1);
+  const vx = neighborX - objectX;
+  const vy = neighborY - objectY;
+  const len = Math.hypot(vx, vy);
+  if (len < 1e-6) return 0;
+  return offset.x * (vx / len) + offset.y * (vy / len);
 }
 
 function sidePreferenceList(
   preferred: ExecutiveStageLabelSide,
   focused: boolean,
+  nearestForeign: Readonly<{ readonly x: number; readonly y: number }> | null,
+  objectX: number,
+  objectY: number,
 ): readonly ExecutiveStageLabelSide[] {
   const base = focused
     ? EXECUTIVE_STAGE_LABEL_POLICY.anchorPreferred
     : EXECUTIVE_STAGE_LABEL_POLICY.sideOrder;
   const ordered: ExecutiveStageLabelSide[] = [preferred];
+  const rest: ExecutiveStageLabelSide[] = [];
   for (const side of base) {
-    if (!ordered.includes(side)) ordered.push(side);
+    if (!ordered.includes(side)) rest.push(side);
   }
   for (const side of EXECUTIVE_STAGE_LABEL_POLICY.sideOrder) {
-    if (!ordered.includes(side)) ordered.push(side);
+    if (!ordered.includes(side) && !rest.includes(side)) rest.push(side);
   }
+  if (nearestForeign != null) {
+    rest.sort((left, right) => {
+      const towardLeft = sideDotTowardNeighbor(
+        left,
+        objectX,
+        objectY,
+        nearestForeign.x,
+        nearestForeign.y,
+      );
+      const towardRight = sideDotTowardNeighbor(
+        right,
+        objectX,
+        objectY,
+        nearestForeign.x,
+        nearestForeign.y,
+      );
+      return towardLeft - towardRight;
+    });
+  }
+  for (const side of rest) ordered.push(side);
   return Object.freeze(ordered);
+}
+
+function labelHalfForContent(
+  mode: Exclude<ExecutiveStageLabelVisibilityMode, "hidden">,
+  primaryLine: string,
+  secondaryLine: string | null,
+): Readonly<{ readonly w: number; readonly h: number }> {
+  const base = labelHalfForMode(mode);
+  const longest = Math.max(
+    primaryLine.trim().length,
+    (secondaryLine ?? "").trim().length,
+    6,
+  );
+  const w = Math.min(1.18, Math.max(base.w, longest * 0.038));
+  const h = secondaryLine != null && secondaryLine.length > 0 ? base.h * 1.32 : base.h;
+  return Object.freeze({ w, h });
+}
+
+function captionCloserToNeighborThanOwner(
+  centerX: number,
+  centerY: number,
+  ownerObjectId: string,
+  bodyById: ReadonlyMap<string, ExecutiveStageLabelRect>,
+  pad: number,
+): boolean {
+  const ownerBody = bodyById.get(ownerObjectId);
+  if (ownerBody == null) return false;
+  const ownerDist = Math.max(
+    0,
+    distancePointToRect(centerX, centerY, ownerBody),
+  );
+  for (const [bodyId, body] of bodyById) {
+    if (bodyId === ownerObjectId) continue;
+    const otherDist = Math.max(0, distancePointToRect(centerX, centerY, body));
+    if (otherDist + 1e-6 < ownerDist + pad) return true;
+  }
+  return false;
 }
 
 function labelHalfForMode(
@@ -542,6 +612,11 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
     const sides = sidePreferenceList(
       preferred,
       object.focused === true || object.id === input.anchorObjectId,
+      nearestForeign != null && nearestForeign.dist < 2.4
+        ? { x: nearestForeign.x, y: nearestForeign.y }
+        : null,
+      object.x,
+      object.y,
     );
     const modes: Exclude<ExecutiveStageLabelVisibilityMode, "hidden">[] = [
       "full",
@@ -552,7 +627,18 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
     let resolved: ExecutiveStageObjectLabelOwnership | null = null;
 
     for (const mode of modes) {
-      const half = labelHalfForMode(mode);
+      const content = resolveExecutiveStageOwnedLabelContent({
+        objectName: object.label,
+        objectKind: object.kind,
+        status: object.status,
+        presentationLevel: level,
+        visibility: mode,
+      });
+      const half = labelHalfForContent(
+        mode,
+        content.primaryLine,
+        content.secondaryLine,
+      );
       const maxDist = maxOwnerDistance(ownerHalf, half.w, half.h);
       for (const side of sides) {
         const placement = makeLabelRect(
@@ -603,28 +689,17 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
         if (hitsLabel) continue;
 
         const center = rectCenter(placement.rect);
-        const ownerDist = Math.hypot(center.x - object.x, center.y - object.y);
-        let ownerViolation = false;
-        for (const other of input.objects) {
-          if (other.id === object.id) continue;
-          if (other.disclosureState === "hidden") continue;
-          if (other.opacity != null && other.opacity <= 0.05) continue;
-          const otherDist = Math.hypot(center.x - other.x, center.y - other.y);
-          // Owner must be clearly closer (perceptual attachment).
-          if (otherDist + 0.28 < ownerDist) {
-            ownerViolation = true;
-            break;
-          }
+        if (
+          captionCloserToNeighborThanOwner(
+            center.x,
+            center.y,
+            object.id,
+            bodyById,
+            EXECUTIVE_STAGE_LABEL_POLICY.associationPad,
+          )
+        ) {
+          continue;
         }
-        if (ownerViolation) continue;
-
-        const content = resolveExecutiveStageOwnedLabelContent({
-          objectName: object.label,
-          objectKind: object.kind,
-          status: object.status,
-          presentationLevel: level,
-          visibility: mode,
-        });
         const territory = Object.freeze({
           minX:
             object.x -
@@ -734,20 +809,16 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
       if (rectsOverlap(ownership.bounds, body)) bodyOverlapCount += 1;
     }
     const center = rectCenter(ownership.bounds);
-    const ownerBody = bodyById.get(ownership.ownerObjectId);
-    if (ownerBody) {
-      const ownerDist = Math.max(
-        0,
-        distancePointToRect(center.x, center.y, ownerBody),
-      );
-      for (const [bodyId, body] of bodyById) {
-        if (bodyId === ownership.ownerObjectId) continue;
-        const otherDist = Math.max(
-          0,
-          distancePointToRect(center.x, center.y, body),
-        );
-        if (otherDist + 0.08 < ownerDist) ownerViolationCount += 1;
-      }
+    if (
+      captionCloserToNeighborThanOwner(
+        center.x,
+        center.y,
+        ownership.ownerObjectId,
+        bodyById,
+        EXECUTIVE_STAGE_LABEL_POLICY.associationPad,
+      )
+    ) {
+      ownerViolationCount += 1;
     }
   }
 

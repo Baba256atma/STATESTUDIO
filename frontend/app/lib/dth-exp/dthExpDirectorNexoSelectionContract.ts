@@ -85,5 +85,7 @@ export type DthExpDirectorNexoSelectionInput = Readonly<{
   currentNexoFamily?: DthExpNexoRecipeFamily | null;
   sceneIntentKind?: NexoraDecisionTheatreSceneIntentKind | null;
   comparisonKind?: "portfolio" | "magnitude" | null;
+  focalCanonicalObjectType?: string | null;
+  collectionKind?: string | null;
   nmiContextHint?: string | null;
 }>;

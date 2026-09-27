@@ -15,6 +15,7 @@ import {
   type NexoraConversationalIntentTrace,
   type NexoraConversationalScenarioIntentPayload,
   type NexoraConversationalDecisionCommitmentPayload,
+  type NexoraConversationalWorkspaceActionPayload,
   type NexoraConversationalTargetHint,
 } from "./conversationalIntent.ts";
 import {
@@ -40,7 +41,48 @@ type MatchResult = {
   readonly candidateKinds: readonly NexoraConversationalIntentKind[];
   readonly scenarioPayload?: NexoraConversationalScenarioIntentPayload | null;
   readonly decisionCommitmentPayload?: NexoraConversationalDecisionCommitmentPayload | null;
+  readonly workspaceActionPayload?: NexoraConversationalWorkspaceActionPayload | null;
 };
+
+function matchWorkspaceAction(normalized: string): MatchResult | null {
+  let payload: NexoraConversationalWorkspaceActionPayload | null = null;
+  const save = normalized.match(/^save this scene as (.+)$/);
+  const open = normalized.match(/^open (?:scene )?(.+ review)$/);
+  if (save?.[1]) {
+    payload = { action: "SAVE_SCENE", sceneName: save[1], useCurrentReferent: true };
+  } else if (open?.[1]) {
+    payload = { action: "OPEN_SCENE", sceneName: open[1], useCurrentReferent: false };
+  } else if (/^make this (?:my )?default scene$/.test(normalized)) {
+    payload = { action: "MAKE_DEFAULT_SCENE", sceneName: null, useCurrentReferent: false };
+  } else if (/^(?:show recent activity|show activity|show history)$/.test(normalized)) {
+    payload = { action: "SHOW_ACTIVITY", sceneName: null, useCurrentReferent: false };
+  } else if (/^(?:open the details|open details|open data for this)$/.test(normalized)) {
+    payload = { action: "OPEN_DETAIL", sceneName: null, useCurrentReferent: true };
+  } else if (/^close (?:the )?detail(?: workspace)?$/.test(normalized)) {
+    payload = { action: "CLOSE_DETAIL", sceneName: null, useCurrentReferent: false };
+  } else if (/^show details$/.test(normalized)) {
+    payload = { action: "SHOW_RIGHT_DETAILS", sceneName: null, useCurrentReferent: false };
+  } else if (/^open (?:the )?advisor$/.test(normalized)) {
+    payload = { action: "OPEN_ADVISOR", sceneName: null, useCurrentReferent: false };
+  } else if (/^collapse (?:the )?right panel$/.test(normalized)) {
+    payload = { action: "COLLAPSE_RIGHT", sceneName: null, useCurrentReferent: false };
+  }
+  if (!payload) return null;
+  return {
+    kind: "workspace-action",
+    confidence: 0.98,
+    reasons: Object.freeze([
+      CONVERSATIONAL_INTENT_REASON.MATCHED_WORKSPACE_ACTION,
+      CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+      CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+    ]),
+    targetHints: Object.freeze([]),
+    requiresContext: payload.useCurrentReferent,
+    requiresTarget: false,
+    candidateKinds: Object.freeze(["workspace-action"] as const),
+    workspaceActionPayload: Object.freeze(payload),
+  };
+}
 
 function clampConfidence(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -2628,6 +2670,7 @@ function resolveMatch(normalized: string): MatchResult {
   // Order matters: decision commitment before scenario; scenario before recommend.
   return (
     matchConversationalEntry(normalized) ??
+    matchWorkspaceAction(normalized) ??
     matchAmbiguous(normalized) ??
     matchOverview(normalized) ??
     matchNavigation(normalized) ??
@@ -2681,6 +2724,9 @@ function freezeIntent(intent: NexoraConversationalIntent): NexoraConversationalI
     decisionCommitmentPayload: intent.decisionCommitmentPayload
       ? Object.freeze({ ...intent.decisionCommitmentPayload })
       : null,
+    workspaceActionPayload: intent.workspaceActionPayload
+      ? Object.freeze({ ...intent.workspaceActionPayload })
+      : null,
   });
 }
 
@@ -2714,6 +2760,7 @@ export function resolveNexoraConversationalIntent(
     targetHints: match.targetHints,
     scenarioPayload: match.scenarioPayload ?? null,
     decisionCommitmentPayload: match.decisionCommitmentPayload ?? null,
+    workspaceActionPayload: match.workspaceActionPayload ?? null,
   });
 
   const trace: NexoraConversationalIntentTrace = Object.freeze({

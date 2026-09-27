@@ -9,6 +9,14 @@ import {
   type ExecutiveObject3DPresentationLevel,
 } from "@/app/lib/spatial-presentation/executiveObject3DGeometry";
 import {
+  isExecutiveOvsObjectVisualLanguageEnabled,
+  resolveExecutiveOvsObjectVisualLanguage,
+} from "@/app/lib/spatial-presentation/executiveOvsObjectVisualLanguage";
+import {
+  resolveExecutiveOvsObjectStateVisual,
+  type ExecutiveOvsObjectStateVisualInput,
+} from "@/app/lib/spatial-presentation/executiveOvsObjectStateVisual";
+import {
   isExecutive3DObjectVisualEnabled,
   resolveExecutive3DObjectVisualProfile,
 } from "@/app/lib/spatial-presentation/executive3DObjectVisualProfile";
@@ -26,6 +34,7 @@ import {
 } from "@/app/lib/spatial-presentation/executive3DObjectPremiumForm";
 import { ExecutiveObjectFaceSurface } from "./ExecutiveObjectFaceSurface";
 import { ExecutiveObjectPremiumBody } from "./ExecutiveObjectPremiumBody";
+import { ExecutiveOvsObjectBody } from "./ExecutiveOvsObjectBody";
 import type {
   ExecutiveObjectDimensions,
   ExecutiveObjectGeometryFamily,
@@ -54,6 +63,8 @@ type GeometryProps = {
     | "critical"
     | "recommended"
     | "unresolved";
+  readonly hovered?: boolean;
+  readonly ovsStateInput?: ExecutiveOvsObjectStateVisualInput;
   readonly onSelect: () => void;
   readonly onHover: (hovered: boolean) => void;
 };
@@ -96,7 +107,8 @@ function mixHexToward(hex: string, toward: string, amount: number): string {
  * When obj3d disabled, falls back to STAGE-2D planar bodies.
  * When obj3dVisual=0, basic STAGE-OBJ:1 slabs; when ON, premium visual foundation.
  * When obj3dSurface=1, STAGE-3DOBJ:2 face symbology / surface identity.
- * When obj3dForm=1, STAGE-3DOBJ:3 premium form language (form-first).
+ * When OVS:1 is ON (default), primitive executive language replaces slab bodies.
+ * When obj3dForm=1 and OVS:1 is OFF, STAGE-3DOBJ:3 premium form language (form-first).
  *
  * Geometry origin: back on plane (z≈0), front toward camera (+Z).
  */
@@ -113,6 +125,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
       presentationLevel = "minimum",
       interactionState = "overview",
       executiveState = "normal",
+      hovered = false,
+      ovsStateInput,
       onSelect,
       onHover,
     },
@@ -126,6 +140,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
     const surfaceEnabled = isExecutive3DObjectSurfaceEnabled();
     const formEnabled = isExecutive3DObjectPremiumFormEnabled();
     const symbolsVisible = isExecutive3DObjectSymbolVisible();
+    const ovsEnabled = isExecutiveOvsObjectVisualLanguageEnabled();
     void formRuntimeEpoch;
     const profile = useMemo(
       () =>
@@ -151,6 +166,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         isExecutive3DObjectVisualEnabled(),
         surfaceEnabled,
         formEnabled,
+        ovsEnabled,
       ],
     );
 
@@ -242,7 +258,40 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
 
     const width = sized.width;
     const height = sized.height;
-    const depth = form.enabled ? form.depth : profile.depth;
+    const ovs = useMemo(
+      () =>
+        resolveExecutiveOvsObjectVisualLanguage({
+          objectKind,
+          width,
+          height,
+          enabled: profile.enabled && ovsEnabled,
+        }),
+      [objectKind, width, height, profile.enabled, ovsEnabled],
+    );
+    const ovsState = useMemo(
+      () =>
+        resolveExecutiveOvsObjectStateVisual({
+          objectKind,
+          executiveState,
+          interactionState,
+          hovered,
+          ...ovsStateInput,
+        }),
+      [
+        objectKind,
+        executiveState,
+        interactionState,
+        hovered,
+        ovsStateInput?.status,
+        ovsStateInput?.attention,
+        ovsStateInput?.executiveVisualState,
+        ovsStateInput?.focused,
+        ovsStateInput?.selected,
+        ovsStateInput?.hovered,
+        ovsStateInput?.disclosureState,
+      ],
+    );
+    const depth = ovs.enabled ? ovs.depth : form.enabled ? form.depth : profile.depth;
     const radius = Math.max(width, height) * 0.5;
     const pickW = width * pickingExtentScale;
     const pickH = height * pickingExtentScale;
@@ -253,22 +302,26 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         family === "cylindrical" ||
         family === "orbital");
 
-    const sideDarken = form.enabled
-      ? 0.68
-      : visual.enabled
-        ? Math.min(visual.sideFaceDarken, face.enabled ? 0.72 : 0.82)
-        : 0.88;
+    const sideDarken = ovs.enabled
+      ? 1 - ovs.material.sideDarken
+      : form.enabled
+        ? 0.68
+        : visual.enabled
+          ? Math.min(visual.sideFaceDarken, face.enabled ? 0.72 : 0.82)
+          : 0.88;
     const sideColor = mixHexToward(
       material.color,
       "#060b14",
-      1 - sideDarken,
+      ovs.enabled ? ovs.material.sideDarken : 1 - sideDarken,
     );
-    const frontLift = form.enabled
-      ? 0.1
-      : visual.enabled
-        ? (visual.frontFaceContrast - 1) * (face.enabled ? 0.85 : 0.55) +
-          (face.enabled ? 0.08 : 0)
-        : 0.04;
+    const frontLift = ovs.enabled
+      ? ovs.material.highlightLift
+      : form.enabled
+        ? 0.1
+        : visual.enabled
+          ? (visual.frontFaceContrast - 1) * (face.enabled ? 0.85 : 0.55) +
+            (face.enabled ? 0.08 : 0)
+          : 0.04;
     const frontColor = mixHexToward(material.color, "#ffffff", frontLift);
     // Machined recess is slightly darker than body — not a bright card plate.
     const recessColor = form.enabled
@@ -277,33 +330,64 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
 
     const bodyMaterialNode = profile.enabled ? (
       <meshStandardMaterial
-        color={visual.enabled ? sideColor : material.color}
+        color={ovs.enabled ? mixHexToward(material.color, "#ffffff", ovs.material.highlightLift) : visual.enabled ? sideColor : material.color}
         emissive={material.emissiveColor ?? material.color}
         emissiveIntensity={Math.min(
           (material.emissiveIntensity ?? 0.2) *
-            (visual.enabled ? (form.enabled ? 0.55 : 0.85) : 1) +
-            (visual.enabled ? visual.emissiveCue * 0.25 : 0),
-          form.enabled ? 0.18 : 0.28,
-        )}
-        metalness={Math.min(
-          (material.metalness ?? 0.1) +
-            (form.enabled ? 0.06 : visual.enabled ? 0.02 : 0),
-          form.enabled ? 0.22 : 0.16,
-        )}
-        roughness={Math.max(
-          (material.roughness ?? 0.7) +
-            (form.enabled
-              ? 0.12
+            (ovs.enabled
+              ? ovs.material.emissiveScale * ovsState.emissiveScale
               : visual.enabled
-                ? face.enabled
-                  ? 0.1
-                  : 0.04
-                : 0),
-          form.enabled ? 0.58 : 0.62,
+                ? (form.enabled ? 0.55 : 0.85)
+                : 1) +
+            (visual.enabled && !ovs.enabled ? visual.emissiveCue * 0.25 : 0),
+          ovs.enabled
+            ? ovsState.maxEmissive
+            : form.enabled
+              ? 0.18
+              : 0.28,
         )}
-        transparent={material.transparent}
-        opacity={material.opacity}
-        envMapIntensity={form.enabled ? 0.34 : visual.enabled ? 0.28 : 0.22}
+        metalness={
+          ovs.enabled
+            ? ovs.material.metalness
+            : Math.min(
+                (material.metalness ?? 0.1) +
+                  (form.enabled ? 0.06 : visual.enabled ? 0.02 : 0),
+                form.enabled ? 0.22 : 0.16,
+              )
+        }
+        roughness={
+          ovs.enabled
+            ? Math.min(
+                0.84,
+                Math.max(0.42, ovs.material.roughness + ovsState.roughnessBias),
+              )
+            : Math.max(
+                (material.roughness ?? 0.7) +
+                  (form.enabled
+                    ? 0.12
+                    : visual.enabled
+                      ? face.enabled
+                        ? 0.1
+                        : 0.04
+                      : 0),
+                form.enabled ? 0.58 : 0.62,
+              )
+        }
+        transparent={material.transparent || (ovs.enabled && ovsState.opacityScale < 0.999)}
+        opacity={
+          ovs.enabled
+            ? material.opacity * ovsState.opacityScale
+            : material.opacity
+        }
+        envMapIntensity={
+          ovs.enabled
+            ? ovs.material.envMapIntensity
+            : form.enabled
+              ? 0.34
+              : visual.enabled
+                ? 0.28
+                : 0.22
+        }
         depthWrite={material.depthWrite ?? true}
         depthTest={material.depthTest ?? true}
         toneMapped={material.toneMapped ?? true}
@@ -434,8 +518,16 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
     }
 
     // ─── 3D ON path — back on plane, front toward camera ────────────────────
-    const centerZ = form.enabled ? form.centerZ : profile.centerZ;
-    const frontZ = form.enabled ? form.frontZ : profile.frontZ;
+    const centerZ = ovs.enabled
+      ? ovs.centerZ
+      : form.enabled
+        ? form.centerZ
+        : profile.centerZ;
+    const frontZ = ovs.enabled
+      ? ovs.frontZ
+      : form.enabled
+        ? form.frontZ
+        : profile.frontZ;
     const bevel = Math.max(
       0.008,
       (form.enabled ? form.bevelSize : profile.bevel) *
@@ -444,8 +536,9 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
     const handlers =
       needsExpandedPick || !interactive ? {} : pointerHandlers;
     const visualOn = visual.enabled;
-    const surfaceOn = face.enabled;
-    const formOn = form.enabled;
+    const surfaceOn = !ovs.enabled && face.enabled;
+    const formOn = !ovs.enabled && form.enabled;
+    const ovsOn = ovs.enabled;
     const frontInset = formOn
       ? form.recessInset
       : visualOn
@@ -472,7 +565,18 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
     let body: ReactNode = null;
     let frontFace: ReactNode = null;
 
-    if (formOn) {
+    if (ovsOn) {
+      body = (
+        <group position={[0, 0, ovsState.depthBias]}>
+          <ExecutiveOvsObjectBody
+            ref={ref}
+            language={ovs}
+            bodyMaterial={bodyMaterialNode}
+            interactiveHandlers={handlers}
+          />
+        </group>
+      );
+    } else if (formOn) {
       body = (
         <ExecutiveObjectPremiumBody
           ref={ref}
@@ -679,21 +783,36 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         userData={{
           geometryResourceKey: resourceKey,
           geometryFamily: family,
-          geometryType: formOn ? form.bodyProfile : profile.shape,
+          geometryType: ovsOn
+            ? ovs.primitive
+            : formOn
+              ? form.bodyProfile
+              : profile.shape,
           geometryDepth: depth,
           frontZ,
-          backZ: formOn ? form.backZ : profile.backZ,
+          backZ: ovsOn ? ovs.backZ : formOn ? form.backZ : profile.backZ,
           rotationX: 0,
           rotationY: 0,
           bodyCount: 1,
           spatialLayer: "object-geometry",
           stageObj3d: true,
           stage3dobj: visualOn,
-          stage3dobjContract: formOn
-            ? "stage-3dobj-3"
-            : visualOn
-              ? "stage-3dobj-1"
-              : "stage-obj-1",
+          stage3dobjContract: ovsOn
+            ? "ovs-1"
+            : formOn
+              ? "stage-3dobj-3"
+              : visualOn
+                ? "stage-3dobj-1"
+                : "stage-obj-1",
+          ovs1: ovsOn,
+          ovs1Contract: ovsOn ? "ovs-1" : "off",
+          ovs1Family: ovsOn ? ovs.family : "off",
+          ovs1Primitive: ovsOn ? ovs.primitive : "off",
+          ovs2: ovsOn,
+          ovs2Contract: ovsOn ? ovsState.contract : "off",
+          ovs2Management: ovsOn ? ovsState.managementClass : "off",
+          ovs2Interaction: ovsOn ? ovsState.interactionClass : "off",
+          ovs2MotionHint: ovsOn ? ovsState.motionHint : "off",
           stage3dobjSurface: surfaceOn,
           stage3dobjSurfaceContract: surfaceOn ? "stage-3dobj-2" : "off",
           stage3dobjForm: formOn,
@@ -743,6 +862,7 @@ type EdgeGeometryProps = {
   readonly depthTest: boolean;
   readonly presentationLevel?: ExecutiveObject3DPresentationLevel;
   readonly objectKind?: string;
+  readonly ovsStateInput?: ExecutiveOvsObjectStateVisualInput;
 };
 
 /**
@@ -758,6 +878,7 @@ export function ExecutiveObjectEdgeGeometry({
   depthTest,
   presentationLevel = "minimum",
   objectKind,
+  ovsStateInput,
 }: EdgeGeometryProps) {
   const profile = resolveExecutiveObject3DGeometryProfile({
     objectKind,
@@ -766,20 +887,61 @@ export function ExecutiveObjectEdgeGeometry({
     width: dimensions.width,
     height: dimensions.height,
   });
-  const width = profile.width * extentScale;
-  const height = profile.height * extentScale;
+  const ovs = resolveExecutiveOvsObjectVisualLanguage({
+    objectKind,
+    width: dimensions.width,
+    height: dimensions.height,
+    enabled:
+      profile.enabled && isExecutiveOvsObjectVisualLanguageEnabled(),
+  });
+  const ovsState = resolveExecutiveOvsObjectStateVisual({
+    objectKind,
+    ...ovsStateInput,
+  });
+  const width =
+    (ovs.enabled ? ovs.width : profile.width) *
+    Math.max(extentScale, ovs.enabled ? ovsState.edgeExtent : 1);
+  const height =
+    (ovs.enabled ? ovs.height : profile.height) *
+    Math.max(extentScale, ovs.enabled ? ovsState.edgeExtent : 1);
   const radius = Math.max(width, height) * 0.5;
-  const frontZ = profile.enabled ? profile.frontZ + 0.012 : 0.01;
+  const frontZ = ovs.enabled
+    ? ovs.frontZ + 0.012
+    : profile.enabled
+      ? profile.frontZ + 0.012
+      : 0.01;
 
   const edgeMaterial = (
     <meshBasicMaterial
       color={color}
       transparent
-      opacity={opacity}
+      opacity={Math.max(opacity, ovs.enabled ? ovsState.edgeOpacity : 0)}
       depthWrite={false}
       depthTest={depthTest}
     />
   );
+
+  // OVS:1 live Stage objects always use the primitive-aware ring.
+  // rounded-block / prism must not fall through to the four-plane AABB
+  // below — that stroke reads as an editor bounding box (Customer/Capacity Watch).
+  if (ovs.enabled) {
+    const segments =
+      ovs.primitive === "hex-prism"
+        ? 6
+        : ovs.primitive === "diamond"
+          ? 4
+          : 48;
+    return (
+      <mesh
+        raycast={() => null}
+        position={[0, 0, frontZ]}
+        rotation={[0, 0, ovs.primitive === "diamond" ? Math.PI / 4 : 0]}
+      >
+        <ringGeometry args={[radius * 0.9, radius * 1.08, segments]} />
+        {edgeMaterial}
+      </mesh>
+    );
+  }
 
   if (
     profile.shape === "disc-slab" ||

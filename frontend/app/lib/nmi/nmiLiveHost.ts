@@ -32,6 +32,10 @@ export type NmiLiveHostInput = {
   readonly vaiVariables?: readonly { readonly id: string; readonly title: string }[];
   readonly includeRegisteredGoal?: boolean;
   readonly compositionProvenance?: readonly string[];
+  /** Existing declared NMI nodes/edges only. Host forwards them; it does not mint belongs_to. */
+  readonly declaredNodes?: readonly NmiCanonicalRef[];
+  readonly declaredRelationships?: readonly NmiManagementRelationship[];
+  readonly declaredAnnotations?: readonly NmiManagementMapNodeAnnotation[];
 };
 
 export type NmiLiveHostedModel = {
@@ -127,6 +131,26 @@ export function composeNmiLiveUnifiedManagementModel(input: NmiLiveHostInput): N
     annotations.push(Object.freeze({ id: variable.id, title: variable.title }));
   }
 
+  for (const node of input.declaredNodes ?? []) {
+    if (present.has(node.id)) continue;
+    present.add(node.id);
+    nodes.push(node);
+  }
+  for (const annotation of input.declaredAnnotations ?? []) {
+    if (annotations.some((item) => item.id === annotation.id)) continue;
+    annotations.push(annotation);
+  }
+  for (const relationship of input.declaredRelationships ?? []) {
+    relationships.push(
+      Object.freeze({
+        ...relationship,
+        causal: false as const,
+        convertsAssociationToCause: false as const,
+        convertsAssumptionToFact: false as const,
+      }),
+    );
+  }
+
   const composeInput: NmiComposeInput = {
     modelId: input.modelId ?? "nmi8:live:executive",
     contextId: input.contextId ?? "nmi8:live:context",
@@ -141,6 +165,9 @@ export function composeNmiLiveUnifiedManagementModel(input: NmiLiveHostInput): N
       nmiLiveIdentity,
       "NEX-MVP:4/NexoraMVPObjectInteractionCatalog",
       "MO:1/ManagerObjectCatalog",
+      ...((input.declaredRelationships?.length ?? 0) > 0
+        ? (["NMI:1/declared-relationship-forwarding"] as const)
+        : []),
     ]),
   };
   const model = composeNmiUnifiedManagementModel(composeInput);

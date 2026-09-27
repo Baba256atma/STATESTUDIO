@@ -1,0 +1,498 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "recovery": true,
+  "steps": [
+    "loaded",
+    "investigate-risk",
+    "risk",
+    "hover",
+    "unresolved",
+    "nmi"
+  ],
+  "http": 200,
+  "load": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "focusedSubject": "none",
+    "nmiOpen": "false",
+    "advisorSubject": "Focused subject: Overview. Presentation: minimum No special Stage atmosphere. In",
+    "statuses": [
+      "stable",
+      "watch",
+      "unresolved"
+    ],
+    "visuals": [
+      "normal",
+      "attention",
+      "unresolved"
+    ],
+    "objects": [
+      {
+        "id": "obj-revenue",
+        "kind": "object",
+        "status": "stable",
+        "attention": "normal",
+        "visual": "normal",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "Revenue"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-budget",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "Budget"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "Delivery"
+      },
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "Risk"
+      },
+      {
+        "id": "obj-inventory",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "Inventory"
+      },
+      {
+        "id": "obj-demand",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "Demand"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      }
+    ]
+  },
+  "risk": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "focusedSubject": "obj-risk",
+    "nmiOpen": "false",
+    "advisorSubject": "Focused subject: Risk. Presentation: minimum No special Stage atmosphere. Intens",
+    "statuses": [
+      "unresolved",
+      "watch"
+    ],
+    "visuals": [
+      "unresolved",
+      "attention"
+    ],
+    "objects": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "true",
+        "selected": "true",
+        "family": null,
+        "primitive": null,
+        "label": "risk object; Uncertain; focused; selected; equal size"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; equal size"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "true",
+        "selected": "true",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      }
+    ]
+  },
+  "hover": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "focusedSubject": "obj-risk",
+    "nmiOpen": "false",
+    "advisorSubject": "Focused subject: Risk. Presentation: minimum No special Stage atmosphere. Intens",
+    "statuses": [
+      "unresolved",
+      "watch"
+    ],
+    "visuals": [
+      "unresolved",
+      "attention"
+    ],
+    "objects": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "true",
+        "selected": "true",
+        "family": null,
+        "primitive": null,
+        "label": "risk object; Uncertain; focused; selected; equal size"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; equal size"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "true",
+        "selected": "true",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      }
+    ]
+  },
+  "unresolved": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "focusedSubject": "obj-budget",
+    "nmiOpen": "false",
+    "advisorSubject": "Focused subject: Budget. Presentation: minimum No special Stage atmosphere. Inte",
+    "statuses": [
+      "unresolved",
+      "watch"
+    ],
+    "visuals": [
+      "unresolved",
+      "attention"
+    ],
+    "objects": [
+      {
+        "id": "obj-budget",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "true",
+        "selected": "true",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Uncertain; focused; selected; equal size"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; equal size"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-budget",
+        "kind": "object",
+        "status": "unresolved",
+        "attention": "normal",
+        "visual": "unresolved",
+        "focused": "true",
+        "selected": "true",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "status": "watch",
+        "attention": "important",
+        "visual": "attention",
+        "focused": "false",
+        "selected": "false",
+        "family": null,
+        "primitive": null,
+        "label": ""
+      }
+    ]
+  },
+  "nmi": {
+    "beforeNmi": "obj-budget",
+    "nodeId": "goal-capacity-availability",
+    "afterPickFocused": "obj-budget",
+    "afterCollapseFocused": "obj-budget"
+  },
+  "ok": true
+}

@@ -25,9 +25,7 @@ import {
   selectNexoraMVPInteractionSubject,
 } from "../nex-mvp/nexoraMVPObjectInteraction.ts";
 import { NEXORA_MVP_CONTEXT_LINK_FIXTURES } from "../nex-mvp/nexoraMVPObjectInteractionFixtures.ts";
-import {
-  EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-} from "./executiveStage2DFixedCamera.ts";
+import { resolveExecutiveStageFixedCameraTuple } from "./executiveStage2DFixedCamera.ts";
 import { setExecutiveObjectPresenceV2Enabled } from "./executiveObjectPresenceIdentity.ts";
 import {
   EXECUTIVE_STAGE_OBJECT_LABEL_TERRITORY_BOUNDARY,
@@ -309,7 +307,10 @@ test("Y/Z/AA/AB/AC/AD — motion contract + camera + z + deep-z + anchor", () =>
     if (object.disclosureState === "hidden") continue;
     assert.equal(object.targetPosition[2], 0);
   }
-  assert.equal(presentation.scene.camera.position[2], EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE);
+  assert.equal(
+    presentation.scene.camera.position[2],
+    resolveExecutiveStageFixedCameraTuple().position[2],
+  );
   assert.deepEqual(presentation.scene.camera.target, [0, 0, 0]);
 });
 

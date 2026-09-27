@@ -1,36 +1,67 @@
 "use client";
 
-import { useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import { PerspectiveCamera, Vector3 } from "three";
 import {
   EXECUTIVE_STAGE_FIXED_CAMERA,
   resolveExecutiveStageFixedCamera,
+  resolveExecutiveStageFixedCameraAtDistance,
 } from "@/app/lib/spatial-presentation/executiveStage2DFixedCamera";
+import { EXECUTIVE_STAGE_MOTION } from "@/app/lib/spatial-presentation/executiveStageMotion";
 import type { NexoraMVPStageCameraPresentation } from "@/app/lib/nex-mvp/nexora3DExecutiveStage";
 
 type Props = {
   readonly camera: NexoraMVPStageCameraPresentation;
+  readonly fitDistance?: number;
 };
 
 /**
  * STAGE-2D:1 — Active Executive Stage camera authority.
  *
- * Fixed front-facing PerspectiveCamera looking at Stage center (0,0,0).
- * Presentation camera props are accepted for API compatibility but cannot
- * override the fixed-camera contract (focus / selection / attention / nav).
- *
- * No orbit, pan, zoom, or cinematic retargeting.
+ * Fixed restrained off-axis PerspectiveCamera looking at Stage center (0,0,0).
+ * STAGE-CAMERA:FIX1 may increase distance to fit the Safe Stage Viewport.
+ * No orbit, pan, user zoom, pointer parallax, or cinematic retargeting.
  */
-export function NexoraExecutiveCameraController({ camera }: Props) {
-  const { camera: threeCamera } = useThree();
+export function NexoraExecutiveCameraController({ camera, fitDistance }: Props) {
   const lookAt = useRef(new Vector3());
-  // Keep prop referenced so React Compiler / callers retain the Stage contract
-  // surface; STAGE-2D:1 ignores variance and always applies the fixed pose.
+  const appliedDistance = useRef(EXECUTIVE_STAGE_FIXED_CAMERA.distance);
+  const reducedMotion = useRef(false);
   void camera;
 
-  useFrame(() => {
-    const fixed = resolveExecutiveStageFixedCamera();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      reducedMotion.current = media.matches;
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  useFrame((state, delta) => {
+    const threeCamera = state.camera;
+    const targetDistance =
+      typeof fitDistance === "number" && Number.isFinite(fitDistance)
+        ? fitDistance
+        : EXECUTIVE_STAGE_FIXED_CAMERA.distance;
+    const durationSec =
+      (reducedMotion.current
+        ? EXECUTIVE_STAGE_MOTION.reducedMotionDurationMs
+        : EXECUTIVE_STAGE_MOTION.topologyDurationMs) / 1000;
+    if (reducedMotion.current || durationSec <= 0) {
+      appliedDistance.current = targetDistance;
+    } else {
+      const t = Math.min(1, Math.max(0.08, delta / durationSec));
+      appliedDistance.current =
+        appliedDistance.current +
+        (targetDistance - appliedDistance.current) * t;
+    }
+
+    const fixed = resolveExecutiveStageFixedCameraAtDistance(
+      appliedDistance.current,
+    );
 
     threeCamera.position.set(
       fixed.position.x,
@@ -60,8 +91,9 @@ export function NexoraExecutiveCameraController({ camera }: Props) {
       }
     }
 
-    // Hard invariant — STAGE-2D:1 forbids user/controls-driven camera motion.
     void EXECUTIVE_STAGE_FIXED_CAMERA.orbitEnabled;
+    void EXECUTIVE_STAGE_FIXED_CAMERA.pointerOffset;
+    void resolveExecutiveStageFixedCamera;
   });
 
   return null;

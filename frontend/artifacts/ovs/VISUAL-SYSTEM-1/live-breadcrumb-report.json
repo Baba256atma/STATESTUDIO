@@ -1,0 +1,46 @@
+{
+  "gap": {
+    "ovs1Primitive": "prism",
+    "ovs1Family": "problem",
+    "focused": [
+      {
+        "id": "ctx-problem-capacity",
+        "kind": "problem",
+        "z": "0"
+      }
+    ]
+  },
+  "plan": {
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "scenario",
+    "focused": [
+      {
+        "id": "ctx-scenario-capacity",
+        "kind": "scenario",
+        "z": "0"
+      }
+    ]
+  },
+  "expand": {
+    "ovs1Primitive": "hex-prism",
+    "ovs1Family": "decision",
+    "focused": [
+      {
+        "id": "ctx-decision-capacity",
+        "kind": "decision",
+        "z": "0"
+      }
+    ]
+  },
+  "execution": {
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "execution",
+    "focused": [
+      {
+        "id": "ctx-execution-capacity",
+        "kind": "execution",
+        "z": "0"
+      }
+    ]
+  }
+}

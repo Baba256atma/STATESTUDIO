@@ -274,9 +274,10 @@ export const EXECUTIVE_OBJECT_LABEL_SCALE_BOUNDS = Object.freeze({
 });
 
 export const EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS = Object.freeze({
-  minimal: 0.5,
-  normal: 0.76,
+  minimal: 0.64,
+  normal: 0.88,
   full: 0.96,
+  hoverLift: 0.06,
 });
 
 export const EXECUTIVE_OBJECT_LABEL_NAME_BOUNDS = Object.freeze({
@@ -380,7 +381,7 @@ function prominenceFromLevel(
     case "summary":
       return "normal";
     default:
-      return "minimal";
+      return "normal";
   }
 }
 
@@ -633,7 +634,11 @@ export function resolveExecutiveObjectLabelPresentation(
 
   const stageProminence = mapStageProminence(input.labelProminence);
   let prominence = prominenceFromLevel(level);
-  if (stageProminence === "full") {
+  if (focused || selected || spatialRole === "focus") {
+    prominence = "full";
+  } else if (spatialRole === "background" && !hovered) {
+    prominence = "minimal";
+  } else if (stageProminence === "full") {
     prominence = "full";
   } else if (stageProminence === "minimal" && level === "identity") {
     prominence = "minimal";
@@ -809,10 +814,13 @@ export function resolveExecutiveObjectLabelPresentation(
       : prominence === "normal"
         ? EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.normal
         : EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.minimal;
+  const hoverOpacity = hovered && !focused
+    ? Math.min(1, opacity + EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.hoverLift)
+    : opacity;
 
   const tone: ExecutiveObjectLabelToneToken =
     focused ||
-    hovered ||
+    selected ||
     readabilityAssist ||
     cue.statusClass === "critical" ||
     cue.recommendationCue
@@ -907,7 +915,7 @@ export function resolveExecutiveObjectLabelPresentation(
     lines: Object.freeze([...lines]),
     prominence,
     tone,
-    opacity: stabilize(opacity),
+    opacity: stabilize(hoverOpacity),
     scale,
     fontSizePx,
     priorityRank,

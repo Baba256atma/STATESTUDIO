@@ -17,7 +17,7 @@ import {
   CANONICAL_STAGE_DEPTH,
   EXECUTIVE_STAGE_2D_DEPTH,
   EXECUTIVE_STAGE_FIXED_CAMERA,
-  EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
+  isExecutiveStageFixedCameraPosition,
   normalizeExecutiveStage2DPosition,
   resolveExecutiveStageFixedCamera,
 } from "./executiveStage2DFixedCamera.ts";
@@ -188,9 +188,7 @@ export function verifyExecutiveStage2DTopologyPlane(options?: {
     poisoned.x === 2 && poisoned.y === 3 && poisoned.z === 0;
   const camera = resolveExecutiveStageFixedCamera();
   const cameraRegressionOk =
-    camera.position.x === 0 &&
-    camera.position.y === 0 &&
-    camera.position.z === EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE &&
+    isExecutiveStageFixedCameraPosition(camera.position) &&
     camera.target.x === 0 &&
     camera.target.y === 0 &&
     camera.target.z === 0 &&

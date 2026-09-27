@@ -1,0 +1,106 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "before": {
+    "count": 5,
+    "duplicateOwners": [],
+    "rows": [
+      {
+        "owner": "obj-capacity",
+        "side": "top",
+        "opacity": "1",
+        "x": 549,
+        "y": 378,
+        "text": "CAPACITYWATCH"
+      },
+      {
+        "owner": "obj-customer",
+        "side": "left",
+        "opacity": "1",
+        "x": 702,
+        "y": 351,
+        "text": "CUSTOMERWATCH"
+      },
+      {
+        "owner": "obj-budget",
+        "side": "left",
+        "opacity": "1",
+        "x": 652,
+        "y": 461,
+        "text": "BUDGETUNRESOLVED"
+      },
+      {
+        "owner": "obj-delivery",
+        "side": "left",
+        "opacity": "1",
+        "x": 376,
+        "y": 335,
+        "text": "DELIVERYWATCH"
+      },
+      {
+        "owner": "obj-inventory",
+        "side": "top",
+        "opacity": "1",
+        "x": 417,
+        "y": 464,
+        "text": "INVENTORYWATCH"
+      }
+    ]
+  },
+  "hoverTarget": {
+    "owner": "obj-delivery",
+    "side": "left",
+    "opacity": "1",
+    "x": 376,
+    "y": 335,
+    "text": "DELIVERYWATCH"
+  },
+  "after": {
+    "count": 5,
+    "duplicateOwners": [],
+    "rows": [
+      {
+        "owner": "obj-capacity",
+        "side": "top",
+        "opacity": "1",
+        "x": 549,
+        "y": 379,
+        "text": "CAPACITYWATCH"
+      },
+      {
+        "owner": "obj-customer",
+        "side": "left",
+        "opacity": "1",
+        "x": 702,
+        "y": 352,
+        "text": "CUSTOMERWATCH"
+      },
+      {
+        "owner": "obj-budget",
+        "side": "left",
+        "opacity": "1",
+        "x": 651,
+        "y": 461,
+        "text": "BUDGETUNRESOLVED"
+      },
+      {
+        "owner": "obj-delivery",
+        "side": "left",
+        "opacity": "1",
+        "x": 376,
+        "y": 335,
+        "text": "DELIVERYWATCH"
+      },
+      {
+        "owner": "obj-inventory",
+        "side": "top",
+        "opacity": "1",
+        "x": 418,
+        "y": 464,
+        "text": "INVENTORYWATCH"
+      }
+    ]
+  },
+  "sideJumps": [],
+  "duplicateAfter": [],
+  "pass": true
+}

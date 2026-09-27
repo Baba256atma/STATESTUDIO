@@ -1890,6 +1890,7 @@ export function executeNexoraConversationalExperience(
       );
     const clarificationOwnedByCanonicalIntent = new Set([
       "prepare-context", "switch-workspace",
+      "workspace-action",
       "explore-scenario", "define-scenario", "compare-scenarios", "explain-scenario", "modify-scenario", "select-scenario-reference",
       "commit-decision", "prefer-option", "reject-decision", "defer-decision", "reconsider-decision", "confirm-decision-commitment", "cancel-decision-commitment",
       "show-problems", "show-goals", "show-scenarios", "show-decisions", "show-execution", "show-related",

@@ -20,7 +20,6 @@ import {
   deriveNexoraMVPExecutiveFlowContext,
   deriveNexoraMVPExecutiveWorkflowPresentation,
   failNexoraMVPFlowPendingAction,
-  mapNexoraMVPJournalEntries,
   mapNexoraMVPTimelinePacks,
   overlayNexoraMVPPresentationStatus,
   projectNexoraMVPCatalogDecisionStatusesFromFlowDomain,
@@ -97,6 +96,7 @@ import {
   openNexoraMVPExecutiveChangeCollection,
   openNexoraMVPExecutiveQueueCollection,
   resetNexoraMVPObjectInteractionOverview,
+  resolveNexoraMVPInteractionSubject,
   acknowledgeNexoraMVPExecutiveChanges,
   beginNexoraMVPDailyPreparation,
   beginNexoraMVPMeetingPreparation,
@@ -114,6 +114,7 @@ import {
   applyNexoraMVPConversationalCommand,
 } from "@/app/lib/nex-mvp/nexoraMVPConversationalRuntimeBridge";
 import type { NexoraConversationalCommand } from "@/app/lib/conversational-control/conversationalCommand";
+import type { NexoraConversationalWorkspaceActionPayload } from "@/app/lib/conversational-control/conversationalIntent";
 import { executeNexoraConversationalExperience } from "@/app/lib/conversational-control/conversationalExperienceOrchestrator";
 import {
   ECA_EXECUTIVE_ACTION_PLAN_IDENTITY,
@@ -335,6 +336,26 @@ import { NexoraWorkspaceDialMount } from "./NexoraWorkspaceDialMount";
 import { NexoraExecutiveDataExplorer } from "./data/NexoraExecutiveDataExplorer";
 import { NexoraStageDataControl } from "./stage/NexoraStageDataControl";
 import { NexoraAutomaticMonitoringCoordinator } from "./data/NexoraAutomaticMonitoringCoordinator";
+import { NexoraExecutiveQueueOverlay } from "./stage/NexoraExecutiveQueueOverlay";
+import { NexoraManagementLevelContextNav } from "./stage/NexoraManagementLevelContextNav";
+import { composeNmiStageProjection } from "@/app/lib/nmi/nmiStageProjectionCompose.ts";
+import { composeNmiLiveManagementLevels } from "@/app/lib/nmi/nmiLiveManagementLevelsCompose.ts";
+import {
+  NexoraDetailWorkspaceBoundary,
+  NexoraWorkspaceRegionBoundary,
+} from "./scene-org/NexoraWorkspaceRegionBoundary";
+import { createSceneOrgCanonicalReference } from "@/app/lib/scene-org/sceneOrgRegionContract";
+import { projectSceneOrgManagerActivity } from "@/app/lib/scene-org/sceneOrgActivityWorkspaceContract";
+import {
+  createSceneOrgSavedScene,
+  resolveSceneOrgSavedSceneCaptureId,
+  resolveSceneOrgSavedScene,
+  type SceneOrgSavedScene,
+} from "@/app/lib/scene-org/sceneOrgWorkspacePlacementContract";
+import {
+  createSceneOrgRightPanelChromeState,
+  updateSceneOrgRightPanelChrome,
+} from "@/app/lib/scene-org/sceneOrgRightContextContract";
 
 const DEFAULT_CONTEXT = Object.freeze({
   company: "Nexora",
@@ -599,6 +620,18 @@ export function NexoraExecutiveShell({
   );
   const [theme, setTheme] = useState<ExecutiveThemeMode>("night");
   const [activeNav, setActiveNav] = useState<ExecutiveNavId>("Home");
+  const [nmiPanelOpen, setNmiPanelOpen] = useState(false);
+  const [detailLaunchReference, setDetailLaunchReference] =
+    useState<ReturnType<typeof createSceneOrgCanonicalReference> | null>(null);
+  const [rightPanelChrome, setRightPanelChrome] = useState(
+    createSceneOrgRightPanelChromeState,
+  );
+  const [savedScenes, setSavedScenes] = useState<readonly SceneOrgSavedScene[]>(
+    Object.freeze([]),
+  );
+  const savedScenesRef = useRef(savedScenes);
+  savedScenesRef.current = savedScenes;
+  const [activeSavedSceneId, setActiveSavedSceneId] = useState<string | null>(null);
   const [explorerWidth, setExplorerWidth] = useState(300);
   const [advisorTab, setAdvisorTab] = useState<ExecutiveAdvisorTab>("Assist");
   const [timelineLens, setTimelineLens] =
@@ -840,6 +873,33 @@ export function NexoraExecutiveShell({
   const advisorDataDialogueRef = useRef(emptyAdvisorDataDialogue);
 
   const explorerKind = navToExplorer(activeNav);
+  const detailWorkspaceOpen = activeNav === "Data";
+  const selectedDataObjectSourceId =
+    csvDataObjects.find((entry) => entry.id === selectedDataObjectId)?.sourceId ??
+    null;
+  const detailSourceId =
+    dataRailSelectedSourceId ??
+    selectedDataObjectSourceId ??
+    activeCsvImport?.sourceContextId ??
+    activeLiveObservation?.sourceContextId ??
+    null;
+  const detailWorkspaceTarget = useMemo(() => {
+    if (detailLaunchReference) return detailLaunchReference;
+    return createSceneOrgCanonicalReference({
+      canonicalId: detailSourceId ?? interaction.workspace,
+      kind: detailSourceId == null ? "collection" : "data-source",
+      owner:
+        detailSourceId == null ? "RDI/Data Reality" : "RDI source authority",
+    });
+  }, [detailLaunchReference, detailSourceId, interaction.workspace]);
+  const detailConfigurationAvailable = useMemo(
+    () =>
+      detailSourceId != null &&
+      committedCsvImports.some(
+        (source) => source.sourceContextId === detailSourceId,
+      ),
+    [committedCsvImports, detailSourceId],
+  );
   const workspaceRegistry = getNexoraMVPWorkspaceRegistry();
   const workspaceLabel =
     workspaceRegistry.find((entry) => entry.kind === application.workspace)
@@ -1038,6 +1098,23 @@ export function NexoraExecutiveShell({
   const nmiLiveRef = useRef(nmiLive);
   nmiLiveRef.current = nmiLive;
 
+  const managementLevels = useMemo(
+    () =>
+      composeNmiLiveManagementLevels({
+        map: nmiLive.map,
+        selectedCanonicalId:
+          stageInteraction.focusedSubjectId ??
+          stageInteraction.selectedSubjectId ??
+          null,
+      }),
+    [
+      nmiLive.map,
+      stageInteraction.focusedSubjectId,
+      stageInteraction.selectedSubjectId,
+    ],
+  );
+  const managementLevelSpatial = managementLevels.spatial;
+
   const dataObjectStage = useMemo(
     () => projectNexoraDecisionTheatreDataObjectsToStage({
       dataObjects: csvDataObjects,
@@ -1221,8 +1298,8 @@ export function NexoraExecutiveShell({
     [flowDomain],
   );
 
-  const journalEntries = useMemo(
-    () => mapNexoraMVPJournalEntries(flowDomain),
+  const activityEntries = useMemo(
+    () => projectSceneOrgManagerActivity(flowDomain),
     [flowDomain],
   );
 
@@ -1469,6 +1546,203 @@ export function NexoraExecutiveShell({
   const interactionRef = useRef(interaction);
   interactionRef.current = interaction;
 
+  const applyWorkspacePresentationAction = useCallback(
+    (
+      action: NexoraConversationalWorkspaceActionPayload,
+      resolvedTargetId: string | null,
+    ): string | null => {
+      const current = interactionRef.current;
+      const currentSubjectId =
+        resolvedTargetId ??
+        current.focusedSubject?.id ??
+        current.selectedSubject?.id ??
+        null;
+      const sceneLabel = action.sceneName
+        ? action.sceneName.replace(/\b\w/g, (letter) => letter.toUpperCase())
+        : null;
+
+      switch (action.action) {
+        case "OPEN_DETAIL": {
+          if (currentSubjectId) {
+            const subject = resolveNexoraMVPInteractionSubject(
+              currentSubjectId,
+              dataRealityExperience.catalog,
+            );
+            setDetailLaunchReference(
+              createSceneOrgCanonicalReference({
+                canonicalId: currentSubjectId,
+                kind:
+                  subject?.kind === "decision"
+                    ? "decision"
+                    : subject?.kind === "execution"
+                      ? "execution"
+                      : "object",
+                owner: "canonical MO/Object catalog",
+              }),
+            );
+          }
+          setActiveNav("Data");
+          return "Opened Detail Workspace for the current canonical context.";
+        }
+        case "CLOSE_DETAIL":
+          setActiveNav("Home");
+          return "Closed Detail Workspace.";
+        case "SHOW_RIGHT_DETAILS":
+          setAdvisorTab("Insight");
+          setRightPanelChrome((chrome) =>
+            chrome.collapsed
+              ? updateSceneOrgRightPanelChrome(chrome, {
+                  kind: "TOGGLE_COLLAPSE",
+                })
+              : chrome,
+          );
+          return "Showing contextual details.";
+        case "OPEN_ADVISOR":
+          setAdvisorTab("Assist");
+          setRightPanelChrome((chrome) =>
+            chrome.collapsed
+              ? updateSceneOrgRightPanelChrome(chrome, {
+                  kind: "TOGGLE_COLLAPSE",
+                })
+              : chrome,
+          );
+          return "Opened Advisor.";
+        case "COLLAPSE_RIGHT":
+          setRightPanelChrome((chrome) =>
+            chrome.collapsed
+              ? chrome
+              : updateSceneOrgRightPanelChrome(chrome, {
+                  kind: "TOGGLE_COLLAPSE",
+                }),
+          );
+          return "Collapsed the right panel.";
+        case "SHOW_ACTIVITY":
+          setActiveNav("Journal");
+          return "Showing recent recorded activity.";
+        case "SAVE_SCENE": {
+          if (!sceneLabel) return "Name the scene you want to save.";
+          const savedSceneSubjectId = resolveSceneOrgSavedSceneCaptureId({
+            focusedSubjectId: current.focusedSubject?.id ?? null,
+            selectedSubjectId: current.selectedSubject?.id ?? null,
+            resolvedReferentId: resolvedTargetId,
+          });
+          const savedSceneSubject = savedSceneSubjectId
+            ? resolveNexoraMVPInteractionSubject(
+                savedSceneSubjectId,
+                dataRealityExperience.catalog,
+              )
+            : null;
+          const references = savedSceneSubjectId
+            ? Object.freeze([
+                createSceneOrgCanonicalReference({
+                  canonicalId: savedSceneSubjectId,
+                  kind:
+                    savedSceneSubject?.kind === "decision"
+                      ? "decision"
+                      : savedSceneSubject?.kind === "execution"
+                        ? "execution"
+                        : "object",
+                  owner: "canonical MO/Object catalog",
+                }),
+              ])
+            : Object.freeze([]);
+          const sceneId = `scene-${action.sceneName
+            ?.toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "")}`;
+          const scene = createSceneOrgSavedScene({
+            sceneId,
+            name: sceneLabel,
+            kind: "SAVED",
+            sceneIntentType: "manager-view",
+            canonicalReferences: references,
+            layout: {
+              presentationDepth: current.presentationState,
+              leftRegion: "management",
+              rightRegion: rightPanelChrome.collapsed
+                ? "collapsed"
+                : "contextual",
+              detailWorkspace: activeNav === "Data" ? "open" : "closed",
+            },
+          });
+          setSavedScenes((scenes) =>
+            Object.freeze([
+              ...scenes.filter((candidate) => candidate.sceneId !== sceneId),
+              scene,
+            ]),
+          );
+          setActiveSavedSceneId(sceneId);
+          return `Saved ${sceneLabel} as view and canonical reference metadata.`;
+        }
+        case "OPEN_SCENE": {
+          const scene = savedScenesRef.current.find(
+            (candidate) =>
+              candidate.name.toLowerCase() === action.sceneName?.toLowerCase(),
+          );
+          if (!scene) return `I couldn't find ${sceneLabel ?? "that saved scene"}.`;
+          const resolved = resolveSceneOrgSavedScene(scene, (reference) =>
+            resolveNexoraMVPInteractionSubject(
+              reference.canonicalId,
+              dataRealityExperience.catalog,
+            ),
+          );
+          const liveSubject = resolved.live.find((entry) => entry.content)?.content;
+          setInteraction((previous) => {
+            const selected = liveSubject
+              ? selectNexoraMVPInteractionSubject(
+                  previous,
+                  liveSubject.id,
+                  dataRealityExperience.catalog,
+                )
+              : previous;
+            const next = applyNexoraMVPPresentationStateChange(
+              selected,
+              scene.layout.presentationDepth,
+            );
+            setApplication((app) => applyInteractionToApplication(app, next));
+            return next;
+          });
+          setRightPanelChrome((chrome) =>
+            Object.freeze({
+              ...chrome,
+              collapsed: scene.layout.rightRegion === "collapsed",
+            }),
+          );
+          setActiveNav(
+            scene.layout.detailWorkspace === "open" ? "Data" : "Home",
+          );
+          setActiveSavedSceneId(scene.sceneId);
+          return `Opened ${scene.name} using current live canonical content.`;
+        }
+        case "MAKE_DEFAULT_SCENE": {
+          if (!activeSavedSceneId) {
+            return "Save or open a scene before making it the default.";
+          }
+          setSavedScenes((scenes) =>
+            Object.freeze(
+              scenes.map((scene) =>
+                createSceneOrgSavedScene({
+                  ...scene,
+                  kind:
+                    scene.sceneId === activeSavedSceneId
+                      ? "DEFAULT_MANAGER"
+                      : "SAVED",
+                }),
+              ),
+            ),
+          );
+          return "Made the current saved scene the default view.";
+        }
+      }
+    },
+    [
+      activeNav,
+      activeSavedSceneId,
+      dataRealityExperience.catalog,
+      rightPanelChrome.collapsed,
+    ],
+  );
+
   const onSubmitConversationalUtterance = useCallback(
     async (utterance: string) => {
       const trimmed = utterance.trim();
@@ -1670,9 +1944,29 @@ export function NexoraExecutiveShell({
           nmiAdvisorBundle: nmiLiveRef.current.advisorBundle,
         });
 
+        const workspaceCommand = result.commandResult?.command;
+        const workspaceResponse =
+          result.runtimeResult?.status === "applied" &&
+          workspaceCommand?.kind === "workspace-presentation" &&
+          workspaceCommand.workspaceAction
+            ? applyWorkspacePresentationAction(
+                workspaceCommand.workspaceAction,
+                workspaceCommand.primaryTargetId,
+              )
+            : null;
+
         lastManagerUtteranceRef.current = trimmed;
         setConversationalMessages((msgs) =>
-          Object.freeze([...msgs, result.nexoraMessage]).slice(-20),
+          Object.freeze([
+            ...msgs,
+            workspaceResponse
+              ? Object.freeze({
+                  ...result.nexoraMessage,
+                  text: workspaceResponse,
+                  status: "applied" as const,
+                })
+              : result.nexoraMessage,
+          ]).slice(-20),
         );
         setExecutiveContext(result.nextExecutiveContext);
         if (result.nextEntranceSession) {
@@ -1775,7 +2069,7 @@ export function NexoraExecutiveShell({
           setApplication((app) =>
             applyInteractionToApplication(app, comparisonState),
           );
-        } else if (result.shouldCommitRuntime) {
+        } else if (result.shouldCommitRuntime && workspaceResponse == null) {
           lastConversationalCommandIdRef.current =
             result.commandResult?.command?.commandId ??
             lastConversationalCommandIdRef.current;
@@ -1837,6 +2131,7 @@ export function NexoraExecutiveShell({
       committedCsvImports,
       csvDataObjects,
       selectedDataObjectId,
+      applyWorkspacePresentationAction,
     ],
   );
 
@@ -2040,6 +2335,9 @@ export function NexoraExecutiveShell({
 
   const onNavSelect = useCallback(
     (nav: ExecutiveNavId) => {
+      if (nav === "Data") {
+        setDetailLaunchReference(null);
+      }
       setActiveNav(nav);
       if (nav === "Home") {
         onOverview();
@@ -2172,7 +2470,13 @@ export function NexoraExecutiveShell({
   const onSelectJournalEntry = useCallback(
     (entryId: string, subjectId: string) => {
       setSelectedJournalId(entryId);
-      const pack = flowDomain.journalPacks.find((item) => item.id === entryId);
+      const timelineEventId = entryId.startsWith("activity:")
+        ? entryId.slice("activity:".length)
+        : entryId;
+      const pack = flowDomain.journalPacks.find(
+        (item) =>
+          item.id === entryId || item.timelineEventId === timelineEventId,
+      );
       if (pack) {
         setSelectedPackId(pack.timelineEventId);
       }
@@ -2213,36 +2517,42 @@ export function NexoraExecutiveShell({
     onOverview,
   ]);
 
+  const dataDetailContent = (
+    <NexoraExecutiveDataExplorer
+      workspaceId={interaction.workspace}
+      activeImport={activeCsvImport}
+      activeLiveObservation={activeLiveObservation}
+      onImportCommitted={onCsvImportCommitted}
+      onLiveObservationActivated={onLiveObservationActivated}
+      onViewOnStage={onViewSourceOnStage}
+      onShowDataObjectOnStage={onShowDataObjectOnStage}
+      onAdvisorContext={onSourceAdvisorContext}
+      onDataObjectSelection={setSelectedDataObjectId}
+      selectedDataObjectId={selectedDataObjectId}
+      onSemanticClarificationRequest={onCsvSemanticClarificationRequest}
+      onSemanticClarificationCancel={onCsvSemanticClarificationCancel}
+      awaitingClarificationFieldId={
+        managerObjectSession.ncaConversationState?.pendingQuestion?.purpose === NCA_CSV_SEMANTIC_PURPOSE
+          && managerObjectSession.ncaConversationState.pendingQuestion.valid
+          ? managerObjectSession.ncaConversationState.pendingQuestion.relatedSubjectId
+          : null
+      }
+      onSourceRemoved={onCsvSourceRemoved}
+      onDismissRemovalReview={() => setCsvRemovalReviewSourceId(null)}
+      removalReviewSourceId={csvRemovalReviewSourceId}
+      selectedSourceId={dataRailSelectedSourceId}
+      onSelectSource={(sourceId) => {
+        setDataRailSelectedSourceId(sourceId);
+        if (sourceId) setDetailLaunchReference(null);
+      }}
+    />
+  );
+
+  const managementExplorerKind = detailWorkspaceOpen ? null : explorerKind;
   const explorerContent =
-    explorerKind === "data" ? (
-      <NexoraExecutiveDataExplorer
-        workspaceId={interaction.workspace}
-        activeImport={activeCsvImport}
-        activeLiveObservation={activeLiveObservation}
-        onImportCommitted={onCsvImportCommitted}
-        onLiveObservationActivated={onLiveObservationActivated}
-        onViewOnStage={onViewSourceOnStage}
-        onShowDataObjectOnStage={onShowDataObjectOnStage}
-        onAdvisorContext={onSourceAdvisorContext}
-        onDataObjectSelection={setSelectedDataObjectId}
-        selectedDataObjectId={selectedDataObjectId}
-        onSemanticClarificationRequest={onCsvSemanticClarificationRequest}
-        onSemanticClarificationCancel={onCsvSemanticClarificationCancel}
-        awaitingClarificationFieldId={
-          managerObjectSession.ncaConversationState?.pendingQuestion?.purpose === NCA_CSV_SEMANTIC_PURPOSE
-            && managerObjectSession.ncaConversationState.pendingQuestion.valid
-            ? managerObjectSession.ncaConversationState.pendingQuestion.relatedSubjectId
-            : null
-        }
-        onSourceRemoved={onCsvSourceRemoved}
-        onDismissRemovalReview={() => setCsvRemovalReviewSourceId(null)}
-        removalReviewSourceId={csvRemovalReviewSourceId}
-        selectedSourceId={dataRailSelectedSourceId}
-        onSelectSource={setDataRailSelectedSourceId}
-      />
-    ) : explorerKind === "journal" ? (
+    explorerKind === "journal" ? (
       <NexoraFlowJournalExplorer
-        entries={journalEntries}
+        entries={activityEntries}
         selectedId={selectedJournalId}
         onSelect={onSelectJournalEntry}
       />
@@ -2278,7 +2588,16 @@ export function NexoraExecutiveShell({
       data-testid="nexora-executive-shell"
       data-csv-hydrated={csvHydrated ? "true" : "false"}
       data-csv-durability={csvDurability}
-      data-data-rail-open={explorerKind === "data" ? "true" : "false"}
+      data-data-rail-open={detailWorkspaceOpen ? "true" : "false"}
+      data-detail-workspace-open={detailWorkspaceOpen ? "true" : "false"}
+      data-right-panel-collapsed={rightPanelChrome.collapsed ? "true" : "false"}
+      data-nmi-panel-open={nmiPanelOpen ? "true" : "false"}
+      data-saved-scene-count={String(savedScenes.length)}
+      data-active-saved-scene={activeSavedSceneId ?? "none"}
+      data-default-saved-scene={
+        savedScenes.find((scene) => scene.kind === "DEFAULT_MANAGER")?.sceneId ??
+        "none"
+      }
       data-selected-data-object-id={selectedDataObjectId ?? "none"}
       data-staged-data-object-ids={dataObjectStage.diagnostics.dataObjectIds.join(",") || "none"}
       data-staged-data-object-count={String(dataObjectStage.participants.length)}
@@ -3066,71 +3385,120 @@ export function NexoraExecutiveShell({
           flex: "1 1 auto",
           display: "flex",
           minHeight: 0,
+          position: "relative",
         }}
       >
-        <ExecutiveLeftNav active={activeNav} onSelect={onNavSelect} compact />
-
-        <ExecutiveExplorerDrawer
-          kind={explorerKind}
-          title={explorerKind === "data" ? "Data Explorer" : undefined}
-          width={explorerWidth}
-          onWidthChange={setExplorerWidth}
-          onClose={onExplorerClose}
-          presentation={explorerKind === "data" ? "data-rail" : "explorer"}
+        <NexoraWorkspaceRegionBoundary
+          region="left-management"
+          canonicalTargetId={interaction.focusedSubject?.id}
         >
-          {explorerContent}
-        </ExecutiveExplorerDrawer>
+          <ExecutiveLeftNav
+            active={activeNav}
+            onSelect={onNavSelect}
+            compact
+            nmiOpen={nmiPanelOpen}
+            onToggleNmi={() => setNmiPanelOpen((open) => !open)}
+          />
 
-        <div
-          data-testid="executive-stage-column"
-          data-mvp-stage-column="true"
-          style={{
-            flex: "1 1 78%",
-            display: "flex",
-            flexDirection: "column",
-            minWidth: 0,
-            minHeight: 0,
-            transition: `flex-basis ${cockpit.drawerMs} ease`,
-          }}
-        >
-          <NexoraExecutiveFlowContextIndicator
-            chain={flowContext.chain}
-            workflow={workflowPresentation}
-            onSelectLink={onSelectSubject}
-          />
-          <div
-            data-testid="nexora-cc4-runtime-bridge"
-            data-cc4="runtime-control-bridge"
-            data-cc4-entry="nexora-cc4-dispatch"
-            hidden
-            aria-hidden="true"
-          />
-          <ExecutiveStageFrame
-            guidedAttentionCue={
-              guidedAttention.presentation?.target === "STAGE"
-                ? guidedAttention.presentation.cue
-                : null
+          <NexoraExecutiveQueueOverlay
+            placement="left-management"
+            visible={nmiPanelOpen}
+            entries={stageInteraction.queueEntries ?? []}
+            collectionHeaderLabel={stageInteraction.collectionHeader?.label ?? null}
+            projectionAnchorId={
+              stageInteraction.focusedSubjectId ??
+              stageInteraction.selectedSubjectId ??
+              null
             }
-            stageControls={
-              <><NexoraStageDataControl open={explorerKind === "data"} attention={false} guidedAttentionCue={
-                guidedAttention.presentation?.target === "DATA_ENTRY"
+            mapNodes={nmiLive.overlayMapNodes}
+            onSelectCanonicalId={(canonicalId) => {
+              const projection = composeNmiStageProjection({
+                projectionId: `nmi8:live:${canonicalId}`,
+                selectedCanonicalId: canonicalId,
+                source: "MANAGEMENT_MAP",
+                map: nmiLive.map,
+              });
+              onSelectSubject(projection.projectionAnchorId);
+            }}
+            onSelectCategory={onSelectQueueCategory}
+          />
+
+          <ExecutiveExplorerDrawer
+            kind={managementExplorerKind}
+            title={explorerKind === "journal" ? "Activity" : undefined}
+            width={explorerWidth}
+            onWidthChange={setExplorerWidth}
+            onClose={onExplorerClose}
+            presentation="explorer"
+          >
+            {explorerContent}
+          </ExecutiveExplorerDrawer>
+        </NexoraWorkspaceRegionBoundary>
+
+        <NexoraWorkspaceRegionBoundary
+          region="center-stage"
+          canonicalTargetId={interaction.focusedSubject?.id}
+        >
+          <div
+            data-testid="executive-stage-column"
+            data-mvp-stage-column="true"
+            style={{
+              flex: "1 1 78%",
+              display: "flex",
+              flexDirection: "column",
+              minWidth: 0,
+              minHeight: 0,
+              transition: `flex-basis ${cockpit.drawerMs} ease`,
+            }}
+          >
+            <NexoraExecutiveFlowContextIndicator
+              chain={flowContext.chain}
+              workflow={workflowPresentation}
+              onSelectLink={onSelectSubject}
+            />
+            <div
+              data-testid="nexora-cc4-runtime-bridge"
+              data-cc4="runtime-control-bridge"
+              data-cc4-entry="nexora-cc4-dispatch"
+              hidden
+              aria-hidden="true"
+            />
+            <ExecutiveStageFrame
+              guidedAttentionCue={
+                guidedAttention.presentation?.target === "STAGE"
                   ? guidedAttention.presentation.cue
                   : null
-              } onToggle={() => setActiveNav(explorerKind === "data" ? "Home" : "Data")} /><NexoraWorkspaceDialMount
-                activeWorkspace={application.workspace}
-                onWorkspaceChange={onWorkspaceChange}
-              /></>
-            }
-          >
-            <NexoraStageMount
-              liveFoundation={liveStageFoundation}
+              }
+              stageControls={
+                <><NexoraStageDataControl open={detailWorkspaceOpen} attention={false} guidedAttentionCue={
+                  guidedAttention.presentation?.target === "DATA_ENTRY"
+                    ? guidedAttention.presentation.cue
+                    : null
+                } onToggle={() => setActiveNav(explorerKind === "data" ? "Home" : "Data")} /><NexoraWorkspaceDialMount
+                  activeWorkspace={application.workspace}
+                  onWorkspaceChange={onWorkspaceChange}
+                /></>
+              }
+            >
+              <NexoraManagementLevelContextNav
+                composition={managementLevelSpatial}
+                selectedCanonicalId={
+                  stageInteraction.focusedSubjectId ??
+                  stageInteraction.selectedSubjectId ??
+                  null
+                }
+                onSelectSubject={onSelectSubject}
+              />
+              <NexoraStageMount
+                liveFoundation={liveStageFoundation}
               workspaceLabel={workspaceLabel}
               interaction={stageInteraction}
+              managementLevelSpatial={managementLevelSpatial}
               environment={environmentVisual}
               presentationViewModel={presentationViewModel}
               advisorBridge={advisorBridge}
+              stageSurfaceActive={!detailWorkspaceOpen}
               onSelectSubject={onSelectSubject}
-              onSelectQueueCategory={onSelectQueueCategory}
               onStepBack={onStepBack}
               onStepForward={onStepForward}
               onNavigateTrailIndex={onNavigateTrailIndex}
@@ -3152,8 +3520,6 @@ export function NexoraExecutiveShell({
                   ? guidedAttention.presentation.cue
                   : null
               }
-              nmiManagementMap={nmiLive.map}
-              nmiMapNodes={nmiLive.overlayMapNodes}
               sceneIntentKind={theatreProjection.sceneIntent.intentKind}
               sceneScriptId={theatreProjection.sceneScript.scriptId}
               theatreComposition={theatreProjection}
@@ -3204,55 +3570,74 @@ export function NexoraExecutiveShell({
               onShowDecisionHistory={() => {
                 void onSubmitConversationalUtterance("compare the alternatives again");
               }}
+              />
+            </ExecutiveStageFrame>
+
+            <ExecutiveTimelineDock
+              lens={timelineLens}
+              packs={timelinePacks}
+              selectedPackId={selectedPackId}
+              onSelectLens={setTimelineLens}
+              onSelectPack={onSelectTimelinePack}
+              defaultCollapsed
             />
-          </ExecutiveStageFrame>
+          </div>
+        </NexoraWorkspaceRegionBoundary>
 
-          <ExecutiveTimelineDock
-            lens={timelineLens}
-            packs={timelinePacks}
-            selectedPackId={selectedPackId}
-            onSelectLens={setTimelineLens}
-            onSelectPack={onSelectTimelinePack}
-            defaultCollapsed
+        <NexoraWorkspaceRegionBoundary
+          region="right-context"
+          canonicalTargetId={interaction.focusedSubject?.id}
+          referentId={advisorBridge.advisorSubjectId}
+        >
+          <NexoraAdvisorInsightRegion
+            tab={advisorTab}
+            onTabChange={setAdvisorTab}
+            panelChrome={rightPanelChrome}
+            onPanelChromeChange={setRightPanelChrome}
+            advisorBridge={advisorBridge}
+            presentationViewModel={presentationViewModel}
+            focusedSubject={advisorFocusedSubject}
+            selectedSubject={interaction.selectedSubject}
+            experienceContext={experienceContext}
+            onIntelligenceAction={onIntelligenceAction}
+            onExecuteNextBestAction={onExecuteNextBestAction}
+            onSelectBriefOption={onSelectBriefOption}
+            advisorRealityBinding={dataRealityAdvisorExperience.advisorBinding}
+            validatedDataSource={dataRealityExperience.usesActiveDataSource}
+            sourceIntelligenceContext={sourceAdvisorContext}
+            onReturnToDataSource={() => setActiveNav("Data")}
+            onProactiveInvestigate={onProactiveInvestigate}
+            onProactiveViewOnStage={onViewSourceOnStage}
+            conversationalMessages={conversationalMessages}
+            conversationalProcessing={conversationalProcessing}
+            conversationalContextLabel={
+              conversationalLastTrace?.experienceCompactContext ||
+              interaction.focusedSubject?.label ||
+              interaction.selectedSubject?.label ||
+              null
+            }
+            conversationalLastTrace={conversationalLastTrace}
+            onSubmitConversationalUtterance={onSubmitConversationalUtterance}
+            onConversationalAdvisorGroundingChange={
+              onConversationalAdvisorGroundingChange
+            }
+            onBeginDailyPreparation={onBeginDailyPreparation}
+            onBeginMeetingPreparation={onBeginMeetingPreparation}
+            flowDecisions={flowDomain.decisions}
+            flowExecutions={flowDomain.executions}
+            decisionRuntime={decisionRuntime.adapter}
           />
-        </div>
+        </NexoraWorkspaceRegionBoundary>
 
-        <NexoraAdvisorInsightRegion
-          tab={advisorTab}
-          onTabChange={setAdvisorTab}
-          advisorBridge={advisorBridge}
-          presentationViewModel={presentationViewModel}
-          focusedSubject={advisorFocusedSubject}
-          selectedSubject={interaction.selectedSubject}
-          experienceContext={experienceContext}
-          onIntelligenceAction={onIntelligenceAction}
-          onExecuteNextBestAction={onExecuteNextBestAction}
-          onSelectBriefOption={onSelectBriefOption}
-          advisorRealityBinding={dataRealityAdvisorExperience.advisorBinding}
-          validatedDataSource={dataRealityExperience.usesActiveDataSource}
-          sourceIntelligenceContext={sourceAdvisorContext}
-          onReturnToDataSource={() => setActiveNav("Data")}
-          onProactiveInvestigate={onProactiveInvestigate}
-          onProactiveViewOnStage={onViewSourceOnStage}
-          conversationalMessages={conversationalMessages}
-          conversationalProcessing={conversationalProcessing}
-          conversationalContextLabel={
-            conversationalLastTrace?.experienceCompactContext ||
-            interaction.focusedSubject?.label ||
-            interaction.selectedSubject?.label ||
-            null
-          }
-          conversationalLastTrace={conversationalLastTrace}
-          onSubmitConversationalUtterance={onSubmitConversationalUtterance}
-          onConversationalAdvisorGroundingChange={
-            onConversationalAdvisorGroundingChange
-          }
-          onBeginDailyPreparation={onBeginDailyPreparation}
-          onBeginMeetingPreparation={onBeginMeetingPreparation}
-          flowDecisions={flowDomain.decisions}
-          flowExecutions={flowDomain.executions}
-          decisionRuntime={decisionRuntime.adapter}
-        />
+        <NexoraDetailWorkspaceBoundary
+          target={detailWorkspaceTarget}
+          open={detailWorkspaceOpen}
+          connectionsAvailable
+          configurationAvailable={detailConfigurationAvailable}
+          onClose={onExplorerClose}
+        >
+          {dataDetailContent}
+        </NexoraDetailWorkspaceBoundary>
       </div>
 
       <ExecutiveStatusBar

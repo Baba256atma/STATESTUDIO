@@ -26,6 +26,9 @@ export type NexoraMVPStageRelationshipFixture = {
   readonly targetId: string;
 };
 
+/** Canonical Risk executive Object identity. Not a visual family registry. */
+export const NEXORA_MVP_CANONICAL_RISK_OBJECT_ID = "obj-risk" as const;
+
 /** ~8 executive entities — enough for spatial presence without chaos. */
 export const NEXORA_MVP_STAGE_OBJECT_FIXTURES = Object.freeze([
   Object.freeze({
@@ -69,7 +72,7 @@ export const NEXORA_MVP_STAGE_OBJECT_FIXTURES = Object.freeze([
     attention: "important" as const,
   }),
   Object.freeze({
-    id: "obj-risk",
+    id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
     label: "Risk",
     kind: "object" as const,
     position: [2.2, -0.05, 1.25] as const,

@@ -887,7 +887,7 @@ export function resolveNexoraExecutiveConversationalContext(
     precedenceApplied.push(CONVERSATIONAL_CONTEXT_PRECEDENCE[3]!);
     const fromStage = resolveFromStageContext(
       input.activeStageContext,
-      input.allowActiveStageContext === true,
+      input.allowActiveStageContext === true || intent.kind === "workspace-action",
       index,
     );
     contextCandidates = Object.freeze([

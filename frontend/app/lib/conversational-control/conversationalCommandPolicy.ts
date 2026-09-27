@@ -56,7 +56,7 @@ export const CONVERSATIONAL_INTENT_COMMAND_RULES: readonly ConversationalIntentC
     Object.freeze({
       intentKind: "overview" as const,
       commandKind: "open-overview" as const,
-      targetRequirement: "none" as const,
+      targetRequirement: "primary-optional" as const,
       allowedPrimaryKinds: "*" as const,
       mappingRuleId: "intent.overview→open-overview",
     }),
@@ -165,6 +165,13 @@ export const CONVERSATIONAL_INTENT_COMMAND_RULES: readonly ConversationalIntentC
       targetRequirement: "primary" as const,
       allowedPrimaryKinds: "*" as const,
       mappingRuleId: "intent.switch-workspace→switch-workspace",
+    }),
+    Object.freeze({
+      intentKind: "workspace-action" as const,
+      commandKind: "workspace-presentation" as const,
+      targetRequirement: "primary-optional" as const,
+      allowedPrimaryKinds: "*" as const,
+      mappingRuleId: "intent.workspace-action→workspace-presentation",
     }),
     Object.freeze({
       intentKind: "recommend" as const,

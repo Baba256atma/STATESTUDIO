@@ -33,6 +33,7 @@ import {
   isExecutive3DObjectPremiumFormEnabled,
   resolveExecutivePremiumObjectForm,
 } from "./executive3DObjectPremiumForm.ts";
+import { isExecutiveOvsObjectVisualLanguageEnabled } from "./executiveOvsObjectVisualLanguage.ts";
 import {
   isExecutiveObjectPresenceV2Enabled,
   resolveExecutiveObjectPresenceFootprintHalfExtent,
@@ -208,10 +209,12 @@ export function resolveExecutiveStage2DVisualFootprint(
     halfExtent += EXECUTIVE_3D_OBJECT_SILHOUETTE_BOOST_BY_LEVEL[presentationState];
   }
   // STAGE-3DOBJ:3 — tapered plate / bevel silhouette pad (XY only).
+  // OVS:1 replaces those plates as the live body; do not double-count form pad.
   if (
     isExecutiveObject3DGeometryEnabled() &&
     isExecutive3DObjectVisualEnabled() &&
-    isExecutive3DObjectPremiumFormEnabled()
+    isExecutive3DObjectPremiumFormEnabled() &&
+    !isExecutiveOvsObjectVisualLanguageEnabled()
   ) {
     const form = resolveExecutivePremiumObjectForm({
       presentationLevel: presentationState,

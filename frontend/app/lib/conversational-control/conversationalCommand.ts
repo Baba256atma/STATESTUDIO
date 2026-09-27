@@ -14,7 +14,10 @@
  *   that CC:4 may later bridge onto the same Runtime authority as click interaction
  */
 
-import type { NexoraConversationalExecutionClass } from "./conversationalIntent.ts";
+import type {
+  NexoraConversationalExecutionClass,
+  NexoraConversationalWorkspaceActionPayload,
+} from "./conversationalIntent.ts";
 import type {
   NexoraConversationalSubjectKind,
   NexoraResolvedConversationalContext,
@@ -94,6 +97,7 @@ export const NEXORA_CONVERSATIONAL_COMMAND_KINDS = Object.freeze([
   "navigate-forward",
   "prepare-executive-context",
   "switch-workspace",
+  "workspace-presentation",
   "request-recommendation",
   "request-explanation",
   "request-prioritization",
@@ -152,6 +156,7 @@ export type NexoraConversationalCommand = {
    */
   readonly executable: boolean;
   readonly reasons: readonly string[];
+  readonly workspaceAction?: NexoraConversationalWorkspaceActionPayload | null;
 };
 
 export type NexoraConversationalCommandTrace = {
@@ -198,6 +203,7 @@ export const CONVERSATIONAL_COMMAND_REASON = Object.freeze({
   MAPPED_EXPLORATION: "mapped-exploration-command",
   MAPPED_NAVIGATION: "mapped-navigation-command",
   MAPPED_EXPERIENCE: "mapped-executive-experience-command",
+  MAPPED_WORKSPACE_PRESENTATION: "mapped-workspace-presentation-command",
   MAPPED_RECOMMENDATION: "mapped-recommendation-command",
   MAPPED_SCENARIO: "mapped-scenario-command",
   MAPPED_DECISION_COMMITMENT: "mapped-decision-commitment-command",

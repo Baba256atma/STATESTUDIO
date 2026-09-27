@@ -27,7 +27,6 @@ import {
   EXECUTIVE_STAGE_2D_DEPTH,
   EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY,
   EXECUTIVE_STAGE_FIXED_CAMERA,
-  EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
   executiveStage2DFixedCameraIdentity,
   executiveStage2DFixedCameraNamespace,
   executiveStage2DFixedCameraVersion,
@@ -121,11 +120,10 @@ test("Invariant C — selection cannot move camera", () => {
   assert.deepEqual(overview.scene.camera.position, selected.scene.camera.position);
   assert.deepEqual(overview.scene.camera.target, selected.scene.camera.target);
   assert.equal(overview.scene.camera.fov, selected.scene.camera.fov);
-  assert.deepEqual(selected.scene.camera.position, [
-    0,
-    0,
-    EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  ]);
+  assert.equal(
+    isExecutiveStageFixedCameraPosition(selected.scene.camera.position),
+    true,
+  );
 });
 
 test("Invariant D — competing attention cannot move camera", () => {
@@ -151,11 +149,10 @@ test("Invariant D — competing attention cannot move camera", () => {
   const fixed = applyExecutiveStageFixedCameraToStagePresentation(poisoned);
   assert.equal(fixed.scene.focusedObjectId, "obj-budget");
   assert.deepEqual(fixed.scene.camera.target, [0, 0, 0]);
-  assert.deepEqual(fixed.scene.camera.position, [
-    0,
-    0,
-    EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  ]);
+  assert.equal(
+    isExecutiveStageFixedCameraPosition(fixed.scene.camera.position),
+    true,
+  );
   assert.equal(
     EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY.movesCameraOnAttention,
     false,
@@ -182,18 +179,25 @@ test("Invariant E — topology depth convention z = 0", () => {
   }
 });
 
-test("fixed camera pose is front-facing on +Z with controls disabled", () => {
+test("fixed camera pose is restrained off-axis with controls disabled", () => {
   const camera = resolveExecutiveStageFixedCamera();
-  assert.deepEqual(camera.position, {
-    x: 0,
-    y: 0,
-    z: EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  });
+  assert.equal(isExecutiveStageFixedCameraPosition(camera.position), true);
+  assert.notEqual(camera.position.x, 0);
+  assert.notEqual(camera.position.y, 0);
   assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.orbitEnabled, false);
   assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.panEnabled, false);
   assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.zoomEnabled, false);
-  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.azimuth, 0);
-  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.elevation, 0);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.pointerOffset, 0);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.azimuthDeg, 8);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA.elevationDeg, 10);
+  assert.equal(
+    EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY.cameraMode,
+    "fixed-executive-perspective",
+  );
+  assert.equal(
+    EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY.allowsPointerParallax,
+    false,
+  );
   assert.equal(
     EXECUTIVE_STAGE_2D_FIXED_CAMERA_BOUNDARY.cameraProjection,
     "perspective",

@@ -9,6 +9,7 @@
  */
 
 import type { NexoraConversationalCommand } from "./conversationalCommand.ts";
+import type { NexoraConversationalWorkspaceActionPayload } from "./conversationalIntent.ts";
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
@@ -100,6 +101,7 @@ export const NEXORA_CONVERSATIONAL_RUNTIME_ACTION_KINDS = Object.freeze([
   "navigation-step-forward",
   "open-queue-collection",
   "change-workspace",
+  "apply-workspace-presentation",
   "resolve-executive-recommendation",
   "resolve-executive-scenario",
   "resolve-executive-decision-commitment",
@@ -122,6 +124,7 @@ export type NexoraConversationalRuntimeActionPlan = {
     | null;
   readonly source: "conversation";
   readonly notes: readonly string[];
+  readonly workspaceAction?: NexoraConversationalWorkspaceActionPayload | null;
 };
 
 export type NexoraConversationalRuntimeBridgeTrace = {
@@ -177,6 +180,8 @@ export const CONVERSATIONAL_RUNTIME_BRIDGE_REASON = Object.freeze({
     "runtime-navigation-forward-dispatched",
   RUNTIME_REVEAL_DISPATCHED: "runtime-reveal-dispatched",
   RUNTIME_WORKSPACE_DISPATCHED: "runtime-workspace-change-dispatched",
+  RUNTIME_WORKSPACE_PRESENTATION_DISPATCHED:
+    "runtime-workspace-presentation-dispatched",
   RUNTIME_RECOMMENDATION_DISPATCHED: "runtime-recommendation-authority-dispatched",
   RUNTIME_SCENARIO_DISPATCHED: "runtime-scenario-authority-dispatched",
   RUNTIME_DECISION_COMMITMENT_DISPATCHED:

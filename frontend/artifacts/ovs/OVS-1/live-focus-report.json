@@ -1,0 +1,20 @@
+{
+  "afterFocus": {
+    "ovs": {
+      "family": "operational",
+      "primitive": "rounded-block",
+      "enabled": "true"
+    },
+    "labels": [
+      {
+        "id": "obj-capacity",
+        "text": "CAPACITYWATCH"
+      },
+      {
+        "id": "obj-customer",
+        "text": "CUSTOMERWATCH"
+      }
+    ]
+  },
+  "afterRisk": null
+}

@@ -1,0 +1,107 @@
+{
+  "server": "http://127.0.0.1:3000/executive?ovs1=1",
+  "capacity": {
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "operational",
+    "ovs3Family": "none",
+    "focused": [
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "z": "0",
+        "status": "watch"
+      }
+    ]
+  },
+  "gap": {
+    "ovs1Primitive": "prism",
+    "ovs1Family": "problem",
+    "ovs3Family": "NEXO_CAUSE",
+    "focused": [
+      {
+        "id": "ctx-problem-capacity",
+        "kind": "problem",
+        "z": "0",
+        "status": "watch"
+      }
+    ]
+  },
+  "plan": {
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "scenario",
+    "ovs3Family": "none",
+    "focused": [
+      {
+        "id": "ctx-scenario-capacity",
+        "kind": "scenario",
+        "z": "0",
+        "status": "watch"
+      }
+    ]
+  },
+  "expand": {
+    "ovs1Primitive": "hex-prism",
+    "ovs1Family": "decision",
+    "ovs3Family": "none",
+    "focused": [
+      {
+        "id": "ctx-decision-capacity",
+        "kind": "decision",
+        "z": "0",
+        "status": "under-review"
+      }
+    ]
+  },
+  "execution": {
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "execution",
+    "ovs3Family": "NEXO_EXECUTION",
+    "focused": [
+      {
+        "id": "ctx-execution-capacity",
+        "kind": "execution",
+        "z": "0",
+        "status": "stable"
+      }
+    ]
+  },
+  "workspaceDecision": {
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "execution",
+    "ovs3Family": "NEXO_EXECUTION",
+    "focused": [
+      {
+        "id": "ctx-execution-capacity",
+        "kind": "execution",
+        "z": "0",
+        "status": "stable"
+      }
+    ]
+  },
+  "workspaceExecution": {
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "execution",
+    "ovs3Family": "NEXO_EXECUTION",
+    "focused": [
+      {
+        "id": "ctx-execution-capacity",
+        "kind": "execution",
+        "z": "0",
+        "status": "stable"
+      }
+    ]
+  },
+  "risk": {
+    "ovs1Primitive": "diamond",
+    "ovs1Family": "risk",
+    "ovs3Family": "NEXO_RISK",
+    "focused": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "z": "0",
+        "status": "unresolved"
+      }
+    ]
+  }
+}

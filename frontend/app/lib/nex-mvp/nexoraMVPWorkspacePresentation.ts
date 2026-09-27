@@ -74,6 +74,22 @@ export const NEXORA_MVP_WORKSPACE_DIAL_EDGE_POLICY = "stop-at-ends" as const;
 export const NEXORA_MVP_WORKSPACE_TRANSITION_MS = 450 as const;
 export const NEXORA_MVP_WORKSPACE_TRANSITION_MS_REDUCED = 80 as const;
 
+/**
+ * VISUAL-SYSTEM:3 — Stage field under the existing environment owner.
+ * Shadow-receiving plane replaces the visible radius-9 disc; no new Scene.
+ */
+export const NEXORA_MVP_STAGE_ATMOSPHERE_FIELD = Object.freeze({
+  geometry: "plane" as const,
+  extent: 48,
+  circleRadius9Retired: true as const,
+  visibleCircularBoundary: false as const,
+  mergesIntoBackground: true as const,
+  /** Below the executive composition band so the floor cannot hide Objects. */
+  positionY: -2.4,
+  encodesObjectFamily: false as const,
+  encodesObjectState: false as const,
+});
+
 export const NEXORA_MVP_WORKSPACE_PRESENTATION_BOUNDARY = Object.freeze({
   architecturalRole: nexoraMVPWorkspaceDialSceneStateArchitecturalRole,
   ownsWorkspaceAuthority: false as const,
@@ -81,7 +97,106 @@ export const NEXORA_MVP_WORKSPACE_PRESENTATION_BOUNDARY = Object.freeze({
   inventsDomainEngines: false as const,
   edgePolicy: NEXORA_MVP_WORKSPACE_DIAL_EDGE_POLICY,
   themeCoupledToEnvironment: false as const,
+  encodesObjectFamily: false as const,
+  encodesObjectState: false as const,
 });
+
+type SceneAtmosphereTokens = {
+  readonly background: string;
+  readonly fogNear: number;
+  readonly fogFar: number;
+  readonly ambientIntensity: number;
+  readonly keyLightIntensity: number;
+  readonly keyLightColor: string;
+  readonly fillLightIntensity: number;
+  readonly fillLightColor: string;
+  readonly groundColor: string;
+  readonly groundOpacity: number;
+  readonly connectionEmphasis: number;
+  readonly objectSurfaceTreatment:
+    | "balanced"
+    | "investigative"
+    | "simulative"
+    | "committal"
+    | "executive";
+};
+
+/**
+ * Restrained Stage-field palettes. Context changes the room, not Object truth.
+ * Fill/key remain desaturated so SP:3.1 mix cannot gold/green-wash bodies.
+ */
+export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
+  neutral: Object.freeze({
+    background: "#080c14",
+    fogNear: 14,
+    fogFar: 28,
+    ambientIntensity: 0.55,
+    keyLightIntensity: 0.85,
+    keyLightColor: "#f3f5f7",
+    fillLightIntensity: 0.28,
+    fillLightColor: "#8aa0b4",
+    groundColor: "#141b26",
+    groundOpacity: 0.72,
+    connectionEmphasis: 1,
+    objectSurfaceTreatment: "balanced",
+  }),
+  investigate: Object.freeze({
+    background: "#070d16",
+    fogNear: 13.5,
+    fogFar: 27,
+    ambientIntensity: 0.52,
+    keyLightIntensity: 0.86,
+    keyLightColor: "#f3f5f7",
+    fillLightIntensity: 0.28,
+    fillLightColor: "#7a93b0",
+    groundColor: "#121924",
+    groundOpacity: 0.72,
+    connectionEmphasis: 1.15,
+    objectSurfaceTreatment: "investigative",
+  }),
+  simulate: Object.freeze({
+    background: "#090c16",
+    fogNear: 14,
+    fogFar: 28,
+    ambientIntensity: 0.53,
+    keyLightIntensity: 0.84,
+    keyLightColor: "#f3f5f7",
+    fillLightIntensity: 0.28,
+    fillLightColor: "#7d86a6",
+    groundColor: "#151824",
+    groundOpacity: 0.72,
+    connectionEmphasis: 1.08,
+    objectSurfaceTreatment: "simulative",
+  }),
+  commit: Object.freeze({
+    background: "#080c16",
+    fogNear: 14,
+    fogFar: 27.5,
+    ambientIntensity: 0.52,
+    keyLightIntensity: 0.86,
+    keyLightColor: "#f3f5f7",
+    fillLightIntensity: 0.28,
+    fillLightColor: "#6d82a8",
+    groundColor: "#131a28",
+    groundOpacity: 0.72,
+    connectionEmphasis: 1.2,
+    objectSurfaceTreatment: "committal",
+  }),
+  execute: Object.freeze({
+    background: "#080e10",
+    fogNear: 14,
+    fogFar: 28,
+    ambientIntensity: 0.54,
+    keyLightIntensity: 0.85,
+    keyLightColor: "#f3f5f7",
+    fillLightIntensity: 0.28,
+    fillLightColor: "#6d8a86",
+    groundColor: "#121c1c",
+    groundOpacity: 0.72,
+    connectionEmphasis: 1.05,
+    objectSurfaceTreatment: "executive",
+  }),
+} as const satisfies Record<NexoraMVPSceneEnvironmentIntent, SceneAtmosphereTokens>);
 
 // ─── Dial state ─────────────────────────────────────────────────────────────
 
@@ -424,94 +539,14 @@ export function deriveNexoraMVPSceneEnvironmentVisualState(
   const transitionMs = options?.reducedMotion
     ? NEXORA_MVP_WORKSPACE_TRANSITION_MS_REDUCED
     : NEXORA_MVP_WORKSPACE_TRANSITION_MS;
-
-  switch (intent) {
-    case "investigate":
-      return Object.freeze({
-        intent,
-        background: "#101826",
-        fogNear: 9,
-        fogFar: 21,
-        ambientIntensity: 0.48,
-        keyLightIntensity: 0.9,
-        keyLightColor: "#f1f5f9",
-        fillLightIntensity: 0.32,
-        fillLightColor: "#93c5fd",
-        groundColor: "#111827",
-        groundOpacity: 0.58,
-        connectionEmphasis: 1.15,
-        objectSurfaceTreatment: "investigative",
-        transitionMs,
-      });
-    case "simulate":
-      return Object.freeze({
-        intent,
-        background: "#0f1a22",
-        fogNear: 10,
-        fogFar: 22,
-        ambientIntensity: 0.52,
-        keyLightIntensity: 0.82,
-        keyLightColor: "#e2e8f0",
-        fillLightIntensity: 0.34,
-        fillLightColor: "#a5b4fc",
-        groundColor: "#0f172a",
-        groundOpacity: 0.56,
-        connectionEmphasis: 1.08,
-        objectSurfaceTreatment: "simulative",
-        transitionMs,
-      });
-    case "commit":
-      return Object.freeze({
-        intent,
-        background: "#141418",
-        fogNear: 10,
-        fogFar: 20,
-        ambientIntensity: 0.5,
-        keyLightIntensity: 0.88,
-        keyLightColor: "#f8fafc",
-        fillLightIntensity: 0.28,
-        fillLightColor: "#fcd34d",
-        groundColor: "#18181b",
-        groundOpacity: 0.6,
-        connectionEmphasis: 1.2,
-        objectSurfaceTreatment: "committal",
-        transitionMs,
-      });
-    case "execute":
-      return Object.freeze({
-        intent,
-        background: "#121c18",
-        fogNear: 10,
-        fogFar: 21,
-        ambientIntensity: 0.54,
-        keyLightIntensity: 0.86,
-        keyLightColor: "#f0fdf4",
-        fillLightIntensity: 0.3,
-        fillLightColor: "#86efac",
-        groundColor: "#102016",
-        groundOpacity: 0.57,
-        connectionEmphasis: 1.05,
-        objectSurfaceTreatment: "executive",
-        transitionMs,
-      });
-    default:
-      return Object.freeze({
-        intent: "neutral",
-        background: "#0b1220",
-        fogNear: 10,
-        fogFar: 22,
-        ambientIntensity: 0.55,
-        keyLightIntensity: 0.85,
-        keyLightColor: "#f8fafc",
-        fillLightIntensity: 0.25,
-        fillLightColor: "#93c5fd",
-        groundColor: "#111827",
-        groundOpacity: 0.55,
-        connectionEmphasis: 1,
-        objectSurfaceTreatment: "balanced",
-        transitionMs,
-      });
-  }
+  const resolvedIntent: NexoraMVPSceneEnvironmentIntent =
+    intent in NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE ? intent : "neutral";
+  const tokens = NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE[resolvedIntent];
+  return Object.freeze({
+    intent: resolvedIntent,
+    ...tokens,
+    transitionMs,
+  });
 }
 
 export function verifyNexoraMVPWorkspaceDialSceneState(options?: {

@@ -1,0 +1,291 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "http": 200,
+  "overview": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "camera": {
+      "az": "8",
+      "el": "10",
+      "d": "11",
+      "fov": "42"
+    },
+    "ovs1": "operational",
+    "ovs3": "none",
+    "focused": [],
+    "labels": [
+      {
+        "id": "obj-revenue",
+        "status": "stable",
+        "attention": "normal",
+        "focused": "false",
+        "selected": "false",
+        "visual": "normal",
+        "label": "Revenue"
+      },
+      {
+        "id": "obj-capacity",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-budget",
+        "status": "unresolved",
+        "attention": "normal",
+        "focused": "false",
+        "selected": "false",
+        "visual": "unresolved",
+        "label": "Budget"
+      },
+      {
+        "id": "obj-customer",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-delivery",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "Delivery"
+      },
+      {
+        "id": "obj-risk",
+        "status": "unresolved",
+        "attention": "normal",
+        "focused": "false",
+        "selected": "false",
+        "visual": "unresolved",
+        "label": "Risk"
+      },
+      {
+        "id": "obj-inventory",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "Inventory"
+      },
+      {
+        "id": "obj-demand",
+        "status": "unresolved",
+        "attention": "normal",
+        "focused": "false",
+        "selected": "false",
+        "visual": "unresolved",
+        "label": "Demand"
+      },
+      {
+        "id": "obj-capacity",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      },
+      {
+        "id": "obj-customer",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      }
+    ]
+  },
+  "clickedRisk": true,
+  "risk": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "camera": {
+      "az": "8",
+      "el": "10",
+      "d": "11",
+      "fov": "42"
+    },
+    "ovs1": "risk",
+    "ovs3": "NEXO_RISK",
+    "focused": [
+      "obj-risk",
+      "obj-risk"
+    ],
+    "labels": [
+      {
+        "id": "obj-risk",
+        "status": "unresolved",
+        "attention": "normal",
+        "focused": "true",
+        "selected": "true",
+        "visual": "unresolved",
+        "label": "risk object; Uncertain; focused; selected; equal size"
+      },
+      {
+        "id": "obj-delivery",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; equal size"
+      },
+      {
+        "id": "obj-capacity",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-customer",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-risk",
+        "status": "unresolved",
+        "attention": "normal",
+        "focused": "true",
+        "selected": "true",
+        "visual": "unresolved",
+        "label": ""
+      },
+      {
+        "id": "obj-delivery",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      },
+      {
+        "id": "obj-capacity",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      },
+      {
+        "id": "obj-customer",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      }
+    ]
+  },
+  "hover": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "camera": {
+      "az": "8",
+      "el": "10",
+      "d": "11",
+      "fov": "42"
+    },
+    "ovs1": "risk",
+    "ovs3": "NEXO_RISK",
+    "focused": [
+      "obj-risk",
+      "obj-risk"
+    ],
+    "labels": [
+      {
+        "id": "obj-risk",
+        "status": "unresolved",
+        "attention": "normal",
+        "focused": "true",
+        "selected": "true",
+        "visual": "unresolved",
+        "label": "risk object; Uncertain; focused; selected; equal size"
+      },
+      {
+        "id": "obj-delivery",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; equal size"
+      },
+      {
+        "id": "obj-capacity",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-customer",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": "kpi object; Attention required; attention requested; present but not central; eq"
+      },
+      {
+        "id": "obj-risk",
+        "status": "unresolved",
+        "attention": "normal",
+        "focused": "true",
+        "selected": "true",
+        "visual": "unresolved",
+        "label": ""
+      },
+      {
+        "id": "obj-delivery",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      },
+      {
+        "id": "obj-capacity",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      },
+      {
+        "id": "obj-customer",
+        "status": "watch",
+        "attention": "important",
+        "focused": "false",
+        "selected": "false",
+        "visual": "attention",
+        "label": ""
+      }
+    ]
+  },
+  "ok": true
+}

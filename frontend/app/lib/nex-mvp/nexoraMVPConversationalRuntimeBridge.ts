@@ -355,6 +355,14 @@ export function applyNexoraMVPConversationalCommand(
       });
     }
 
+    case "apply-workspace-presentation": {
+      return Object.freeze({
+        result: markApplied(planned),
+        nextState: state,
+        controlSource: "conversation",
+      });
+    }
+
     case "resolve-executive-recommendation": {
       // Advisory only — Runtime/Stage unchanged. CC:8 runs in the orchestrator.
       const applied = markApplied(planned);

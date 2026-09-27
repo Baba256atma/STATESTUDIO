@@ -59,7 +59,7 @@ export type DthExpInterpretedConversationTurn = Readonly<{
 
 export type DthExpTheatreSceneResponseInput = Readonly<{
   turn: DthExpInterpretedConversationTurn;
-  directorPlan: NexoraDirectorPlan;
+  directorPlan?: NexoraDirectorPlan | null;
   graph: DthExpDirectorSceneGraph;
   awareness?: DthExpAdvisorSceneAwareness | null;
   sourceScene?: DthExpTheatreScene | null;

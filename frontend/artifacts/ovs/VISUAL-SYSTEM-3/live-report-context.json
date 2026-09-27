@@ -1,0 +1,42 @@
+{
+  "investigate": {
+    "env": "investigate",
+    "treatment": "investigative",
+    "workspaceNav": "problem",
+    "ovs1": "operational",
+    "ovs3": "none",
+    "primitive": "rounded-block",
+    "az": "8",
+    "z": "0"
+  },
+  "simulate-workspace": {
+    "env": "simulate",
+    "treatment": "simulative",
+    "workspaceNav": "scenario",
+    "ovs1": "operational",
+    "ovs3": "none",
+    "primitive": "rounded-block",
+    "az": "8",
+    "z": "0"
+  },
+  "simulate": {
+    "env": "simulate",
+    "treatment": "simulative",
+    "workspaceNav": "scenario",
+    "ovs1": "operational",
+    "ovs3": "none",
+    "primitive": "rounded-block",
+    "az": "8",
+    "z": "0"
+  },
+  "investigate-risk": {
+    "env": "investigate",
+    "treatment": "investigative",
+    "workspaceNav": "problem",
+    "ovs1": "risk",
+    "ovs3": "NEXO_RISK",
+    "primitive": "diamond",
+    "az": "8",
+    "z": "0"
+  }
+}

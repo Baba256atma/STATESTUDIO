@@ -15,6 +15,7 @@ import { NexoraExecutiveShell } from "../NexoraExecutiveShell.tsx";
 import { getNexora3DExecutiveStageIdentity } from "../../../lib/nex-mvp/nexora3DExecutiveStage.ts";
 import {
   buildNexoraMVPAdvisorContextBridge,
+  collapsedExecutiveThreadSubjectId,
   createInitialNexoraMVPObjectInteractionState,
   deriveNexoraMVPStageInteractionPresentation,
   selectNexoraMVPInteractionSubject,
@@ -295,10 +296,7 @@ describe("NEX-MVP:4 Stage object interaction host", () => {
       React.createElement(Nexora3DExecutiveStage, stageProps),
     );
     // SP:4.1B — MINIMUM discloses a collapsed Executive Thread, not expanded work nodes.
-    assert.match(
-      html,
-      /data-testid="nexora-stage-context-control-thread-obj-revenue"/,
-    );
+    assert.match(html, /data-testid="nexora-stage-thread-control"/);
     assert.match(html, /data-kind="executive-thread"/);
     assert.match(html, /data-context-node-count="1"/);
   });
@@ -326,6 +324,52 @@ describe("NEX-MVP:4 Stage object interaction host", () => {
     assert.match(html, /data-testid="nexora-stage-interaction-breadcrumb"/);
     assert.match(html, /Overview/);
     assert.match(html, /Revenue/);
+  });
+
+  it("STAGE-THREAD:FIX1 expanded Collapse Thread lives on breadcrumb", () => {
+    let state = createInitialNexoraMVPObjectInteractionState({
+      workspace: "overview",
+      presentationState: "minimum",
+      environmentIntent: "neutral",
+    });
+    state = selectNexoraMVPInteractionSubject(state, "obj-capacity");
+    state = selectNexoraMVPInteractionSubject(
+      state,
+      collapsedExecutiveThreadSubjectId("obj-capacity"),
+    );
+    const interaction = deriveNexoraMVPStageInteractionPresentation(state);
+    const advisorBridge = buildNexoraMVPAdvisorContextBridge(state, interaction);
+    const environment = deriveNexoraMVPSceneEnvironmentVisualState(
+      state.environmentIntent,
+    );
+    const subject = state.focusedSubject;
+    const presentationViewModel = deriveNexoraMVPPresentationViewModel({
+      presentationState: state.presentationState,
+      workspace: state.workspace,
+      environmentIntent: state.environmentIntent,
+      subjectId: subject?.id ?? null,
+      subjectKind: subject?.kind ?? null,
+      subjectLabel: subject?.label ?? null,
+    });
+    const html = renderToStaticMarkup(
+      React.createElement(Nexora3DExecutiveStage, {
+        workspaceLabel: "Overview",
+        interaction,
+        environment,
+        presentationViewModel,
+        advisorBridge,
+        onSelectSubject: () => undefined,
+        onStepBack: () => undefined,
+        onOverview: () => undefined,
+        onPresentationStateChange: () => undefined,
+        onPresentationAction: () => undefined,
+      }),
+    );
+    assert.match(html, /data-testid="nexora-stage-thread-control"/);
+    assert.doesNotMatch(
+      html,
+      /data-testid="nexora-stage-context-control-thread-obj-capacity"/,
+    );
   });
 
   it("10. Stage does not page-navigate during interaction", () => {

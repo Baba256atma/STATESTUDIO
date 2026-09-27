@@ -301,6 +301,13 @@ export const EXECUTIVE_LIGHTING_LIGHT_TYPES = Object.freeze([
  * Restrained executive product-visualization lighting.
  * Elevated off-axis key; softer opposing fill; subtle rear/upper rim.
  */
+export const EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION = Object.freeze({
+  fillHintMix: 0.1,
+  keyHintMix: 0.12,
+  preservesObjectFamilyMaterial: true as const,
+  replacesFillWithWorkspaceHue: false as const,
+});
+
 export const EXECUTIVE_DEFAULT_LIGHTING_TOKENS: ExecutiveLightingTokens =
   Object.freeze({
     ambientIntensity: 0.26,
@@ -485,10 +492,42 @@ function sanitizeTokens(tokens: ExecutiveLightingTokens): ExecutiveLightingToken
   });
 }
 
+function mixExecutiveLightingChannel(
+  from: number,
+  to: number,
+  amount: number,
+): number {
+  return from + (to - from) * amount;
+}
+
+export function mixExecutiveLightingHex(
+  base: string,
+  hint: string,
+  amount: number,
+): string {
+  const mix = clamp(amount, 0, 1);
+  const parse = (hex: string) => {
+    const raw = hex.replace("#", "").toLowerCase();
+    return {
+      r: Number.parseInt(raw.slice(0, 2), 16),
+      g: Number.parseInt(raw.slice(2, 4), 16),
+      b: Number.parseInt(raw.slice(4, 6), 16),
+    };
+  };
+  const a = parse(base);
+  const b = parse(hint);
+  const channel = (value: number) =>
+    Math.round(clamp(value, 0, 255)).toString(16).padStart(2, "0");
+  return `#${channel(mixExecutiveLightingChannel(a.r, b.r, mix))}${channel(
+    mixExecutiveLightingChannel(a.g, b.g, mix),
+  )}${channel(mixExecutiveLightingChannel(a.b, b.b, mix))}`;
+}
+
 /**
  * Soft environment tint — preserves foundation intensities/positions while
  * allowing existing Stage environment colors to tint key/fill/ground.
- * Does not create workspace-specific lighting themes.
+ * Fill/key are identity-preserving mixes so workspace hue cannot repaint
+ * Object family material (VISUAL-SYSTEM:2). Ground remains environment-owned.
  */
 function applyEnvironmentHints(
   base: ExecutiveLightingTokens,
@@ -498,17 +537,31 @@ function applyEnvironmentHints(
     return base;
   }
 
+  const keyHint =
+    environment.keyLightColor != null && isHexColor(environment.keyLightColor)
+      ? environment.keyLightColor.toLowerCase()
+      : null;
+  const fillHint =
+    environment.fillLightColor != null && isHexColor(environment.fillLightColor)
+      ? environment.fillLightColor.toLowerCase()
+      : null;
+
   return Object.freeze({
     ...base,
-    keyColor:
-      environment.keyLightColor != null && isHexColor(environment.keyLightColor)
-        ? environment.keyLightColor.toLowerCase()
-        : base.keyColor,
-    fillColor:
-      environment.fillLightColor != null &&
-      isHexColor(environment.fillLightColor)
-        ? environment.fillLightColor.toLowerCase()
-        : base.fillColor,
+    keyColor: keyHint
+      ? mixExecutiveLightingHex(
+          base.keyColor,
+          keyHint,
+          EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION.keyHintMix,
+        )
+      : base.keyColor,
+    fillColor: fillHint
+      ? mixExecutiveLightingHex(
+          base.fillColor,
+          fillHint,
+          EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION.fillHintMix,
+        )
+      : base.fillColor,
     groundResponse: Object.freeze({
       ...base.groundResponse,
       groundColor:
@@ -720,10 +773,22 @@ export function verifyExecutiveLightingFoundation(options?: {
 
   // Compatible with current Stage environment visual tokens (color tint only).
   const environmentCompatible =
-    a.tokens.keyColor === "#f8fafc" &&
-    a.tokens.fillColor === "#93c5fd" &&
+    a.tokens.keyColor ===
+      mixExecutiveLightingHex(
+        EXECUTIVE_DEFAULT_LIGHTING_TOKENS.keyColor,
+        "#f8fafc",
+        EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION.keyHintMix,
+      ) &&
+    a.tokens.fillColor ===
+      mixExecutiveLightingHex(
+        EXECUTIVE_DEFAULT_LIGHTING_TOKENS.fillColor,
+        "#93c5fd",
+        EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION.fillHintMix,
+      ) &&
     a.tokens.groundResponse.groundColor === "#111827" &&
-    a.profileId === "executive-default";
+    a.profileId === "executive-default" &&
+    EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION.replacesFillWithWorkspaceHue ===
+      false;
 
   const ok =
     options?.forceFailure !== true &&

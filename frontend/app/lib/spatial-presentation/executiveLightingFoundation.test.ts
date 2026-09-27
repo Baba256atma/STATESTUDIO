@@ -12,6 +12,7 @@ import {
   EXECUTIVE_LIGHTING_FOUNDATION_BOUNDARY,
   EXECUTIVE_LIGHTING_LIGHT_TYPES,
   EXECUTIVE_LIGHTING_MATERIAL_COMPATIBILITY,
+  EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION,
   EXECUTIVE_LIGHTING_PERFORMANCE_SAFEGUARDS,
   EXECUTIVE_LIGHTING_PROFILES,
   EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION,
@@ -21,6 +22,7 @@ import {
   executiveLightingFoundationNamespace,
   executiveLightingFoundationVersion,
   getExecutiveLightingFoundationIdentity,
+  mixExecutiveLightingHex,
   resolveExecutiveLightingProfile,
   toExecutiveLightingTuple,
   validateExecutiveLightingTokens,
@@ -301,8 +303,14 @@ test("8. compatibility with current Stage environment", () => {
   });
 
   // Color tint consumed; foundation intensities remain profile-owned.
-  assert.equal(resolved.tokens.keyColor, "#f8fafc");
-  assert.equal(resolved.tokens.fillColor, "#93c5fd");
+  assert.equal(
+    resolved.tokens.keyColor,
+    mixExecutiveLightingHex("#f3f5f7", "#f8fafc", 0.12),
+  );
+  assert.equal(
+    resolved.tokens.fillColor,
+    mixExecutiveLightingHex("#9aadc0", "#93c5fd", 0.1),
+  );
   assert.equal(resolved.tokens.groundResponse.groundColor, "#111827");
   assert.equal(
     resolved.tokens.keyIntensity,
@@ -334,7 +342,25 @@ test("9. no mutation of upstream state", () => {
     environment: hints,
   });
   assert.equal(JSON.stringify(hints), before);
-  assert.equal(resolved.tokens.keyColor, "#abcdef");
+  assert.equal(
+    resolved.tokens.keyColor,
+    mixExecutiveLightingHex(
+      EXECUTIVE_DEFAULT_LIGHTING_TOKENS.keyColor,
+      "#abcdef",
+      EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION.keyHintMix,
+    ),
+  );
+  assert.equal(
+    resolved.tokens.fillColor,
+    mixExecutiveLightingHex(
+      EXECUTIVE_DEFAULT_LIGHTING_TOKENS.fillColor,
+      "#123456",
+      EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION.fillHintMix,
+    ),
+  );
+  assert.notEqual(resolved.tokens.fillColor, "#123456");
+  assert.notEqual(resolved.tokens.fillColor, "#fcd34d");
+  assert.notEqual(resolved.tokens.fillColor, "#86efac");
 
   const frozenTokens = EXECUTIVE_DEFAULT_LIGHTING_TOKENS;
   assert.throws(() => {

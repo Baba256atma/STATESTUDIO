@@ -1,0 +1,170 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "steps": [
+    "stage-loaded",
+    "selected-object",
+    "nmi-continuity"
+  ],
+  "http": 200,
+  "load": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "ovs": {
+      "contract": "ovs-1",
+      "identity": "NPA-T OVS:1/Executive3DObjectVisualLanguage",
+      "enabled": "true",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "focusedSubject": "none",
+    "nmiOpen": "false",
+    "overflow": {
+      "innerW": 1440,
+      "innerH": 900,
+      "scrollW": 1440,
+      "scrollH": 900
+    },
+    "objects": [
+      {
+        "id": "obj-revenue",
+        "kind": "object",
+        "label": "Revenue",
+        "role": "unrelated",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "label": "kpi object; Attention required; attention requested; present but not central; equal size",
+        "role": "normal",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-budget",
+        "kind": "object",
+        "label": "Budget",
+        "role": "unrelated",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "label": "kpi object; Attention required; attention requested; present but not central; equal size",
+        "role": "normal",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "label": "Delivery",
+        "role": "unrelated",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "label": "Risk",
+        "role": "unrelated",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-inventory",
+        "kind": "object",
+        "label": "Inventory",
+        "role": "unrelated",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-demand",
+        "kind": "object",
+        "label": "Demand",
+        "role": "unrelated",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "label": "CAPACITYWATCH",
+        "role": "normal",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "label": "CUSTOMERWATCH",
+        "role": "normal",
+        "focused": "false",
+        "selected": "false",
+        "family": "operational",
+        "primitive": "rounded-block"
+      }
+    ],
+    "alerts": [],
+    "objectListOpen": false
+  },
+  "selection": {
+    "pick": {
+      "id": "obj-revenue",
+      "kind": "object",
+      "label": "Revenue",
+      "role": "unrelated",
+      "focused": "false",
+      "selected": "false",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "afterSelect": {
+      "focusedSubject": "obj-revenue",
+      "advisor": "Nexora Advisor◀ CollapseAdvisorDetailsActive contextoverview · minimum · neutralobject · RevenueRecent Change · 2 executive objects changed materiallyNEXORA DETECTED · urgentCustomer moved from NORMAL to CRITICAL. Capacity Capacity Utilizat",
+      "ovsFamily": "operational",
+      "ovsPrimitive": "rounded-block",
+      "selectedId": "obj-revenue"
+    }
+  },
+  "nmi": {
+    "before": "obj-revenue",
+    "nmiOpen": "true",
+    "nmiPicked": null,
+    "afterNmi": {
+      "focusedSubject": "none",
+      "nmiOpen": "true"
+    },
+    "afterCollapse": {
+      "focusedSubject": "none",
+      "nmiOpen": "false"
+    }
+  },
+  "connections": {
+    "connectionCount": "0",
+    "hasConnectionsLayer": false
+  },
+  "elapsedMs": 5300,
+  "ok": true
+}

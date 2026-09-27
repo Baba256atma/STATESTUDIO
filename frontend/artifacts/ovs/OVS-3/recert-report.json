@@ -1,0 +1,168 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "recert": true,
+  "steps": [
+    "overview-before",
+    "investigate-risk",
+    "risk",
+    "advisor"
+  ],
+  "http": 200,
+  "overviewBefore": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "orbitControls": false,
+    "ovs3": {
+      "enabled": "false",
+      "family": "none",
+      "scene": "unavailable",
+      "data": "precision-2d",
+      "structures": "0",
+      "roadmap": "none",
+      "identity": "NPA-T OVS:3/DataVisualizationIsometricTheatre"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "sceneFamily": "orientation",
+    "sceneIntent": "ORIENT_TO_STAGE",
+    "focusedSubject": "none",
+    "advisorSubject": "none",
+    "advisorBridge": "overview · Executive Overview",
+    "risk": {
+      "id": "obj-risk",
+      "kind": "object",
+      "status": "unresolved",
+      "attention": "normal",
+      "visual": "unresolved",
+      "focused": "false",
+      "selected": "false",
+      "family": null,
+      "primitive": null,
+      "label": "Risk"
+    },
+    "objectIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand",
+      "obj-capacity",
+      "obj-customer"
+    ],
+    "kinds": [
+      "object"
+    ],
+    "connections": [],
+    "objectCount": 10
+  },
+  "risk": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "orbitControls": false,
+    "ovs3": {
+      "enabled": "true",
+      "family": "NEXO_RISK",
+      "scene": "available",
+      "data": "isometric-2_5d",
+      "structures": "1",
+      "roadmap": "none",
+      "identity": "NPA-T OVS:3/DataVisualizationIsometricTheatre"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "risk",
+      "primitive": "diamond"
+    },
+    "sceneFamily": "investigation",
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "focusedSubject": "obj-risk",
+    "advisorSubject": "obj-risk",
+    "advisorBridge": "object · Risk",
+    "risk": {
+      "id": "obj-risk",
+      "kind": "object",
+      "status": "unresolved",
+      "attention": "normal",
+      "visual": "unresolved",
+      "focused": "true",
+      "selected": "true",
+      "family": null,
+      "primitive": null,
+      "label": "risk object; Uncertain; focused; selected; equal size"
+    },
+    "objectIds": [
+      "obj-risk",
+      "obj-delivery",
+      "obj-capacity",
+      "obj-customer",
+      "obj-risk",
+      "obj-delivery",
+      "obj-capacity",
+      "obj-customer"
+    ],
+    "kinds": [
+      "object"
+    ],
+    "connections": [],
+    "objectCount": 8
+  },
+  "advisor": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "orbitControls": false,
+    "ovs3": {
+      "enabled": "true",
+      "family": "NEXO_RISK",
+      "scene": "available",
+      "data": "isometric-2_5d",
+      "structures": "1",
+      "roadmap": "none",
+      "identity": "NPA-T OVS:3/DataVisualizationIsometricTheatre"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "risk",
+      "primitive": "diamond"
+    },
+    "sceneFamily": "investigation",
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "focusedSubject": "obj-risk",
+    "advisorSubject": "obj-risk",
+    "advisorBridge": "object · Risk",
+    "risk": {
+      "id": "obj-risk",
+      "kind": "object",
+      "status": "unresolved",
+      "attention": "normal",
+      "visual": "unresolved",
+      "focused": "true",
+      "selected": "true",
+      "family": null,
+      "primitive": null,
+      "label": "risk object; Uncertain; focused; selected; equal size"
+    },
+    "objectIds": [
+      "obj-risk",
+      "obj-delivery",
+      "obj-capacity",
+      "obj-customer",
+      "obj-risk",
+      "obj-delivery",
+      "obj-capacity",
+      "obj-customer"
+    ],
+    "kinds": [
+      "object"
+    ],
+    "connections": [],
+    "objectCount": 8
+  },
+  "ok": false,
+  "error": "locator.click: Timeout 3000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"nexora-stage-reset\"]')\n    - locator resolved to <button type=\"button\" data-testid=\"nexora-stage-reset\">Overview</button>\n  - attempting click action\n    - waiting for element to be visible, enabled and stable\n    - element is not stable\n  - retrying click action\n    - waiting for element to be visible, enabled and stable\n    - element is not visible\n  - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    5 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 500ms\n"
+}

@@ -1,0 +1,113 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "http": 200,
+  "clickedCapacity": true,
+  "capacityAdvisorOpen": {
+    "az": "8",
+    "el": "10",
+    "base": "11",
+    "distance": "11",
+    "effective": "14",
+    "reason": "density-conflict",
+    "conflict": "SCENE_DENSITY_LAYOUT_CONFLICT",
+    "safe": "164,44.203125,284,46.390625",
+    "fov": "42",
+    "ovs3": "none",
+    "focused": [
+      "obj-capacity",
+      "obj-capacity"
+    ],
+    "advisorCollapsed": "false",
+    "canvas": {
+      "w": 1064,
+      "h": 799
+    }
+  },
+  "capacityAdvisorClosed": {
+    "az": "8",
+    "el": "10",
+    "base": "11",
+    "distance": "11",
+    "effective": "11",
+    "reason": "base",
+    "conflict": "none",
+    "safe": "164,44.203125,284,46.390625",
+    "fov": "42",
+    "ovs3": "none",
+    "focused": [
+      "obj-capacity",
+      "obj-capacity"
+    ],
+    "advisorCollapsed": "true",
+    "canvas": {
+      "w": 1332,
+      "h": 799
+    }
+  },
+  "capacityAdvisorReopen": {
+    "az": "8",
+    "el": "10",
+    "base": "11",
+    "distance": "11",
+    "effective": "11",
+    "reason": "base",
+    "conflict": "none",
+    "safe": "164,44.203125,284,46.390625",
+    "fov": "42",
+    "ovs3": "none",
+    "focused": [
+      "ctx-decision-capacity",
+      "ctx-decision-capacity"
+    ],
+    "advisorCollapsed": "true",
+    "canvas": {
+      "w": 1332,
+      "h": 799
+    }
+  },
+  "clickedRisk": true,
+  "risk": {
+    "az": "8",
+    "el": "10",
+    "base": "11",
+    "distance": "11",
+    "effective": "11",
+    "reason": "base",
+    "conflict": "none",
+    "safe": "164,44.203125,284,46.390625",
+    "fov": "42",
+    "ovs3": "NEXO_RISK",
+    "focused": [
+      "obj-risk",
+      "obj-risk"
+    ],
+    "advisorCollapsed": "true",
+    "canvas": {
+      "w": 1332,
+      "h": 799
+    }
+  },
+  "clickedRevenue": false,
+  "simple": {
+    "az": "8",
+    "el": "10",
+    "base": "11",
+    "distance": "11",
+    "effective": "11",
+    "reason": "base",
+    "conflict": "none",
+    "safe": "164,44.203125,284,46.390625",
+    "fov": "42",
+    "ovs3": "NEXO_RISK",
+    "focused": [
+      "obj-risk",
+      "obj-risk"
+    ],
+    "advisorCollapsed": "true",
+    "canvas": {
+      "w": 1332,
+      "h": 799
+    }
+  },
+  "ok": true
+}

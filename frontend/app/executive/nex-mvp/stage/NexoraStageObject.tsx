@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import type { Group, Mesh } from "three";
+import { DoubleSide, type Group, type Mesh } from "three";
 import type { NexoraMVPStageObjectPresentation } from "@/app/lib/nex-mvp/nexora3DExecutiveStage";
 import type { ExecutiveStageDensityProfile } from "@/app/lib/spatial-presentation/executiveFramingVisualCalibration";
 import {
@@ -30,6 +30,7 @@ import {
   type ExecutiveObject3DPresentationLevel,
 } from "@/app/lib/spatial-presentation/executiveObject3DGeometry";
 import {
+  EXECUTIVE_OBJECT_GROUND_PRESENCE,
   isExecutiveObjectPresenceV2Enabled,
   resolveExecutiveObjectVisualIdentity,
 } from "@/app/lib/spatial-presentation/executiveObjectPresenceIdentity";
@@ -46,6 +47,7 @@ import {
 } from "./executiveStage2DLivePositions";
 import { sampleExecutiveStageMotionObject } from "@/app/lib/spatial-presentation/executiveStageMotion";
 import { projectStageProdObjectMotion } from "@/app/lib/stage-prod/stageProdObjectMotion.ts";
+import { projectExecutiveOvsObjectKindHandoff } from "@/app/lib/spatial-presentation/projectExecutiveOvsObjectKindHandoff.ts";
 
 type Props = {
   readonly presentation: NexoraMVPStageObjectPresentation;
@@ -108,21 +110,17 @@ export function NexoraStageObject({
     };
   }, [presentation.id]);
 
-  /** STAGE-3DOBJ:1 — id/label cues so Risk/Problem/etc. resolve when kind is generic "object". */
-  const semanticKindCue = [
-    presentation.id,
-    presentation.label,
-    presentation.kind,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const ovsObjectKind = projectExecutiveOvsObjectKindHandoff({
+    id: presentation.id,
+    kind: presentation.kind,
+  });
 
   const visual: ExecutiveObjectVisualPresentation = useMemo(
     () =>
       resolveExecutiveObjectVisualPresentation(
         toExecutiveObjectVisualInput({
           objectId: presentation.id,
-          objectKind: semanticKindCue,
+          objectKind: ovsObjectKind,
           objectName: presentation.label,
           selected: presentation.selected,
           focused: presentation.focused,
@@ -151,7 +149,7 @@ export function NexoraStageObject({
       densityProfile,
       hovered,
       presentation,
-      semanticKindCue,
+      ovsObjectKind,
       stageOrder,
     ],
   );
@@ -337,7 +335,7 @@ export function NexoraStageObject({
   const geometryProfile = useMemo(
     () =>
       resolveExecutiveObject3DGeometryProfile({
-        objectKind: semanticKindCue,
+        objectKind: ovsObjectKind,
         geometryFamily: geometry.family,
         presentationLevel,
         width: dimensions.width,
@@ -364,7 +362,7 @@ export function NexoraStageObject({
                 : "normal",
       }),
     [
-      semanticKindCue,
+      ovsObjectKind,
       presentation.focused,
       presentation.selected,
       presentation.role,
@@ -379,7 +377,7 @@ export function NexoraStageObject({
   const visualIdentity = useMemo(() => {
     if (!isExecutiveObjectPresenceV2Enabled()) return null;
     return resolveExecutiveObjectVisualIdentity({
-      objectKind: semanticKindCue,
+      objectKind: ovsObjectKind,
       presentationLevel,
       interactionState: presentation.focused
         ? "focused"
@@ -402,7 +400,7 @@ export function NexoraStageObject({
               : "normal",
     });
   }, [
-    semanticKindCue,
+    ovsObjectKind,
     presentation.focused,
     presentation.selected,
     presentation.role,
@@ -526,7 +524,7 @@ export function NexoraStageObject({
         resourceKey={geometry.resourceKey}
         pickingExtentScale={geometry.pickingExtentScale}
         interactive={presentation.interactive !== false}
-        objectKind={semanticKindCue}
+        objectKind={ovsObjectKind}
         presentationLevel={presentationLevel}
         interactionState={
           presentation.focused
@@ -550,27 +548,35 @@ export function NexoraStageObject({
                 ? "unresolved"
                 : "normal"
         }
+        hovered={hovered}
+        ovsStateInput={{
+          status: presentation.status,
+          attention: presentation.attention,
+          executiveVisualState,
+          focused: presentation.focused,
+          selected: presentation.selected,
+          hovered,
+          disclosureState: presentation.disclosureState ?? null,
+        }}
         onSelect={() => onSelect(presentation.id)}
         onHover={(nextHovered) =>
           onHover(nextHovered ? presentation.id : null)
         }
       />
 
-      {/* STAGE-OBJ:2 — restrained planar territory (not Deep-Z, not topology). */}
+      {/* STAGE-PRESENCE:FIX1 — horizontal ground presence (not state, not focus). */}
       {isExecutive3DObjectTerritoryVisible() &&
       visualIdentity &&
-      visualIdentity.territoryStyle !== "none" &&
-      // UX:5-FIX1 — a broad circular territory around a compact collection
-      // peer can read as a second body. Collection state stays visible through
-      // the shape-aware edge and corner marker below.
+      visualIdentity.territoryStyle === "ground" &&
       !isCollectionMember &&
       visualIdentity.territoryOpacity > 0.04 ? (
         <mesh
-          position={[0, 0, geometryProfile.frontZ + 0.015]}
+          position={[0, -geometryProfile.height * 0.52, 0.012]}
           rotation={[0, 0, 0]}
+          raycast={() => null}
           userData={{
             visualAudit: "stage-object-territory",
-            visualLayerRole: "state-territory",
+            visualLayerRole: "ground-presence",
             decorative: true,
             interactive: false,
             territoryStyle: visualIdentity.territoryStyle,
@@ -579,38 +585,27 @@ export function NexoraStageObject({
         >
           <ringGeometry
             args={[
-              // STAGE-3DOBJ:2-FIX — thinner territory band so body/face dominate.
-              Math.min(
-                visualIdentity.territoryOuter - 0.035,
-                visualIdentity.territoryInner +
-                  (visualIdentity.territoryOuter - visualIdentity.territoryInner) *
-                    0.55,
-              ),
+              visualIdentity.territoryInner,
               visualIdentity.territoryOuter,
-              56,
+              EXECUTIVE_OBJECT_GROUND_PRESENCE.segments,
             ]}
           />
           <meshBasicMaterial
-            color={
-              visualIdentity.territoryStyle === "critical"
-                ? "#f87171"
-                : visualIdentity.territoryStyle === "attention"
-                  ? "#fbbf24"
-                  : edge.color
-            }
+            color={EXECUTIVE_OBJECT_GROUND_PRESENCE.color}
             transparent
             opacity={visualIdentity.territoryOpacity}
             depthWrite={false}
+            side={DoubleSide}
           />
         </mesh>
       ) : null}
 
-      {/* STAGE-OBJ:1 — planar focus ring on front face (not a depth shell). */}
-      {emphasis.showFocusPedestal &&
-      !(visualIdentity && visualIdentity.territoryStyle === "focused") ? (
+      {/* SP:2.6 — planar focus ring on front face (not a depth shell, not territory). */}
+      {emphasis.showFocusPedestal ? (
         <mesh
           position={[0, 0, geometryProfile.frontZ + 0.02]}
           rotation={[0, 0, 0]}
+          raycast={() => null}
           userData={{
             visualLayerRole: "selection-indication",
             decorative: true,
@@ -627,9 +622,9 @@ export function NexoraStageObject({
             ]}
           />
           <meshBasicMaterial
-            color={edge.color}
+            color="#94a3b8"
             transparent
-            opacity={0.45}
+            opacity={0.32}
             depthWrite={false}
           />
         </mesh>
@@ -656,7 +651,7 @@ export function NexoraStageObject({
             color={
               visualIdentity.stateMarkerStyle === "corner"
                 ? "#f87171"
-                : visualIdentity.territoryStyle === "attention"
+                : visualIdentity.stateMarkerStyle === "segment"
                   ? "#fbbf24"
                   : "#94a3b8"
             }
@@ -677,7 +672,16 @@ export function NexoraStageObject({
           opacity={edge.opacity}
           depthTest={edge.mode !== "occlusion"}
           presentationLevel={presentationLevel}
-          objectKind={semanticKindCue}
+          objectKind={ovsObjectKind}
+          ovsStateInput={{
+            status: presentation.status,
+            attention: presentation.attention,
+            executiveVisualState,
+            focused: presentation.focused,
+            selected: presentation.selected,
+            hovered,
+            disclosureState: presentation.disclosureState ?? null,
+          }}
         />
       ) : null}
 

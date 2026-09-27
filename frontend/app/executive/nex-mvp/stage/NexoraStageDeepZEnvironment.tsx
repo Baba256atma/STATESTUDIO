@@ -119,8 +119,14 @@ export function NexoraStageDeepZEnvironment({
   const presenceAtmosphere = isExecutiveObjectPresenceV2Enabled()
     ? EXECUTIVE_OBJECT_PRESENCE_DEEP_Z
     : null;
-  const farDiscOpacity = presenceAtmosphere?.farDiscOpacity ?? 0.55;
-  const ringOpacityScale = presenceAtmosphere?.ringOpacityScale ?? 1;
+  const farDiscOpacity = Math.min(
+    presenceAtmosphere?.farDiscOpacity ?? 0.22,
+    EXECUTIVE_STAGE_DEEP_Z_RANGE.farDiscOpacity,
+  );
+  const ringOpacityScale = Math.min(
+    presenceAtmosphere?.ringOpacityScale ?? 1,
+    0.45,
+  );
   const particleOpacityScale = presenceAtmosphere?.particleOpacityScale ?? 1;
   const ringColor = new Color("#6b8cae");
   const particleColor = new Color("#8aa4c0");
@@ -171,7 +177,7 @@ export function NexoraStageDeepZEnvironment({
         <meshBasicMaterial
           color="#152033"
           transparent
-          opacity={0.08 * convergenceBoost * ringOpacityScale}
+          opacity={0.022 * convergenceBoost * ringOpacityScale}
           depthWrite={false}
           depthTest
           side={DoubleSide}
@@ -200,7 +206,7 @@ export function NexoraStageDeepZEnvironment({
         </mesh>
       ))}
 
-      {/* Faint radial tunnel traces */}
+      {EXECUTIVE_STAGE_DEEP_Z_RANGE.radialSegmentCount > 0 ? (
       <lineSegments
         geometry={radialGeometry}
         renderOrder={-18}
@@ -215,7 +221,9 @@ export function NexoraStageDeepZEnvironment({
           toneMapped={false}
         />
       </lineSegments>
+      ) : null}
 
+      {EXECUTIVE_STAGE_DEEP_Z_RANGE.particleCount > 0 ? (
       <points
         ref={pointsRef}
         geometry={particleGeometry}
@@ -233,6 +241,7 @@ export function NexoraStageDeepZEnvironment({
           toneMapped={false}
         />
       </points>
+      ) : null}
     </group>
   );
 }

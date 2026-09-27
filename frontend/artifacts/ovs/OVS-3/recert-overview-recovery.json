@@ -1,0 +1,28 @@
+{
+  "recovery": true,
+  "risk": {
+    "ovs3": {
+      "enabled": "true",
+      "family": "NEXO_RISK",
+      "scene": "available",
+      "structures": "1"
+    },
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "focusedSubject": "obj-risk",
+    "advisorSubject": "obj-risk",
+    "canvasCount": 1
+  },
+  "overviewAfter": {
+    "ovs3": {
+      "enabled": "false",
+      "family": "none",
+      "scene": "unavailable",
+      "structures": "0"
+    },
+    "sceneIntent": "ORIENT_TO_STAGE",
+    "focusedSubject": "none",
+    "advisorSubject": "none",
+    "canvasCount": 1
+  },
+  "ok": true
+}

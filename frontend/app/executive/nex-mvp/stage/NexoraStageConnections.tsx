@@ -173,6 +173,7 @@ function LiveStageConnection({
         visualAudit: "stage-connection",
         impliesCausality: false,
         linePattern: connection.linePattern ?? "solid",
+        presentationKind: connection.presentationKind ?? null,
         routeKind: connection.routeKind ?? "straight",
         stageHitKind: "connection",
       }}
@@ -195,13 +196,16 @@ function LiveStageConnection({
           event.stopPropagation();
         }}
       />
-      {directionCue === "source-to-target" && connection.emphasized ? (
+      {directionCue === "source-to-target" ? (
         <Line
           points={directionMarkerPoints(points[0]!, points[points.length - 1]!)}
           color={color}
           transparent
-          opacity={Math.min(connection.opacity + 0.08, 0.85)}
-          lineWidth={Math.max(lineWidth - 0.2, 1)}
+          opacity={Math.min(
+            connection.opacity + (connection.emphasized ? 0.08 : 0.02),
+            0.85,
+          )}
+          lineWidth={Math.max(lineWidth - 0.25, 0.85)}
           depthWrite={false}
           onClick={(event) => {
             event.stopPropagation();

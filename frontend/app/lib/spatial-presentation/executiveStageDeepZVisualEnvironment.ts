@@ -78,16 +78,14 @@ export const EXECUTIVE_STAGE_DEEP_Z_RANGE = Object.freeze({
   near: -1 as const,
   far: -10 as const,
   rings: Object.freeze([
-    Object.freeze({ z: -1.5, scale: 1.05, opacity: 0.07 }),
-    Object.freeze({ z: -2.5, scale: 1.28, opacity: 0.09 }),
-    Object.freeze({ z: -3.8, scale: 1.55, opacity: 0.1 }),
-    Object.freeze({ z: -5.2, scale: 1.9, opacity: 0.085 }),
-    Object.freeze({ z: -7.0, scale: 2.35, opacity: 0.065 }),
-    Object.freeze({ z: -9.0, scale: 2.9, opacity: 0.045 }),
+    Object.freeze({ z: -4.2, scale: 1.7, opacity: 0.022 }),
+    Object.freeze({ z: -8.0, scale: 2.55, opacity: 0.014 }),
   ]),
-  particleCount: 96,
-  radialSegmentCount: 16,
+  particleCount: 0,
+  radialSegmentCount: 0,
   quietZoneRadius: 0.95,
+  farDiscOpacity: 0.12,
+  decorativeSubordinateToSemanticRings: true as const,
 });
 
 export const EXECUTIVE_STAGE_DEEP_Z_OBSERVABILITY = Object.freeze({

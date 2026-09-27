@@ -38,14 +38,18 @@ import { NexoraStageDeepZEnvironment } from "./NexoraStageDeepZEnvironment";
 import { NexoraStageMotionController } from "./NexoraStageMotionController";
 import { NexoraStageObject } from "./NexoraStageObject";
 import { NexoraStageDataObject } from "./NexoraStageDataObject";
+import { ExecutiveOvsIsometricTheatreStructures } from "./ExecutiveOvsIsometricTheatreStructures";
+import type { ExecutiveOvsIsometricTheatreVisual } from "@/app/lib/spatial-presentation/executiveOvsIsometricTheatreVisual";
 
 type Props = {
   readonly presentation: NexoraMVPStageInteractionPresentation;
   readonly environment: NexoraMVPSceneEnvironmentVisualState;
   readonly dataObjectStage: NexoraDecisionTheatreDataObjectStageProjection;
+  readonly isometricVisual?: ExecutiveOvsIsometricTheatreVisual | null;
   readonly onSelectSubject: (subjectId: string) => void;
   readonly onSelectDataObject: (dataObjectId: string) => void;
   readonly onClearSelection: () => void;
+  readonly fitDistance?: number;
 };
 
 function mergeOcclusionPresentation(
@@ -116,9 +120,11 @@ export function NexoraStageScene({
   presentation,
   environment,
   dataObjectStage,
+  isometricVisual = null,
   onSelectSubject,
   onSelectDataObject,
   onClearSelection,
+  fitDistance,
 }: Props) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const previousCollisionsRef = useRef<
@@ -464,6 +470,10 @@ export function NexoraStageScene({
             }
           />
 
+          {isometricVisual ? (
+            <ExecutiveOvsIsometricTheatreStructures visual={isometricVisual} />
+          ) : null}
+
           <NexoraStageConnections
             connections={allConnections}
             objects={connectionObjects}
@@ -499,7 +509,9 @@ export function NexoraStageScene({
           ))}
 
           <NexoraStageContextNodes
-            nodes={presentation.contextNodes}
+            nodes={presentation.contextNodes.filter(
+              (node) => node.role !== "collapsed-thread",
+            )}
             hoveredId={hoveredId}
             onSelect={onSelectSubject}
             onHover={setHoveredId}
@@ -507,7 +519,10 @@ export function NexoraStageScene({
         </group>
       </group>
 
-      <NexoraExecutiveCameraController camera={scene.camera} />
+      <NexoraExecutiveCameraController
+        camera={scene.camera}
+        fitDistance={fitDistance}
+      />
     </>
   );
 }

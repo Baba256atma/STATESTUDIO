@@ -1,0 +1,248 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "http": 200,
+  "clickedCapacity": true,
+  "aCapacityThreadExpandedAdvisorOpen": {
+    "focused": "obj-capacity",
+    "threadState": "expanded",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11.574013",
+    "advisorCollapsed": "false",
+    "captionCount": 5,
+    "duplicateOwners": [],
+    "captions": [
+      {
+        "owner": "obj-capacity",
+        "text": "CAPACITYWATCH",
+        "side": "bottom",
+        "visibility": "full",
+        "x": 542,
+        "y": 514,
+        "w": 67,
+        "h": 28
+      },
+      {
+        "owner": "ctx-problem-capacity",
+        "text": "CAPACITY GAPProblem",
+        "side": "left",
+        "visibility": "full",
+        "x": 555,
+        "y": 302,
+        "w": 60,
+        "h": 37
+      },
+      {
+        "owner": "ctx-scenario-capacity",
+        "text": "CAPACITY EXPANSION PLANScenario",
+        "side": "top",
+        "visibility": "full",
+        "x": 380,
+        "y": 353,
+        "w": 66,
+        "h": 47
+      },
+      {
+        "owner": "ctx-decision-capacity",
+        "text": "EXPAND CAPACITYDecision",
+        "side": "top",
+        "visibility": "full",
+        "x": 715,
+        "y": 361,
+        "w": 61,
+        "h": 38
+      },
+      {
+        "owner": "ctx-execution-capacity",
+        "text": "CAPACITY EXPANSIONExecution",
+        "side": "top-left",
+        "visibility": "minimal",
+        "x": 359,
+        "y": 487,
+        "w": 64,
+        "h": 35
+      }
+    ]
+  },
+  "bCapacityThreadCollapsedAdvisorOpen": {
+    "focused": "obj-capacity",
+    "threadState": "collapsed",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "14",
+    "advisorCollapsed": "false",
+    "captionCount": 5,
+    "duplicateOwners": [],
+    "captions": [
+      {
+        "owner": "obj-capacity",
+        "text": "CAPACITYWATCH",
+        "side": "top",
+        "visibility": "full",
+        "x": 549,
+        "y": 378,
+        "w": 57,
+        "h": 24
+      },
+      {
+        "owner": "obj-budget",
+        "text": "BUDGETUNRESOLVED",
+        "side": "left",
+        "visibility": "full",
+        "x": 652,
+        "y": 461,
+        "w": 64,
+        "h": 21
+      },
+      {
+        "owner": "obj-customer",
+        "text": "CUSTOMERWATCH",
+        "side": "left",
+        "visibility": "full",
+        "x": 702,
+        "y": 352,
+        "w": 47,
+        "h": 17
+      },
+      {
+        "owner": "obj-delivery",
+        "text": "DELIVERYWATCH",
+        "side": "left",
+        "visibility": "full",
+        "x": 376,
+        "y": 335,
+        "w": 46,
+        "h": 20
+      },
+      {
+        "owner": "obj-inventory",
+        "text": "INVENTORYWATCH",
+        "side": "top",
+        "visibility": "full",
+        "x": 417,
+        "y": 464,
+        "w": 55,
+        "h": 20
+      }
+    ]
+  },
+  "cCapacityAdvisorClosed": {
+    "focused": "obj-capacity",
+    "threadState": "expanded",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11",
+    "advisorCollapsed": "true",
+    "captionCount": 5,
+    "duplicateOwners": [],
+    "captions": [
+      {
+        "owner": "obj-capacity",
+        "text": "CAPACITYWATCH",
+        "side": "bottom",
+        "visibility": "full",
+        "x": 674,
+        "y": 516,
+        "w": 71,
+        "h": 30
+      },
+      {
+        "owner": "ctx-problem-capacity",
+        "text": "CAPACITY GAPProblem",
+        "side": "left",
+        "visibility": "full",
+        "x": 687,
+        "y": 293,
+        "w": 63,
+        "h": 39
+      },
+      {
+        "owner": "ctx-scenario-capacity",
+        "text": "CAPACITY EXPANSION PLANScenario",
+        "side": "top",
+        "visibility": "full",
+        "x": 503,
+        "y": 347,
+        "w": 69,
+        "h": 50
+      },
+      {
+        "owner": "ctx-decision-capacity",
+        "text": "EXPAND CAPACITYDecision",
+        "side": "top",
+        "visibility": "full",
+        "x": 856,
+        "y": 355,
+        "w": 64,
+        "h": 40
+      },
+      {
+        "owner": "ctx-execution-capacity",
+        "text": "CAPACITY EXPANSIONExecution",
+        "side": "top-left",
+        "visibility": "minimal",
+        "x": 481,
+        "y": 488,
+        "w": 67,
+        "h": 36
+      }
+    ]
+  },
+  "clickedRisk": true,
+  "dRiskAlternate": {
+    "focused": "obj-risk",
+    "threadState": "collapsed",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11.157516",
+    "advisorCollapsed": "false",
+    "captionCount": 4,
+    "duplicateOwners": [],
+    "captions": [
+      {
+        "owner": "obj-risk",
+        "text": "RISKUNRESOLVED",
+        "side": "top",
+        "visibility": "full",
+        "x": 657,
+        "y": 307,
+        "w": 93,
+        "h": 31
+      },
+      {
+        "owner": "obj-delivery",
+        "text": "DELIVERYWATCH",
+        "side": "top",
+        "visibility": "full",
+        "x": 373,
+        "y": 471,
+        "w": 47,
+        "h": 20
+      },
+      {
+        "owner": "obj-capacity",
+        "text": "CAPACITY",
+        "side": "left",
+        "visibility": "minimal",
+        "x": 499,
+        "y": 531,
+        "w": 50,
+        "h": 10
+      },
+      {
+        "owner": "obj-customer",
+        "text": "CUSTOMERWATCH",
+        "side": "right",
+        "visibility": "full",
+        "x": 754,
+        "y": 546,
+        "w": 57,
+        "h": 21
+      }
+    ]
+  }
+}

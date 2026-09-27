@@ -31,8 +31,6 @@ import {
 } from "@/app/lib/spatial-presentation/executiveObjectLabelRelationshipGrammar";
 import {
   isExecutiveThreadWorkKind,
-  EXECUTIVE_THREAD_GATEWAY_FOOTPRINT,
-  resolveExecutiveThreadGatewayPosition,
   resolveExecutiveThreadSectorPosition,
 } from "@/app/lib/spatial-presentation/executiveThreadExpansion";
 import {
@@ -521,51 +519,9 @@ export function applyExecutiveStage2DTopologyReadabilityToStagePresentation(
   const contextNodes = Object.freeze(
     presentation.contextNodes.map((node) => {
       if (node.role === "collapsed-thread") {
-        // STAGE-THREAD:1-FIX — preserve discoverable gateway footprint/placement.
-        // Do not shrink to legacy subordinate metadata opacity/scale.
-        const occupiedCenters = objects
-          .filter(
-            (object) =>
-              object.disclosureState !== "hidden" && object.opacity > 0.05,
-          )
-          .map((object) => {
-            const classification =
-              readability.classifications[object.id] ?? "related";
-            const half =
-              classification === "anchor"
-                ? EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT.minimum.anchor
-                : classification === "related"
-                  ? EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT.minimum.related
-                  : EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT.minimum.secondary;
-            return Object.freeze({
-              x: object.targetPosition[0],
-              y: object.targetPosition[1],
-              halfWidth: half,
-              halfHeight: half,
-              halfExtent: half,
-            });
-          });
-        const gateway = resolveExecutiveThreadGatewayPosition({
-          mode: node.gatewayMode === "quiet-collapse"
-            ? "quiet-collapse"
-            : "discoverable-collapsed",
-          occupiedCenters,
-          minGap: EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT.minVisualGap,
-        });
-        const isQuiet = node.gatewayMode === "quiet-collapse";
+        // STAGE-THREAD:FIX1 — Thread open/collapse is Stage chrome, not world occupancy.
         return Object.freeze({
           ...node,
-          targetPosition: Object.freeze([
-            gateway.x,
-            gateway.y,
-            0,
-          ] as const),
-          opacity: isQuiet
-            ? Math.min(Math.max(node.opacity, 0.55), 0.72)
-            : Math.max(node.opacity, 0.92),
-          scale: isQuiet
-            ? Math.min(Math.max(node.scale, 0.8), 0.9)
-            : Math.max(node.scale, 1),
           interactive: true,
           focused: false,
           labelVisible: true,

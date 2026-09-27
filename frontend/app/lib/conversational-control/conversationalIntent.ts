@@ -90,6 +90,7 @@ export const NEXORA_CONVERSATIONAL_INTENT_KINDS = Object.freeze([
   "navigate-forward",
   "prepare-context",
   "switch-workspace",
+  "workspace-action",
   "recommend",
   "explain",
   "prioritize",
@@ -200,6 +201,23 @@ export type NexoraConversationalDecisionCommitmentPayload = {
   readonly hasCompoundExecutionRequest?: boolean;
 };
 
+export type NexoraConversationalWorkspaceActionKind =
+  | "OPEN_DETAIL"
+  | "CLOSE_DETAIL"
+  | "SHOW_RIGHT_DETAILS"
+  | "OPEN_ADVISOR"
+  | "COLLAPSE_RIGHT"
+  | "SHOW_ACTIVITY"
+  | "SAVE_SCENE"
+  | "OPEN_SCENE"
+  | "MAKE_DEFAULT_SCENE";
+
+export type NexoraConversationalWorkspaceActionPayload = Readonly<{
+  action: NexoraConversationalWorkspaceActionKind;
+  sceneName: string | null;
+  useCurrentReferent: boolean;
+}>;
+
 export type NexoraConversationalIntent = {
   readonly kind: NexoraConversationalIntentKind;
   /** 0..1 inclusive; deterministic heuristic, not probabilistic model score. */
@@ -214,6 +232,7 @@ export type NexoraConversationalIntent = {
   readonly targetHints: readonly NexoraConversationalTargetHint[];
   readonly scenarioPayload?: NexoraConversationalScenarioIntentPayload | null;
   readonly decisionCommitmentPayload?: NexoraConversationalDecisionCommitmentPayload | null;
+  readonly workspaceActionPayload?: NexoraConversationalWorkspaceActionPayload | null;
 };
 
 export type NexoraConversationalIntentInput = {
@@ -267,6 +286,7 @@ export const EXECUTION_CLASS_BY_INTENT_KIND: Readonly<
   "navigate-forward": "navigation",
   "prepare-context": "navigation",
   "switch-workspace": "navigation",
+  "workspace-action": "navigation",
   recommend: "analysis",
   explain: "analysis",
   prioritize: "analysis",
@@ -314,6 +334,7 @@ export const CONVERSATIONAL_INTENT_REASON = Object.freeze({
   MATCHED_NAVIGATE_FORWARD: "matched-navigate-forward-pattern",
   MATCHED_PREPARE_CONTEXT: "matched-prepare-context-pattern",
   MATCHED_SWITCH_WORKSPACE: "matched-switch-workspace-pattern",
+  MATCHED_WORKSPACE_ACTION: "matched-workspace-presentation-action",
   MATCHED_ORDINAL_REFERENCE: "matched-ordinal-reference-pattern",
   MATCHED_RECOMMEND: "matched-recommend-pattern",
   MATCHED_EXPLAIN: "matched-explain-pattern",

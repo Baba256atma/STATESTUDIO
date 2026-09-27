@@ -1,0 +1,170 @@
+{
+  "server": "http://127.0.0.1:3000/executive?ovs1=1",
+  "pidHint": "reuse-existing-3000",
+  "capacity": {
+    "canvasCount": 1,
+    "hasOrbit": false,
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "ovs3Enabled": "false",
+    "ovs3Family": "none",
+    "ovs3Scene": "unavailable",
+    "ovs3Structures": "0",
+    "ovs3Data": "precision-2d",
+    "ovs1Family": "operational",
+    "ovs1Primitive": "rounded-block",
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "focused": [
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "status": "watch",
+        "selected": "true",
+        "z": "0",
+        "scale": "1.08",
+        "opacity": "1",
+        "executiveVisualState": "attention",
+        "role": "focused"
+      }
+    ],
+    "objectZs": [
+      {
+        "id": "obj-capacity",
+        "z": "0"
+      },
+      {
+        "id": "obj-budget",
+        "z": "0"
+      },
+      {
+        "id": "obj-delivery",
+        "z": "0"
+      },
+      {
+        "id": "obj-inventory",
+        "z": "0"
+      },
+      {
+        "id": "obj-customer",
+        "z": "0"
+      },
+      {
+        "id": "obj-demand",
+        "z": "0"
+      }
+    ],
+    "objectIds": [
+      "obj-capacity",
+      "obj-budget",
+      "obj-delivery",
+      "obj-inventory",
+      "obj-customer",
+      "obj-demand"
+    ],
+    "advisorHasRisk": false,
+    "advisorHasCapacity": false
+  },
+  "risk": {
+    "canvasCount": 1,
+    "hasOrbit": false,
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "ovs3Enabled": "true",
+    "ovs3Family": "NEXO_RISK",
+    "ovs3Scene": "available",
+    "ovs3Structures": "3",
+    "ovs3Data": "isometric-2_5d",
+    "ovs1Family": "risk",
+    "ovs1Primitive": "diamond",
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "focused": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "status": "unresolved",
+        "selected": "true",
+        "z": "0",
+        "scale": "1.08",
+        "opacity": "1",
+        "executiveVisualState": "unresolved",
+        "role": "focused"
+      }
+    ],
+    "objectZs": [
+      {
+        "id": "obj-risk",
+        "z": "0"
+      },
+      {
+        "id": "obj-delivery",
+        "z": "0"
+      },
+      {
+        "id": "obj-capacity",
+        "z": "0"
+      },
+      {
+        "id": "obj-customer",
+        "z": "0"
+      }
+    ],
+    "objectIds": [
+      "obj-risk",
+      "obj-delivery",
+      "obj-capacity",
+      "obj-customer"
+    ],
+    "advisorHasRisk": false,
+    "advisorHasCapacity": false
+  },
+  "riskAfterObjectClick": {
+    "canvasCount": 1,
+    "hasOrbit": false,
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "ovs3Enabled": "true",
+    "ovs3Family": "NEXO_RISK",
+    "ovs3Scene": "available",
+    "ovs3Structures": "3",
+    "ovs3Data": "isometric-2_5d",
+    "ovs1Family": "risk",
+    "ovs1Primitive": "diamond",
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "focused": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "status": "unresolved",
+        "selected": "true",
+        "z": "0",
+        "scale": "1.08",
+        "opacity": "1",
+        "executiveVisualState": "unresolved",
+        "role": "focused"
+      }
+    ],
+    "objectZs": [
+      {
+        "id": "obj-risk",
+        "z": "0"
+      },
+      {
+        "id": "obj-delivery",
+        "z": "0"
+      },
+      {
+        "id": "obj-capacity",
+        "z": "0"
+      },
+      {
+        "id": "obj-customer",
+        "z": "0"
+      }
+    ],
+    "objectIds": [
+      "obj-risk",
+      "obj-delivery",
+      "obj-capacity",
+      "obj-customer"
+    ],
+    "advisorHasRisk": false,
+    "advisorHasCapacity": false
+  }
+}

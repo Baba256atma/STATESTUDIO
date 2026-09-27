@@ -1,0 +1,60 @@
+{
+  "server": "http://127.0.0.1:3000/executive?ovs1=1",
+  "pidHint": "reuse-existing-3000",
+  "capacity": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "ovs1Primitive": "rounded-block",
+    "ovs1Family": "operational",
+    "ovs3Family": "none",
+    "focused": [
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "z": "0"
+      }
+    ],
+    "objectIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ]
+  },
+  "gap": {
+    "error": "TimeoutError: locator.click: Timeout 4000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"nexora-stage-object-control-ctx-problem-capacity\"]').first()\n"
+  },
+  "plan": {
+    "error": "TimeoutError: locator.click: Timeout 4000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"nexora-stage-object-control-ctx-scenario-capacity\"]').first()\n"
+  },
+  "expand": {
+    "error": "TimeoutError: locator.click: Timeout 4000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"nexora-stage-object-control-ctx-decision-capacity\"]').first()\n"
+  },
+  "execution": {
+    "error": "TimeoutError: locator.click: Timeout 4000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"nexora-stage-object-control-ctx-execution-capacity\"]').first()\n"
+  },
+  "risk": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "ovs1Primitive": "diamond",
+    "ovs1Family": "risk",
+    "ovs3Family": "NEXO_RISK",
+    "focused": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "z": "0"
+      }
+    ],
+    "objectIds": [
+      "obj-risk",
+      "obj-delivery",
+      "obj-capacity",
+      "obj-customer"
+    ]
+  }
+}

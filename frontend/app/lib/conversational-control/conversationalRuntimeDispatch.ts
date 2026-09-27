@@ -30,6 +30,13 @@ function freezeResult(
             ...result.plan.secondaryTargetIds,
           ]),
           notes: Object.freeze([...result.plan.notes]),
+          ...(result.plan.workspaceAction
+            ? {
+                workspaceAction: Object.freeze({
+                  ...result.plan.workspaceAction,
+                }),
+              }
+            : {}),
         })
       : null,
     trace: Object.freeze({

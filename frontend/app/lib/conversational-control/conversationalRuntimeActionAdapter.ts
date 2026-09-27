@@ -87,7 +87,6 @@ export function mapConversationalCommandToRuntimeAction(
         supported: true,
         plan: Object.freeze({
           ...base,
-          primaryTargetId: null,
           secondaryTargetIds: Object.freeze([]),
           runtimeActionKind: "reset-overview",
           collectionCategory: null,
@@ -103,7 +102,6 @@ export function mapConversationalCommandToRuntimeAction(
         supported: true,
         plan: Object.freeze({
           ...base,
-          primaryTargetId: null,
           secondaryTargetIds: Object.freeze([]),
           runtimeActionKind: "navigation-step-back",
           collectionCategory: null,
@@ -119,7 +117,6 @@ export function mapConversationalCommandToRuntimeAction(
         supported: true,
         plan: Object.freeze({
           ...base,
-          primaryTargetId: null,
           secondaryTargetIds: Object.freeze([]),
           runtimeActionKind: "navigation-step-forward",
           collectionCategory: null,
@@ -226,6 +223,30 @@ export function mapConversationalCommandToRuntimeAction(
                   "explicit-subject-preserved-over-experience-default",
                 ]
               : []),
+          ]),
+        }),
+      };
+
+    case "workspace-presentation":
+      if (!command.workspaceAction) {
+        return {
+          supported: false,
+          reason: "workspace presentation command requires a typed action",
+          plan: null,
+        };
+      }
+      return {
+        supported: true,
+        plan: Object.freeze({
+          ...base,
+          secondaryTargetIds: Object.freeze([]),
+          runtimeActionKind: "apply-workspace-presentation",
+          collectionCategory: null,
+          workspaceAction: Object.freeze({ ...command.workspaceAction }),
+          notes: Object.freeze([
+            CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_WORKSPACE_PRESENTATION_DISPATCHED,
+            "authority:existing-workspace-presentation-seams",
+            "presentation-only-no-business-mutation",
           ]),
         }),
       };

@@ -360,15 +360,32 @@ export function resolveExecutiveCameraPosition(
   const distance = clampExecutiveCameraDistance(intent.distance);
   const elevation = clampExecutiveCameraElevation(intent.elevation);
   const azimuth = normalizeExecutiveCameraAzimuth(intent.azimuth);
-  const cosElevation = Math.cos(elevation);
-  const sinElevation = Math.sin(elevation);
-  const sinAzimuth = Math.sin(azimuth);
-  const cosAzimuth = Math.cos(azimuth);
+  return mapExecutiveCameraSphericalToPosition({
+    target: intent.target,
+    distance,
+    azimuth,
+    elevation,
+  });
+}
 
+/**
+ * Spherical pose → Cartesian camera position. Clamping belongs to the caller.
+ * STAGE-2D:1 uses this with its own elevation band (does not restore SP:1.1's 18° default).
+ */
+export function mapExecutiveCameraSphericalToPosition(input: Readonly<{
+  readonly target: ExecutiveCameraVector;
+  readonly distance: number;
+  readonly azimuth: number;
+  readonly elevation: number;
+}>): ExecutiveCameraVector {
+  const cosElevation = Math.cos(input.elevation);
+  const sinElevation = Math.sin(input.elevation);
+  const sinAzimuth = Math.sin(input.azimuth);
+  const cosAzimuth = Math.cos(input.azimuth);
   return stabilizeExecutiveCameraVector({
-    x: intent.target.x + distance * cosElevation * sinAzimuth,
-    y: intent.target.y + distance * sinElevation,
-    z: intent.target.z + distance * cosElevation * cosAzimuth,
+    x: input.target.x + input.distance * cosElevation * sinAzimuth,
+    y: input.target.y + input.distance * sinElevation,
+    z: input.target.z + input.distance * cosElevation * cosAzimuth,
   });
 }
 

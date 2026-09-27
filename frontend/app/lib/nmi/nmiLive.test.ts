@@ -313,9 +313,11 @@ test("authority, Gate, RMS, Queue, Stage, and overlay wiring stay downstream", (
   const shell = readFileSync(join(HERE, "../../executive/nex-mvp/NexoraExecutiveShell.tsx"), "utf8");
   assert.match(shell, /hostNmiLiveManagementIntelligence/);
   assert.match(shell, /nmiAdvisorBundle:/);
+  assert.match(shell, /composeNmiStageProjection/);
+  assert.match(shell, /map: nmiLive\.map/);
   const stage = readFileSync(join(HERE, "../../executive/nex-mvp/stage/Nexora3DExecutiveStage.tsx"), "utf8");
-  assert.match(stage, /nmiManagementMap/);
-  assert.match(stage, /composeNmiStageProjection/);
+  assert.doesNotMatch(stage, /nmiManagementMap/);
+  assert.doesNotMatch(stage, /composeNmiStageProjection/);
   const html = renderToStaticMarkup(
     React.createElement(NexoraExecutiveQueueOverlay, {
       entries: [

@@ -38,6 +38,8 @@ type Props = {
   readonly projectionAnchorId?: string | null;
   readonly mapNodes?: readonly NexoraExecutiveQueueOverlayMapNode[];
   readonly onSelectCanonicalId?: (canonicalId: string) => void;
+  readonly placement?: "stage-overlay" | "left-management";
+  readonly visible?: boolean;
 };
 
 const NAV_SECTION_LABELS: Readonly<Record<(typeof NMI_NAVIGATION_SECTIONS)[number], string>> =
@@ -65,6 +67,8 @@ export function NexoraExecutiveQueueOverlay({
   projectionAnchorId = null,
   mapNodes = [],
   onSelectCanonicalId,
+  placement = "stage-overlay",
+  visible = true,
 }: Props) {
   const [mode, setMode] = useState<"attention" | "map">("attention");
   if (entries.length === 0) {
@@ -86,29 +90,44 @@ export function NexoraExecutiveQueueOverlay({
         entry.category === "changes-since-visit"),
   );
   const collectionActive = collectionHeaderLabel != null;
+  const placedInLeftManagement = placement === "left-management";
 
   return (
     <aside
+      hidden={!visible}
+      aria-hidden={visible ? undefined : true}
       data-testid="nexora-executive-queue"
       data-stage-prod="2"
-        data-nmi="6"
-        data-nmi-live="8"
-        data-nmi-mode={mode}
+      data-nmi="6"
+      data-nmi-live="8"
+      data-nmi-mode={mode}
       data-nmi-projection-anchor={projectionAnchorId ?? undefined}
       data-queue-is-semantic-object="false"
       data-core-int4="reader"
       data-queue-compact="true"
       data-collection-header={collectionHeaderLabel ?? undefined}
+      data-scene-org-placement={placement}
       aria-label="Executive Queue"
       style={{
-        position: "absolute",
-        right: "0.85rem",
-        top: "42%",
-        transform: "translateY(-50%)",
-        zIndex: 8,
-        width: collectionActive ? "9.25rem" : "8.15rem",
-        maxWidth: "18%",
+        display: visible ? undefined : "none",
+        position: placedInLeftManagement ? "relative" : "absolute",
+        right: placedInLeftManagement ? undefined : "0.85rem",
+        top: placedInLeftManagement ? undefined : "42%",
+        transform: placedInLeftManagement ? undefined : "translateY(-50%)",
+        zIndex: placedInLeftManagement ? 7 : 8,
+        width: placedInLeftManagement
+          ? "9.25rem"
+          : collectionActive
+            ? "9.25rem"
+            : "8.15rem",
+        maxWidth: placedInLeftManagement ? "9.25rem" : "18%",
         minWidth: "7.25rem",
+        height: placedInLeftManagement ? "100%" : undefined,
+        flexShrink: placedInLeftManagement ? 0 : undefined,
+        borderRight: placedInLeftManagement
+          ? `1px solid ${cockpit.border}`
+          : undefined,
+        background: placedInLeftManagement ? cockpit.charcoal : undefined,
         pointerEvents: "auto",
         color: cockpit.textSoft,
         fontFamily: "inherit",
@@ -116,7 +135,7 @@ export function NexoraExecutiveQueueOverlay({
     >
       <details
         data-testid="nexora-executive-queue-disclosure"
-        open={collectionActive || undefined}
+        open={placedInLeftManagement || collectionActive || undefined}
         style={{
           display: "flex",
           flexDirection: "column",

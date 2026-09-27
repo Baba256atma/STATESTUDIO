@@ -13,6 +13,7 @@ import {
   type DthExpDirectorNexoSelection,
   type DthExpDirectorNexoSelectionInput,
 } from "./dthExpDirectorNexoSelectionContract.ts";
+import { resolveDthExpManagementNeedFromLiveTheatre } from "./dthExpResolveLiveManagementNeed.ts";
 
 function isFamily(value: string | null | undefined): value is DthExpNexoRecipeFamily {
   return value != null && (DTH_EXP_NEXO_RECIPE_FAMILIES as readonly string[]).includes(value);
@@ -87,20 +88,7 @@ function selected(
 }
 
 function deriveNeed(input: DthExpDirectorNexoSelectionInput): DthExpDirectorManagementNeed {
-  if (input.managementNeed) return input.managementNeed;
-  const scene = input.sceneIntentKind ?? null;
-  if (scene === "INVESTIGATE_CONDITION") return "CAUSE_INVESTIGATION";
-  if (scene === "REVIEW_EXECUTION") return "EXECUTION_STATUS";
-  if (scene === "REVIEW_OUTCOME") return "OUTCOME_ASSESSMENT";
-  if (scene === "COMPARE_CANDIDATES" && input.comparisonKind === "portfolio") return "PORTFOLIO_COMPARISON";
-  if (scene === "COMPARE_CANDIDATES" && input.comparisonKind === "magnitude") return "MAGNITUDE_COMPARISON";
-  if (scene === "PRESERVE_SCENE" || scene === "CLARIFY_SCENE") return "CONTINUATION";
-  const plan = input.directorPlan;
-  if (plan?.intent === "SHOW_RELATIONSHIP") return "OPERATIONAL_FLOW";
-  if (plan?.intent === "SHOW_COLLECTION" && plan.collection?.kind === "risk") return "RISK_FOCUS";
-  if (plan?.intent === "SHOW_COLLECTION" && plan.collection?.kind === "scenario") return "PORTFOLIO_COMPARISON";
-  if (plan?.intent === "SHOW_COLLECTION" && plan.collection?.kind === "execution") return "EXECUTION_STATUS";
-  return "UNSPECIFIED";
+  return resolveDthExpManagementNeedFromLiveTheatre(input);
 }
 
 /**

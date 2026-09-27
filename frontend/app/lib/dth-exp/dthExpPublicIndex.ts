@@ -142,6 +142,13 @@ export type {
 } from "./dthExpDirectorNexoSelectionContract.ts";
 export { selectNexoraDirectorNexoFamily } from "./dthExpSelectDirectorNexoFamily.ts";
 export {
+  DTH_EXP_LIVE_MANAGEMENT_NEED_BOUNDARY,
+  dthExpLiveManagementNeedIdentity,
+  resolveDthExpManagementNeedFromLiveTheatre,
+  verifyDthExpLiveManagementNeedBoundary,
+} from "./dthExpResolveLiveManagementNeed.ts";
+export { projectDthExpLiveTheatreSceneResponse } from "./dthExpProjectLiveTheatreSceneResponse.ts";
+export {
   dthExpDirectorSceneCompositionArchitecturalRole,
   dthExpDirectorSceneCompositionIdentity,
   dthExpDirectorSceneCompositionNamespace,

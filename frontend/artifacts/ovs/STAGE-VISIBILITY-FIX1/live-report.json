@@ -1,0 +1,151 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "http": 200,
+  "openedScenario": true,
+  "aScenarioCollection": {
+    "focused": "none",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11",
+    "threadState": "collapsed",
+    "stageSurfaceActive": "true",
+    "stageVisibility": "visible",
+    "stagePointer": "auto",
+    "canvasPresent": true,
+    "detailOpen": false,
+    "detailHidden": true,
+    "captionCount": 3,
+    "captions": [
+      {
+        "owner": "ctx-scenario-capacity",
+        "text": "CAPACITY EXPANSION PLANScenario",
+        "visible": true,
+        "x": 683,
+        "y": 315
+      },
+      {
+        "owner": "ctx-scenario-demand",
+        "text": "DEMAND SURGEScenario",
+        "visible": true,
+        "x": 439,
+        "y": 571
+      },
+      {
+        "owner": "ctx-scenario-pricing",
+        "text": "PRICING RESPONSEScenario",
+        "visible": true,
+        "x": 608,
+        "y": 650
+      }
+    ]
+  },
+  "openedProblem": true,
+  "eAlternateCollection": {
+    "focused": "none",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11",
+    "threadState": "collapsed",
+    "stageSurfaceActive": "true",
+    "stageVisibility": "visible",
+    "stagePointer": "auto",
+    "canvasPresent": true,
+    "detailOpen": false,
+    "detailHidden": true,
+    "captionCount": 2,
+    "captions": [
+      {
+        "owner": "ctx-problem-capacity",
+        "text": "CAPACITY GAPProblem",
+        "visible": true,
+        "x": 605,
+        "y": 287
+      },
+      {
+        "owner": "ctx-problem-margin",
+        "text": "MARGIN PRESSUREProblem",
+        "visible": true,
+        "x": 441,
+        "y": 576
+      }
+    ]
+  },
+  "cDetailOpen": {
+    "focused": "none",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11",
+    "threadState": "collapsed",
+    "stageSurfaceActive": "false",
+    "stageVisibility": "hidden",
+    "stagePointer": "none",
+    "canvasPresent": true,
+    "detailOpen": true,
+    "detailHidden": false,
+    "captionCount": 0,
+    "captions": [
+      {
+        "owner": "ctx-scenario-capacity",
+        "text": "CAPACITY EXPANSION PLANScenario",
+        "visible": false,
+        "x": 683,
+        "y": 315
+      },
+      {
+        "owner": "ctx-scenario-demand",
+        "text": "DEMAND SURGEScenario",
+        "visible": false,
+        "x": 439,
+        "y": 571
+      },
+      {
+        "owner": "ctx-scenario-pricing",
+        "text": "PRICING RESPONSEScenario",
+        "visible": false,
+        "x": 608,
+        "y": 650
+      }
+    ]
+  },
+  "dReturnFromDetail": {
+    "focused": "none",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11",
+    "threadState": "collapsed",
+    "stageSurfaceActive": "true",
+    "stageVisibility": "visible",
+    "stagePointer": "auto",
+    "canvasPresent": true,
+    "detailOpen": false,
+    "detailHidden": true,
+    "captionCount": 3,
+    "captions": [
+      {
+        "owner": "ctx-scenario-capacity",
+        "text": "CAPACITY EXPANSION PLANScenario",
+        "visible": true,
+        "x": 683,
+        "y": 315
+      },
+      {
+        "owner": "ctx-scenario-demand",
+        "text": "DEMAND SURGEScenario",
+        "visible": true,
+        "x": 439,
+        "y": 571
+      },
+      {
+        "owner": "ctx-scenario-pricing",
+        "text": "PRICING RESPONSEScenario",
+        "visible": true,
+        "x": 608,
+        "y": 650
+      }
+    ]
+  }
+}

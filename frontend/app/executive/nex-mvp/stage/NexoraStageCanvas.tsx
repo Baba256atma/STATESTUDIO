@@ -7,14 +7,17 @@ import type { NexoraDecisionTheatreDataObjectStageProjection } from "@/app/lib/d
 import { resolveExecutiveStageFixedCamera } from "@/app/lib/spatial-presentation/executiveStage2DFixedCamera";
 import { shouldResetExecutiveStage2DToOverview } from "@/app/lib/spatial-presentation/executiveStage2DTopologyReadability";
 import { NexoraStageScene } from "./NexoraStageScene";
+import type { ExecutiveOvsIsometricTheatreVisual } from "@/app/lib/spatial-presentation/executiveOvsIsometricTheatreVisual";
 
 type Props = {
   readonly presentation: NexoraMVPStageInteractionPresentation;
   readonly environment: NexoraMVPSceneEnvironmentVisualState;
   readonly dataObjectStage: NexoraDecisionTheatreDataObjectStageProjection;
+  readonly isometricVisual?: ExecutiveOvsIsometricTheatreVisual | null;
   readonly onSelectSubject: (subjectId: string) => void;
   readonly onSelectDataObject: (dataObjectId: string) => void;
   readonly onClearSelection: () => void;
+  readonly fitDistance?: number;
 };
 
 /**
@@ -24,9 +27,11 @@ export function NexoraStageCanvas({
   presentation,
   environment,
   dataObjectStage,
+  isometricVisual = null,
   onSelectSubject,
   onSelectDataObject,
   onClearSelection,
+  fitDistance,
 }: Props) {
   // STAGE-2D:1 — seed Canvas from the fixed camera; ignore presentation variance.
   const fixed = resolveExecutiveStageFixedCamera();
@@ -75,9 +80,11 @@ export function NexoraStageCanvas({
         presentation={presentation}
         environment={environment}
         dataObjectStage={dataObjectStage}
+        isometricVisual={isometricVisual}
         onSelectSubject={onSelectSubject}
         onSelectDataObject={onSelectDataObject}
         onClearSelection={onClearSelection}
+        fitDistance={fitDistance}
       />
     </Canvas>
   );

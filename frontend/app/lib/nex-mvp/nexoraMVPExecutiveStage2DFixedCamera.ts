@@ -62,6 +62,11 @@ export function getNexoraMVPExecutiveStage2DFixedCameraObservability(): Readonly
   readonly cameraTarget: string;
   readonly stageDepth: string;
   readonly contract: string;
+  readonly azimuthDeg: string;
+  readonly elevationDeg: string;
+  readonly distance: string;
+  readonly fov: string;
+  readonly pointerOffset: string;
 }> {
   const identity = getExecutiveStage2DFixedCameraIdentity();
   return Object.freeze({
@@ -70,6 +75,11 @@ export function getNexoraMVPExecutiveStage2DFixedCameraObservability(): Readonly
     cameraTarget: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.cameraTarget,
     stageDepth: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.stageDepth,
     contract: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.contract,
+    azimuthDeg: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.azimuthDeg,
+    elevationDeg: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.elevationDeg,
+    distance: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.distance,
+    fov: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.fov,
+    pointerOffset: EXECUTIVE_STAGE_2D_CAMERA_OBSERVABILITY.pointerOffset,
   });
 }
 

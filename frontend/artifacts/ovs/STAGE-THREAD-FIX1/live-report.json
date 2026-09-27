@@ -1,0 +1,146 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "http": 200,
+  "clickedCapacity": true,
+  "expandedCapacity": true,
+  "capacityAdvisorOpen": {
+    "focused": "obj-capacity",
+    "threadState": "expanded",
+    "collapseAvailable": "true",
+    "collapseSurface": "nexora-stage-interaction-breadcrumb",
+    "collapseWorld": "false",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11.574013",
+    "advisorCollapsed": "false",
+    "collapseInDom": true,
+    "collapseInBreadcrumb": true,
+    "collapseOverlapsObjectLabel": false,
+    "collapseBox": {
+      "x": 629,
+      "y": 88,
+      "w": 109,
+      "h": 21
+    },
+    "canvas": {
+      "w": 1064,
+      "h": 799
+    }
+  },
+  "objectControls": [
+    "nexora-stage-object-control-obj-revenue",
+    "nexora-stage-object-control-obj-capacity",
+    "nexora-stage-object-control-obj-budget",
+    "nexora-stage-object-control-obj-customer",
+    "nexora-stage-object-control-obj-delivery",
+    "nexora-stage-object-control-obj-risk",
+    "nexora-stage-object-control-obj-inventory",
+    "nexora-stage-object-control-obj-demand",
+    "nexora-stage-object-control-ctx-problem-capacity",
+    "nexora-stage-object-control-ctx-scenario-capacity",
+    "nexora-stage-object-control-ctx-decision-capacity",
+    "nexora-stage-object-control-ctx-execution-capacity"
+  ],
+  "afterNearbyObjectClick": {
+    "focused": "obj-capacity",
+    "threadState": "expanded",
+    "collapseAvailable": "true",
+    "collapseSurface": "nexora-stage-interaction-breadcrumb",
+    "collapseWorld": "false",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11.574013",
+    "advisorCollapsed": "false",
+    "collapseInDom": true,
+    "collapseInBreadcrumb": true,
+    "collapseOverlapsObjectLabel": false,
+    "collapseBox": {
+      "x": 629,
+      "y": 88,
+      "w": 109,
+      "h": 21
+    },
+    "canvas": {
+      "w": 1064,
+      "h": 799
+    }
+  },
+  "collapseVisibleBefore": true,
+  "afterCollapse": {
+    "focused": "obj-capacity",
+    "threadState": "collapsed",
+    "collapseAvailable": "false",
+    "collapseSurface": "nexora-stage-interaction-breadcrumb",
+    "collapseWorld": "false",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "14",
+    "advisorCollapsed": "false",
+    "collapseInDom": false,
+    "collapseInBreadcrumb": false,
+    "collapseOverlapsObjectLabel": false,
+    "collapseBox": null,
+    "canvas": {
+      "w": 1064,
+      "h": 799
+    }
+  },
+  "clickedCapacityAgain": true,
+  "expandedAgain": true,
+  "capacityAdvisorClosed": {
+    "focused": "obj-capacity",
+    "threadState": "expanded",
+    "collapseAvailable": "true",
+    "collapseSurface": "nexora-stage-interaction-breadcrumb",
+    "collapseWorld": "false",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11",
+    "advisorCollapsed": "true",
+    "collapseInDom": true,
+    "collapseInBreadcrumb": true,
+    "collapseOverlapsObjectLabel": false,
+    "collapseBox": {
+      "x": 763,
+      "y": 88,
+      "w": 109,
+      "h": 21
+    },
+    "canvas": {
+      "w": 1332,
+      "h": 799
+    }
+  },
+  "clickedRisk": true,
+  "expandedRisk": true,
+  "risk": {
+    "focused": "obj-risk",
+    "threadState": "expanded",
+    "collapseAvailable": "true",
+    "collapseSurface": "nexora-stage-interaction-breadcrumb",
+    "collapseWorld": "false",
+    "az": "8",
+    "el": "10",
+    "fov": "42",
+    "effective": "11",
+    "advisorCollapsed": "true",
+    "collapseInDom": true,
+    "collapseInBreadcrumb": true,
+    "collapseOverlapsObjectLabel": false,
+    "collapseBox": {
+      "x": 783,
+      "y": 88,
+      "w": 109,
+      "h": 21
+    },
+    "canvas": {
+      "w": 1332,
+      "h": 799
+    }
+  },
+  "ok": true
+}

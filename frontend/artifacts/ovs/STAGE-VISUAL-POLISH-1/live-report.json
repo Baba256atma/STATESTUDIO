@@ -1,0 +1,68 @@
+{
+  "server": "http://127.0.0.1:3000/executive?ovs1=1",
+  "revenue": {
+    "env": "neutral",
+    "az": "8",
+    "el": "10",
+    "d": "11",
+    "fov": "42",
+    "z": "0",
+    "ovs1": "operational",
+    "ovs3": "none",
+    "focused": [
+      "obj-revenue"
+    ]
+  },
+  "investigate": {
+    "env": "investigate",
+    "az": "8",
+    "el": "10",
+    "d": "11",
+    "fov": "42",
+    "z": "0",
+    "ovs1": "operational",
+    "ovs3": "none",
+    "focused": [
+      "obj-revenue"
+    ]
+  },
+  "commit": {
+    "env": "commit",
+    "az": "8",
+    "el": "10",
+    "d": "11",
+    "fov": "42",
+    "z": "0",
+    "ovs1": "operational",
+    "ovs3": "none",
+    "focused": [
+      "obj-revenue"
+    ]
+  },
+  "execute": {
+    "env": "execute",
+    "az": "8",
+    "el": "10",
+    "d": "11",
+    "fov": "42",
+    "z": "0",
+    "ovs1": "operational",
+    "ovs3": "none",
+    "focused": [
+      "obj-revenue"
+    ]
+  },
+  "risk": {
+    "env": "neutral",
+    "az": "8",
+    "el": "10",
+    "d": "11",
+    "fov": "42",
+    "z": "0",
+    "ovs1": "risk",
+    "ovs3": "NEXO_RISK",
+    "focused": [
+      "obj-risk"
+    ]
+  }
+}

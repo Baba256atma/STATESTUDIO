@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  EXECUTIVE_OBJECT_MATERIAL_DNA,
   EXECUTIVE_OBJECT_MATERIAL_SURFACE_BOUNDS,
   resolveExecutiveObjectMaterialPresentation,
 } from "./executiveObjectMaterialSurface.ts";
@@ -960,7 +961,7 @@ test("28. no traffic-light body colors", () => {
     assert.notEqual(material.color.toLowerCase(), "#ef4444");
     assert.equal(
       material.baseColor,
-      "#536478",
+      EXECUTIVE_OBJECT_MATERIAL_DNA.baseBodyColor,
     );
   }
 });

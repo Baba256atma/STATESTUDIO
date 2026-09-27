@@ -761,6 +761,7 @@ function resolveEdge(input: {
 function resolveMaterial(input: {
   readonly geometryFamily: ExecutiveObjectGeometryFamily;
   readonly semanticFamily: ExecutiveObjectSemanticVisualFamily;
+  readonly objectKind?: string;
   readonly status: string | undefined;
   readonly attention?: ExecutiveObjectVisualAttention;
   readonly spatialRole: ExecutiveObjectSpatialRole;
@@ -776,6 +777,7 @@ function resolveMaterial(input: {
   return resolveExecutiveObjectMaterialPresentation({
     geometryFamily: input.geometryFamily,
     semanticFamily: input.semanticFamily,
+    objectKind: input.objectKind,
     spatialRole: input.spatialRole,
     selected: input.selected,
     focused: input.focused,
@@ -883,6 +885,7 @@ export function resolveExecutiveObjectVisualPresentation(
   const material = resolveMaterial({
     geometryFamily: geometry.family,
     semanticFamily: geometry.semanticFamily,
+    objectKind,
     status: input.status,
     attention: input.attention,
     spatialRole,

@@ -1,0 +1,277 @@
+{
+  "url": "http://127.0.0.1:3000/executive?ovs1=1",
+  "final": true,
+  "steps": [
+    "list-customer",
+    "A",
+    "B",
+    "C"
+  ],
+  "http": 200,
+  "journeyA": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "orbitControls": false,
+    "compactNav": true,
+    "advisorRegion": true,
+    "ovs3": {
+      "enabled": "false",
+      "family": "none",
+      "scene": "unavailable",
+      "data": "precision-2d",
+      "structures": "0",
+      "roadmap": "none"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "sceneFamily": "investigation",
+    "focusedSubject": "obj-customer",
+    "advisorSubject": "obj-customer",
+    "advisorBridge": "object · Customer",
+    "uniqueObjectIds": [
+      "obj-customer",
+      "obj-delivery",
+      "obj-revenue",
+      "obj-capacity",
+      "obj-inventory"
+    ],
+    "uniqueObjectCount": 5,
+    "kinds": [
+      "object"
+    ],
+    "connections": [],
+    "capacity": {
+      "id": "obj-capacity",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "false",
+      "selected": "false",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; attention requested; present but not central; eq"
+    },
+    "customer": {
+      "id": "obj-customer",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "true",
+      "selected": "true",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; focused; selected; attention requested; equal si"
+    },
+    "risk": null,
+    "reducedMotion": false
+  },
+  "journeyB": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "orbitControls": false,
+    "compactNav": true,
+    "advisorRegion": true,
+    "ovs3": {
+      "enabled": "false",
+      "family": "none",
+      "scene": "unavailable",
+      "data": "precision-2d",
+      "structures": "0",
+      "roadmap": "none"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "sceneFamily": "investigation",
+    "focusedSubject": "obj-customer",
+    "advisorSubject": "obj-customer",
+    "advisorBridge": "object · Customer",
+    "uniqueObjectIds": [
+      "obj-customer",
+      "obj-delivery",
+      "obj-revenue",
+      "obj-capacity",
+      "obj-inventory"
+    ],
+    "uniqueObjectCount": 5,
+    "kinds": [
+      "object"
+    ],
+    "connections": [],
+    "capacity": {
+      "id": "obj-capacity",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "false",
+      "selected": "false",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; attention requested; present but not central; eq"
+    },
+    "customer": {
+      "id": "obj-customer",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "true",
+      "selected": "true",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; focused; selected; attention requested; equal si"
+    },
+    "risk": null,
+    "reducedMotion": false
+  },
+  "fps": {
+    "durationMs": 1500,
+    "frameCount": 90,
+    "fps": 60,
+    "meanIntervalMs": 16.667,
+    "maxIntervalMs": 16.8,
+    "framesOver33_4Ms": 0
+  },
+  "journeyBAfterFps": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "orbitControls": false,
+    "compactNav": true,
+    "advisorRegion": true,
+    "ovs3": {
+      "enabled": "false",
+      "family": "none",
+      "scene": "unavailable",
+      "data": "precision-2d",
+      "structures": "0",
+      "roadmap": "none"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "sceneIntent": "REVIEW_FOCAL_OBJECT",
+    "sceneFamily": "investigation",
+    "focusedSubject": "obj-customer",
+    "advisorSubject": "obj-customer",
+    "advisorBridge": "object · Customer",
+    "uniqueObjectIds": [
+      "obj-customer",
+      "obj-delivery",
+      "obj-revenue",
+      "obj-capacity",
+      "obj-inventory"
+    ],
+    "uniqueObjectCount": 5,
+    "kinds": [
+      "object"
+    ],
+    "connections": [],
+    "capacity": {
+      "id": "obj-capacity",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "false",
+      "selected": "false",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; attention requested; present but not central; eq"
+    },
+    "customer": {
+      "id": "obj-customer",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "true",
+      "selected": "true",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; focused; selected; attention requested; equal si"
+    },
+    "risk": null,
+    "reducedMotion": false
+  },
+  "journeyC": {
+    "href": "http://127.0.0.1:3000/executive?ovs1=1",
+    "canvasCount": 1,
+    "orbitControls": false,
+    "compactNav": true,
+    "advisorRegion": true,
+    "ovs3": {
+      "enabled": "false",
+      "family": "none",
+      "scene": "unavailable",
+      "data": "precision-2d",
+      "structures": "0",
+      "roadmap": "none"
+    },
+    "ovs1": {
+      "enabled": "true",
+      "family": "operational",
+      "primitive": "rounded-block"
+    },
+    "sceneIntent": "ORIENT_TO_STAGE",
+    "sceneFamily": "orientation",
+    "focusedSubject": "none",
+    "advisorSubject": "none",
+    "advisorBridge": "overview · Executive Overview",
+    "uniqueObjectIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "uniqueObjectCount": 8,
+    "kinds": [
+      "object"
+    ],
+    "connections": [],
+    "capacity": {
+      "id": "obj-capacity",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "false",
+      "selected": "false",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; attention requested; present but not central; eq"
+    },
+    "customer": {
+      "id": "obj-customer",
+      "kind": "object",
+      "status": "watch",
+      "visual": "attention",
+      "focused": "false",
+      "selected": "false",
+      "family": null,
+      "primitive": null,
+      "label": "kpi object; Attention required; attention requested; present but not central; eq"
+    },
+    "risk": {
+      "id": "obj-risk",
+      "kind": "object",
+      "status": "unresolved",
+      "visual": "unresolved",
+      "focused": "false",
+      "selected": "false",
+      "family": null,
+      "primitive": null,
+      "label": "Risk"
+    },
+    "reducedMotion": false
+  },
+  "ok": true
+}

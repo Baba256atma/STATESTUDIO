@@ -5,7 +5,6 @@
 
 import type { NexoraMVPStageInteractionPresentation } from "./nexoraMVPObjectInteraction";
 import {
-  buildExecutiveThreadGatewayLabelObstacle,
   getExecutiveStageObjectLabelObservability,
   resolveExecutiveStageOwnedLabelPlacement,
   type ExecutiveStageLabelLayoutResult,
@@ -51,19 +50,7 @@ export function applyExecutiveStageObjectLabelTerritoryToStagePresentation(
     }
   ).stage2dReadability;
 
-  const gateway = presentation.contextNodes.find(
-    (node) => node.role === "collapsed-thread",
-  );
-  const obstacles =
-    gateway != null
-      ? [
-          buildExecutiveThreadGatewayLabelObstacle({
-            x: gateway.targetPosition[0],
-            y: gateway.targetPosition[1],
-            mode: gateway.gatewayMode,
-          }),
-        ]
-      : [];
+  const obstacles: readonly never[] = [];
 
   const layout = resolveExecutiveStageOwnedLabelPlacement({
     objects: presentation.scene.objects.map((object) => {

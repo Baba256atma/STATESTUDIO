@@ -26,6 +26,7 @@ import {
 } from "../../../lib/nex-mvp/nexoraMVPObjectInteraction.ts";
 import { deriveNexoraMVPPresentationViewModel } from "../../../lib/nex-mvp/nexoraMVPPresentationState.ts";
 import { applyNexoraMVPWorkspaceChangeToInteraction } from "../../../lib/nex-mvp/nexoraMVPWorkspacePresentation.ts";
+import { projectSceneOrgManagerActivity } from "../../../lib/scene-org/sceneOrgActivityWorkspaceContract.ts";
 import { NexoraExecutiveShell } from "../NexoraExecutiveShell.tsx";
 import { NexoraExecutiveFlowContextIndicator } from "./NexoraExecutiveFlowContextIndicator.tsx";
 import { NexoraFlowJournalExplorer } from "./NexoraFlowJournalExplorer.tsx";
@@ -235,8 +236,8 @@ describe("NEX-MVP:8 Executive Flow components", () => {
     assert.match(html, /nexora-flow-link-obj-revenue/);
   });
 
-  it("journal explorer renders packs", () => {
-    const entries = mapNexoraMVPJournalEntries(
+  it("manager Activity renders existing linked flow records", () => {
+    const entries = projectSceneOrgManagerActivity(
       createInitialNexoraMVPFlowDomainState(),
     );
     const html = renderToStaticMarkup(
@@ -246,7 +247,7 @@ describe("NEX-MVP:8 Executive Flow components", () => {
         onSelect: () => undefined,
       }),
     );
-    assert.match(html, /nexora-flow-journal/);
+    assert.match(html, /nexora-manager-activity/);
     assert.match(html, /Margin Pressure/);
   });
 

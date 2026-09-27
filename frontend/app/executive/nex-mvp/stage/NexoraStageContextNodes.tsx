@@ -408,10 +408,11 @@ export function NexoraStageContextNodes({
   onSelect,
   onHover,
 }: Props) {
-  if (nodes.length === 0) return null;
+  const sceneNodes = nodes.filter((node) => node.role !== "collapsed-thread");
+  if (sceneNodes.length === 0) return null;
   return (
     <group>
-      {nodes.map((node) => (
+      {sceneNodes.map((node) => (
         <ContextNodeMesh
           key={node.id}
           node={node}

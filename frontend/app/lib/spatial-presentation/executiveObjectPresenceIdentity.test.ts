@@ -109,7 +109,7 @@ test("STAGE-OBJ:2 identity", () => {
     identity.id,
     "STAGE-OBJ:2/ExecutiveBusinessObjectPresenceIdentity",
   );
-  assert.equal(identity.version, "4.2.0");
+  assert.equal(identity.version, "4.3.0");
   assert.equal(verifyExecutiveObjectPresenceIdentity().ok, true);
   assert.equal(isExecutiveObjectPresenceV2Enabled(), true);
 });
@@ -216,7 +216,7 @@ test("H/I/Q — Focused > related > context presence", () => {
   assert.ok(focused.bodyScale > related.bodyScale);
   assert.ok(related.bodyScale > context.bodyScale);
   assert.equal(context.territoryStyle, "none");
-  assert.equal(focused.territoryStyle, "focused");
+  assert.equal(focused.territoryStyle, "ground");
   assert.equal(
     EXECUTIVE_OBJECT_PRESENCE_ROLE_SCALE.focused,
     1.12,

@@ -31,6 +31,7 @@ import {
   resolveNavigatedExecutiveCameraIntent,
 } from "./executiveCameraNavigation.ts";
 import { resolveExecutiveCameraPresentation } from "./executiveCameraFoundation.ts";
+import { EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES } from "./executiveObjectStateVisualHierarchy.ts";
 
 const source = readFileSync(
   new URL("./executiveObjectMaterialSurface.ts", import.meta.url),
@@ -579,7 +580,11 @@ test("20. state tint is bounded — not full traffic-light body", () => {
   assert.notEqual(risk.color.toLowerCase(), "#f87171");
   assert.notEqual(risk.color.toLowerCase(), "#ff0000");
   assert.equal(risk.baseColor, EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor);
-  const mixed = mixExecutiveObjectMaterialHex("#536478", "#c07070", 0.34);
+  const mixed = mixExecutiveObjectMaterialHex(
+    EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor,
+    "#c07070",
+    EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint,
+  );
   assert.equal(risk.color, mixed);
 });
 
