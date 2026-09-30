@@ -481,9 +481,13 @@ export function isExplicitPresentationRequest(utterance: string, intentKind: str
     /^(?:(?:okay|ok|now|actually)\s*,?\s*)+/,
     "",
   );
+  // Topic switch is a legitimate subject change, unlike definitional "what is".
+  if (/^what about\b/.test(text)) return true;
+  if (/^what (?:were we|was i) (?:saying|talking) about\b/.test(text)) return true;
+  if (/^go back to overview\b/.test(text)) return false;
   if (/^(?:what|which|why|how|explain)\b/.test(text)) return false;
   if (
-    /^(?:show|open|focus(?: on)?|bring up|go to|take me to|go back|look at|lets work on|let s work on|let us work on|how about)\b/.test(
+    /^(?:show|open|focus(?: on)?|bring up|go to|take me to|go back|return to|switch to|look at|lets work on|let s work on|let us work on|how about)\b/.test(
       text,
     )
   )

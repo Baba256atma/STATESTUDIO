@@ -20,16 +20,19 @@ import {
 } from "./conversationalIntent.ts";
 import {
   isAmbiguousConversationalReference,
+  isCurrentSubjectReassessmentUtterance,
   isInvestigateNowUtterance,
   isInvestigationOptionsUtterance,
   isTargetedDeicticInvestigationUtterance,
   isNoActionConsequenceUtterance,
   classifyExecutiveInvestigationAsk,
+  normalizeNexoraConversationalUtterance,
   normalizeNexoraConversationalUtteranceWithDiagnostics,
   stripConversationalArticles,
   stripConversationalSignificanceQualifier,
 } from "./conversationalIntentNormalization.ts";
 import { parseNexoraWhatIfUtterance } from "./conversationalWhatIfStateGrammar.ts";
+import { getNexoraRegisteredExecutiveExperiences } from "./conversationalExperienceRegistry.ts";
 
 type MatchResult = {
   readonly kind: NexoraConversationalIntentKind;
@@ -43,6 +46,21 @@ type MatchResult = {
   readonly decisionCommitmentPayload?: NexoraConversationalDecisionCommitmentPayload | null;
   readonly workspaceActionPayload?: NexoraConversationalWorkspaceActionPayload | null;
 };
+
+function isExactRegisteredExperienceHint(raw: string): boolean {
+  const key = normalizeNexoraConversationalUtterance(raw);
+  if (!key) return false;
+  for (const experience of getNexoraRegisteredExecutiveExperiences()) {
+    const names = [
+      experience.id,
+      experience.label,
+      experience.workspaceId,
+      ...experience.aliases,
+    ].map((value) => normalizeNexoraConversationalUtterance(String(value)));
+    if (names.includes(key)) return true;
+  }
+  return false;
+}
 
 function matchWorkspaceAction(normalized: string): MatchResult | null {
   let payload: NexoraConversationalWorkspaceActionPayload | null = null;
@@ -193,6 +211,26 @@ function matchNamedSubjectInquiry(normalized: string): MatchResult | null {
   if (!named) return null;
   const raw = (named[1] ?? "").trim();
   if (!raw || isAmbiguousConversationalReference(raw)) return null;
+  if (
+    /^(?:(?:the|this|that)\s+)?(?:problem|issue|situation)(?:\s+(?:here|there|now))?$/.test(
+      raw,
+    )
+  ) {
+    return {
+      kind: "explain",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+        CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: true,
+      candidateKinds: Object.freeze(["explain"] as const),
+    };
+  }
   if (
     /^(?:going\s+on|happening|different|predicted|unknown|the\s+evidence|the\s+risk|the\s+constraint|the\s+priority|the\s+downside|(?:the\s+)?decision\s+status|(?:the\s+)?execution\s+status|being\s+executed|still\s+uncertain|connected(?:\s+to\s+(?:this|it|that))?|related(?:\s+to\s+(?:it|this|that|this one|that one))?)$/.test(
       raw,
@@ -443,6 +481,29 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
       "situation",
       CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
       false,
+    );
+  }
+  if (isCurrentSubjectReassessmentUtterance(normalized)) {
+    const kind = /\b(?:changed|change|stand)\b/.test(normalized)
+      ? ("change" as const)
+      : ("explain" as const);
+    return advisoryQuery(
+      kind,
+      kind === "change"
+        ? CONVERSATIONAL_INTENT_REASON.MATCHED_CHANGE
+        : CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+      true,
+    );
+  }
+  if (
+    /^(?:what does (?:the )?(?:.+? )?(?:data|numbers) show|what do (?:the )?(?:.+? )?(?:data|numbers) show|show(?: me)? (?:the )?(?:.+? )?data)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "evidence",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+      true,
     );
   }
   if (
@@ -1258,9 +1319,40 @@ function matchFocusOrOpen(normalized: string): MatchResult | null {
   // This is a knowledge follow-up on the established conversational subject,
   // not permission to navigate to a ranked attention target.
   if (isTargetedDeicticInvestigationUtterance(normalized)) return null;
+  // A terse manager may name the subject and request detail without a verb:
+  // "Delivery. Details." The noun phrase is still an explicit current-turn
+  // target; a bare "Details" remains context-dependent and is not guessed.
+  const terseDetails = normalized.match(/^(?:the\s+)?(.+?)\s+details?$/);
+  if (terseDetails) {
+    const raw = stripConversationalArticles((terseDetails[1] ?? "").trim());
+    const generic = /^(?:more|some|any|current|selected|this|that|it|these|those)$/;
+    if (
+      raw &&
+      !generic.test(raw) &&
+      !isAmbiguousConversationalReference(raw) &&
+      raw.split(/\s+/).length <= 4
+    ) {
+      const primary = hint(raw, "primary");
+      return {
+        kind: "focus",
+        confidence: 0.9,
+        reasons: [
+          CONVERSATIONAL_INTENT_REASON.MATCHED_FOCUS,
+          CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+          CONVERSATIONAL_INTENT_REASON.TARGET_REQUIRED,
+          CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+          CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+        ],
+        targetHints: Object.freeze(primary ? [primary] : []),
+        requiresContext: false,
+        requiresTarget: true,
+        candidateKinds: Object.freeze(["focus"] as const),
+      };
+    }
+  }
   // Apostrophes become spaces: "let's work on" → "let s work on".
   const focus = normalized.match(
-    /^(?:(?:(?:lets|let\s+s|let\s+us)\s+)?(?:work\s+on|focus(?:\s+on)?|look\s+at|go\s+to|take\s+me\s+to|review|investigate)|how\s+about|i\s+want\s+to\s+look\s+at)\s+(.+)$/,
+    /^(?:switch\s+to|(?:(?:lets|let\s+s|let\s+us)\s+)?(?:work\s+on|focus(?:\s+on)?|look\s+at|go\s+to|take\s+me\s+to|review|investigate)|how\s+about|i\s+want\s+to\s+look\s+at)\s+(.+)$/,
   );
   const showOpen = normalized.match(
     /^(?:show|open)(?:\s+me)?\s+(.+)$/,
@@ -1416,10 +1508,18 @@ function matchSwitchWorkspace(normalized: string): MatchResult | null {
     /^(?:open|switch\s+to)\s+(?:the\s+)?(.+?)\s+workspace$/,
   );
   const switchTo = normalized.match(/^switch\s+to\s+(?:the\s+)?(.+)$/);
+  if (!openWorkspace && !switchTo) return null;
+
+  const raw = ((openWorkspace ?? switchTo)?.[1] ?? "").trim();
+  // Bare "switch to X" is a workspace intent only when X names a registered
+  // experience/workspace. Object switches such as "Switch to inventory" remain focus.
+  if (!openWorkspace && switchTo) {
+    if (!raw || isAmbiguousConversationalReference(raw)) return null;
+    if (!isExactRegisteredExperienceHint(raw)) return null;
+  }
+
   const matched = openWorkspace ?? switchTo;
   if (!matched) return null;
-
-  const raw = (matched[1] ?? "").trim();
   if (!raw || isAmbiguousConversationalReference(raw)) {
     return {
       kind: "switch-workspace",
@@ -1796,6 +1896,9 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
   if (
     /^(?:confirm(?:\s+the)?\s+(?:decision|commitment)|confirm\s+decision\s+commitment|commit\s+it)$/.test(
       normalized,
+    ) ||
+    /^(?:yes[,\s]+)?(?:make\s+that\s+the\s+decision|that(?:\s+is|\s+s)\s+the\s+decision)$/.test(
+      normalized,
     )
   ) {
     return {
@@ -2078,14 +2181,20 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
   // Explicit commitment / approve / choose / let's go with / we'll proceed
   // Note: normalization turns apostrophes into spaces ("let's" → "let s").
   if (
-    /^(?:choose|approve|commit(?:\s+to)?|lets|let\s+s)\s+go\s+with\s+(?:scenario\s+)?(.+)$/.test(
+    /^(?:(?:choose|approve|commit(?:\s+to)?|use|lets|let\s+s)\s+)?go\s+with\s+(?:scenario\s+)?(.+)$/.test(
       normalized,
     ) ||
     /^(?:well|we\s+ll)\s+proceed\s+with\s+(?:scenario\s+)?(.+)$/.test(
       normalized,
     ) ||
     /^(?:lets|let\s+s)\s+choose\s+(?:scenario\s+)?(.+)$/.test(normalized) ||
-    /^(?:choose|approve|commit(?:\s+to)?)\s+(?:scenario\s+)?(.+)$/.test(
+    /^(?:choose|approve|commit(?:\s+to)?|use)\s+(?:the\s+)?(?:first|second|third)\s+option$/.test(
+      normalized,
+    ) ||
+    /^(?:choose|approve|commit(?:\s+to)?|use)\s+option\s+([a-z])$/.test(
+      normalized,
+    ) ||
+    /^(?:choose|approve|commit(?:\s+to)?|use)\s+(?:scenario\s+)?(.+)$/.test(
       normalized,
     ) ||
     /^commit\s+to\s+this$/.test(normalized) ||
@@ -2095,7 +2204,7 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
   ) {
     const named =
       normalized.match(
-        /^(?:choose|approve|commit(?:\s+to)?|lets|let\s+s)\s+go\s+with\s+(?:scenario\s+)?(.+)$/,
+        /^(?:(?:choose|approve|commit(?:\s+to)?|use|lets|let\s+s)\s+)?go\s+with\s+(?:scenario\s+)?(.+)$/,
       ) ??
       normalized.match(
         /^(?:well|we\s+ll)\s+proceed\s+with\s+(?:scenario\s+)?(.+)$/,
@@ -2104,7 +2213,13 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
         /^(?:lets|let\s+s)\s+choose\s+(?:scenario\s+)?(.+)$/,
       ) ??
       normalized.match(
-        /^(?:choose|approve|commit(?:\s+to)?)\s+(?:scenario\s+)?(.+)$/,
+        /^(?:choose|approve|commit(?:\s+to)?|use)\s+((?:the\s+)?(?:first|second|third)\s+option)$/,
+      ) ??
+      normalized.match(
+        /^(?:choose|approve|commit(?:\s+to)?|use)\s+(option\s+[a-z])$/,
+      ) ??
+      normalized.match(
+        /^(?:choose|approve|commit(?:\s+to)?|use)\s+(?:scenario\s+)?(.+)$/,
       );
     let raw = named?.[1]?.trim() ?? "";
     if (/^(?:lets|let\s+s)\s+do\s+it$/.test(normalized)) raw = "it";
@@ -2666,6 +2781,44 @@ function matchInvestigationFollowup(normalized: string): MatchResult | null {
   };
 }
 
+function matchBareNamedIssueFocus(normalized: string): MatchResult | null {
+  if (
+    /^(?:go|return|switch|show|open|focus|look|work|take|lets|let\s+s|let\s+us|what|why|how|tell|explain|compare|analyze)\b/.test(
+      normalized,
+    )
+  ) {
+    return null;
+  }
+  if (isCurrentSubjectReassessmentUtterance(normalized)) return null;
+  const named = normalized.match(
+    /^(?:the\s+)?(?!this\b|that\b|other\b|first\b|second\b|third\b|previous\b)(.+?)\s+(?:problems?|issues?)$/,
+  );
+  if (!named) return null;
+  const raw = stripConversationalArticles((named[1] ?? "").trim());
+  if (!raw || isAmbiguousConversationalReference(raw)) return null;
+  if (/\b(?:this|that|it)\b/.test(raw)) return null;
+  if (/^(?:is|are|was|were|do|does|did|has|have|had|should)\b/.test(raw)) return null;
+  if (/^(?:problem|issue|situation|risk)$/.test(raw)) return null;
+  if (/\b(?:go|return|back|switch|show|open|focus|look|work|take)\b/.test(raw)) return null;
+  if (raw.split(/\s+/).length > 4) return null;
+  const primary = hint(raw, "primary");
+  return {
+    kind: "focus",
+    confidence: 0.9,
+    reasons: [
+      CONVERSATIONAL_INTENT_REASON.MATCHED_FOCUS,
+      CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+      CONVERSATIONAL_INTENT_REASON.TARGET_REQUIRED,
+      CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+      CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+    ],
+    targetHints: Object.freeze(primary ? [primary] : []),
+    requiresContext: false,
+    requiresTarget: true,
+    candidateKinds: Object.freeze(["focus"] as const),
+  };
+}
+
 function resolveMatch(normalized: string): MatchResult {
   // Order matters: decision commitment before scenario; scenario before recommend.
   return (
@@ -2690,6 +2843,7 @@ function resolveMatch(normalized: string): MatchResult {
     matchAnalyze(normalized) ??
     matchSimulate(normalized) ??
     matchFocusOrOpen(normalized) ??
+    matchBareNamedIssueFocus(normalized) ??
     matchExplore(normalized) ??
     unknownMatch(normalized)
   );

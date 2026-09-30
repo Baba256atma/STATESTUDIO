@@ -435,8 +435,16 @@ export function interpretExecutiveCollectionQuery(
       /^(?:what)\s+are\s+(?:(?:the|our|my)\s+)?(?:main|open|active|key)?\s*(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?)$/i,
       "show $1",
     )
-    .replace(/^(?:what)\s+(?!(?:is|are|was|were)\b)/i, "show ")
-    .replace(/^go back to\s+/i, "show ")
+    .replace(/^(?:what)\s+(?!(?:is|are|was|were)\b)/i, "show ");
+  const restoreCollectionFromGoBack =
+    /^go back to\s+(?:the |all |our |current |active )?(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?)$/i.test(
+      stripped,
+    ) ||
+    (/^go back to\b/i.test(stripped) && collectionOrdinalIndex(stripped) != null);
+  const afterGoBack = restoreCollectionFromGoBack
+    ? stripped.replace(/^go back to\s+/i, "show ")
+    : stripped;
+  const normalized = afterGoBack
     .replace(/\s+(?:that are |are )?(?:on stage(?: that show)?)$/i, "")
     .replace(/\s+(?:do we have|are there|are open|we have)$/i, "")
     .trim();
@@ -445,17 +453,17 @@ export function interpretExecutiveCollectionQuery(
     /\b(?:show|list|all|what|open)\b/.test(prepared);
   const kindNoun =
     "(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?|evidence|outcomes?|data objects?|objects?)";
-  const match = stripped.match(
+  const match = normalized.match(
     new RegExp(
       `^(?:(?:show|open|list|see)(?:\\s+me)?|what|which)(?:\\s+(?:are|do we have))?(?:\\s+(the|all|active|open|current|our|my|top))?\\s*${kindNoun}(?:\\s+(?:do we have|are there|are open|collection|on stage))?(?:\\s+(?:related to|for|about)\\s+(.+))?$`,
     ),
   );
-  const memberMatch = stripped.match(
+  const memberMatch = normalized.match(
     new RegExp(
       `^(?:(?:show|open|list|see)(?:\\s+me)?)\\s+(.+?)\\s+${kindNoun}$`,
     ),
   );
-  const nounOnly = stripped.match(
+  const nounOnly = normalized.match(
     new RegExp(`^(?:the |all |our |current )?${kindNoun}$`),
   );
   const scopeWords = new Set(["the", "all", "active", "open", "current", "our", "my", "top"]);
@@ -466,7 +474,10 @@ export function interpretExecutiveCollectionQuery(
     const words = maybeMember.split(/\s+/).filter(Boolean);
     const onlyGrammar = words.length > 0 && words.every((word) => scopeWords.has(word) || grammarWords.has(word));
     if (maybeMember && !scopeWords.has(maybeMember) && !onlyGrammar) {
-      requestedMember = maybeMember.replace(/^(?:about|for|regarding)\s+/i, "").trim();
+      requestedMember = maybeMember
+        .replace(/^(?:about|for|regarding)\s+/i, "")
+        .replace(/^(?:the|this|that)\s+/i, "")
+        .trim();
       if (
         /^(?:problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?|evidence|outcomes?|objects?)$/i.test(
           requestedMember,
@@ -692,6 +703,51 @@ export function composeConcreteAttentionReason(input: {
     return `${input.label} needs attention because ${state}.`;
   }
   return `${input.label} has not been resolved yet, so it still deserves attention.`;
+}
+
+export function ncaCollectionContainsSubject(
+  collection:
+    | {
+        readonly items: readonly string[];
+        readonly memberIds?: readonly string[];
+      }
+    | null
+    | undefined,
+  subject:
+    | {
+        readonly id?: string | null;
+        readonly name?: string | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  if (!collection || !subject) return false;
+  if (subject.id && collection.memberIds?.includes(subject.id)) return true;
+  const name = subject.name?.trim().toLowerCase();
+  if (name && collection.items.some((item) => item.trim().toLowerCase() === name)) return true;
+  return false;
+}
+
+export function isNcaLastCollectionOrdinalReferable(
+  collection:
+    | {
+        readonly items: readonly string[];
+        readonly memberIds?: readonly string[];
+        readonly establishedAtTurn?: number;
+      }
+    | null
+    | undefined,
+  activeSubject:
+    | {
+        readonly id?: string | null;
+        readonly name?: string | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  if (!collection?.items.length) return false;
+  if (ncaCollectionContainsSubject(collection, activeSubject)) return true;
+  return collection.establishedAtTurn != null;
 }
 
 export function collectionOrdinalIndex(utterance: string): number | null {

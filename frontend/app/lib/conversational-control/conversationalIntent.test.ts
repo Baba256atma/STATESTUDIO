@@ -18,6 +18,7 @@ import {
 } from "./conversationalIntent.ts";
 import {
   isAmbiguousConversationalReference,
+  isCurrentSubjectReassessmentUtterance,
   normalizeNexoraConversationalUtterance,
   normalizeNexoraConversationalUtteranceWithDiagnostics,
 } from "./conversationalIntentNormalization.ts";
@@ -190,6 +191,33 @@ test('cert: "Show Revenue" / "Open Budget" → focus with lexical hints', () => 
   assert.equal(open.kind, "focus");
   assert.equal(open.targetHints[0]?.raw, "budget");
   assertNoObjectIdClaim(open);
+});
+
+test("cert: Switch to inventory is object focus, not workspace switch", () => {
+  const inventory = resolve("Switch to inventory.").intent;
+  assert.equal(inventory.kind, "focus");
+  assert.equal(inventory.requiresTarget, true);
+  assert.equal(inventory.targetHints[0]?.raw, "inventory");
+  assert.equal(inventory.targetHints[0]?.role, "primary");
+  assertNoObjectIdClaim(inventory);
+
+  const delivery = resolve("Switch to Delivery.").intent;
+  assert.equal(delivery.kind, "focus");
+  assert.equal(delivery.targetHints[0]?.raw, "delivery");
+  assert.equal(delivery.targetHints[0]?.role, "primary");
+
+  const workspace = resolve("Switch to the Problem workspace.").intent;
+  assert.equal(workspace.kind, "switch-workspace");
+  const implicit = resolve("Switch to overview.").intent;
+  assert.equal(implicit.kind, "switch-workspace");
+});
+
+test("locative problem-here is deictic explain, not a named subject", () => {
+  const intent = resolve("What is the problem here?").intent;
+  assert.equal(intent.kind, "explain");
+  assert.equal(intent.requiresContext, true);
+  assert.equal(intent.targetHints.length, 0);
+  assertNoObjectIdClaim(intent);
 });
 
 test('cert: collection / related shows', () => {
@@ -436,6 +464,29 @@ test("LLM / provider boundary: module graph stays local", async () => {
   }
 });
 
+test("bare named issue is a focus target, not unknown", () => {
+  const intent = resolve("The delivery issue.").intent;
+  assert.equal(intent.kind, "focus");
+  assert.equal(intent.targetHints[0]?.raw, "delivery");
+  assertNoObjectIdClaim(intent);
+});
+
+test("named return with go-back is not stolen as a bare issue focus", () => {
+  const intent = resolve("Go back to the supplier problem.").intent;
+  assert.notEqual(intent.kind, "focus");
+});
+
+test("cert: production data query is evidence, not an object target hint", () => {
+  const production = resolve("What does the production data show?").intent;
+  assert.equal(production.kind, "evidence");
+  assert.equal(production.targetHints.length, 0);
+  const generic = resolve("What does the data show?").intent;
+  assert.equal(generic.kind, "evidence");
+  const inventory = resolve("What does the inventory data show?").intent;
+  assert.equal(inventory.kind, "evidence");
+  assert.equal(inventory.targetHints.length, 0);
+});
+
 test("MO:1 object-aware why extracts the subject without encoding an object id", () => {
   const result = resolve("Why is Capacity critical?");
   assert.equal(result.intent.kind, "explain");
@@ -448,4 +499,58 @@ test("MO:1 connected / next-action / do-nothing remain generic CC intents", () =
   assert.equal(resolve("What can I do about this?").intent.kind, "recommend");
   assert.equal(resolve("What happens if I do nothing?").intent.kind, "explore-scenario");
   assert.equal(resolve("What decision is required?").intent.kind, "decision-status");
+});
+
+test("SIM-TEST:8-FIX1 — deictic reassessment is not a named issue title", () => {
+  const family = [
+    "Is this still a problem?",
+    "Is this still an issue?",
+    "Is this still happening?",
+    "Do we still have this problem?",
+    "Has this problem been resolved?",
+    "Do I still need to act?",
+    "Do we still need to do something?",
+    "Does this still need attention?",
+    "Is this risk still relevant?",
+    "Is this still a risk?",
+    "Should I still worry about this?",
+    "Does this decision still make sense?",
+    "Is this decision still valid?",
+    "Should we reconsider this?",
+    "What about this now?",
+    "Has this changed?",
+    "Where does this stand now?",
+    "Is this still relevant?",
+    "Is this still running?",
+  ];
+  for (const utterance of family) {
+    const normalized = normalizeNexoraConversationalUtterance(utterance);
+    assert.equal(isCurrentSubjectReassessmentUtterance(normalized), true, utterance);
+    const intent = resolve(utterance).intent;
+    assert.notEqual(intent.kind, "focus", utterance);
+    assert.ok(intent.kind === "explain" || intent.kind === "change", utterance);
+    assert.equal(intent.targetHints.length, 0, utterance);
+    assert.equal(intent.requiresContext, true, utterance);
+    assert.doesNotMatch(JSON.stringify(intent.targetHints), /is this still a/i, utterance);
+  }
+  assert.equal(
+    isCurrentSubjectReassessmentUtterance(
+      normalizeNexoraConversationalUtterance("Is Delivery Risk still relevant?"),
+    ),
+    false,
+  );
+  const named = resolve("Is Delivery Risk still relevant?").intent;
+  assert.equal(named.targetHints.some((hint) => /is this still a/i.test(hint.raw)), false);
+  const schedule = resolve("Show the Schedule problem.").intent;
+  assert.ok(schedule.kind === "focus" || schedule.kind === "show-problems");
+  assert.notEqual(schedule.kind, "situation");
+  const namedIssue = resolve("The Schedule problem.").intent;
+  assert.equal(namedIssue.kind, "focus");
+  assert.equal(namedIssue.targetHints[0]?.raw, "schedule");
+  assert.equal(isCurrentSubjectReassessmentUtterance("why"), false);
+  assert.equal(isCurrentSubjectReassessmentUtterance("show me"), false);
+  assert.equal(
+    isCurrentSubjectReassessmentUtterance(normalizeNexoraConversationalUtterance("What about this?")),
+    false,
+  );
 });

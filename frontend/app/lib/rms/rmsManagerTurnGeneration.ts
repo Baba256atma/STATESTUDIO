@@ -3,60 +3,73 @@
  * Emits natural language. Does not classify Nexora intent.
  */
 
-import type { RmsManagerIntent, RmsManagerKnowledge, RmsManagerProfile } from "./rmsManagerContract.ts";
-import { RMS_ARCHITECTURE_TERMS, RMS_4_BOUNDARY } from "./rmsManagerContract.ts";
+import type { RmsManagerIntent, RmsManagerKnowledge, RmsManagerProfile, RmsManagerProfileId } from "./rmsManagerContract.ts";
+import { RMS_ARCHITECTURE_TERMS, RMS_4_BOUNDARY, RMS_MANAGER_PROFILE_IDS } from "./rmsManagerContract.ts";
 
-const UTTERANCES: Readonly<Record<RmsManagerIntent, Readonly<Record<RmsManagerProfile["profileId"], string>>>> = Object.freeze({
-  UNDERSTAND: Object.freeze({
+type CertifiedProfileId = "STANDARD_MANAGER" | "IMPATIENT_MANAGER" | "DATA_DRIVEN_MANAGER";
+
+function withBehaviorFallbacks(
+  certified: Readonly<Record<CertifiedProfileId, string>>,
+  fallback: string,
+): Readonly<Record<RmsManagerProfileId, string>> {
+  const row: Record<string, string> = { ...certified };
+  for (const id of RMS_MANAGER_PROFILE_IDS) {
+    if (!row[id]) row[id] = fallback;
+  }
+  return Object.freeze(row) as Readonly<Record<RmsManagerProfileId, string>>;
+}
+
+const UTTERANCES: Readonly<Record<RmsManagerIntent, Readonly<Record<RmsManagerProfileId, string>>>> = Object.freeze({
+  UNDERSTAND: withBehaviorFallbacks({
     STANDARD_MANAGER: "What is happening?",
     IMPATIENT_MANAGER: "What's going on?",
     DATA_DRIVEN_MANAGER: "What data do we have?",
-  }),
-  INSPECT: Object.freeze({
+  }, "What is happening?"),
+  INSPECT: withBehaviorFallbacks({
     STANDARD_MANAGER: "Show me the problems.",
     IMPATIENT_MANAGER: "Show me the current problems.",
     DATA_DRIVEN_MANAGER: "Show me the problems and the supporting data.",
-  }),
-  INVESTIGATE: Object.freeze({
+  }, "Show me the problems."),
+  INVESTIGATE: withBehaviorFallbacks({
     STANDARD_MANAGER: "Explain Capacity Gap.",
     IMPATIENT_MANAGER: "Explain it.",
     DATA_DRIVEN_MANAGER: "Investigate Capacity Gap.",
-  }),
-  ASK_DATA: Object.freeze({
+  }, "Explain Capacity Gap."),
+  ASK_DATA: withBehaviorFallbacks({
     STANDARD_MANAGER: "What data supports this?",
     IMPATIENT_MANAGER: "What data?",
     DATA_DRIVEN_MANAGER: "What data supports this?",
-  }),
-  ASK_CAUSE: Object.freeze({
+  }, "What data supports this?"),
+  ASK_CAUSE: withBehaviorFallbacks({
     STANDARD_MANAGER: "Why is delivery getting worse?",
     IMPATIENT_MANAGER: "Why?",
     DATA_DRIVEN_MANAGER: "Why is delivery performance declining?",
-  }),
-  ASK_OPTIONS: Object.freeze({
+  }, "Why is delivery getting worse?"),
+  ASK_OPTIONS: withBehaviorFallbacks({
     STANDARD_MANAGER: "What can I change?",
     IMPATIENT_MANAGER: "What can I change?",
     DATA_DRIVEN_MANAGER: "What are my options?",
-  }),
-  COMPARE: Object.freeze({
+  }, "What can I change?"),
+  COMPARE: withBehaviorFallbacks({
     STANDARD_MANAGER: "Compare these scenarios.",
     IMPATIENT_MANAGER: "Compare them.",
     DATA_DRIVEN_MANAGER: "Compare these scenarios with the data.",
-  }),
-  ASK_RECOMMENDATION: Object.freeze({
+  }, "Compare these scenarios."),
+  ASK_RECOMMENDATION: withBehaviorFallbacks({
     STANDARD_MANAGER: "What do you recommend?",
     IMPATIENT_MANAGER: "What should I do?",
     DATA_DRIVEN_MANAGER: "What do you recommend, and what evidence is that based on?",
-  }),
-  FOLLOW_UP: Object.freeze({
+  }, "What do you recommend?"),
+  FOLLOW_UP: withBehaviorFallbacks({
     STANDARD_MANAGER: "Tell me more about it.",
     IMPATIENT_MANAGER: "Tell me more about that.",
     DATA_DRIVEN_MANAGER: "Tell me more about the data behind that.",
-  }),
-  CLARIFY: Object.freeze({
+  }, "Tell me more about it."),
+  CLARIFY: withBehaviorFallbacks({
     STANDARD_MANAGER: "I don't know.",
     IMPATIENT_MANAGER: "I don't know.",
     DATA_DRIVEN_MANAGER: "I don't know.",
-  }),
+  }, "I don't know."),
 });
 
 export const RMS_IMPERFECT_UTTERANCES = Object.freeze({

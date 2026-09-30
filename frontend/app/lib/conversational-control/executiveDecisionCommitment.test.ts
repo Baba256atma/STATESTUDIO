@@ -282,6 +282,187 @@ test("2–3 explicit scenario commitment + approval", () => {
   assert.equal(approve.decisionCommitmentResult?.status, "already-committed");
 });
 
+test("option B ordinal commitment uses the active candidate collection", () => {
+  const decisionRuntime = withRuntime();
+  const session = sessionWithScenarios(["a", "b", "c"]);
+  const choose = run("Let's go with option B.", {
+    scenarioSession: session,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "option-b",
+  });
+  assert.equal(choose.decisionCommitmentResult?.status, "applied");
+  assert.equal(decisionRuntime.adapter.listDecisions().length, 1);
+  assert.equal(
+    choose.decisionCommitmentResult?.decision?.scenarioId,
+    scenario("b").scenarioId,
+  );
+
+  const second = run("Use the second option.", {
+    scenarioSession: session,
+    decisionRuntime: withRuntime().adapter,
+    seed: "second-option",
+  });
+  assert.equal(second.decisionCommitmentResult?.status, "applied");
+  assert.equal(
+    second.decisionCommitmentResult?.decision?.scenarioId,
+    scenario("b").scenarioId,
+  );
+
+  const discuss = run("What about option B?", {
+    scenarioSession: session,
+    decisionRuntime: withRuntime().adapter,
+    seed: "discuss-b",
+  });
+  assert.notEqual(discuss.decisionCommitmentResult?.status, "applied");
+  assert.equal(discuss.decisionRuntime?.listDecisions().length ?? 0, 0);
+
+  const compared = run("Compare option A and option B.", {
+    scenarioSession: session,
+    decisionRuntime: withRuntime().adapter,
+    seed: "compare-ab",
+  });
+  assert.notEqual(compared.decisionCommitmentResult?.status, "applied");
+
+  const unknown = run("Use option Z.", {
+    scenarioSession: session,
+    decisionRuntime: withRuntime().adapter,
+    seed: "option-z",
+  });
+  assert.notEqual(unknown.decisionCommitmentResult?.status, "applied");
+  assert.equal(unknown.decisionRuntime?.listDecisions().length ?? 0, 0);
+
+  const outOfRange = run("Choose option C.", {
+    scenarioSession: sessionWithScenarios(["a", "b"]),
+    decisionRuntime: withRuntime().adapter,
+    seed: "option-c",
+  });
+  assert.equal(outOfRange.decisionCommitmentResult?.status, "clarification-required");
+  assert.equal(outOfRange.decisionRuntime?.listDecisions().length ?? 0, 0);
+});
+
+test("Approve that option commits the active candidate without replacing it with the current problem", () => {
+  const decisionRuntime = withRuntime();
+  const session = sessionWithScenarios(["a", "b"]);
+  const choose = run("Approve that option.", {
+    scenarioSession: session,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "approve-that",
+  });
+  assert.equal(choose.decisionCommitmentResult?.status, "applied");
+  assert.equal(
+    choose.decisionCommitmentResult?.decision?.scenarioId,
+    scenario("a").scenarioId,
+  );
+  assert.equal(decisionRuntime.adapter.listDecisions().length, 1);
+});
+
+test("Use that option clarifies when multiple candidates have no active scenario", () => {
+  const decisionRuntime = withRuntime();
+  const session = Object.freeze({
+    ...sessionWithScenarios(["a", "b"]),
+    activeScenarioId: null,
+  });
+  const result = run("Use that option.", {
+    executiveContext: ctx(),
+    scenarioSession: session,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "use-that-ambig",
+  });
+  assert.equal(result.decisionCommitmentResult?.status, "clarification-required");
+  assert.equal(decisionRuntime.adapter.listDecisions().length, 0);
+});
+
+test("discussion of option A retains the active option collection for later commitment", () => {
+  const decisionRuntime = withRuntime();
+  const session = sessionWithScenarios(["a", "b"]);
+  const discuss = run("What about option A?", {
+    scenarioSession: session,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "discuss-a-retain",
+  });
+  assert.equal(discuss.decisionCommitmentResult?.status ?? null, null);
+  assert.equal(decisionRuntime.adapter.listDecisions().length, 0);
+  assert.deepEqual(
+    discuss.nextScenarioSession?.candidateScenarioIds,
+    session.candidateScenarioIds,
+  );
+
+  const choose = run("Let's go with option B.", {
+    scenarioSession: discuss.nextScenarioSession,
+    executiveContext: discuss.nextExecutiveContext,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "commit-after-discuss",
+  });
+  assert.equal(choose.decisionCommitmentResult?.status, "applied");
+  assert.equal(decisionRuntime.adapter.listDecisions().length, 1);
+  assert.equal(
+    choose.decisionCommitmentResult?.decision?.scenarioId,
+    scenario("b").scenarioId,
+  );
+});
+
+test("named delivery recovery plan commits the unique intervention candidate", () => {
+  const decisionRuntime = withRuntime();
+  const doNothing = Object.freeze({
+    ...scenario("a"),
+    scenarioId: "cc9:scenario:do-nothing:obj-delivery:v1:a",
+    name: "No Action on Delivery",
+    kind: "do-nothing" as const,
+    subjectIds: Object.freeze(["obj-delivery"]),
+  });
+  const investigate = Object.freeze({
+    ...scenario("b"),
+    scenarioId: "cc9:scenario:intervention:obj-delivery:v1:b",
+    name: "Investigate Delivery",
+    kind: "intervention" as const,
+    subjectIds: Object.freeze(["obj-delivery"]),
+  });
+  const session = Object.freeze({
+    ...createEmptyNexoraExecutiveScenarioSession(),
+    scenariosById: Object.freeze({
+      [doNothing.scenarioId]: doNothing,
+      [investigate.scenarioId]: investigate,
+    }),
+    evaluationsById: Object.freeze({
+      [doNothing.scenarioId]: evaluationFor(doNothing),
+      [investigate.scenarioId]: evaluationFor(investigate),
+    }),
+    candidateScenarioIds: Object.freeze([doNothing.scenarioId, investigate.scenarioId]),
+    activeScenarioId: doNothing.scenarioId,
+    lastComparison: null,
+  });
+  const choose = run("Approve the delivery recovery plan.", {
+    scenarioSession: session,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "delivery-plan",
+  });
+  assert.equal(choose.decisionCommitmentResult?.status, "applied");
+  assert.equal(
+    choose.decisionCommitmentResult?.decision?.scenarioId,
+    investigate.scenarioId,
+  );
+  assert.equal(decisionRuntime.adapter.listDecisions().length, 1);
+});
+
+test("duplicate confirmation does not create a second Decision", () => {
+  const decisionRuntime = withRuntime();
+  const session = sessionWithScenarios(["a", "b", "c"]);
+  const choose = run("Let's go with option B.", {
+    scenarioSession: session,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "commit-once",
+  });
+  assert.equal(choose.decisionCommitmentResult?.status, "applied");
+  const yes = run("Yes, make that the decision.", {
+    scenarioSession: session,
+    decisionSession: choose.nextDecisionSession,
+    decisionRuntime: decisionRuntime.adapter,
+    seed: "confirm-again",
+  });
+  assert.equal(yes.decisionCommitmentResult?.status, "already-committed");
+  assert.equal(decisionRuntime.adapter.listDecisions().length, 1);
+});
+
 test("4 ambiguous commitment", () => {
   const decisionRuntime = withRuntime();
   const session = sessionWithScenarios(["a", "b", "c"]);
@@ -322,6 +503,21 @@ test("5–7 confirmation required, yes, cancel", () => {
   assert.equal(yes.decisionCommitmentResult?.status, "applied");
   assert.equal(yes.decisionCommitmentResult?.decision?.status, "Approved");
   assert.equal(decisionRuntime.adapter.listDecisions().length, 1);
+
+  const changeRuntime = withRuntime();
+  const pendingB = run("I think we should probably choose B", {
+    scenarioSession: session,
+    decisionRuntime: changeRuntime.adapter,
+    seed: "pending-b",
+  });
+  const switchA = run("Let's go with option A.", {
+    scenarioSession: session,
+    decisionSession: pendingB.nextDecisionSession,
+    decisionRuntime: changeRuntime.adapter,
+    seed: "switch-a",
+  });
+  assert.notEqual(switchA.decisionCommitmentResult?.decision?.scenarioId, scenario("b").scenarioId);
+  assert.equal(changeRuntime.adapter.listDecisions().filter((item) => item.scenarioId === scenario("b").scenarioId).length, 0);
 
   const soft2 = run("I think we should probably choose B", {
     scenarioSession: session,

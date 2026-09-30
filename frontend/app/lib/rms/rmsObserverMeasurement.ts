@@ -27,6 +27,8 @@ export type RmsObserverInput = {
   readonly observations: readonly RmsObservableRecord[];
   readonly publications: readonly RmsOperatorPublicationAttempt[];
   readonly publishedMetricKeys: readonly string[];
+  readonly expectedObservationFields?: readonly string[];
+  readonly publicationEligibleFields?: readonly string[];
   readonly managerTurns: readonly RmsManagerRecordedTurn[];
   readonly managerKnowledge: RmsManagerKnowledge | null;
   readonly nexoraKnowledge: RmsNexoraKnowledgeView;
@@ -93,7 +95,11 @@ export function measureRmsPerspectives(input: RmsObserverInput): RmsObserverRepo
   }
 
   const latestByField = latestObservations(input.observations);
+  const expectedObservationFields = input.expectedObservationFields
+    ? new Set(input.expectedObservationFields)
+    : null;
   for (const rule of RMS_DEFAULT_OBSERVATION_POLICY) {
+    if (expectedObservationFields && !expectedObservationFields.has(rule.field)) continue;
     const variable = input.world.variables.find((item) => item.key === rule.worldKey);
     if (!variable) continue;
     const delayOk = tick - variable.tick >= rule.delayTicks;
@@ -135,6 +141,7 @@ export function measureRmsPerspectives(input: RmsObserverInput): RmsObserverRepo
 
   for (const record of latestByField.values()) {
     if (record.status !== "AVAILABLE" || typeof record.value !== "number") continue;
+    if (input.publicationEligibleFields && !input.publicationEligibleFields.includes(record.field)) continue;
     if (!input.publishedMetricKeys.includes(record.field)) {
       push({
         measurementId: `m:bc:${record.field}`,
@@ -427,7 +434,7 @@ function managerAskedHiddenTruth(utterance: string, knowledge: RmsManagerKnowled
 }
 
 function classifyCausalLanguage(response: string): "OVERCLAIM" | "UNCERTAIN" | "OTHER" {
-  if (/(not yet confirmed|insufficient evidence|cause is not yet|possible contributor|evidence is incomplete)/i.test(response)) {
+  if (/(not (?:a )?confirmed cause|without treating .{0,40} as (?:a )?confirmed cause|not confirmed as (?:a )?cause|not yet confirmed|insufficient evidence|cause is not yet|possible contributor|evidence is incomplete|not enough evidence|do not establish|does not establish|not a measured impact)/i.test(response)) {
     return "UNCERTAIN";
   }
   if (/(definitely caused|caused the delivery problem|confirmed cause)/i.test(response)) return "OVERCLAIM";

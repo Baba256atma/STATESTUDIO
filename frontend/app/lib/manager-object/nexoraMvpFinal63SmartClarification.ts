@@ -113,7 +113,10 @@ export function applyResumedMeaningToIntent(
   const forcedUnknown: NexoraConversationalIntentResolution = Object.freeze({
     intent: Object.freeze({
       ...resolution.intent,
-      kind: "unknown",
+      kind:
+        resolution.intent.kind === "focus" && resumed.requestedOperation === "FOCUS"
+          ? resolution.intent.kind
+          : "unknown",
     }),
     trace: resolution.trace,
   });

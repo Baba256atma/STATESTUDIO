@@ -3,6 +3,7 @@
  */
 
 import type { RmsActorIdentity } from "./rmsActorContracts.ts";
+import { observationPolicyForSources } from "./rmsObservationPolicy.ts";
 import { RMS_MANAGER_PROFILES } from "./rmsManagerProfiles.ts";
 import { emptyRmsManagerKnowledge } from "./rmsManagerRuntime.ts";
 import { RMS_7_BOUNDARY, type RmsScenarioDefinition, type RmsScenarioRunResult } from "./rmsScenarioContract.ts";
@@ -81,7 +82,11 @@ export function executeRmsScenario(input: {
   for (let i = 0; i < scenario.managerTurns; i += 1) {
     runRmsManagerConversationTurn(session, manager);
   }
-  const report = measureRmsObserverIntelligence(session, observer);
+  const report = measureRmsObserverIntelligence(session, observer, {
+    expectedObservationFields: observationPolicyForSources(scenario.enabledSources).map(
+      (rule) => rule.field,
+    ),
+  });
   const events = inspectRmsEventSchedule(session, observer);
   const ledger = inspectRmsOperatorLedger(session, observer);
   const conversation = inspectRmsManagerConversation(session, observer);

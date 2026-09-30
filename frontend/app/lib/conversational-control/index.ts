@@ -47,6 +47,7 @@ export {
 export {
   normalizeNexoraConversationalUtterance,
   isAmbiguousConversationalReference,
+  isCurrentSubjectReassessmentUtterance,
   isConversationalInterfaceFiller,
   stripConversationalArticles,
   stripConversationalInterfaceFiller,

@@ -76,6 +76,32 @@ describe("NXA:1 Executive Decision Advisor contract", () => {
     safe(explained);
   });
 
+  it("what is the problem follows the current Delivery subject", () => {
+    const shown = run("Show Delivery.");
+    const asked = run("What is the problem?", shown);
+    assert.match(asked.nxaAdvisorContract?.referentId ?? "", /delivery/i);
+    assert.doesNotMatch(asked.nxaAdvisorContract?.referentId ?? "", /capacity/i);
+    safe(asked);
+  });
+
+  it("locative problem-here follows the current Delivery subject, not a stale Problem alias", () => {
+    const shown = run("Show Delivery.");
+    const asked = run("What is the problem here?", shown);
+    assert.match(asked.nxaAdvisorContract?.referentId ?? "", /delivery/i);
+    assert.doesNotMatch(asked.nxaAdvisorContract?.referentId ?? "", /capacity/i);
+    assert.doesNotMatch(asked.response, /couldn't find a clear match for “Problem Here”/i);
+    safe(asked);
+  });
+
+  it("unsupported action does not retarget Advisor away from the current subject", () => {
+    const shown = run("Show Capacity.");
+    const result = run("Teleport all inventory to the finished-goods warehouse.", shown);
+    assert.match(result.response, /can't do that from this workspace/i);
+    assert.match(result.nxaAdvisorContract?.referentId ?? "", /capacity/i);
+    assert.doesNotMatch(result.nxaAdvisorContract?.referentId ?? "", /inventory/i);
+    safe(result);
+  });
+
   it("investigation and advice preserve evidence limits", () => {
     const shown = run("Show Delivery.");
     const why = run("Why is Delivery below target?", shown);

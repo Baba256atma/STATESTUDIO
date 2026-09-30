@@ -6,7 +6,10 @@
  * subject and FINAL:6.2 continuity.
  */
 
-import { isTargetedDeicticInvestigationUtterance } from "./conversationalIntentNormalization.ts";
+import {
+  isCurrentSubjectReassessmentUtterance,
+  isTargetedDeicticInvestigationUtterance,
+} from "./conversationalIntentNormalization.ts";
 
 export type CompositionSubjectRef = Readonly<{
   readonly id: string | null;
@@ -145,6 +148,7 @@ export function isDeicticSubjectFollowUpUtterance(
   ) {
     return true;
   }
+  if (isCurrentSubjectReassessmentUtterance(normalizedUtterance)) return true;
   return isTargetedDeicticInvestigationUtterance(normalizedUtterance);
 }
 

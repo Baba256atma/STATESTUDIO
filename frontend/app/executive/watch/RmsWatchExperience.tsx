@@ -36,6 +36,9 @@ import {
 import type { RmsWatchScenarioCard, RmsWatchSession, RmsWatchSpeed } from "@/app/lib/rms/rmsWatchContract.ts";
 import type { RmsTakeControlView } from "@/app/lib/rms/rmsHandoffContract.ts";
 import type { RmsExperimentView } from "@/app/lib/rms/rmsExperimentContract.ts";
+import { runNexoraSimulationTestJourney } from "@/app/lib/sim-test/nexoraSimulationTestHarness.ts";
+import { getNexoraSimulationIngestionJourney } from "@/app/lib/sim-test/nexoraSimulationIngestionJourneys.ts";
+import type { NexoraSimulationTestRunReport } from "@/app/lib/sim-test/nexoraSimulationTestContract.ts";
 
 const chrome = {
   bg: "#0a0e14",
@@ -53,6 +56,8 @@ export function RmsWatchExperience({ cards = listRmsWatchScenarioCards() }: { re
   const [control, setControl] = useState<RmsTakeControlView | null>(null);
   const [experiment, setExperiment] = useState<RmsExperimentView | null>(null);
   const [draft, setDraft] = useState("");
+  const [dataInspector, setDataInspector] = useState<NexoraSimulationTestRunReport | null>(null);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const visibleConversation = useMemo(() => {
     if (!session) return [];
     if (control?.phase === "TAKE_CONTROL") return session.presentation.conversation;
@@ -62,6 +67,35 @@ export function RmsWatchExperience({ cards = listRmsWatchScenarioCards() }: { re
     if (allowed.size === 0) return [];
     return session.presentation.conversation.filter((item) => allowed.has(item.turnIndex));
   }, [session, control]);
+  const managerVisibleData = useMemo(() => {
+    if (!session) return [];
+    const ingestionVisible = session.visibleMoments.some(
+      (item) => item.kind === "DATA_CHANGE" || item.kind === "KPI_CHANGE",
+    );
+    return ingestionVisible
+      ? session.presentation.data.filter((item) => item.status === "AVAILABLE")
+      : [];
+  }, [session]);
+  const visibleFiles = useMemo(() => {
+    const all = dataInspector?.ingestion?.files ?? [];
+    if (!session || all.length === 0) return [];
+    const maxVersion = Math.max(...all.map((item) => item.version));
+    const progress = session.presentation.moments.length <= 1
+      ? 1
+      : session.cursor / (session.presentation.moments.length - 1);
+    const visibleVersion = Math.max(1, Math.min(maxVersion, 1 + Math.floor(progress * maxVersion)));
+    return all.filter((item) => item.version <= visibleVersion);
+  }, [dataInspector, session]);
+  const currentFiles = useMemo(() => {
+    const latest = new Map<string, (typeof visibleFiles)[number]>();
+    for (const file of visibleFiles) latest.set(file.sourceType, file);
+    return [...latest.values()];
+  }, [visibleFiles]);
+  const selectedSource = dataInspector?.ingestion?.files.find((item) => item.fileId === selectedFileId)?.sourceType ?? null;
+  const selectedFile = currentFiles.find((item) => item.sourceType === selectedSource)
+    ?? currentFiles[0]
+    ?? null;
+  const selectedIngestion = dataInspector?.ingestion?.states.find((item) => item.file.fileId === selectedFile?.fileId) ?? null;
 
   if (!selected) {
     return (
@@ -126,7 +160,7 @@ export function RmsWatchExperience({ cards = listRmsWatchScenarioCards() }: { re
           ))}
         </ol>
         <h3 style={h3}>What changed?</h3>
-        <p data-testid="rms-watch-what-changed">{session.presentation.whatChanged}</p>
+        <p data-testid="rms-watch-what-changed">{session.currentMoment?.summary ?? session.presentation.whatChanged}</p>
       </section>
       <section style={{ ...panel, borderLeft: `1px solid ${chrome.line}`, borderRight: `1px solid ${chrome.line}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
@@ -284,10 +318,54 @@ export function RmsWatchExperience({ cards = listRmsWatchScenarioCards() }: { re
       <section style={panel}>
         <h2 style={h2}>Visible data</h2>
         <ul data-testid="rms-watch-data">
-          {session.presentation.data.filter((item) => item.status === "AVAILABLE").map((item) => (
+          {managerVisibleData.map((item) => (
             <li key={item.field}>{item.field}: {String(item.value ?? "—")}</li>
           ))}
         </ul>
+        <button
+          type="button"
+          data-testid="rms-watch-data-files"
+          onClick={() => {
+            if (dataInspector) {
+              setDataInspector(null);
+              setSelectedFileId(null);
+              return;
+            }
+            const report = runNexoraSimulationTestJourney({
+              journey: getNexoraSimulationIngestionJourney(session.scenarioId),
+              runId: session.runId,
+            });
+            setDataInspector(report);
+            setSelectedFileId(report.ingestion?.files[0]?.fileId ?? null);
+          }}
+          style={ghostButton}
+        >
+          {dataInspector ? "Close Data / Files" : "Data / Files"}
+        </button>
+        {dataInspector ? (
+          <div data-testid="rms-watch-csv-inspector" style={{ marginTop: 12, padding: 12, border: `1px solid ${chrome.line}`, borderRadius: 10 }}>
+            <div style={{ fontSize: 12, color: chrome.muted }}>SIM-TEST data inspector · Observer/test visibility</div>
+            <div data-testid="rms-watch-file-list" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              {currentFiles.map((file) => (
+                <button key={file.fileId} type="button" data-testid={`rms-watch-file-${file.sourceType}`} onClick={() => setSelectedFileId(file.fileId)} style={selectedFile?.fileId === file.fileId ? primaryButton : ghostButton}>
+                  {file.fileName} · v{file.version}
+                </button>
+              ))}
+            </div>
+            {selectedFile ? (
+              <div data-testid="rms-watch-file-detail" style={{ marginTop: 12 }}>
+                <strong>{selectedFile.fileName}</strong>
+                <div style={{ color: chrome.muted, fontSize: 12 }}>{selectedFile.sourceType} · tick {selectedFile.generatedAtTick} · {selectedFile.rowCount} row(s)</div>
+                <div style={{ color: chrome.muted, fontSize: 12 }}>Schema {selectedFile.schemaVersion} · provenance {selectedFile.provenance.sealedGroundTruthIncluded ? "invalid" : "verified"}</div>
+                <div data-testid="rms-watch-file-ingestion-state" style={{ color: chrome.accent, fontSize: 12 }}>{selectedIngestion?.state ?? "Not ingested"}</div>
+                <pre data-testid="rms-watch-file-content" style={{ overflow: "auto", fontSize: 11, whiteSpace: "pre", background: chrome.bg, padding: 8, borderRadius: 6 }}>{selectedFile.csvText}</pre>
+                <div data-testid="rms-watch-file-history" style={{ fontSize: 12, color: chrome.muted }}>
+                  Updates: {visibleFiles.filter((item) => item.sourceType === selectedFile.sourceType).map((item) => `tick ${item.generatedAtTick} (v${item.version})`).join(" · ")}
+                </div>
+              </div>
+            ) : <p>No Operator-observable file version is available.</p>}
+          </div>
+        ) : null}
         <h3 style={h3}>Why did Nexora react?</h3>
         <p data-testid="rms-watch-why">{session.presentation.whyNexoraReacted}</p>
         <h3 style={h3}>Guidance</h3>
@@ -302,6 +380,8 @@ export function RmsWatchExperience({ cards = listRmsWatchScenarioCards() }: { re
             setSelected(null);
             setControl(null);
             setExperiment(null);
+            setDataInspector(null);
+            setSelectedFileId(null);
           }}
           style={{ ...ghostButton, marginTop: 16 }}
         >

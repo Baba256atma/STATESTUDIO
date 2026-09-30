@@ -1,7 +1,7 @@
 import type { CanonicalManagerMeaning } from "../manager-object/canonicalManagerMeaning.ts";
 import type { ManagerObjectActivationSource } from "../manager-object/managerObjectInteractionFoundation.ts";
 import type { NexoraConversationState } from "../manager-object/nexoraNca2ConversationStateTypes.ts";
-import { collectionOrdinalIndex } from "../manager-object/nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
+import { collectionOrdinalIndex, isNcaLastCollectionOrdinalReferable } from "../manager-object/nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import {
   isDeicticSubjectFollowUpUtterance,
 } from "../conversational-control/subjectCompositionFidelity.ts";
@@ -351,11 +351,20 @@ export function composeEcaWorkingConversationContext(
             input.subjects.find((subject) => subject.label.toLowerCase() === name.toLowerCase()) ?? null,
         )
         .filter((subject): subject is EcaSubject => subject != null);
+  const lastCollectionReferable = isNcaLastCollectionOrdinalReferable(
+    input.conversationState?.lastCollection,
+    input.conversationState?.activeSubject,
+  );
+  const comparisonReferable =
+    comparisonPool.length > 0 &&
+    ((Boolean(input.conversationState?.activeSubject?.id) &&
+      comparisonPool.some((subject) => subject.id === input.conversationState?.activeSubject?.id)) ||
+      lastCollectionReferable);
   const stageMembershipUtterance = /\bon (?:the )?stage\b/i.test(input.utterance);
   const ordinalPool =
-    comparisonPool.length > 0
+    comparisonPool.length > 0 && comparisonReferable
       ? comparisonPool
-      : !stageMembershipUtterance && listedPool.length > 0
+      : !stageMembershipUtterance && lastCollectionReferable && listedPool.length > 0
         ? listedPool
       : /\bscenario/i.test(input.utterance)
         ? /scenario/i.test(input.stage.collection?.kind ?? "") && collectionPool.length > 0
@@ -365,9 +374,7 @@ export function composeEcaWorkingConversationContext(
           ? /problem/i.test(input.stage.collection?.kind ?? "") && collectionPool.length > 0
             ? collectionPool
             : problemPool
-          : collectionPool.length > 0
-            ? collectionPool
-            : scenarioPool;
+          : [];
   const ordinalSubject =
     ordinalIdx == null || ordinalPool.length === 0
       ? null

@@ -1,0 +1,27 @@
+# T83 focused reproduction
+
+- Manufacturing baseline (pre-FIX6): `fnv1a32:13088832`
+- Focused baseline (86 manager turns): `fnv1a32:b75eba23` (S1 includes T83 REPEATED_CLARIFICATION)
+- Minimum history: T13 Decision, T17 Execution, T77/T78 scenario revisit/compare, T69–T71 referent, T79–T86 window
+- T83 manager utterance: `Is there a new bottleneck I should know about?`
+- Intent: INVESTIGATE
+- Canonical meaning: investigation of current Delivery context
+- Subject / referent: `obj-delivery`
+- Pending before T83 (pre-repair): **YES**
+- Pending origin turn: T81 `What supports that now?`
+- Pending type: REFERENCE_AMBIGUITY / TYPE_AMBIGUITY (`Are you asking about the problem or the KPI?`)
+- Pending target: Delivery Object vs problem/KPI candidates from long thread
+- Pending candidates: mixed Object/Problem (not empty)
+- T83 independently resolvable: **yes** (active Delivery; not an answer to problem-vs-KPI)
+- Compatible with pending: no
+- Answers pending: no
+- Supersedes pending: **yes** (certified independent-request semantics)
+- Clarification action before repair: KEEP → loopCount ≥ 2 → fail (`Name the one you want to investigate.`)
+- Pending after (pre-repair): fail / same signature
+- clarificationRequired (pre): true
+- First divergence: FINAL:6.3 gate treated `that` in T81 evidence as thread REFERENCE_AMBIGUITY while Delivery was already current; resolver then kept that pending through T82–T83
+- Root cause: PENDING_STATE_PRECEDENCE_DEFECT / FINAL63_SUPERSESSION_DEFECT (CREATE at T81, KEEP at T83)
+- Earliest owner: `nexoraMvpFinal63ClarificationGate` (`that` + thread ≥ 2)
+- Repair: skip that-rule for knowledge ops with active subject; supersede TYPE/REFERENCE pending on independent `?` / investigate / status
+- Focused repaired signature: `fnv1a32:b99dbbdd` (T83 finding gone; T85–T86 Stage remain)
+- Result: REPAIRED_AND_PASS

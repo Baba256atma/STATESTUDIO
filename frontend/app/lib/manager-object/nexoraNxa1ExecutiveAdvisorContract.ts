@@ -10,6 +10,7 @@
 import type { CanonicalManagerMeaning } from "./canonicalManagerMeaning.ts";
 import type { ManagerConversationTurn } from "./nexoraNca1ConversationTypes.ts";
 import type { NexoraConversationState } from "./nexoraNca2ConversationStateTypes.ts";
+import { classifyGuidanceIntent } from "./nexoraMvpFinal65Guidance.ts";
 
 export const nexoraNxa1Identity =
   "NXA:1/ExecutiveDecisionAdvisorConversationContract" as const;
@@ -93,10 +94,13 @@ export function resolveNxaAdvisorTurnContract(input: {
   const need = needFromExistingMeaning(input.meaning, input.nca);
   const rawExplicit = input.meaning.objectReference;
   const deicticUtterance =
-    /^(?:explain|investigate|why|what about|tell me about)?\s*(?:it|this|that)(?:\s+(?:problem|scenario|one|object))?[.!?]?$/i.test(
+    /^(?:explain|investigate|why|what about|what is|what's|whats|tell me about)?\s*(?:it|this|that|the|here|there)(?:\s+(?:problem|issue|scenario|one|object))?(?:\s+(?:here|there|now))?[.!?]?$/i.test(
       input.meaning.rawUtterance.trim(),
     ) || /how do i use this object/i.test(input.meaning.rawUtterance);
-  const explicit = deicticUtterance ? null : rawExplicit;
+  const unsupportedAction =
+    input.nca.need.family === "UNKNOWN" ||
+    classifyGuidanceIntent(input.meaning, input.meaning.rawUtterance) === "PRODUCT_FICTION";
+  const explicit = deicticUtterance || unsupportedAction ? null : rawExplicit;
   const active = input.dialogue.activeSubject;
   const collection = input.dialogue.lastCollection;
   const useCollection =
@@ -135,7 +139,7 @@ export function inspectNxaManagerLanguage(response: string): {
   readonly unsupportedCausalCertainty: boolean;
 } {
   const certaintyCandidate = response.replace(
-    /\b(?:not|isn't|is not|none of (?:these|them) is) (?:a )?confirmed cause\b/gi,
+    /\b(?:not|isn't|is not|none of (?:these|them) is|without treating \w+(?: \w+)? as) (?:a )?confirmed cause\b/gi,
     "uncertainty preserved",
   );
   return Object.freeze({

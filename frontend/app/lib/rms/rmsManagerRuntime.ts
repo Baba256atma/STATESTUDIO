@@ -11,6 +11,7 @@ import type {
   RmsManagerVisibleFact,
 } from "./rmsManagerContract.ts";
 import { RMS_4_BOUNDARY } from "./rmsManagerContract.ts";
+import { profileUsesBoundedBehavior, selectBoundedRmsManagerBehaviorTurn } from "./rmsManagerBehavior.ts";
 import { generateRmsManagerTurn, nexoraAskedClarification, selectRmsManagerIntent } from "./rmsManagerTurnGeneration.ts";
 import type { RmsCc5Turn } from "./rmsManagerCc5Adapter.ts";
 import { projectManagerVisibleResponse } from "./rmsManagerCc5Adapter.ts";
@@ -39,6 +40,7 @@ export type RmsManagerConversationBind = {
   autoConfirm: false;
   autoApproveDecision: false;
   autoStartExecution: false;
+  behaviorSeed: number | null;
 };
 
 export type RmsManagerRecordedTurn = {
@@ -83,6 +85,7 @@ export function createRmsManagerConversationBind(input: {
   readonly profile: RmsManagerProfile;
   readonly objective: RmsManagerObjective;
   readonly knowledge?: RmsManagerKnowledge;
+  readonly behaviorSeed?: number | null;
 }): RmsManagerConversationBind {
   if (input.profile.groundTruthAccess) throw new Error("RMS:4 profile must not grant Ground Truth");
   return {
@@ -99,6 +102,7 @@ export function createRmsManagerConversationBind(input: {
     autoConfirm: false,
     autoApproveDecision: false,
     autoStartExecution: false,
+    behaviorSeed: input.behaviorSeed ?? null,
   };
 }
 
@@ -115,10 +119,20 @@ export function chooseRmsManagerUtterance(bind: RmsManagerConversationBind, extr
     });
     return Object.freeze({ intent, utterance: extras.forcedUtterance, replacesNexoraIntent: false });
   }
+  const clarificationAsked = bind.lastNexoraResponse ? nexoraAskedClarification(bind.lastNexoraResponse) : false;
+  if (!clarificationAsked && profileUsesBoundedBehavior(bind.profile.profileId, bind.behaviorSeed)) {
+    return selectBoundedRmsManagerBehaviorTurn({
+      profile: bind.profile,
+      objective: bind.objective,
+      knowledge: bind.knowledge,
+      turnCount: bind.memory.turnCount,
+      seed: bind.behaviorSeed ?? 0,
+    });
+  }
   const intent = selectRmsManagerIntent({
     agenda: bind.objective.agenda,
     turnCount: bind.memory.turnCount,
-    clarificationAsked: bind.lastNexoraResponse ? nexoraAskedClarification(bind.lastNexoraResponse) : false,
+    clarificationAsked,
   });
   return generateRmsManagerTurn({
     intent,

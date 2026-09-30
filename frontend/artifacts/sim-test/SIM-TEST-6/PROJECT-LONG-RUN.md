@@ -1,0 +1,28 @@
+## Project long session
+- Journey: sim-test-6-project-long
+- Turns: 63
+- Ticks: 15
+- Mode: INGESTION
+- Profile: STANDARD_MANAGER
+- Signature: fnv1a32:564816ec
+- Stop: JOURNEY_COMPLETE
+- Harness: PASS
+- Product: PASS
+- Continuity conversation: PASS
+- Continuity referent: PASS
+- Continuity NMI: PASS
+- Continuity MLEVEL: PASS
+- Continuity Stage: PASS
+- Continuity Advisor: PASS
+- Data freshness: PASS
+- Evidence safety: PASS
+- Causal safety: PASS
+- Decision IDs: cc10:decision:cc9:scenario:intervention:obj-delivery:v1
+- Execution IDs: execution-cc10:decision:cc9:scenario:intervention:obj-delivery:v1
+- Scenario IDs: cc9:scenario:intervention:obj-delivery:v1
+- Subject switches: 11
+- Historical returns: 7
+- Clarification-required turns: 12
+- Learning durable: false
+- Journey findings: 1
+- Harness findings: 0

@@ -68,6 +68,13 @@ export function stripReferenceFillers(value: string): string {
   return text;
 }
 
+function compoundKeyCoveredByInput(key: string, normalizedInput: string): boolean {
+  const words = key.split(/\s+/).filter((word) => word.length >= 3);
+  if (words.length <= 1) return true;
+  const haystack = ` ${normalizedInput} `;
+  return words.every((word) => haystack.includes(` ${word} `));
+}
+
 export function damerauLevenshtein(a: string, b: string, limit = 2): number {
   if (a === b) return 0;
   if (Math.abs(a.length - b.length) > limit) return limit + 1;
@@ -128,6 +135,7 @@ export function resolveRegisteredReference(input: {
   const exact: RegisteredReferenceCandidate[] = [];
   const morph: RegisteredReferenceCandidate[] = [];
   const fuzzy: RegisteredReferenceCandidate[] = [];
+  const partial: RegisteredReferenceCandidate[] = [];
   const context = new Set(
     (input.contextNames ?? []).map((name) => normalizeRegisteredReferenceText(name)),
   );
@@ -156,6 +164,7 @@ export function resolveRegisteredReference(input: {
     for (const entry of input.catalog) {
       const keys = [...new Set(entry.keys.map((key) => normalizeRegisteredReferenceText(key)).filter(Boolean))];
       let best: RegisteredReferenceCandidate | null = null;
+      let bestPartial: RegisteredReferenceCandidate | null = null;
       for (const key of keys) {
         const compact = key.replace(/\s+/g, "");
         const parts = [
@@ -163,17 +172,25 @@ export function resolveRegisteredReference(input: {
           ...key.split(/\s+/).map((part) => part.replace(/\s+/g, "")),
         ].filter((part) => part.length >= 5);
         for (const part of [...new Set(parts)]) {
+          const covered = part === compact || compoundKeyCoveredByInput(key, normalized);
           const distance = damerauLevenshtein(token, part, limit);
           if (distance > limit) continue;
           if (distance / Math.max(token.length, part.length) > 0.34) continue;
-          if (!best || distance < best.distance) {
-            best = candidate(entry, key, distance, "fuzzy");
+          if (covered) {
+            if (!best || distance < best.distance) best = candidate(entry, key, distance, "fuzzy");
+          } else if (!bestPartial || distance < bestPartial.distance) {
+            bestPartial = candidate(entry, key, distance, "fuzzy");
           }
         }
       }
       if (best) fuzzy.push(best);
+      else if (bestPartial) partial.push(bestPartial);
     }
   }
+  // A single word of a compound key never selects that subject on its own; it
+  // stays a competing candidate only when a complete key matches equally well.
+  const bestCovered = Math.min(...fuzzy.map((item) => item.distance));
+  fuzzy.push(...partial.filter((item) => item.distance === bestCovered));
 
   fuzzy.sort((left, right) => {
     if (left.distance !== right.distance) return left.distance - right.distance;

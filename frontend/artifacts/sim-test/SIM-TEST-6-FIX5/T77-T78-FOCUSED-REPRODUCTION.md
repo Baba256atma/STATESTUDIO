@@ -1,0 +1,30 @@
+# T77–T78 focused reproduction
+
+- Manufacturing baseline (pre-FIX5): `fnv1a32:e22a59ad`
+- Focused baseline (80 manager turns, pre-Observer repair): `fnv1a32:bd1099b6` (S1 = T77 + T78 PREMATURE_DECISION)
+- Minimum required history: commitment at T13, Execution at T17, T69–T71 referent/clarification, T72–T80 window
+- T77 utterance: `Show me the alternatives again.`
+- T78 utterance: `Compare those options without changing the decision.`
+- Scenario state before: scenario collection still available; current subject `obj-delivery`
+- Decision state before: count=1, ID `cc10:decision:cc9:scenario:do-nothing:do-nothing:v1`
+- Execution state before: count=1, ID `execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1`
+- Intent: T77 EXPLORE_OPTIONS; T78 COMPARE
+- Referent: `obj-delivery`
+- Commitment candidate: none (T77 decisionStatus=null; T78 decisionStatus=null)
+- Confirmation state: none
+- CC:10 invoked?: no write; existing Decision merely listed on the observation
+- CC:10 input: none
+- Decision count before/after T77: 1 → 1
+- Decision IDs before/after: same do-nothing ID
+- New Decision IDs: none
+- Execution count before/after: 1 → 1
+- Execution IDs: unchanged
+- New Execution IDs: none
+- Observer expectation (pre-repair): EXPLORE/COMPARE must not have a Decision ID present
+- Observer classification (pre-repair): PREMATURE_DECISION because “Decision existed while exploring/comparing”
+- Mutation class: **NO_DECISION_CHANGE**
+- First divergence: Observer `classifyLifecycleJourney` PREMATURE_DECISION rule
+- Earliest owner: OBSERVER_EVENT_SCORING_DEFECT
+- Repair/reclassification: score Decision **write** (count increase or Decision without prior COMMIT event), not Decision **presence** after a legitimate COMMIT
+- Focused repaired signature: `fnv1a32:8b271f71` (S1=0)
+- Result: OBSERVER_CLASSIFICATION_CORRECTED / REPAIRED_AND_PASS

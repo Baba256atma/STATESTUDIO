@@ -269,4 +269,11 @@ describe("NCA-POST:2 Manager assertions, pending questions, collections", () => 
       /CONFLICT|UNVERIFIED|REPORTED/,
     );
   });
+
+  it("does not rewrite named historical return into a collection SHOW", () => {
+    assert.equal(interpretExecutiveCollectionQuery("Go back to the capacity problem."), null);
+    assert.equal(interpretExecutiveCollectionQuery("Return to the delivery risk."), null);
+    assert.ok(interpretExecutiveCollectionQuery("go back to scenarios"));
+    assert.ok(interpretExecutiveCollectionQuery("go back to the first problem"));
+  });
 });

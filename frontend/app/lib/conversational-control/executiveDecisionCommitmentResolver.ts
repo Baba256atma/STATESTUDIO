@@ -121,9 +121,49 @@ function scenarioRevisionMap(
 }
 
 function resolveOrdinalLetter(raw: string): number | null {
-  const m = raw.trim().toLowerCase().match(/^(?:scenario\s+)?([a-c])$/);
-  if (!m) return null;
-  return m[1]!.charCodeAt(0) - "a".charCodeAt(0);
+  const text = raw.trim().toLowerCase().replace(/[?.!,]+$/g, "");
+  const letter = text.match(
+    /^(?:(?:the|option|scenario)\s+)?([a-c])(?:\s+(?:option|scenario))?$/,
+  );
+  if (letter) return letter[1]!.charCodeAt(0) - "a".charCodeAt(0);
+  const words = Object.freeze({ first: 0, second: 1, third: 2 });
+  const word = text.match(
+    /^(?:the\s+)?(first|second|third)(?:\s+(?:option|scenario|one))?$/,
+  );
+  if (word) return words[word[1] as keyof typeof words];
+  return null;
+}
+
+function resolveUniqueInterventionPlan(
+  session: NexoraExecutiveScenarioSession,
+  raw: string,
+): NexoraExecutiveScenario | null {
+  if (!/\bplan\b/.test(raw)) return null;
+  const interventions = session.candidateScenarioIds
+    .map((id) => session.scenariosById[id])
+    .filter((scenario): scenario is NexoraExecutiveScenario => scenario?.kind === "intervention");
+  if (interventions.length !== 1) return null;
+  const scenario = interventions[0]!;
+  const haystack = `${scenario.name} ${scenario.subjectIds.join(" ")}`.toLowerCase();
+  const tokens = raw.split(/[^a-z0-9]+/).filter((token) => token.length > 3 && token !== "plan" && token !== "recovery");
+  if (tokens.length === 0) return null;
+  return tokens.some((token) => haystack.includes(token)) ? scenario : null;
+}
+
+/**
+ * A retained option collection answers ordinal references ("B", "the second
+ * option") only while the conversation still addresses what it intervenes on.
+ */
+function optionCollectionAnchoredToContext(
+  session: NexoraExecutiveScenarioSession,
+  context: NexoraExecutiveContextSnapshot,
+): boolean {
+  const current = context.currentSubject;
+  if (current?.subjectKind !== "object" || !current.subjectId) return true;
+  const intervened = session.candidateScenarioIds.flatMap(
+    (id) => session.scenariosById[id]?.interventions.map((item) => item.subjectId) ?? [],
+  );
+  return intervened.length === 0 || intervened.includes(current.subjectId);
 }
 
 function resolveScenarioFromHint(
@@ -139,6 +179,10 @@ function resolveScenarioFromHint(
     raw === "this" ||
     raw === "that" ||
     raw === "it" ||
+    raw === "this option" ||
+    raw === "that option" ||
+    raw === "this one" ||
+    raw === "that one" ||
     raw === "the preferred scenario" ||
     raw === "preferred scenario" ||
     raw === "your recommendation" ||
@@ -148,14 +192,19 @@ function resolveScenarioFromHint(
   } else {
     const ordinal = resolveOrdinalLetter(raw);
     if (ordinal != null) {
+      if (!optionCollectionAnchoredToContext(session, context)) return null;
       const id = session.candidateScenarioIds[ordinal];
       if (id) return session.scenariosById[id] ?? null;
+      return null;
     }
+    const uniquePlan = resolveUniqueInterventionPlan(session, raw);
+    if (uniquePlan) return uniquePlan;
     for (const scenario of Object.values(session.scenariosById)) {
       if (scenario.name.toLowerCase() === raw) return scenario;
       if (scenario.scenarioId.toLowerCase() === raw) return scenario;
       if (scenario.name.toLowerCase().includes(raw)) return scenario;
     }
+    return null;
   }
 
   if (
@@ -643,6 +692,26 @@ export function resolveNexoraExecutiveDecisionCommitment(
   if (input.action === "confirm") {
     const pending = session.pendingConfirmation;
     if (pending == null || pending.status !== "pending") {
+      const approved = runtime.listDecisions().find((item) => item.status === "Approved");
+      if (approved) {
+        return freezeResult({
+          status: "already-committed",
+          candidate: buildCandidateFromExistingDecision(approved),
+          decision: approved,
+          requestedTransition: null,
+          requiresConfirmation: false,
+          clarificationPrompt: null,
+          summary: "That Decision is already committed.",
+          nextSession: session,
+          executionDeferred: false,
+          reasons: [
+            EXECUTIVE_DECISION_REASON.DETERMINISTIC,
+          ],
+          evidenceFingerprint: null,
+          scenarioFingerprint: null,
+          trace: { action: "confirm", reasons: ["already-committed"] },
+        });
+      }
       return freezeResult({
         status: "clarification-required",
         candidate: null,

@@ -200,6 +200,62 @@ export function isAmbiguousConversationalReference(token: string): boolean {
   );
 }
 
+const CURRENT_SUBJECT_REASSESSMENT_KIND = /^(?:problems?|issues?|risks?|decisions?|executions?|outcomes?|actions?)$/;
+const CURRENT_SUBJECT_REASSESSMENT_FILLER = new Set([
+  "is", "are", "am", "was", "were", "do", "does", "did", "has", "have", "had",
+  "should", "can", "could", "would", "will", "we", "i", "you", "the", "a", "an",
+  "still", "now", "yet", "been", "need", "needs", "to", "act", "something",
+  "attention", "worry", "about", "reconsider", "valid", "make", "sense",
+  "running", "changed", "change", "stand", "stands", "relevant", "resolved",
+  "happening", "where", "what", "when", "how", "if", "of", "for", "my", "our",
+  "with", "on", "at", "and", "or", "be", "being", "keep", "continue",
+  "continues", "why", "which", "any", "some", "this", "that", "it", "them",
+  "these", "those", "here", "there", "current", "one", "already", "also",
+  "please", "just", "remain", "remains", "remaining", "matter", "matters",
+  "status", "state",
+]);
+
+function currentSubjectReassessmentHasExplicitName(normalized: string): boolean {
+  return normalized
+    .split(/\s+/)
+    .some(
+      (token) =>
+        token.length > 0 &&
+        !CURRENT_SUBJECT_REASSESSMENT_FILLER.has(token) &&
+        !CURRENT_SUBJECT_REASSESSMENT_KIND.test(token),
+    );
+}
+
+/**
+ * Deictic reassessment of the current canonical subject.
+ * Not a named-object extractor. Explicit leftover names are rejected so
+ * “Is Delivery Risk still relevant?” stays named resolution.
+ */
+export function isCurrentSubjectReassessmentUtterance(normalized: string): boolean {
+  const text = normalized.trim();
+  if (!text) return false;
+  if (currentSubjectReassessmentHasExplicitName(text)) return false;
+  if (
+    /^(?:do (?:i|we) still need to (?:act|do something))$/.test(text)
+  ) {
+    return true;
+  }
+  if (!/\b(?:this|that|it)\b/.test(text)) return false;
+  const hasCue =
+    /\b(?:still|now|remain(?:s|ing)?|resolved|reconsider|stand(?:s)?|changed|relevant|valid)\b/.test(
+      text,
+    ) ||
+    /\bstill\s+happening\b/.test(text) ||
+    /\bneed(?:s)?\s+to\s+(?:act|do\s+something)\b/.test(text) ||
+    /\bneed(?:s)?\s+attention\b/.test(text) ||
+    /\bworry\b/.test(text) ||
+    /\bmake\s+sense\b/.test(text) ||
+    /\brunning\b/.test(text);
+  if (!hasCue) return false;
+  if (currentSubjectReassessmentHasExplicitName(text)) return false;
+  return true;
+}
+
 /**
  * Controlled manager-language forms — not edit-distance fuzzy matching.
  * Example: deliver → delivery, recover → recovery.
@@ -229,7 +285,7 @@ export function isNoActionConsequenceUtterance(normalized: string): boolean {
 }
 
 export function isInvestigationOptionsUtterance(normalized: string): boolean {
-  return /^(?:what are my options|what options do i have|give me another option|give me another scenario)$/u.test(
+  return /^(?:what are my options|what options do i have|give me another option|give me another scenario|(?:show(?:\s+me)?\s+)?(?:the\s+)?(?:alternatives|options)|what(?:\s+are)?\s+(?:the\s+)?alternatives)$/u.test(
     normalized.trim(),
   );
 }

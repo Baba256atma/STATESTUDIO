@@ -349,6 +349,7 @@ export function prepareRmsManagerConversation(
     readonly profile: RmsManagerProfile;
     readonly objective: RmsManagerObjective;
     readonly knowledge?: RmsManagerKnowledge;
+    readonly behaviorSeed?: number | null;
   },
 ): RmsManagerConversationBind {
   if (actor.kind !== "MANAGER_AGENT") {
@@ -357,7 +358,12 @@ export function prepareRmsManagerConversation(
   const bound = WORLD.get(session);
   if (!bound) throw new Error("RMS:4 session is not bound");
   if (RMS_4_BOUNDARY.managerReadsGroundTruth) throw new Error("RMS:4 Manager must not read Ground Truth");
-  bound.manager = createRmsManagerConversationBind(input);
+  bound.manager = createRmsManagerConversationBind({
+    profile: input.profile,
+    objective: input.objective,
+    knowledge: input.knowledge,
+    behaviorSeed: input.behaviorSeed ?? null,
+  });
   bound.managerActions = Object.freeze([
     ...bound.managerActions,
     tagRmsAction({
@@ -479,6 +485,8 @@ export function measureRmsObserverIntelligence(
     readonly unauthorizedMutation?: boolean;
     readonly runtimeException?: string | null;
     readonly publishedMetricKeys?: readonly string[];
+    readonly expectedObservationFields?: readonly string[];
+    readonly publicationEligibleFields?: readonly string[];
   },
 ): RmsObserverReport {
   if (observer.kind !== "OBSERVER") {
@@ -500,6 +508,8 @@ export function measureRmsObserverIntelligence(
     observations,
     publications: bound.publications,
     publishedMetricKeys,
+    expectedObservationFields: extras?.expectedObservationFields,
+    publicationEligibleFields: extras?.publicationEligibleFields,
     managerTurns: bound.manager?.turns ?? [],
     managerKnowledge: bound.manager?.knowledge ?? null,
     nexoraKnowledge: session.nexoraKnowledge,

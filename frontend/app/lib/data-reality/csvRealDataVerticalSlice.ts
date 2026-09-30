@@ -348,6 +348,16 @@ export const CSV_MAPPING_TARGETS: readonly CsvMappingTarget[] = Object.freeze([
   Object.freeze({ targetId: "shipping.total", label: "Total Deliveries", objectKey: "shipping", metricKey: "totalDeliveries", unit: "deliveries", aggregation: "sum" as const, aliases: Object.freeze(["total deliveries", "deliveries", "shipped orders"]) }),
   Object.freeze({ targetId: "customer.score", label: "Customer Satisfaction", objectKey: "customer", metricKey: "satisfactionScore", unit: "score", aggregation: "last" as const, aliases: Object.freeze(["customer satisfaction", "satisfaction score", "customer score"]) }),
   Object.freeze({ targetId: "customer.maximum", label: "Maximum Satisfaction Score", objectKey: "customer", metricKey: "maximumSatisfactionScore", unit: "score", aggregation: "last" as const, aliases: Object.freeze(["maximum satisfaction score", "max satisfaction score", "maximum score"]) }),
+  // SIM-TEST:2 uses these canonical operational names through this existing
+  // Gate registry. Ambiguous aliases such as plain `capacity` remain unresolved.
+  Object.freeze({ targetId: "operations.orders-received", label: "Orders Received", objectKey: "operations", metricKey: "ordersReceived", unit: "count", aggregation: "last" as const, aliases: Object.freeze(["orders received"]) }),
+  Object.freeze({ targetId: "operations.requested-quantity", label: "Requested Quantity", objectKey: "operations", metricKey: "requestedQuantity", unit: "units", aggregation: "last" as const, aliases: Object.freeze(["requested quantity"]) }),
+  Object.freeze({ targetId: "inventory.on-hand", label: "Inventory On Hand", objectKey: "inventory", metricKey: "onHand", unit: "units", aggregation: "last" as const, aliases: Object.freeze(["inventory on hand", "inventory quantity"]) }),
+  Object.freeze({ targetId: "project.planned-progress", label: "Planned Progress", objectKey: "project-control", metricKey: "plannedProgress", unit: "ratio", aggregation: "last" as const, aliases: Object.freeze(["planned progress"]) }),
+  Object.freeze({ targetId: "project.actual-progress", label: "Actual Progress", objectKey: "project-control", metricKey: "actualProgress", unit: "ratio", aggregation: "last" as const, aliases: Object.freeze(["actual progress"]) }),
+  Object.freeze({ targetId: "project.resource-load", label: "Resource Load", objectKey: "project-control", metricKey: "resourceLoad", unit: "people", aggregation: "last" as const, aliases: Object.freeze(["resource load", "resource usage"]) }),
+  Object.freeze({ targetId: "project.schedule-variance", label: "Schedule Variance Days", objectKey: "project-control", metricKey: "scheduleVarianceDays", unit: "days", aggregation: "last" as const, aliases: Object.freeze(["schedule variance days", "schedule observation"]) }),
+  Object.freeze({ targetId: "service.staff-available", label: "Staff Available", objectKey: "service", metricKey: "staffAvailable", unit: "people", aggregation: "last" as const, aliases: Object.freeze(["staff available"]) }),
 ]);
 
 function canonicalMetricName(target: CsvMappingTarget): string {

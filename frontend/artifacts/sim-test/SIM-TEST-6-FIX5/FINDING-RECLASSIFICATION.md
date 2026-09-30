@@ -1,0 +1,17 @@
+# Finding reclassification
+
+| Finding | Classification |
+| --- | --- |
+| Manufacturing T77 PREMATURE_DECISION | OBSERVER_CLASSIFICATION_CORRECTED / REPAIRED_AND_PASS |
+| Manufacturing T78 PREMATURE_DECISION | SAME_ROOT_REPAIRED (same Observer presence rule) |
+| Manufacturing T83 REPEATED_CLARIFICATION | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Manufacturing T85–T89 STAGE_DIVERGENCE | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Manufacturing T88 WRONG/STALE referent | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Manufacturing T92 WRONG_REFERENT | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Manufacturing T102 ADVISOR_DIVERGENCE | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Project T40–T41 Decision scoring | SAME_ROOT_REPAIRED |
+| Project T18/T31 Advisor, T30 referent, T35 clarification | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Logistics T21 | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Service T17/T18 | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| FAST | remains green |
+| Impatient | separate S1=5; not used to relax commitment |

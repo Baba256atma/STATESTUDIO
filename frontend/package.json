@@ -5,7 +5,7 @@
   "scripts": {
     "psych:smoke": "rm -rf ./.tmp && tsc app/lib/psych/reactionTypes.ts app/lib/psych/reactionInterpreter.ts app/lib/psych/reactionEngine.ts app/lib/psych/reactionStore.ts app/lib/psych/reactionSmokeTest.ts --outDir ./.tmp && node ./.tmp/reactionSmokeTest.js && rm -rf ./.tmp",
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' next build",
     "start": "next start",
     "typecheck": "tsc --noEmit --pretty false --incremental false",
     "test": "npm run test:executive",

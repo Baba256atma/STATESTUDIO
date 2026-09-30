@@ -1,0 +1,26 @@
+# T85–T89 focused reproduction
+
+- Manufacturing baseline (pre-FIX7): `fnv1a32:9ceb71ec`
+- Focused baseline (91 manager turns, T80–T91 window): `fnv1a32:bb9a610d`
+- Minimum history: T13 Decision, T17 Execution, T81–T83 FIX6 (no stale pending), T84 `What about inventory?`
+- First failing turn: **T85**
+- Manager utterance: `What were we saying about capacity?`
+- Canonical subject: `obj-capacity` (CORRECT)
+- Referent: Capacity family (CORRECT for this turn)
+- Expected presentation action: FOCUS `obj-capacity` (historical return, same class as `What about` / `Go back to`)
+- Director intent (pre): NONE / STAGE_COMPATIBLE (generic `^what` false; `topicSwitchCue` omitted saying-about)
+- Director subject (pre): no FOCUS instruction
+- Director composition (pre): preserve Inventory scene
+- Stage bridge input (pre): no FOCUS plan
+- Stage instruction (pre): none
+- Stage subject before: `obj-inventory`
+- Stage selected (pre): `obj-inventory`
+- Stage focused (pre): `obj-inventory`
+- Stage subject after (pre): `obj-inventory`
+- MLEVEL L1 (pre): `obj-inventory`
+- Rendered subject: same as Stage (`obj-inventory`)
+- First divergence: canonical Capacity CORRECT → Director emitted no required FOCUS
+- Earliest owner: CC:5 `topicSwitchCue` / NXA:5-FIX4 `isExplicitPresentationRequest` (feeds existing Director FOCUS path)
+- Repair: treat historical `what were we saying about` and `switch to` as explicit topic-switch presentation; apply existing `applyDirectorPlanToStage`
+- Focused repaired signature: `fnv1a32:ec704e0a` (T85–T89 Stage findings gone; T88 WRONG/STALE referent remain)
+- Result: T85–T89 Stage REPAIRED_AND_PASS; T88 referent STILL_REPRODUCIBLE

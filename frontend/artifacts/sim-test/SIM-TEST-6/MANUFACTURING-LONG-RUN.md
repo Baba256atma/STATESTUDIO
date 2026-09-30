@@ -1,0 +1,28 @@
+## Manufacturing long session
+- Journey: sim-test-6-manufacturing-long
+- Turns: 108
+- Ticks: 21
+- Mode: INGESTION
+- Profile: DATA_DRIVEN_MANAGER
+- Signature: fnv1a32:4add88ad
+- Stop: JOURNEY_COMPLETE
+- Harness: PASS
+- Product: PASS
+- Continuity conversation: PASS
+- Continuity referent: PASS
+- Continuity NMI: PASS
+- Continuity MLEVEL: PASS
+- Continuity Stage: PASS
+- Continuity Advisor: PASS
+- Data freshness: PASS
+- Evidence safety: PASS
+- Causal safety: PASS
+- Decision IDs: cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Execution IDs: execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Scenario IDs: cc9:scenario:intervention:ctx-problem-capacity:v1, cc9:scenario:intervention:cc10decisioncc9scenariodo-nothingdo-nothingv1:v1
+- Subject switches: 24
+- Historical returns: 11
+- Clarification-required turns: 12
+- Learning durable: false
+- Journey findings: 0
+- Harness findings: 0

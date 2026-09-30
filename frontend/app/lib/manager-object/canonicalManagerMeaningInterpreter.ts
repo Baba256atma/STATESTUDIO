@@ -6,7 +6,7 @@
  * Does not invent object IDs or business truth.
  */
 
-import { expandControlledManagerLanguageKeys } from "@/app/lib/conversational-control/conversationalIntentNormalization.ts";
+import { expandControlledManagerLanguageKeys, isCurrentSubjectReassessmentUtterance } from "@/app/lib/conversational-control/conversationalIntentNormalization.ts";
 import { buildNexoraConversationalSubjectMatchIndex } from "@/app/lib/conversational-control/conversationalSubjectRegistry.ts";
 import { resolveRegisteredReference } from "./nexoraRegisteredReferenceRecovery.ts";
 import { classifyManagerSpeechAct, observationShouldNotNavigate } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
@@ -45,6 +45,9 @@ const PRESENTATION_FILLER =
 const DEICTIC =
   /^(?:this|that|it|them|these|those|here|there)$/u;
 
+const KIND_TOKEN =
+  /^(?:problem|issue|risk|scenario|option|goal|decision|execution|outcome|kpi)s?$/u;
+
 const CUES: readonly {
   readonly cue: string;
   readonly family: CueHit["family"];
@@ -61,6 +64,7 @@ const CUES: readonly {
   { cue: "you are assuming", family: "CHALLENGE", weight: 5 },
   { cue: "recommendation", family: "RECOMMEND", weight: 3 },
   { cue: "bring", family: "FOCUS", weight: 2 },
+  { cue: "switch to", family: "FOCUS", weight: 4 },
   { cue: "which would you choose", family: "RECOMMEND", weight: 5 },
   { cue: "what would you choose", family: "RECOMMEND", weight: 5 },
   { cue: "how do we know", family: "EVIDENCE", weight: 5 },
@@ -151,6 +155,8 @@ const CUES: readonly {
   { cue: "impact", family: "IMPACT", weight: 4 },
   { cue: "connected", family: "IMPACT", weight: 3 },
   { cue: "related", family: "IMPACT", weight: 2 },
+  { cue: "data show", family: "EVIDENCE", weight: 5 },
+  { cue: "the data", family: "EVIDENCE", weight: 4 },
   { cue: "evidence", family: "EVIDENCE", weight: 4 },
   { cue: "missing", family: "EVIDENCE", weight: 2 },
   { cue: "confident", family: "EVIDENCE", weight: 3 },
@@ -415,10 +421,33 @@ function preferNestedRegisteredName(
 }
 
 function isDeicticKindAlias(key: string, prepared: string): boolean {
-  if (!/^(?:the )?(?:problem|scenario|decision|execution|goal|risk)s?$/.test(key)) {
+  if (!/^(?:the )?(?:problem|issue|scenario|decision|execution|goal|risk)s?$/.test(key)) {
     return false;
   }
-  return new RegExp(`\\b(?:this|that)\\s+${escapeRegExp(key)}\\b`).test(` ${prepared} `);
+  const kind = escapeRegExp(key.replace(/^the /, ""));
+  const deictic = new RegExp(
+    `\\b(?:this|that|it)\\s+(?:(?:still|now)\\s+)?(?:(?:a|an|the)\\s+)?${kind}\\b`,
+  ).exec(prepared);
+  if (deictic) {
+    const suffix = prepared.slice(deictic.index + deictic[0].length).trim();
+    const nextToken = suffix.split(/\s+/)[0] ?? "";
+    if (KIND_TOKEN.test(nextToken)) return false;
+    return true;
+  }
+  const adjacent = new RegExp(`\\b(?:this|that|the)\\s+${kind}\\b`).exec(prepared);
+  if (adjacent) {
+    const suffix = prepared.slice(adjacent.index + adjacent[0].length).trim();
+    const nextToken = suffix.split(/\s+/)[0] ?? "";
+    if (KIND_TOKEN.test(nextToken)) return false;
+    return true;
+  }
+  return new RegExp(`\\b${kind}\\s+(?:here|there)\\b`).test(prepared);
+}
+
+function isDataDomainQualifier(prepared: string, key: string): boolean {
+  return new RegExp(
+    `(?:^|\\s)${escapeRegExp(key)}\\s+(?:data|numbers|csv)\\b`,
+  ).test(` ${prepared} `);
 }
 
 function findObjectMentions(
@@ -434,6 +463,7 @@ function findObjectMentions(
       if (isDeicticKindAlias(key, deicticSource)) continue;
       const bounded = new RegExp(`(?:^|\\s)${escapeRegExp(key)}(?:$|\\s)`);
       if (!bounded.test(` ${prepared} `)) continue;
+      if (isDataDomainQualifier(deicticSource, key)) continue;
       if (seen.has(subject.subjectId)) continue;
       seen.add(subject.subjectId);
       found.push(toRef(subject, key));
@@ -446,7 +476,9 @@ function findObjectMentions(
   }
   if (
     found.length === 0 &&
-    /\b(?:this|that)\s+(?:problem|scenario|decision|execution|goal|risk)s?\b/.test(` ${deicticSource} `)
+    (/\b(?:this|that)\s+(?:problem|scenario|decision|execution|goal|risk)s?\b/.test(` ${deicticSource} `) ||
+      isCurrentSubjectReassessmentUtterance(deicticSource) ||
+      isCurrentSubjectReassessmentUtterance(prepared))
   ) {
     return Object.freeze(found);
   }
@@ -476,9 +508,15 @@ function findObjectMentions(
     } else {
       const tokens = prepared.split(/\s+/).filter(Boolean);
       for (const token of tokens) {
-        if (token.length < 5 || DEICTIC.test(token) || PRESENTATION_FILLER.test(token)) {
+        if (
+          token.length < 5 ||
+          DEICTIC.test(token) ||
+          PRESENTATION_FILLER.test(token) ||
+          KIND_TOKEN.test(token)
+        ) {
           continue;
         }
+        if (isDataDomainQualifier(deicticSource, token)) continue;
         const recovered = resolveRegisteredReference({ raw: token, catalog });
         if (!recovered.selected) continue;
         const subject = index.subjects.find((item) => item.subjectId === recovered.selected?.subjectId);
@@ -488,26 +526,57 @@ function findObjectMentions(
       }
     }
     if (found.length === 0) {
-      const tokens = prepared.split(/\s+/).filter((token) => token.length >= 5);
+      const tokens = prepared.split(/\s+/).filter(
+        (token) =>
+          token.length >= 5 &&
+          !KIND_TOKEN.test(token) &&
+          !DEICTIC.test(token) &&
+          !isDataDomainQualifier(deicticSource, token),
+      );
       let best: CanonicalManagerObjectReference | null = null;
       let bestScore = 99;
+      let bestHeadOnly = false;
+      let bestDistance = 99;
+      const headOnlyByDistance = new Map<number, Set<string>>();
       for (const subject of index.subjects) {
+        const canonicalKey = prepareManagerUtterance(subject.canonicalName);
         for (const key of keysForSubject(subject)) {
-          for (const part of key.split(/\s+/)) {
+          const keyParts = key.split(/\s+/);
+          const keyWords = keyParts.filter((word) => word.length >= 3);
+          const coversKey =
+            keyWords.length <= 1 ||
+            keyWords.every((word) => ` ${prepared} `.includes(` ${word} `));
+          // A compound canonical name's head noun ("pressure" in "margin pressure")
+          // names the subject; a modifier ("production" in "production capacity") does not.
+          const parts = coversKey
+            ? keyParts
+            : key === canonicalKey
+              ? keyParts.slice(-1)
+              : [];
+          for (const part of parts) {
             if (part.length < 5) continue;
             for (const token of tokens) {
               const distance = editDistance(token, part);
               if (distance > 1) continue;
+              if (!coversKey) {
+                const ids = headOnlyByDistance.get(distance) ?? new Set<string>();
+                ids.add(subject.subjectId);
+                headOnlyByDistance.set(distance, ids);
+              }
               const score = distance * 20 - subject.canonicalName.length;
               if (!best || score < bestScore) {
                 best = toRef(subject, token);
                 bestScore = score;
+                bestHeadOnly = !coversKey;
+                bestDistance = distance;
               }
             }
           }
         }
       }
-      if (best) found.push(best);
+      const headOnlyCompetes =
+        bestHeadOnly && (headOnlyByDistance.get(bestDistance)?.size ?? 0) > 1;
+      if (best && !headOnlyCompetes) found.push(best);
     }
   }
   if (found.length > 1) {

@@ -54,6 +54,9 @@ describe("NXA:5-FIX4 Advisor↔Stage context intelligence", () => {
     assert.equal(isStageMetaUtterance("what is on stage?"), true);
     assert.equal(isExplicitPresentationRequest("show Capacity", "focus"), true);
     assert.equal(isExplicitPresentationRequest("what is Capacity?", "focus"), false);
+    assert.equal(isExplicitPresentationRequest("What about delivery?", "explain"), true);
+    assert.equal(isExplicitPresentationRequest("What were we saying about capacity?", "explain"), true);
+    assert.equal(isExplicitPresentationRequest("Switch to inventory.", "focus"), true);
     assert.equal(isCollectionConfirmation("I am talking about Scenarios"), true);
   });
 
@@ -194,5 +197,31 @@ describe("NXA:5-FIX4 Advisor↔Stage context intelligence", () => {
       }),
       "EXPLICIT_PRESENTATION",
     );
+  });
+
+  it("follows conversational subject changes A → B → C on Stage", () => {
+    const a = run("Show Capacity.");
+    assert.equal(a.nextRuntimeState.focusedSubject?.id, "obj-capacity");
+    const b = run("What about delivery?", a);
+    assert.equal(b.nextRuntimeState.focusedSubject?.id, "obj-delivery");
+    assert.equal(b.nextExecutiveContext.currentSubject?.subjectId, "obj-delivery");
+    const c = run("What about the customer impact?", b);
+    assert.equal(c.nextRuntimeState.focusedSubject?.id, "obj-customer");
+    assert.equal(c.nextExecutiveContext.currentSubject?.subjectId, "obj-customer");
+  });
+
+  it("historical saying-about return focuses Stage on the known subject", () => {
+    const inventory = run("What about inventory?", run("Show Delivery."));
+    assert.equal(inventory.nextRuntimeState.focusedSubject?.id, "obj-inventory");
+    const returned = run("What were we saying about capacity?", inventory);
+    assert.equal(returned.nextExecutiveContext.currentSubject?.subjectId, "obj-capacity");
+    assert.equal(returned.nextRuntimeState.focusedSubject?.id, "obj-capacity");
+  });
+
+  it("does not treat definitional what-is as a Stage focus request", () => {
+    const shown = run("show scenarios");
+    const asked = run("what is Capacity?", shown);
+    assert.equal(asked.nextRuntimeState.collectionContext?.category, "scenario");
+    assert.equal(asked.nextRuntimeState.focusedSubject, null);
   });
 });

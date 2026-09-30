@@ -83,6 +83,37 @@ test("already-satisfied collection is stable and a collection supersedes stale f
   assert.equal(repeated.mutationRequired, false);
 });
 
+test("FOCUS_OBJECT conversation subject changes do not remain pinned to A", () => {
+  const semanticB = composeNexoraSemanticTurn({ utterance: "What about delivery?", catalog });
+  const focusedA = selectNexoraMVPInteractionSubject(initial(), "obj-capacity", catalog);
+  const planB = directNexoraPresentation({
+    owner: semanticB.owner,
+    presentationRequest: "FOCUS",
+    primaryReference: Object.freeze({ id: "obj-delivery", name: "Delivery", kind: "object" }),
+    references: semanticB.references.references,
+    collectionKind: null,
+    collectionScope: null,
+    collectionMembers: Object.freeze([]),
+    currentStage: focusedA,
+  });
+  assert.equal(planB.intent, "FOCUS_OBJECT");
+  const focusedB = applyDirectorPlanToStage({ plan: planB, state: focusedA, catalog });
+  assert.equal(focusedB.focusedSubject?.id, "obj-delivery");
+  const semanticC = composeNexoraSemanticTurn({ utterance: "What about the customer impact?", catalog });
+  const planC = directNexoraPresentation({
+    owner: semanticC.owner,
+    presentationRequest: "FOCUS",
+    primaryReference: Object.freeze({ id: "obj-customer", name: "Customer", kind: "object" }),
+    references: semanticC.references.references,
+    collectionKind: null,
+    collectionScope: null,
+    collectionMembers: Object.freeze([]),
+    currentStage: focusedB,
+  });
+  const focusedC = applyDirectorPlanToStage({ plan: planC, state: focusedB, catalog });
+  assert.equal(focusedC.focusedSubject?.id, "obj-customer");
+});
+
 test("explain, workspace, capability, assertion and social turns are NO_CHANGE", () => {
   for (const utterance of [
     "Explain Capacity Gap.", "What is on Stage now?", "Can you add an object?",

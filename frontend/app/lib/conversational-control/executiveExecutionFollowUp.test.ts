@@ -25,7 +25,8 @@ test("minimal execution language stays distinct from Decision commitment", () =>
   assert.deepEqual(resolveNexoraExecutionFollowUpRequest("Start execution for Decision B."), { action: "start", targetHint: "decision b", requiresContext: false });
   assert.deepEqual(resolveNexoraExecutionFollowUpRequest("What's blocking this?"), { action: "blockers", targetHint: null, requiresContext: true });
   assert.deepEqual(resolveNexoraExecutionFollowUpRequest("Mark this complete."), { action: "transition", transitionAction: "complete", targetHint: null, requiresContext: true });
-  assert.equal(resolveNexoraExecutionFollowUpRequest("Approve B."), null);
+  assert.deepEqual(resolveNexoraExecutionFollowUpRequest("Put the decision into action."), { action: "start", targetHint: null, requiresContext: true });
+  assert.deepEqual(resolveNexoraExecutionFollowUpRequest("Yes, execute."), { action: "start", targetHint: null, requiresContext: true });
   assert.equal(resolveNexoraExecutionFollowUpRequest("Create five tasks for this."), null);
 });
 

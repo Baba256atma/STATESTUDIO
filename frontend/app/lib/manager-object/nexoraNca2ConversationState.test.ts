@@ -197,6 +197,23 @@ describe("NCA:2 Conversational Context & Dialogue State", () => {
     assert.match(previous.ncaConversationState?.activeSubject?.name ?? "", /Option B/i);
   });
 
+  it("J2. explicit object switch does not let stale lastCollection own the first one", () => {
+    let previous = run("Show Capacity.");
+    previous = withDialogue(previous, {
+      lastCollection: Object.freeze({
+        kind: "PROBLEM",
+        items: Object.freeze(["Capacity Gap", "Delivery Delay"]),
+        memberIds: Object.freeze(["ctx-problem-capacity", "ctx-problem-delivery"]),
+        establishedAtTurn: 4,
+      }),
+    });
+    previous = run("Switch to inventory.", previous);
+    previous = run("The first one.", previous);
+    assert.notEqual(previous.ncaConversationState?.dialogueMove, "FOLLOW_UP");
+    assert.doesNotMatch(previous.response, /Capacity Gap/);
+    assert.match(previous.ncaConversationState?.activeSubject?.name ?? "", /Inventory/i);
+  });
+
   it("K. Why that one? resolves the last recommendation", () => {
     let previous = run("Should we increase capacity?");
     previous = withDialogue(previous, {

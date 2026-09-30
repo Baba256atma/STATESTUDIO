@@ -1,0 +1,2079 @@
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_5_runtime_proofs_muncg0zq',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_5_runtime_proofs_muncg0zq',
+  workspaceName: 'NPS:5 Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:05.391Z',
+  updatedAt: '2026-09-30T00:05:05.391Z',
+  lastOpenedAt: '2026-09-30T00:05:05.391Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_5_runtime_proofs_muncg0zq',
+  workspaceName: 'NPS:5 Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ NPS:5 live — compare, recommend, and refuse Decision on Capacity Gap (1813.521292ms)
+✔ boundary: NPS:5 does not create comparison or recommendation engines (0.375875ms)
+✔ A — Ready comparison produces explicit trade-offs (10.556541ms)
+✔ B — Fast recovery makes speed relevant without mechanical extra dimensions (0.844041ms)
+✔ C — Unknown priority that discriminates speed vs cost asks the manager (0.734208ms)
+✔ D — External capacity with unknown supplier is conditional (0.492708ms)
+✔ E — Missing critical information defers without a fake winner (11.350291ms)
+✔ F — Balanced trade-offs with no priority produce no clear preference (0.578792ms)
+✔ G — Recommended direction traces to Problem and Evidence (0.3895ms)
+✔ H — Causal safety: Demand Surge is not treated as the confirmed cause (0.446916ms)
+✔ I — Manager preference and Nexora recommendation stay separate (0.5065ms)
+✔ J — Capacity Expansion Plan keeps canonical Scenario identity (22.964292ms)
+✔ K — Leading question does not upgrade a conditional recommendation (8.7835ms)
+✔ L — New evidence that supplier capacity is unavailable updates the recommendation (0.217792ms)
+✔ M — Recommendation produces zero Decision writes (0.13025ms)
+✔ N — NPS:5 composition alone produces zero unauthorized writes (5.176459ms)
+✔ uncertain Problem does not compare options (0.414333ms)
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_6_runtime_proofs_muncg0ma',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_6_runtime_proofs_muncg0ma',
+  workspaceName: 'NPS:6 Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:04.927Z',
+  updatedAt: '2026-09-30T00:05:04.927Z',
+  lastOpenedAt: '2026-09-30T00:05:04.927Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_6_runtime_proofs_muncg0ma',
+  workspaceName: 'NPS:6 Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ NPS:6 live — preference, challenge, and Decision vs Execution on Capacity Gap (2165.986208ms)
+✔ boundary: NPS:6 does not create commitment, confirmation, or Decision authorities (0.785375ms)
+✔ A — Recommendation only is not a Decision (5.216791ms)
+✔ B — Preference is not a Decision (0.571083ms)
+✔ C — Ambiguous commitment asks; no Decision (0.259583ms)
+✔ D — Explicit commitment still requires confirmation (0.472084ms)
+✔ E — Unresolved supplier availability issues one material challenge (0.213084ms)
+✔ F — Manager override keeps Expansion Plan, not Nexora’s recommendation (18.235ms)
+✔ G — Valid confirmation is a CC:10 handoff, not an NPS write (0.255083ms)
+✔ H — Generic Yes without pending proposal does not write (0.206709ms)
+✔ I — Topic change makes a later Yes stale (51.248209ms)
+✔ J — Pending External Capacity target does not silently switch (0.638125ms)
+✔ K — CC:10 failure does not appear approved (0.44975ms)
+✔ L — CC:10 success is observed as DECIDED (0.293958ms)
+✔ M — Approved Decision does not start Execution (0.277958ms)
+✔ N — Do it without a Decision does not approve and execute (0.620542ms)
+✔ O — Invalidated recommendation blocks stale approval (0.255541ms)
+✔ P — Before valid CC:10 observation there are zero NPS writes (0.3075ms)
+✔ Did we decide? answers from canonical Decision truth (0.471334ms)
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_3_runtime_proofs_muncg155',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_3_runtime_proofs_muncg155',
+  workspaceName: 'NPS:3 Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:05.603Z',
+  updatedAt: '2026-09-30T00:05:05.603Z',
+  lastOpenedAt: '2026-09-30T00:05:05.603Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_3_runtime_proofs_muncg155',
+  workspaceName: 'NPS:3 Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ NPS:3 live — evidence question stays on Capacity Gap and does not confirm a cause (1408.685292ms)
+✔ boundary: NPS:3 does not create evidence or causal authorities (9.207583ms)
+✔ A — No evidence → INSUFFICIENT/NONE, no cause, REQUEST_MORE_EVIDENCE (0.738625ms)
+✔ B — Observation only is recorded without automatic cause (0.239792ms)
+✔ C — Correlation stays ASSOCIATED / POSSIBLE_CONTRIBUTOR, not confirmed cause (0.1545ms)
+✔ D — Supported contributor keeps causal uncertainty (0.119792ms)
+✔ E — Confounder is preserved; no premature causal conclusion (0.238875ms)
+✔ F — Contradicting evidence weakens the demand hypothesis (0.1095ms)
+✔ G — Unconfirmed CAP_AV must not become Available Capacity evidence (0.125375ms)
+✔ H — Manager-confirmed CAP_AV meaning may participate in evidence analysis (0.098333ms)
+✔ I — Cause analysis stays on Capacity Gap despite Stage and conversation drift (6.753833ms)
+✔ J — Ready for options without generating a Scenario (8.462042ms)
+✔ K — Correlation only keeps confirmedCause null (1.050292ms)
+✔ L — Analysis alone produces zero mutations (1.600042ms)
+✔ uncertain ownership does not run cause analysis (3.064333ms)
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_7_recovery_proofs_muncg191',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_7_recovery_proofs_muncg191',
+  workspaceName: 'NPS:7 Recovery Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:05.747Z',
+  updatedAt: '2026-09-30T00:05:05.747Z',
+  lastOpenedAt: '2026-09-30T00:05:05.747Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_7_recovery_proofs_muncg191',
+  workspaceName: 'NPS:7 Recovery Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ NPS:7 recovery live — Decision to readiness to monitoring to NPS:8 Outcome Review (1958.28175ms)
+✔ A — NPS:7 identity is present and does not own Execution (115.340084ms)
+✔ B — Approved Decision exposes EXECUTION_READINESS without auto-start (0.545666ms)
+✔ C — Unresolved Decision condition blocks CC:11 (0.374ms)
+✔ D — READY still has no executionId (6.154041ms)
+✔ E — Explicit Start with READY is READY_FOR_CC11 (10.142417ms)
+✔ F — CC:11 success becomes EXECUTING (57.882125ms)
+✔ G — CC:11 failure is not EXECUTING (0.097916ms)
+✔ H — Existing Execution is reused (0.127125ms)
+✔ I — Active Execution with progress is MONITORING (0.115125ms)
+✔ J — Unknown progress is UNKNOWN, not an estimate (0.100666ms)
+✔ K — Canonical deviation is attention, not intervention mutation (0.082458ms)
+✔ L — Completed Execution hands the same chain to NPS:8 (0.360167ms)
+✔ M — Stale Margin Pressure does not replace Capacity Gap Execution (0.135583ms)
+✔ N — Monitoring alone writes nothing (0.054917ms)
+✔ Ambiguous Okay does not start Execution (0.059125ms)
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_final_runtime_proofs_muncg0ya',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_final_runtime_proofs_muncg0ya',
+  workspaceName: 'NPS:FINAL Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:05.352Z',
+  updatedAt: '2026-09-30T00:05:05.352Z',
+  lastOpenedAt: '2026-09-30T00:05:05.352Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_final_runtime_proofs_muncg0ya',
+  workspaceName: 'NPS:FINAL Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_final_runtime_proofs_muncg3u0',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_final_runtime_proofs_muncg3u0',
+  workspaceName: 'NPS:FINAL Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:09.096Z',
+  updatedAt: '2026-09-30T00:05:09.096Z',
+  lastOpenedAt: '2026-09-30T00:05:09.096Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_final_runtime_proofs_muncg3u0',
+  workspaceName: 'NPS:FINAL Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ NPS:FINAL live — Capacity Gap manager journey through NPS:1–8 (3778.654542ms)
+✔ NPS:FINAL live — negative: generic Yes, start without Decision, ambiguous Investigate it (112.724917ms)
+✔ NPS:FINAL freeze — certified identities remain NPS:1 through NPS:8 (0.377167ms)
+✔ NPS:FINAL — REASSESSMENT branch: 91 / 96 / 94 is not resolved (0.717208ms)
+✔ NPS:FINAL — RESOLVED branch: observed Goal met is path resolution, not a Problem write (0.177042ms)
+✔ NPS:FINAL — NPS:7 completion hands the same IDs to NPS:8 Outcome Review (0.556208ms)
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_4_runtime_proofs_muncg218',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_4_runtime_proofs_muncg218',
+  workspaceName: 'NPS:4 Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:06.696Z',
+  updatedAt: '2026-09-30T00:05:06.696Z',
+  lastOpenedAt: '2026-09-30T00:05:06.696Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_4_runtime_proofs_muncg218',
+  workspaceName: 'NPS:4 Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ NPS:4 live — options stay on Capacity Gap, reuse Expansion Plan, and do not recommend (1558.091208ms)
+✔ boundary: NPS:4 does not create a Scenario authority or store (13.907542ms)
+✔ A — Ready Problem generates meaningful option candidates (56.958916ms)
+✔ B — Causal uncertainty allows a capacity option without stating a confirmed cause (0.842208ms)
+✔ C — Capacity Gap options are distinct mechanisms, not cosmetic variants (0.566584ms)
+✔ D — Hiring freeze marks permanent hiring currently infeasible (0.463542ms)
+✔ E — Unknown supplier availability stays REQUIRES_VALIDATION (0.9665ms)
+✔ F — Existing Capacity Expansion Plan is reused rather than duplicated (0.667667ms)
+✔ G — Uncertain Problem ownership returns CLARIFY_PROBLEM with zero options (1.114583ms)
+✔ H — Insufficient evidence does not fabricate intervention logic (0.645875ms)
+✔ I — Distinct bounded options become READY_FOR_COMPARISON (0.422416ms)
+✔ J — Option generation does not recommend a winner (0.208791ms)
+✔ K — Option candidates do not write a Decision (0.14825ms)
+✔ L — NPS:4 composition alone produces zero unauthorized writes (0.117458ms)
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_8_runtime_proofs_muncg1lm',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_8_runtime_proofs_muncg1lm',
+  workspaceName: 'NPS:8 Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:06.188Z',
+  updatedAt: '2026-09-30T00:05:06.188Z',
+  lastOpenedAt: '2026-09-30T00:05:06.188Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_8_runtime_proofs_muncg1lm',
+  workspaceName: 'NPS:8 Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+✔ NPS:8 live — Did it work, resolution, reassessment, and causal safety on Capacity Gap (2418.564583ms)
+✔ A — Execution complete with no Outcome is UNKNOWN, not RESOLVED (3.348834ms)
+✔ B — Improvement below Goal is partial and reassessment is available (0.591792ms)
+✔ C / I — Goal reached allows RESOLVED from Outcome evidence (0.344208ms)
+✔ D — Worse Outcome is WORSENED and reassessment is available (0.248792ms)
+✔ E — Contradictory unchanged KPI weakens the hypothesis without false cause (0.427875ms)
+✔ F — Causal safety: improvement is association, not caused-by (0.35175ms)
+✔ G — Durable Learning remains false; no new writer (0.222584ms)
+✔ H — Cause picture invalidated loops to CAUSE_ANALYSIS, not NPS:1 (0.193417ms)
+✔ J / K — Poor Outcome does not write Decision or Execution (0.256583ms)
+✔ L — Did it work stays on the Capacity Gap chain (0.741375ms)
+✔ Uncertain Problem blocks Outcome resolution (0.277209ms)
+✔ Baseline remains distinct from Goal and expected remains distinct from observed (0.1885ms)
+✔ identity and boundary: NPS is a path contract, not an authority layer (1.08325ms)
+✔ A — New Problem: exists without investigation → UNDERSTANDING / next = Investigate (1.979417ms)
+✔ B — Investigation: Problem + investigation → INVESTIGATING (0.653792ms)
+✔ C — Evidence: Problem + investigation + evidence → EVIDENCE_REVIEW (0.136625ms)
+✔ C2 — Incomplete evidence blocks cause analysis without inventing causes (0.08375ms)
+✔ D — Options: evidence/cause analysis + scenarios → OPTIONS_AVAILABLE (0.071ms)
+✔ E — Recommendation: comparison + recommendation → RECOMMENDATION_READY (0.067583ms)
+✔ F — Decision: approved canonical Decision → DECIDED / EXECUTION_READINESS (0.128375ms)
+✔ G — Execution: canonical Execution active → EXECUTING or MONITORING (0.102ms)
+✔ H — Outcome: observed Outcome → OUTCOME_REVIEW (0.146125ms)
+✔ I — Reassessment: Outcome indicates unresolved Problem → REASSESSMENT (0.061291ms)
+✔ I2 — Resolved Problem after observed Outcome → RESOLVED (0.05925ms)
+✔ J — Safety: path advancement alone produces zero canonical mutations (0.375042ms)
+✔ uncertainty: missing Problem is explicit and does not guess from Stage or conversation (0.412875ms)
+✔ uncertainty: conflicting Problem candidates are not silently resolved (0.168417ms)
+✔ stale Scenario and Stage focus do not replace a determined Problem (0.229291ms)
+✔ manager projection keeps architecture terminology out of the facing text (0.191291ms)
+✔ AWAITING_COMMITMENT is observed from pending confirmation, not invented as Decision (0.133542ms)
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_2_runtime_proofs_muncg2u1',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_2_runtime_proofs_muncg2u1',
+  workspaceName: 'NPS:2 Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:07.800Z',
+  updatedAt: '2026-09-30T00:05:07.800Z',
+  lastOpenedAt: '2026-09-30T00:05:07.800Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_2_runtime_proofs_muncg2u1',
+  workspaceName: 'NPS:2 Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'upsertWorkspace',
+  activeWorkspaceId: 'demo_workspace',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
+[WorkspaceRegistry][Mutation] {
+  type: 'setActiveWorkspace',
+  activeWorkspaceId: 'nps_2_runtime_proofs_muncg3k2',
+  workspaceCount: 2
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'nps_2_runtime_proofs_muncg3k2',
+  workspaceName: 'NPS:2 Runtime Proofs',
+  status: 'active',
+  createdAt: '2026-09-30T00:05:08.738Z',
+  updatedAt: '2026-09-30T00:05:08.738Z',
+  lastOpenedAt: '2026-09-30T00:05:08.738Z',
+  domain: null,
+  objectCount: 0,
+  dataSourceCount: 0,
+  metadata: { lifecycle: 'empty_workspace', phase: 'NW-A:3' }
+}
+[WorkspaceLifecycle] Created Workspace {
+  workspaceId: 'nps_2_runtime_proofs_muncg3k2',
+  workspaceName: 'NPS:2 Runtime Proofs'
+}
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ NPS:2 live — Investigate Capacity Gap understands the Problem and next investigation step (938.43725ms)
+✔ NPS:2 live — follow-up keeps the same Problem and investigation need (237.182333ms)
+✔ boundary: NPS:2 is path composition, not a new authority (0.605459ms)
+✔ A — Clear Problem, missing understanding → UNDERSTANDING and an investigation need (3.691375ms)
+✔ B — Manager knowledge required → ASK_MANAGER with ECA questioning handoff (0.46825ms)
+✔ C — Existing trusted evidence → INVESTIGATE_EXISTING_EVIDENCE and do not ask (0.322041ms)
+✔ D — NPS:1 ownership UNCERTAIN → CLARIFY_PROBLEM and no guessed investigation (0.282291ms)
+✔ E — Conflicting Stage/conversation context stays anchored to Capacity Gap (0.229583ms)
+✔ F — Required evidence unavailable → WAIT_FOR_EVIDENCE with no invented understanding (0.209708ms)
+✔ G — Investigation active → NPS state INVESTIGATING (0.178917ms)
+✔ H — Completed investigation with usable evidence may become EVIDENCE_REVIEW (0.199583ms)
+✔ I — Symptom plus correlation is investigation direction, not a confirmed cause (0.287916ms)
+✔ J — Understanding and path progression produce zero canonical mutations (0.434958ms)
+ℹ tests 131
+ℹ suites 0
+ℹ pass 131
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10378.203334

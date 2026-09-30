@@ -1,0 +1,115 @@
+## Logistics
+- Journey: sim-test-6-logistics-parity
+- Turns: 34
+- Ticks: 12
+- Mode: INGESTION
+- Profile: STANDARD_MANAGER
+- Signature: fnv1a32:5c62c131
+- Stop: JOURNEY_COMPLETE
+- Harness: PASS
+- Product: PASS
+- Continuity conversation: PASS
+- Continuity referent: PASS
+- Continuity NMI: PASS
+- Continuity MLEVEL: PASS
+- Continuity Stage: PASS
+- Continuity Advisor: PASS
+- Data freshness: PASS
+- Evidence safety: PASS
+- Causal safety: PASS
+- Decision IDs: cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Execution IDs: execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Scenario IDs: cc9:scenario:intervention:obj-delivery:v1
+- Subject switches: 5
+- Historical returns: 3
+- Clarification-required turns: 5
+- Learning durable: false
+- Journey findings: 1
+- Harness findings: 0
+
+## Service
+- Journey: sim-test-6-service-parity
+- Turns: 34
+- Ticks: 12
+- Mode: INGESTION
+- Profile: STANDARD_MANAGER
+- Signature: fnv1a32:a03c509c
+- Stop: JOURNEY_COMPLETE
+- Harness: PASS
+- Product: PASS
+- Continuity conversation: PASS
+- Continuity referent: PASS
+- Continuity NMI: PASS
+- Continuity MLEVEL: PASS
+- Continuity Stage: PASS
+- Continuity Advisor: PASS
+- Data freshness: PASS
+- Evidence safety: PASS
+- Causal safety: PASS
+- Decision IDs: cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Execution IDs: execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Scenario IDs: cc9:scenario:intervention:obj-capacity:v1
+- Subject switches: 5
+- Historical returns: 3
+- Clarification-required turns: 5
+- Learning durable: false
+- Journey findings: 0
+- Harness findings: 0
+
+## FAST
+- Journey: sim-test-6-fast-parity
+- Turns: 34
+- Ticks: 21
+- Mode: FAST
+- Profile: DATA_DRIVEN_MANAGER
+- Signature: fnv1a32:3aa7cfc6
+- Stop: JOURNEY_COMPLETE
+- Harness: PASS
+- Product: PASS
+- Continuity conversation: PASS
+- Continuity referent: PASS
+- Continuity NMI: PASS
+- Continuity MLEVEL: PASS
+- Continuity Stage: PASS
+- Continuity Advisor: PASS
+- Data freshness: PASS
+- Evidence safety: PASS
+- Causal safety: PASS
+- Decision IDs: cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Execution IDs: execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Scenario IDs: cc9:scenario:intervention:obj-capacity:v1
+- Subject switches: 5
+- Historical returns: 3
+- Clarification-required turns: 5
+- Learning durable: false
+- Journey findings: 0
+- Harness findings: 0
+
+## Impatient manufacturing
+- Journey: sim-test-6-manufacturing-impatient
+- Turns: 33
+- Ticks: 21
+- Mode: INGESTION
+- Profile: IMPATIENT_MANAGER
+- Signature: fnv1a32:a5d79e5e
+- Stop: JOURNEY_COMPLETE
+- Harness: PASS
+- Product: PASS
+- Continuity conversation: PASS
+- Continuity referent: PASS
+- Continuity NMI: PASS
+- Continuity MLEVEL: PASS
+- Continuity Stage: PASS
+- Continuity Advisor: PASS
+- Data freshness: PASS
+- Evidence safety: PASS
+- Causal safety: PASS
+- Decision IDs: cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Execution IDs: execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1
+- Scenario IDs: cc9:scenario:intervention:obj-capacity:v1
+- Subject switches: 4
+- Historical returns: 4
+- Clarification-required turns: 0
+- Learning durable: false
+- Journey findings: 0
+- Harness findings: 0

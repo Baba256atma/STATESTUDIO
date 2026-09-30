@@ -6,6 +6,7 @@
 import type { CanonicalManagerMeaning } from "./canonicalManagerMeaning.ts";
 import type { ContextualManagerMeaning } from "./contextualManagerMeaning.ts";
 import type { ManagerConversationTurn } from "./nexoraNca1ConversationTypes.ts";
+import { classifyGuidanceIntent } from "./nexoraMvpFinal65Guidance.ts";
 import { isSocialAckUtterance } from "./nexoraNca1ConversationArchitecture.ts";
 import {
   classifyManagerSpeechAct,
@@ -13,6 +14,8 @@ import {
   inferNexoraQuestionPurpose,
   interpretExecutiveCollectionQuery,
   isGreetingSocialUtterance,
+  isNcaLastCollectionOrdinalReferable,
+  ncaCollectionContainsSubject,
   polarReplyCompatibleWithPurpose,
 } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import {
@@ -415,7 +418,7 @@ function isReturnUtterance(prepared: string): boolean {
 function isPronounOnlyReferent(utterance: string): boolean {
   const text = utterance.trim();
   return (
-    /^(?:explain|investigate|why|what about|tell me about|open|show|review)?\s*(?:it|this|that)(?:\s+(?:problem|scenario|one))?[.!?]?$/i.test(
+    /^(?:explain|investigate|why|what about|what is|what's|whats|tell me about|open|show|review)?\s*(?:it|this|that|the|here|there)(?:\s+(?:problem|issue|scenario|one))?(?:\s+(?:here|there|now))?[.!?]?$/i.test(
       text,
     ) || /^how do i use this object\??$/i.test(text)
   );
@@ -548,7 +551,15 @@ export function interpretNcaDialogueTurn(input: {
   const prepared = preparedOf(input.utterance);
   const turn = previous.turnIndex + 1;
   const incoming = subjectOf(input.nca, input.meaning, input.contextual);
+  const productFiction = classifyGuidanceIntent(input.meaning, input.utterance) === "PRODUCT_FICTION";
   const pending = previous.pendingQuestion;
+  const pronounLocksActiveSubject =
+    isPronounOnlyReferent(input.utterance) &&
+    !(
+      input.contextual.provenance === "CONTEXT_ACTIVE_SUBJECT" &&
+      Boolean(incoming.id) &&
+      incoming.id !== previous.activeSubject?.id
+    );
 
   let move: DialogueMove = "CONTINUE_TOPIC";
   let answer: NcaAnswerPayload | null = null;
@@ -669,23 +680,59 @@ export function interpretNcaDialogueTurn(input: {
     }
   } else if (
     collectionOrdinalIndex(input.utterance) != null &&
-    (previous.lastCollection?.items.length ?? previous.lastOfferedOptions.length) > 0
+    !isReturnUtterance(prepared) &&
+    isNcaLastCollectionOrdinalReferable(previous.lastCollection, previous.activeSubject)
   ) {
     move = "FOLLOW_UP";
-    const items =
-      previous.lastCollection?.items.length
-        ? previous.lastCollection.items
-        : previous.lastOfferedOptions;
+    const items = previous.lastCollection?.items ?? Object.freeze([]);
+    const idx = collectionOrdinalIndex(input.utterance) ?? 0;
+    const picked =
+      idx < 0 ? items[items.length - 1] ?? null : items[idx] ?? null;
     answer = extractAnswer(input.utterance, "OPTION", items);
-    resolvedDeictic = answer?.optionLabel ?? items[collectionOrdinalIndex(input.utterance) ?? 0] ?? null;
-    if (resolvedDeictic) {
-      const idx = collectionOrdinalIndex(input.utterance) ?? 0;
+    resolvedDeictic = answer?.optionLabel ?? picked;
+    if (picked && resolvedDeictic) {
+      const resolvedIndex = idx < 0 ? items.length - 1 : idx;
       activeSubject = Object.freeze({
-        id: previous.lastCollection?.memberIds?.[idx] ?? previous.activeSubject?.id ?? null,
+        id: previous.lastCollection?.memberIds?.[resolvedIndex] ?? previous.activeSubject?.id ?? null,
         name: resolvedDeictic,
         kind: previous.lastCollection?.kind ?? "problem",
       });
+    } else {
+      move = "CLARIFY";
+      resolvedDeictic = null;
     }
+  } else if (
+    collectionOrdinalIndex(input.utterance) != null &&
+    !isReturnUtterance(prepared) &&
+    !previous.lastCollection?.items.length &&
+    previous.lastOfferedOptions.length > 0
+  ) {
+    move = "FOLLOW_UP";
+    const items = previous.lastOfferedOptions;
+    const idx = collectionOrdinalIndex(input.utterance) ?? 0;
+    const picked =
+      idx < 0 ? items[items.length - 1] ?? null : items[idx] ?? null;
+    answer = extractAnswer(input.utterance, "OPTION", items);
+    resolvedDeictic = answer?.optionLabel ?? picked;
+    if (picked && resolvedDeictic) {
+      activeSubject = Object.freeze({
+        id: previous.activeSubject?.id ?? null,
+        name: resolvedDeictic,
+        kind: "scenario",
+      });
+    } else {
+      move = "CLARIFY";
+      resolvedDeictic = null;
+    }
+  } else if (
+    collectionOrdinalIndex(input.utterance) != null &&
+    !isReturnUtterance(prepared) &&
+    !(
+      input.contextual.continuityMove === "other-referent" &&
+      input.contextual.provenance !== "UNRESOLVED"
+    )
+  ) {
+    move = "CLARIFY";
   } else if (isReturnUtterance(prepared) && collectionOrdinalIndex(input.utterance) == null) {
     move = "RETURN_TO_TOPIC";
     const token = prepared
@@ -716,20 +763,6 @@ export function interpretNcaDialogueTurn(input: {
       activeTopic = restored.topic;
       pendingQuestion = restoredPending;
       restoredThread = restored;
-    }
-  } else if (
-    /^(?:the )?(?:first|second|third)(?: one)?$/.test(prepared) &&
-    previous.lastOfferedOptions.length > 0
-  ) {
-    move = "FOLLOW_UP";
-    answer = extractAnswer(input.utterance, "OPTION", previous.lastOfferedOptions);
-    resolvedDeictic = answer?.optionLabel ?? null;
-    if (resolvedDeictic) {
-      activeSubject = Object.freeze({
-        id: previous.activeSubject?.id ?? null,
-        name: resolvedDeictic,
-        kind: "scenario",
-      });
     }
   } else if (
     pending?.valid &&
@@ -784,17 +817,18 @@ export function interpretNcaDialogueTurn(input: {
     move = "REJECT";
   } else if (isSocialAckUtterance(input.utterance)) {
     move = "ACKNOWLEDGE";
-  } else if (isShiftUtterance(prepared) && incoming.name) {
+  } else if (isShiftUtterance(prepared) && incoming.name && !productFiction) {
     move = pending?.valid ? "PAUSE_TOPIC" : "TOPIC_SHIFT";
     activate(incoming, "side-topic", false);
   } else if (
     incoming.name &&
     previous.activeSubject?.name &&
     incoming.name.toLowerCase() !== previous.activeSubject.name.toLowerCase() &&
-    !isPronounOnlyReferent(input.utterance) &&
+    !pronounLocksActiveSubject &&
     collectionOrdinalIndex(input.utterance) == null &&
     input.nca.need.family !== "SOCIAL_CONVERSATION" &&
-    classifyManagerSpeechAct(input.utterance) !== "PREFERENCE"
+    classifyManagerSpeechAct(input.utterance) !== "PREFERENCE" &&
+    !productFiction
   ) {
     move = "TOPIC_SHIFT";
     activate(incoming, input.nca.need.family.toLowerCase(), false);
@@ -809,8 +843,9 @@ export function interpretNcaDialogueTurn(input: {
     if (
       incoming.name &&
       speech !== "PREFERENCE" &&
-      !isPronounOnlyReferent(input.utterance) &&
-      collectionOrdinalIndex(input.utterance) == null
+      !pronounLocksActiveSubject &&
+      collectionOrdinalIndex(input.utterance) == null &&
+      !productFiction
     ) {
       activate(incoming, input.nca.need.family.toLowerCase(), false);
     }
@@ -822,7 +857,32 @@ export function interpretNcaDialogueTurn(input: {
     lastCollection = Object.freeze({
       kind: String(collectionQuery["collectionKind"] ?? "PROBLEM"),
       items: previous.lastCollection?.items ?? Object.freeze([]),
+      ...(previous.lastCollection?.memberIds
+        ? { memberIds: previous.lastCollection.memberIds }
+        : {}),
+      establishedAtTurn: turn,
+      ...(previous.lastCollection?.scope ? { scope: previous.lastCollection.scope } : {}),
+      source: previous.lastCollection?.source ?? "NCA-POST:2_COLLECTION_QUERY",
     });
+  } else {
+    const previousId = previous.activeSubject?.id ?? null;
+    const previousName = previous.activeSubject?.name?.toLowerCase() ?? null;
+    const nextId = activeSubject?.id ?? null;
+    const nextName = activeSubject?.name?.toLowerCase() ?? null;
+    const subjectChanged = previousId !== nextId || previousName !== nextName;
+    if (
+      subjectChanged &&
+      lastCollection?.items.length &&
+      !ncaCollectionContainsSubject(lastCollection, activeSubject)
+    ) {
+      lastCollection = Object.freeze({
+        kind: lastCollection.kind,
+        items: lastCollection.items,
+        ...(lastCollection.memberIds ? { memberIds: lastCollection.memberIds } : {}),
+        ...(lastCollection.scope ? { scope: lastCollection.scope } : {}),
+        ...(lastCollection.source ? { source: lastCollection.source } : {}),
+      });
+    }
   }
 
   const history = activeTopic
@@ -1155,6 +1215,12 @@ export function composeNca2ContinuityResponse(input: {
       followUp: null,
     };
   }
+  if (move === "CLARIFY" && collectionOrdinalIndex(input.nca.message) != null && !resolvedDeictic) {
+    return {
+      text: "I don't have a current ordered list to apply that to. Which items should count as first, second, and third?",
+      followUp: null,
+    };
+  }
   if (move === "FOLLOW_UP" && resolvedDeictic) {
     return { text: `Understood — ${resolvedDeictic}.`, followUp: null };
   }
@@ -1221,6 +1287,16 @@ export function overlayNcaTurnWithDialogue(
     return Object.freeze({
       ...nca,
       advisorBehavior: "ACKNOWLEDGE" as const,
+    });
+  }
+  if (interpretation.move === "CLARIFY") {
+    return Object.freeze({
+      ...nca,
+      advisorBehavior: "CLARIFY" as const,
+      need: Object.freeze({
+        family: "CLARIFY" as const,
+        confidence: 0.9,
+      }),
     });
   }
   if (interpretation.move === "RETURN_TO_TOPIC" && interpretation.restoredThread) {

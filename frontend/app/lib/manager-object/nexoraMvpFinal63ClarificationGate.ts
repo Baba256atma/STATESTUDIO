@@ -167,6 +167,23 @@ export function evaluateClarificationGate(input: {
     /^(?:overview|navigate-back|navigate-forward|show-problems|show-goals|show-related|show-scenarios|show-decisions|show-execution|switch-workspace|help|situation|evidence)$/.test(
       input.intentKind,
     );
+  const completeNavigationIntent =
+    /^(?:overview|navigate-back|navigate-forward)$/.test(input.intentKind);
+  const namedTargetUnresolved =
+    (contextual.continuityMove === "previous-referent" ||
+      contextual.continuityMove === "backtrack") &&
+    contextual.provenance === "UNRESOLVED" &&
+    contextual.objectReference == null;
+
+  if (namedTargetUnresolved && !completeNavigationIntent) {
+    const ambiguous = contextual.ambiguity.reason === "multiple-objects";
+    return {
+      required: true,
+      reason: ambiguous ? "REFERENCE_AMBIGUITY" : "MISSING_SUBJECT",
+      consequence,
+      candidates: ambiguous ? candidates : [],
+    };
+  }
 
   const deicticPrior =
     /\b(?:that one|this one|that option)\b/.test(contextual.turnMeaning.preparedUtterance) &&
@@ -187,6 +204,31 @@ export function evaluateClarificationGate(input: {
     }
   }
 
+  const thread = input.continuity?.thread ?? [];
+  const latestFrame = thread[thread.length - 1];
+  const priorFrame = thread[thread.length - 2];
+  const recentSubjectsCompete =
+    latestFrame != null &&
+    priorFrame != null &&
+    latestFrame.subjectId === input.continuity?.activeSubjectId &&
+    priorFrame.subjectId !== latestFrame.subjectId &&
+    latestFrame.turnIndex === input.continuity?.turnIndex &&
+    priorFrame.turnIndex === latestFrame.turnIndex - 1;
+  const standaloneThat = /\bthat(?: (?:now|again|then|too|still))?$/.test(
+    contextual.turnMeaning.preparedUtterance,
+  );
+
+  const deicticFollowsActiveSubject =
+    Boolean(input.continuity?.activeSubjectId) &&
+    !(recentSubjectsCompete && standaloneThat) &&
+    (contextual.requestedOperation === "EVIDENCE" ||
+      contextual.requestedOperation === "CAUSE" ||
+      contextual.requestedOperation === "EXPLAIN" ||
+      contextual.requestedOperation === "INVESTIGATE" ||
+      contextual.requestedOperation === "STATUS" ||
+      contextual.requestedOperation === "CONSEQUENCE" ||
+      contextual.requestedOperation === "IMPACT");
+
   if (
     /\bthat\b/.test(contextual.turnMeaning.preparedUtterance) &&
     !/\bit\b/.test(contextual.turnMeaning.preparedUtterance) &&
@@ -200,7 +242,8 @@ export function evaluateClarificationGate(input: {
     new Set((input.continuity?.thread ?? []).map((frame) => frame.subjectId)).size >=
       2 &&
     !namedNlu &&
-    contextual.requestedOperation !== "COMPARE"
+    contextual.requestedOperation !== "COMPARE" &&
+    !deicticFollowsActiveSubject
   ) {
     const threadIds = (input.continuity?.thread ?? []).map((frame) => frame.subjectId);
     const threadCandidates = uniqueCandidates(
@@ -247,6 +290,21 @@ export function evaluateClarificationGate(input: {
   }
 
   if (
+    (contextual.requestedOperation === "STATUS" ||
+      contextual.requestedOperation === "CONSEQUENCE" ||
+      contextual.requestedOperation === "IMPACT" ||
+      contextual.requestedOperation === "INVESTIGATE") &&
+    Boolean(input.continuity?.activeSubjectId)
+  ) {
+    return {
+      required: false,
+      reason: "NONE",
+      consequence,
+      candidates,
+    };
+  }
+
+  if (
     contextual.ambiguity.unresolved &&
     contextual.requestedOperation !== "NONE" &&
     contextual.requestedOperation !== "HELP"
@@ -269,6 +327,21 @@ export function evaluateClarificationGate(input: {
         : new Set(candidates.map((item) => item.subjectKind)).size > 1
           ? "TYPE_AMBIGUITY"
           : "REFERENCE_AMBIGUITY";
+    const currentTurnNamesSeveral =
+      contextual.turnMeaning.ambiguity.reason === "multiple-objects" &&
+      contextual.turnMeaning.ambiguity.candidates.length >= 2;
+    if (
+      reason === "TYPE_AMBIGUITY" &&
+      !currentTurnNamesSeveral &&
+      Boolean(input.continuity?.activeSubjectId || (input.continuity?.thread.length ?? 0) > 0)
+    ) {
+      return {
+        required: false,
+        reason: "NONE",
+        consequence,
+        candidates,
+      };
+    }
     return { required: true, reason, consequence, candidates };
   }
 

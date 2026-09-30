@@ -83,7 +83,7 @@ function ordinalCandidate(
 }
 
 function isCancel(prepared: string): boolean {
-  return /^(?:never mind|forget it|cancel that|lets talk about something else)$/.test(
+  return /^(?:never mind|forget it|forget that|cancel that|lets talk about something else)$/.test(
     prepared,
   );
 }
@@ -124,6 +124,71 @@ function isReferentialKnowledgeRequest(
   return deictic && knowledge;
 }
 
+function isBarePendingAnswer(prepared: string): boolean {
+  return /^(?:that one|this one|it|that|this|the first one|the second one|the other one)$/.test(
+    prepared,
+  );
+}
+
+function isIndependentlyResolvableWhilePending(
+  meaning: CanonicalManagerMeaning,
+  prepared: string,
+  intentKind: string,
+  pending: PendingClarification,
+): boolean {
+  if (isBarePendingAnswer(prepared)) return false;
+  if (/^(?:overview|navigate-back|navigate-forward)$/.test(intentKind)) {
+    return pending.consequence !== "COMMITMENT";
+  }
+  if (meaning.requestedOperation === "COMPARE") return true;
+  if (
+    meaning.requestedOperation === "FOCUS" &&
+    meaning.objectReference?.subjectId &&
+    pending.consequence !== "COMMITMENT" &&
+    /^(?:switch to|return to|go back to|what about)\b/.test(prepared)
+  ) {
+    return !pending.candidates.some((item) => item.subjectId === meaning.objectReference?.subjectId);
+  }
+  if (
+    (pending.reason === "TYPE_AMBIGUITY" || pending.reason === "REFERENCE_AMBIGUITY") &&
+    pending.consequence !== "COMMITMENT" &&
+    /\?/.test(meaning.rawUtterance)
+  ) {
+    return true;
+  }
+  if (
+    meaning.requestedOperation === "INVESTIGATE" ||
+    meaning.requestedOperation === "STATUS" ||
+    meaning.requestedOperation === "CONSEQUENCE" ||
+    meaning.requestedOperation === "IMPACT" ||
+    meaning.requestedOperation === "CAUSE"
+  ) {
+    return pending.consequence !== "COMMITMENT";
+  }
+  if (pending.reason === "MISSING_SUBJECT" && pending.candidates.length === 0) {
+    if (/\b(?:decision|execution|outcome)\b/.test(prepared)) return true;
+    if (/\b(?:return|go back|back to)\b/.test(prepared)) return true;
+  }
+  if (meaning.requestedOperation === "EVIDENCE") return true;
+  if (/\bchanged\b/.test(prepared) && pending.consequence !== "COMMITMENT") {
+    return true;
+  }
+  if (
+    /^(?:compare-scenarios|explain-scenario|decision-status|execution-status|evidence|situation|change)$/.test(
+      intentKind,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(?:option|scenario|alternative)s?\b/.test(prepared) &&
+    /\b(?:compar|difference|differ)\b/.test(prepared)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function isNewCompleteRequest(
   meaning: CanonicalManagerMeaning,
   prepared: string,
@@ -132,6 +197,9 @@ function isNewCompleteRequest(
 ): boolean {
   if (meaning.requestedOperation === "HELP") return false;
   if (isExplicitCollectionIntent(intentKind)) return true;
+  if (pending && isIndependentlyResolvableWhilePending(meaning, prepared, intentKind, pending)) {
+    return true;
+  }
   if (meaning.communicativeIntent === "CORRECT" && meaning.objectReference) {
     const targetId = meaning.objectReference.subjectId;
     if (pending?.candidates.some((item) => item.subjectId === targetId)) {
@@ -140,12 +208,24 @@ function isNewCompleteRequest(
     return true;
   }
   if (meaning.communicativeIntent === "CORRECT") return false;
-  if (
-    pending &&
-    meaning.requestedOperation === "FOCUS" &&
-    !/\b(?:show|look at|open|bring|display|explain|compare|list|see)\b/.test(prepared)
-  ) {
-    return false;
+  if (pending && meaning.requestedOperation === "FOCUS") {
+    const targetId = meaning.objectReference?.subjectId ?? null;
+    const explicitNamedSwitch =
+      /^(?:switch to|return to|go back to|what about|show|open|focus(?: on)?)\b/.test(
+        prepared,
+      );
+    if (explicitNamedSwitch && targetId) return true;
+    if (targetId && pending.candidates.some((item) => item.subjectId === targetId)) {
+      return false;
+    }
+    if (targetId) return true;
+    if (
+      !/\b(?:show|look at|open|bring|display|explain|compare|list|see|return|go back|back to|switch)\b/.test(
+        prepared,
+      )
+    ) {
+      return false;
+    }
   }
   return (
     meaning.objectReference != null &&
@@ -278,6 +358,20 @@ export function interpretClarificationTurn(input: {
 
   if (
     pending &&
+    /^(?:what about|switch to|return to|go back to)\b/.test(prepared) &&
+    !matchCandidate(prepared, pending.candidates) &&
+    !(
+      input.turnMeaning.objectReference &&
+      pending.candidates.some(
+        (item) => item.subjectId === input.turnMeaning.objectReference?.subjectId,
+      )
+    )
+  ) {
+    return interpretClarificationTurn({ ...input, pending: null });
+  }
+
+  if (
+    pending &&
     /commit|prefer-option|start-execution|confirm-decision/.test(input.intentKind)
   ) {
     return emptyResult({
@@ -289,6 +383,14 @@ export function interpretClarificationTurn(input: {
   }
 
   if (pending && isNewCompleteRequest(input.turnMeaning, prepared, pending, input.intentKind)) {
+    const namedTargetUnresolved =
+      (input.contextual.continuityMove === "previous-referent" ||
+        input.contextual.continuityMove === "backtrack") &&
+      input.contextual.provenance === "UNRESOLVED" &&
+      input.contextual.objectReference == null;
+    if (namedTargetUnresolved) {
+      return interpretClarificationTurn({ ...input, pending: null });
+    }
     return emptyResult({
       action: "proceed",
       cancelled: true,

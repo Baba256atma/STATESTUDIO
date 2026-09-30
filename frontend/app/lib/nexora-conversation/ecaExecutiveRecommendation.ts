@@ -495,7 +495,10 @@ export function judgeEcaExecutiveRecommendation(
       ? `${other.label} can still be preferable if your priority changes. I am not dismissing it.`
       : "The alternative remains viable if priorities change.";
     speak = true;
-  } else if (isWhy(text)) {
+  } else if (
+    isWhy(text) &&
+    (Boolean(recommended) || previous.delivered || previous.lastOptionId != null || /\brecommend/i.test(text))
+  ) {
     note = whyBits.length
       ? `${whyBits.join(". ")}.`
       : "I don’t have a justified option recommendation yet.";

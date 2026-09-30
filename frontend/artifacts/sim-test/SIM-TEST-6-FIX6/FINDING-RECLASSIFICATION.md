@@ -1,0 +1,16 @@
+# Finding reclassification
+
+| Finding | Classification |
+| --- | --- |
+| Manufacturing T83 REPEATED_CLARIFICATION | REPAIRED_AND_PASS |
+| Manufacturing T85–T89 STAGE_DIVERGENCE | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Manufacturing T88 WRONG/STALE referent | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Manufacturing T92 WRONG_REFERENT | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Manufacturing T102 ADVISOR_DIVERGENCE | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Project T18/T31 Advisor, T30 referent | INDEPENDENT_ROOT |
+| Project T35 REPEATED_CLARIFICATION | INDEPENDENT_ROOT / STILL_REPRODUCIBLE |
+| Logistics T21 | INDEPENDENT_ROOT |
+| Service T17 | INDEPENDENT_ROOT |
+| Service T18 REPEATED_CLARIFICATION | INDEPENDENT_ROOT (unknown Resource KEEP after “That one.”) |
+| FAST | remains green |
+| Impatient | separate S1=5 |

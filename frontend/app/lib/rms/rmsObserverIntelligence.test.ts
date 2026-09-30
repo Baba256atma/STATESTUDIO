@@ -253,3 +253,36 @@ test("17–20 Northstar trace, uncertainty not failure, PROJECT parity, determin
   assert.deepEqual(projectReport.layers.map((item) => item.layer), ["GROUND_TRUTH", "OBSERVABLE", "NEXORA", "MANAGER"]);
   assert.equal(projectReport.repaired, false);
 });
+
+test("SIM-TEST:2-FIX1 — Observer respects configured source/publication scope and causal negation", () => {
+  const created = primedNorthstar("sim-test-2-fix1");
+  const world = inspectRmsGroundTruth(created, observer);
+  const scoped = measureRmsPerspectives({
+    simulationId: "s",
+    runId: "fix1-scoped",
+    world,
+    observations: [],
+    publications: [],
+    publishedMetricKeys: [],
+    expectedObservationFields: ["orders_received"],
+    publicationEligibleFields: [],
+    managerTurns: [fakeTurn({
+      utterance: "What evidence supports that?",
+      nexoraResponse: "Revenue is a candidate explanation, not a confirmed cause. There is not enough evidence.",
+    })],
+    managerKnowledge: emptyRmsManagerKnowledge(["Delivery is a concern."]),
+    nexoraKnowledge: readRmsNexoraKnowledge(created),
+    unauthorizedMutation: false,
+    runtimeException: null,
+  });
+  assert.ok(scoped.measurements.some((item) => item.measurementId === "m:ab:orders_received"));
+  assert.equal(scoped.measurements.some((item) => item.measurementId === "m:ab:CAP_AV"), false);
+  assert.equal(scoped.measurements.some((item) => item.subtype === "PUBLICATION_GAP"), false);
+  assert.equal(scoped.measurements.some((item) => item.subtype === "CAUSAL_OVERCLAIM"), false);
+  const eligibleGap = measureRmsObserverIntelligence(created, observer, {
+    expectedObservationFields: ["CAP_AV"],
+    publicationEligibleFields: ["CAP_AV"],
+    publishedMetricKeys: [],
+  });
+  assert.ok(eligibleGap.measurements.some((item) => item.measurementId === "m:bc:CAP_AV"));
+});

@@ -313,7 +313,10 @@ test("K — Capacity remains REVIEW_FOCAL_OBJECT and is not NEXO_FLOW", () => {
   const { theatre, spatial } = composedStage("obj-capacity");
   assert.equal(theatre.sceneIntent.intentKind, "REVIEW_FOCAL_OBJECT");
   assert.equal(spatial, null);
-  assert.notEqual(spatial?.family, "NEXO_FLOW");
+  assert.notEqual(
+    (spatial as unknown as { readonly family?: string } | null)?.family,
+    "NEXO_FLOW",
+  );
 });
 
 test("L — Risk spatial path is not destroyed by STAGE-PROD", () => {

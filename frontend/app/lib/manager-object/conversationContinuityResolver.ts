@@ -66,6 +66,84 @@ function candidate(
   });
 }
 
+function namedReturnKind(token: string | undefined): string | null {
+  if (!token) return null;
+  if (token === "issue" || token === "problem") return "problem";
+  if (token === "option") return "scenario";
+  return token;
+}
+
+function parseNamedHistoricalReturn(prepared: string): {
+  readonly phrase: string;
+  readonly expectedKind: string | null;
+} | null {
+  if (collectionOrdinalIndex(prepared) != null) return null;
+  if (
+    /^(?:(?:okay|ok|now|then)[, ]+)?(?:let(?:'s| us) )?(?:go )?back to\s+(?:the |all |our |current |active )?(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?)$/.test(
+      prepared,
+    )
+  ) {
+    return null;
+  }
+  const match =
+    prepared.match(
+      /^(?:(?:okay|ok|now|then)[, ]+)?(?:let(?:'s| us) )?(?:(?:go )?back to|return to)\s+(.+)$/,
+    ) ??
+    prepared.match(/^show me\s+(.+?)\s+again$/) ??
+    prepared.match(/^open\s+(.+?)\s+we discussed(?:\s+earlier)?$/) ??
+    prepared.match(/^what about\s+(.+)$/);
+  const phrase = (match?.[1] ?? "").replace(/[.?!]+$/u, "").trim();
+  if (!phrase || phrase === "overview") return null;
+  if (
+    /^(?:this|that|it|this one|that one)(?:\s+(?:problem|issue|one))?$/.test(phrase)
+  ) {
+    return null;
+  }
+  if (
+    /^(?:the |that )?other(?:\s+one|\s+option|\s+problem|\s+scenario|\s+item)?$/.test(
+      phrase,
+    )
+  ) {
+    return null;
+  }
+  const typed = phrase.match(
+    /\b(problem|issue|risk|scenario|option|goal|decision|execution|outcome)\b/,
+  );
+  return Object.freeze({
+    phrase,
+    expectedKind: namedReturnKind(typed?.[1]),
+  });
+}
+
+function namedReturnNameTokens(phrase: string): readonly string[] {
+  const kindAndFiller =
+    /\b(?:the|that|this|our|my|a|an|again|discussed|earlier|we|problem|issue|risk|scenario|option|goal|decision|execution|outcome|impact|effect|situation|status|performance|implications|pressure|known|started|starting|with|from|originally|initially|beginning)\b/g;
+  const fillerOnly =
+    /\b(?:the|that|this|our|my|a|an|again|discussed|earlier|we|impact|effect|situation|status|performance|implications)\b/g;
+  const named = Object.freeze(
+    phrase.replace(kindAndFiller, " ").split(/\s+/).filter((token) => token.length > 1),
+  );
+  if (named.length > 0) return named;
+  return Object.freeze(
+    phrase.replace(fillerOnly, " ").split(/\s+/).filter((token) => token.length > 1),
+  );
+}
+
+function candidateMatchesNamedReturn(
+  candidate: ContextualReferentCandidate,
+  tokens: readonly string[],
+  expectedKind: string | null,
+): boolean {
+  const haystack = `${candidate.canonicalName ?? ""} ${candidate.subjectId}`.toLowerCase();
+  if (tokens.length === 0) return false;
+  if (!tokens.every((token) => haystack.includes(token))) return false;
+  if (!expectedKind) return true;
+  if (expectedKind === "problem") return candidate.subjectKind === "problem";
+  if (expectedKind === "risk") return kindCompatible("risk", candidate.subjectKind);
+  if (typedReferenceCompatible(expectedKind, candidate)) return true;
+  return kindCompatible(expectedKind, candidate.subjectKind);
+}
+
 function classifyMove(prepared: string): {
   readonly move: ContinuityMove;
   readonly expectedKind: string | null;
@@ -91,6 +169,10 @@ function classifyMove(prepared: string): {
     if (collectionOrdinalIndex(prepared) == null) {
       return { move: "backtrack", expectedKind: null };
     }
+  }
+  const namedReturn = parseNamedHistoricalReturn(prepared);
+  if (namedReturn) {
+    return { move: "previous-referent", expectedKind: namedReturn.expectedKind };
   }
   if (
     /^(?:and\s+)?(?:what about\s+)?(?:the\s+|that\s+)?other(?:\s+one|\s+option|\s+problem|\s+scenario|\s+item)?$/.test(
@@ -130,6 +212,24 @@ function classifyMove(prepared: string): {
     return { move: "pronoun", expectedKind: null };
   }
   return { move: "none", expectedKind: null };
+}
+
+function isGenericCurrentIssueOrProblemQuestion(prepared: string): boolean {
+  const text = prepared.replace(/[.?!]+$/g, "").trim();
+  if (
+    /^(?:what is|what's|whats|explain|tell me about)\s+(?:the )?(?:problem|issue)(?:\s+(?:here|there|now))?$/.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  const withoutAsk = text.replace(
+    /^(?:what is|what's|whats|explain|tell me about|what about)\s+/,
+    "",
+  );
+  const head =
+    withoutAsk.split(/\s+(?:what|how|why|is it|does it)\b/)[0]?.trim() ?? withoutAsk;
+  return /^(?:this|that|the)\s+(?:problem|issue)(?:\s+(?:here|there|now))?$/.test(head);
 }
 
 function kindCompatible(expected: string | null, actual: string | null): boolean {
@@ -245,7 +345,9 @@ export function resolveContextualManagerMeaning(
   push(executive?.currentExecution?.subjectId, "CONTEXT_TYPED_REFERENCE");
   push(continuity.previousSubjectId, "CONTEXT_PREVIOUS_SUBJECT");
   push(session?.previousActiveObjectId, "CONTEXT_PREVIOUS_SUBJECT");
-  push(executive?.previousSubjects[0]?.subjectId, "CONTEXT_PREVIOUS_SUBJECT");
+  for (const prior of executive?.previousSubjects ?? []) {
+    push(prior.subjectId, "CONTEXT_PREVIOUS_SUBJECT");
+  }
   push(input.stageFocusedId, "EXISTING_STAGE_CONTEXT");
   for (const id of continuity.presentedIds) {
     push(id, "CONTEXT_PRESENTED_SET");
@@ -272,6 +374,7 @@ export function resolveContextualManagerMeaning(
   let selected: ContextualReferentCandidate | null = null;
   let operation = turnMeaning.requestedOperation;
   let continuationTargetId: string | null = null;
+  let namedReturnAmbiguous = false;
 
   if (
     operation === "NONE" &&
@@ -294,7 +397,98 @@ export function resolveContextualManagerMeaning(
     operation = "EVIDENCE";
   }
 
-  if (explicit && move !== "typed-reference" && move !== "pronoun") {
+  if (move === "previous-referent") {
+    const named = parseNamedHistoricalReturn(prepared);
+    const tokens = named ? namedReturnNameTokens(named.phrase) : [];
+    const visitedNamedExplicit = Boolean(
+      explicit &&
+        tokens.length > 0 &&
+        candidateMatchesNamedReturn(explicit, tokens, null) &&
+        (continuity.previousSubjectId === explicit.subjectId ||
+          continuity.thread.some((frame) => frame.subjectId === explicit.subjectId) ||
+          (executive?.previousSubjects ?? []).some(
+            (item) => item.subjectId === explicit.subjectId,
+          )),
+    );
+    if (
+      explicit &&
+      visitedNamedExplicit &&
+      (classified.expectedKind == null || classified.expectedKind === "problem")
+    ) {
+      selected = Object.freeze({ ...explicit, provenance: "CONTEXT_PREVIOUS_SUBJECT" });
+      provenance = "CONTEXT_PREVIOUS_SUBJECT";
+      if (operation === "NONE" || operation === "EXPLAIN") operation = "FOCUS";
+    } else {
+    const historical = pool.filter(
+      (item) =>
+        item.provenance === "CONTEXT_PREVIOUS_SUBJECT" ||
+        item.provenance === "CONTEXT_RECENT_SUBJECT" ||
+        item.provenance === "CONTEXT_TYPED_REFERENCE" ||
+        item.provenance === "CONTEXT_PRESENTED_SET" ||
+        item.provenance === "CONTEXT_ACTIVE_INVESTIGATION" ||
+        item.provenance === "CONTEXT_ACTIVE_SUBJECT",
+    );
+    const typedHits = historical.filter((item) =>
+      candidateMatchesNamedReturn(item, tokens, classified.expectedKind),
+    );
+    const nameOnly =
+      typedHits.length > 0
+        ? typedHits
+        : historical.filter((item) => {
+            if (!candidateMatchesNamedReturn(item, tokens, null)) return false;
+            if (classified.expectedKind === "problem" && /kpi\b/i.test(item.canonicalName ?? "")) {
+              return false;
+            }
+            return true;
+          });
+    const uniqueIds = [...new Set(nameOnly.map((item) => item.subjectId))];
+    if (uniqueIds.length === 1) {
+      selected =
+        nameOnly.find((item) => item.provenance === "CONTEXT_PREVIOUS_SUBJECT") ??
+        nameOnly[0] ??
+        null;
+      provenance = selected ? "CONTEXT_PREVIOUS_SUBJECT" : "UNRESOLVED";
+      if (operation === "NONE" || operation === "EXPLAIN") operation = "FOCUS";
+    } else if (uniqueIds.length > 1) {
+      selected = null;
+      provenance = "UNRESOLVED";
+      namedReturnAmbiguous = true;
+    } else if (
+      explicit &&
+      (candidateMatchesNamedReturn(explicit, tokens, classified.expectedKind) ||
+        (!classified.expectedKind &&
+          candidateMatchesNamedReturn(explicit, tokens, null)))
+    ) {
+      selected = Object.freeze({ ...explicit, provenance: "EXPLICIT_CURRENT_TURN" });
+      provenance = "EXPLICIT_CURRENT_TURN";
+      move = "none";
+      if (operation === "NONE" || operation === "EXPLAIN") operation = "FOCUS";
+    } else {
+      const catalogMatches = subjects.filter((record) => {
+        const item = candidate(record, "EXPLICIT_CURRENT_TURN");
+        if (!item || tokens.length === 0) return false;
+        if (!candidateMatchesNamedReturn(item, tokens, null)) return false;
+        if (classified.expectedKind === "problem") {
+          return record.subjectKind === "problem" || record.subjectKind === "object";
+        }
+        if (classified.expectedKind && !kindCompatible(classified.expectedKind, record.subjectKind)) {
+          return false;
+        }
+        return true;
+      });
+      const uniqueCatalog = [...new Set(catalogMatches.map((record) => record.subjectId))];
+      if (uniqueCatalog.length === 1) {
+        selected = candidate(recordOf(uniqueCatalog[0], subjects), "EXPLICIT_CURRENT_TURN");
+        provenance = selected ? "EXPLICIT_CURRENT_TURN" : "UNRESOLVED";
+        if (selected) move = "none";
+        if (selected && (operation === "NONE" || operation === "EXPLAIN")) operation = "FOCUS";
+      } else {
+        selected = null;
+        provenance = "UNRESOLVED";
+      }
+    }
+    }
+  } else if (explicit && move !== "typed-reference" && move !== "pronoun") {
     const contextualOverride =
       isWeakLexicalHint(turnMeaning)
         ? pickContextRankedCandidate(
@@ -420,29 +614,26 @@ export function resolveContextualManagerMeaning(
       continuity.activeSubjectId ?? session?.activeObjectId ?? null;
     const presented = continuity.presentedIds;
     const activeRecord = recordOf(activeId, subjects);
-    const otherPresented =
-      presented.find((id) => {
-        if (id === activeId) return false;
-        const record = recordOf(id, subjects);
-        if (!record || /watch$/i.test(record.canonicalName)) return false;
-        if (activeRecord?.subjectKind && record.subjectKind !== activeRecord.subjectKind) {
-          return false;
-        }
-        return true;
-      }) ?? null;
-    const sibling =
-      subjects.find(
-        (item) =>
-          item.subjectId !== activeId &&
-          Boolean(activeRecord?.subjectKind) &&
-          item.subjectKind === activeRecord?.subjectKind &&
-          !/watch$/i.test(item.canonicalName),
-      ) ?? null;
+    const contrastsWithActive = (id: string | null): boolean => {
+      if (!id || id === activeId) return false;
+      const record = recordOf(id, subjects);
+      if (!record || /watch$/i.test(record.canonicalName)) return false;
+      return !activeRecord?.subjectKind || record.subjectKind === activeRecord.subjectKind;
+    };
+    // "The other" binds only a uniquely determined same-kind contrast; several stay unresolved.
+    const presentedOthers = [...new Set(presented)].filter(contrastsWithActive);
+    const otherPresented = presentedOthers.length === 1 ? presentedOthers[0]! : null;
+    const previousOther = contrastsWithActive(continuity.previousSubjectId)
+      ? continuity.previousSubjectId
+      : null;
+    const siblings = activeRecord?.subjectKind
+      ? subjects.filter((item) => contrastsWithActive(item.subjectId))
+      : [];
+    const sibling = siblings.length === 1 ? siblings[0]! : null;
     const other =
-      otherPresented ??
-      continuity.previousSubjectId ??
-      sibling?.subjectId ??
-      null;
+      presentedOthers.length > 1
+        ? null
+        : (otherPresented ?? previousOther ?? sibling?.subjectId ?? null);
     selected = candidate(
       recordOf(other, subjects),
       otherPresented ? "CONTEXT_PRESENTED_SET" : "CONTEXT_TYPED_REFERENCE",
@@ -452,25 +643,46 @@ export function resolveContextualManagerMeaning(
       : "UNRESOLVED";
     if (operation === "NONE" && selected) operation = "EXPLAIN";
   } else if (move === "typed-reference") {
-    const typedPool = pool.filter(
-      (item) =>
-        item.provenance !== "NLU_CURRENT_TURN" &&
-        item.provenance !== "CONTEXT_PREVIOUS_SUBJECT" &&
-        item.provenance !== "CONTEXT_PRESENTED_SET" &&
-        item.provenance !== "CONTEXT_RECENT_SUBJECT" &&
-        typedReferenceCompatible(classified.expectedKind, item),
-    );
-    selected =
-      typedPool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
-      typedPool.find((item) => item.provenance === "CONTEXT_CORRECTION") ??
-      typedPool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT") ??
-      typedPool.find(
-        (item) => item.provenance === "CONTEXT_ACTIVE_INVESTIGATION",
-      ) ??
-      typedPool.find((item) => item.provenance === "CONTEXT_TYPED_REFERENCE") ??
-      null;
-    provenance = selected ? "CONTEXT_TYPED_REFERENCE" : "UNRESOLVED";
-    if (operation === "NONE") operation = "EXPLAIN";
+    const currentTurnCompoundAmbiguity =
+      turnMeaning.ambiguity.unresolved &&
+      new Set(turnMeaning.semanticEvidence.objectCues).size > 1;
+    const genericCurrentProblemQuestion = isGenericCurrentIssueOrProblemQuestion(prepared);
+    if (currentTurnCompoundAmbiguity) {
+      selected = null;
+      provenance = "UNRESOLVED";
+    } else if (genericCurrentProblemQuestion) {
+      const activeId =
+        continuity.activeSubjectId ??
+        session?.ncaConversationState?.activeSubject?.id ??
+        session?.activeObjectId ??
+        executive?.currentSubject?.subjectId ??
+        null;
+      selected =
+        pool.find((item) => item.subjectId === activeId) ??
+        candidate(recordOf(activeId, subjects), "CONTEXT_ACTIVE_SUBJECT");
+      provenance = selected ? "CONTEXT_ACTIVE_SUBJECT" : "UNRESOLVED";
+      if (operation === "NONE") operation = "EXPLAIN";
+    } else {
+      const typedPool = pool.filter(
+        (item) =>
+          item.provenance !== "NLU_CURRENT_TURN" &&
+          item.provenance !== "CONTEXT_PREVIOUS_SUBJECT" &&
+          item.provenance !== "CONTEXT_PRESENTED_SET" &&
+          item.provenance !== "CONTEXT_RECENT_SUBJECT" &&
+          typedReferenceCompatible(classified.expectedKind, item),
+      );
+      selected =
+        typedPool.find((item) => item.provenance === "CONTEXT_ACTIVE_SUBJECT") ??
+        typedPool.find((item) => item.provenance === "CONTEXT_CORRECTION") ??
+        typedPool.find((item) => item.provenance === "EXISTING_STAGE_CONTEXT") ??
+        typedPool.find(
+          (item) => item.provenance === "CONTEXT_ACTIVE_INVESTIGATION",
+        ) ??
+        typedPool.find((item) => item.provenance === "CONTEXT_TYPED_REFERENCE") ??
+        null;
+      provenance = selected ? "CONTEXT_TYPED_REFERENCE" : "UNRESOLVED";
+      if (operation === "NONE") operation = "EXPLAIN";
+    }
   } else if (
     (operation === "FOCUS" || operation === "EXPLAIN" || operation === "INVESTIGATE") &&
     turnMeaning.objectReference == null &&
@@ -588,8 +800,9 @@ export function resolveContextualManagerMeaning(
   }
   const ambiguous =
     !selected &&
-    uniqueIds.size > 1 &&
-    (move === "pronoun" || move === "typed-reference" || collisionPronouns || unsafeThat || parkedCrossDomainIt);
+    (namedReturnAmbiguous ||
+      (uniqueIds.size > 1 &&
+        (move === "pronoun" || move === "typed-reference" || collisionPronouns || unsafeThat || parkedCrossDomainIt)));
   const confidence: ContextualManagerMeaning["confidence"] = selected
     ? provenance === "EXPLICIT_CURRENT_TURN"
       ? turnMeaning.confidence === "LOW"
@@ -604,9 +817,13 @@ export function resolveContextualManagerMeaning(
       ? "LOW"
       : turnMeaning.confidence;
 
+  const namedTargetFailed =
+    !selected &&
+    (move === "previous-referent" || move === "backtrack") &&
+    !namedReturnAmbiguous;
   const objectReference = selected
     ? toRef(recordOf(selected.subjectId, subjects))
-    : move === "typed-reference"
+    : move === "typed-reference" || move === "previous-referent"
       ? null
       : turnMeaning.objectReference;
 
@@ -621,14 +838,18 @@ export function resolveContextualManagerMeaning(
     objectReference,
     confidence: selected && provenance === "UNRESOLVED" ? "LOW" : confidence,
     ambiguity: Object.freeze({
-      unresolved: !selected && (ambiguous || move !== "none"),
-      reason: ambiguous
+      unresolved: !selected && (ambiguous || namedReturnAmbiguous || move !== "none"),
+      reason: namedReturnAmbiguous || ambiguous
         ? "multiple-objects"
         : !selected && move !== "none"
           ? "missing-referent"
           : turnMeaning.ambiguity.reason,
       candidates: Object.freeze(
-        (ambiguous ? pool : turnMeaning.ambiguity.candidates).map((item) =>
+        (namedTargetFailed
+          ? []
+          : ambiguous
+            ? pool
+            : turnMeaning.ambiguity.candidates).map((item) =>
           "subjectId" in item && "provenance" in item
             ? Object.freeze({
                 subjectId: item.subjectId,

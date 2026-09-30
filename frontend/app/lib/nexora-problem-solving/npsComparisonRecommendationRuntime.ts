@@ -85,6 +85,8 @@ export function applyNpsComparisonRecommendationToPresentedResponse(input: {
   readonly utterance: string;
   readonly comparison: NpsComparisonRecommendation;
   readonly locked?: boolean;
+  /** Bare "why?" justifies the recommendation only once ECA:7 has formed or delivered one. */
+  readonly recommendationInDiscourse?: boolean;
 }): string {
   if (input.locked) return input.source;
   const utterance = input.utterance.trim();
@@ -94,7 +96,9 @@ export function applyNpsComparisonRecommendationToPresentedResponse(input: {
     utterance,
   );
   const asksDecision = /so that(?:'s| is) our decision|is that (?:our |the )?decision|have we (?:chosen|decided)/i.test(utterance);
-  const asksWhy = /^(?:why(?: that one)?|why do you recommend(?: that)?)\??$/i.test(utterance);
+  const asksWhy =
+    /^(?:why that one|why do you recommend(?: that)?)\??$/i.test(utterance) ||
+    (/^why\??$/i.test(utterance) && input.recommendationInDiscourse !== false);
   const leading = /definitely the best|is definitely the best choice|best choice, right/i.test(utterance);
   const asksExpansion = /what about capacity expansion plan/i.test(utterance);
   if (asksDecision) {

@@ -148,6 +148,15 @@ describe("NCA-POST:1 Natural language recovery", () => {
     assert.equal(noise.selected, null);
   });
 
+  it("does not treat production data as the production-capacity alias", () => {
+    const catalog = registered();
+    assert.equal(resolveRegisteredReference({ raw: "production", catalog }).selected?.canonicalName ?? null, null);
+    assert.equal(
+      resolveRegisteredReference({ raw: "production capacity", catalog }).selected?.canonicalName,
+      "Capacity",
+    );
+  });
+
   it("asks when two registered names are equally plausible", () => {
     const catalog = [
       { subjectId: "a", canonicalName: "Delivery", keys: ["delivery"] },

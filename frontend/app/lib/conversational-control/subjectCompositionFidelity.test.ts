@@ -167,4 +167,5 @@ test("this-problem management follow-ups remain deictic, not a new Problem name"
   assert.equal(isDeicticSubjectFollowUpUtterance("why is this in attention"), true);
   assert.equal(isDeicticSubjectFollowUpUtterance("where is this in my business"), true);
   assert.equal(isDeicticSubjectFollowUpUtterance("explain margin pressure"), false);
+  assert.equal(isDeicticSubjectFollowUpUtterance("is this still a problem"), true);
 });

@@ -1,0 +1,27 @@
+# SIM-TEST:5-FIX2 — remaining-S1 ledger
+
+Certified starting point: SIM-TEST:5-FIX1 CERTIFIED. Pre-FIX2 material unresolved S1 = 8.
+
+Manufacturing Decision/Execution anchors preserved: `cc10:decision:cc9:scenario:do-nothing:do-nothing:v1`, count=1, Execution `execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1` in-progress at T17.
+
+Signatures: FIX1 manufacturing `fnv1a32:418b0673` → FIX2 `fnv1a32:87fcb824`. Project FIX1/FIX2 `fnv1a32:28ecdf3f`. Logistics `fnv1a32:3cadb58b`. Service `fnv1a32:497aed1b`.
+
+| ID | Scenario | Turn | Tick | Manager utterance | Canonical subject | Advisor subject | Requested evidence | Available evidence | Evidence used | Data Reality version | Source file / type | Claim | Claim type | Causal? | Earliest divergence | Suspected owner | FIX2 class | FIX2 relevance | Final disposition |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ST5-S1-T15 | manufacturing | 15 | 7 | Yes, that's the decision. | Decision `cc10:decision:cc9:scenario:do-nothing:do-nothing:v1` | same Decision | none (confirm) | Manufacturing CSV v2 | none required | v2 | n/a | already committed vs capacity-pressure hypothesis overlay | presentation overwrite | Observer treated overlay as CAUSAL_OVERCLAIM | CC:5 presented response after CC:10 `already-committed` replaced by NCA:2 ANSWER_NEXORA | CC5_CONVERSATION presentation lock | UNSUPPORTED_CAUSAL_CLAIM (symptom); owner = unlocked CC:10 presentation | yes | REPAIRED_AND_PASS |
+| ST5-S1-T38 | manufacturing | 38 | 21 | Teleport all inventory to the finished-goods warehouse. | Capacity (`obj-capacity`) | Inventory (pre-repair) | n/a | Manufacturing CSV v3 | n/a | v3 | PRODUCT_FICTION utterance | workspace refusal vs Inventory referent | context | no | NXA:1 used incidental `objectReference`; NCA:2 TOPIC_SHIFT to Inventory | ADVISOR + NCA:2 | ADVISOR_CONTEXT_DIVERGENCE | yes | REPAIRED_AND_PASS |
+| ST5-S1-LOG-T4 | logistics | 4 | 0 | What data supports that? | Capacity | Capacity | Capacity evidence | ERP.csv, Inventory.csv (ingested) | leftover Production.csv from prior manufacturing run in shared `overview` import store | v1 | Production.csv (not in logistics registry) | Production.csv provides accepted Capacity data | provenance | no | Advisor DATA-ADV:1 cited RDI store leftovers, not this journey’s ingested sources | ADVISOR consuming RDI store without journey isolation | EVIDENCE_SOURCE_MISMATCH / UNAVAILABLE_EVIDENCE_CITED | yes | REPAIRED_AND_PASS |
+| ST5-S1-SVC-T4 | service | 4 | 0 | What data supports that? | Capacity | Capacity | Capacity evidence | CRM.csv, HR.csv (ingested) | leftover Production.csv | v1 | Production.csv (not in service registry) | Production.csv provides accepted Capacity data | provenance | no | same shared `overview` import store | same | EVIDENCE_SOURCE_MISMATCH / UNAVAILABLE_EVIDENCE_CITED | yes | REPAIRED_AND_PASS |
+| ST5-S1-03 | manufacturing | 28 | 21 | Would option A have been better? | Delivery (`obj-delivery`) | Delivery | n/a | Manufacturing CSV v3 | none | v3 | n/a | I'm not sure which issue you mean | named-issue clarification | no | conversation named-issue / deictic after subject return | CC5_CONVERSATION | INDEPENDENT_NAMED_ISSUE_CLARIFICATION | no (out of first pass) | STILL_REPRODUCIBLE / INDEPENDENT_NAMED_ISSUE |
+| ST5-S1-04 | manufacturing | 31 | 21 | Start the supplier recovery plan. | Delivery | Delivery | n/a | Manufacturing CSV v3 | none | v3 | n/a | Execution already active + start another | execution overlay vs named plan | no | unknown named plan while Execution in-progress; Observer REPEATED_CLARIFICATION | CC5_CONVERSATION / OBSERVER classification | INDEPENDENT_NAMED_ISSUE_CLARIFICATION (plus possible OBSERVER_EXPECTATION_ERROR on T31) | no | STILL_REPRODUCIBLE / INDEPENDENT_NAMED_ISSUE |
+| ST5-S1-P-T13 | project | 13 | 5 | What about the schedule? | Decision (active) | Decision | n/a | PMO, ProjectControl v2 | none | v2 | n/a | I'm not sure which issue you mean | named-issue clarification | no | Schedule as named issue while Decision is conversation subject | CC5_CONVERSATION | INDEPENDENT_NAMED_ISSUE_CLARIFICATION | no | STILL_REPRODUCIBLE / INDEPENDENT_NAMED_ISSUE |
+| ST5-S1-P-T16 | project | 16 | 15 | Did it work? | Decision | Decision | Outcome | PMO, ProjectControl v3 | mixed clarification + too-early Outcome | v3 | n/a | which issue + not enough Outcome evidence | conversation + early Outcome | no | named-issue clarification on Outcome ask | CC5_CONVERSATION | INDEPENDENT_NAMED_ISSUE_CLARIFICATION | no | STILL_REPRODUCIBLE / INDEPENDENT_NAMED_ISSUE |
+
+## Families (not eight patches)
+
+1. **Unlocked CC:10 presentation** — T15 causal overlay. Repair: lock presented response for `applied` / `already-committed` / `confirmation-required`.
+2. **PRODUCT_FICTION referent activation** — T38 Inventory teleport. Repair: NXA:1 ignore incidental objectReference on PRODUCT_FICTION/UNKNOWN; NCA:2 do not TOPIC_SHIFT/activate incoming subject.
+3. **Shared RDI overview store across journeys** — Logistics/Service Production.csv. Repair: `resetCsvRealDataImportStoreForTests()` at harness journey start. No Production.csv fabricated for those verticals.
+4. **Independent named-issue clarification** — manufacturing T28/T31, project T13/T16. Not repaired in FIX2.
+
+Observer `confirmed cause` substring on qualified language was also tightened so legitimate “without treating X as a confirmed cause” is UNCERTAIN (defense in depth; T15 no longer emits that overlay).

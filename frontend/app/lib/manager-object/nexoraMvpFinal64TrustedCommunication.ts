@@ -148,6 +148,18 @@ function stripUnjustifiedCertainty(text: string, confirmed: boolean): string {
     .replace(/(?<!\bnot\s)\bproven\b/gi, "");
 }
 
+function dropRepeatedSentences(text: string): string {
+  const seen = new Set<string>();
+  return joinSentences(
+    sentences(text).filter((item) => {
+      const key = item.toLowerCase().replace(/\s+/g, " ");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }),
+  );
+}
+
 function capDepth(text: string, depth: TrustedResponseDepth, locked: boolean): string {
   if (locked || depth === "DEEP") return text;
   const max = depth === "BRIEF" ? 3 : 4;
@@ -397,7 +409,7 @@ export function composeTrustedExecutiveCommunication(input: {
   }
 
   if (!locked) {
-    answer = capDepth(answer, depth, false);
+    answer = capDepth(dropRepeatedSentences(answer), depth, false);
     answer = polish(answer);
   }
   if (!answer) answer = sourceText;

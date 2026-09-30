@@ -753,6 +753,17 @@ function seedInvestigationScenarioPair(input: {
   return session;
 }
 
+function retainActiveScenarioOptionCollection(
+  next: NexoraExecutiveScenarioSession | null | undefined,
+  previous: NexoraExecutiveScenarioSession | null | undefined,
+): NexoraExecutiveScenarioSession | null {
+  const nextCount = next?.candidateScenarioIds.length ?? 0;
+  if (nextCount > 0) return next ?? null;
+  const previousCount = previous?.candidateScenarioIds.length ?? 0;
+  if (previousCount > 0) return previous ?? null;
+  return next ?? previous ?? null;
+}
+
 function resolveScenarioForTurn(input: {
   readonly intent: import("./conversationalIntent.ts").NexoraConversationalIntent;
   readonly primarySubjectId: string | null;
@@ -945,6 +956,7 @@ function resolveScenarioForTurn(input: {
 
   if (
     operation === "compare" &&
+    primarySubjectId &&
     isInvestigationOptionsUtterance(
       normalizeNexoraConversationalUtterance(input.utterance ?? ""),
     )
@@ -1193,6 +1205,17 @@ function mapExperienceStatus(input: {
   return "failed";
 }
 
+function namedSubjectTargetUnresolved(contextual: {
+  readonly continuityMove: string;
+  readonly objectReference?: { readonly subjectId?: string | null } | null;
+}): boolean {
+  return (
+    (contextual.continuityMove === "previous-referent" ||
+      contextual.continuityMove === "backtrack") &&
+    !contextual.objectReference?.subjectId
+  );
+}
+
 function resolveIntentForTurn(
   managerUtterance: string,
   semanticUtterance: string,
@@ -1360,6 +1383,7 @@ export function executeNexoraConversationalExperience(
     });
     return finalize({
       ...args,
+      previousScenarioSession: input.scenarioSession ?? null,
       previousUtterance: input.previousUtterance ?? args.previousUtterance ?? null,
       runtimeStateBeforeTurn: input.runtimeState,
       nextEntranceSession:
@@ -1847,21 +1871,6 @@ export function executeNexoraConversationalExperience(
       utterance: managerOverrideSemanticUtterance(utterance),
       subjects: input.executiveSubjects,
     });
-    if (
-      !pendingCriterion &&
-      intentResult.intent.kind === "unknown" &&
-      naturalLanguageUnderstanding.requestedOperation === "FOCUS" &&
-      naturalLanguageUnderstanding.objectReference?.canonicalName &&
-      !/\b(?:problems|risks|opportunities|scenarios|decisions|executions|goals)\b/i.test(
-        utterance,
-      ) &&
-      isExplicitPresentationRequest(utterance, "focus")
-    ) {
-      intentResult = resolveIntentForTurn(
-        utterance,
-        `Focus on ${naturalLanguageUnderstanding.objectReference.canonicalName}`,
-      );
-    }
     const contextualManagerMeaning = interpretContextualManagerTurn({
       turnMeaning: naturalLanguageUnderstanding,
       subjects: input.executiveSubjects,
@@ -1871,6 +1880,29 @@ export function executeNexoraConversationalExperience(
       managerSession: input.previousManagerObjectSession ?? null,
       stageFocusedId: input.runtimeState.focusedSubject?.id ?? null,
     });
+    const namedFocusName = namedSubjectTargetUnresolved(contextualManagerMeaning)
+      ? null
+      : contextualManagerMeaning.objectReference?.canonicalName ??
+        (contextualManagerMeaning.continuityMove === "previous-referent" ||
+        contextualManagerMeaning.continuityMove === "backtrack"
+          ? null
+          : naturalLanguageUnderstanding.objectReference?.canonicalName);
+    if (
+      !pendingCriterion &&
+      intentResult.intent.kind === "unknown" &&
+      naturalLanguageUnderstanding.requestedOperation === "FOCUS" &&
+      namedFocusName &&
+      !/\b(?:problems|risks|opportunities|scenarios|decisions|executions|goals)\b/i.test(
+        utterance,
+      ) &&
+      (isExplicitPresentationRequest(utterance, "focus") ||
+        contextualManagerMeaning.continuityMove === "previous-referent")
+    ) {
+      intentResult = resolveIntentForTurn(
+        utterance,
+        `Focus on ${namedFocusName}`,
+      );
+    }
     const clarificationRaw = interpretClarificationTurn({
       turnMeaning: naturalLanguageUnderstanding,
       contextual: contextualManagerMeaning,
@@ -1894,7 +1926,19 @@ export function executeNexoraConversationalExperience(
       "explore-scenario", "define-scenario", "compare-scenarios", "explain-scenario", "modify-scenario", "select-scenario-reference",
       "commit-decision", "prefer-option", "reject-decision", "defer-decision", "reconsider-decision", "confirm-decision-commitment", "cancel-decision-commitment",
       "show-problems", "show-goals", "show-scenarios", "show-decisions", "show-execution", "show-related",
+      "execution-status", "decision-status",
     ]).has(intentResult.intent.kind);
+    const approvedDecisionExists = (boundDecisionRuntime?.listDecisions() ?? []).some(
+      (decision) => decision.status === "Approved",
+    );
+    const executionHandoff = resolveNexoraExecutionFollowUpRequest(utterance);
+    const executionAlreadyActive = (boundExecutionRuntime?.listExecutions() ?? []).some(
+      (execution) => execution.status === "in-progress" || execution.status === "blocked",
+    );
+    const clarificationOwnedByExecutionHandoff =
+      executionHandoff?.action === "start" &&
+      approvedDecisionExists &&
+      (executionHandoff.requiresContext || !executionHandoff.targetHint || executionAlreadyActive);
     const clarificationOwnedByMultiEntitySemantics =
       clarificationRaw.action === "clarify" &&
       naturalLanguageUnderstanding.ambiguity.reason === "multiple-objects" &&
@@ -1922,6 +1966,7 @@ export function executeNexoraConversationalExperience(
     const clarification: ClarificationTurnResult = situationResolvesClarification ||
       (clarificationRaw.action === "clarify" && clarificationOwnedByCanonicalIntent) ||
       clarificationOwnedByResolvedAction ||
+      clarificationOwnedByExecutionHandoff ||
       clarificationOwnedByMultiEntitySemantics ||
       clarificationOwnedByAdvisoryDialogue ||
       clarificationOwnedByStageMeta ||
@@ -2127,7 +2172,7 @@ export function executeNexoraConversationalExperience(
       const describeResolvedScenario =
         resolvedCompositionSubject.kind === "scenario" &&
         (isDeicticSubjectExplain(intent.kind, intent.normalizedUtterance) ||
-          isDeicticSubjectFollowUpUtterance(intent.normalizedUtterance));
+          isTargetedDeicticInvestigationUtterance(intent.normalizedUtterance));
       intent = Object.freeze({
         ...intent,
         kind: "explain-scenario" as const,
@@ -2985,7 +3030,11 @@ export function executeNexoraConversationalExperience(
 
     const focusMutationMatchesManagerNeed =
       commandResult.command.kind !== "focus-subject" ||
-      (naturalLanguageUnderstanding.requestedOperation === "FOCUS" &&
+      ((naturalLanguageUnderstanding.requestedOperation === "FOCUS" ||
+        (contextualManagerMeaning.requestedOperation === "FOCUS" &&
+          contextualManagerMeaning.objectReference?.subjectId != null &&
+          contextualManagerMeaning.objectReference.subjectId ===
+            context.primarySubject?.subjectId)) &&
         !(pendingCriterion &&
           isExecutiveComparisonCriterionAnswer(utterance)));
     const shouldCommitRuntime =
@@ -3033,7 +3082,11 @@ export function executeNexoraConversationalExperience(
       // investigation through final presentation; advisory layers may add
       // context on selection turns but must not replace this answer's subject.
       lockPresentedResponse:
-        Boolean(dataLibraryAnswer) || targetedDeicticInvestigation,
+        Boolean(dataLibraryAnswer) ||
+        targetedDeicticInvestigation ||
+        decisionCommitmentResult?.status === "applied" ||
+        decisionCommitmentResult?.status === "already-committed" ||
+        decisionCommitmentResult?.status === "confirmation-required",
       dataLibraryResponse: dataLibraryAnswer?.text ?? null,
       dataLibraryDialogue: dataLibraryAnswer?.dialogue ?? null,
       clarificationTurn: clarification,
@@ -3092,6 +3145,7 @@ function finalize(args: {
   readonly runtimeResult: NexoraConversationalExperienceResult["runtimeResult"];
   readonly recommendationResult?: NexoraExecutiveRecommendationResult | null;
   readonly scenarioResult?: NexoraExecutiveScenarioConversationResult | null;
+  readonly previousScenarioSession?: NexoraExecutiveScenarioSession | null;
   readonly decisionCommitmentResult?: NexoraDecisionCommitmentResult | null;
   readonly pendingTurnResolution?: NexoraPendingTurnResolution | null;
   readonly nextPendingTurnExpectation?: NexoraPendingTurnExpectation | null;
@@ -3357,7 +3411,7 @@ function finalize(args: {
     ...nextExecutiveContext,
     pendingTurnExpectation: derivedPendingTurnExpectation,
   });
-  const nextConversationContext =
+  let nextConversationContext =
     toNexoraConversationContextSnapshot(nextExecutiveContext);
 
   const managerMessage = freezeMessage({
@@ -3393,9 +3447,7 @@ function finalize(args: {
     deicticUtterance &&
     isDeicticSubjectFollowUpUtterance(normalizedUtterance) &&
     priorSession?.activationSource !== "conversation-named" &&
-    priorSession?.activeObjectId != null &&
-    focusedBeforeTurnId != null &&
-    priorSession.activeObjectId === focusedBeforeTurnId;
+    focusedBeforeTurnId != null;
   const hasNamedHint =
     !deicticUtterance &&
     !/\bits\b/i.test(args.utterance) &&
@@ -3678,22 +3730,27 @@ function finalize(args: {
     contextual: contextualManagerMeaning,
     resolvedSubjectId:
       args.clarificationTurn?.resumeReference?.subjectId ??
-      (contextualManagerMeaning.continuityMove === "backtrack" ||
-      contextualManagerMeaning.continuityMove === "resume-parked" ||
-      contextualManagerMeaning.continuityMove === "other-referent"
-        ? contextualManagerMeaning.objectReference?.subjectId ??
-          managerObjectTurn.activeObjectId ??
-          args.contextResult.context.primarySubject?.subjectId ??
+      (namedSubjectTargetUnresolved(contextualManagerMeaning)
+        ? managerObjectTurn.activeObjectId ??
+          args.previousManagerObjectSession?.activeObjectId ??
           null
-        : contextualManagerMeaning.provenance === "EXPLICIT_CURRENT_TURN"
+        : contextualManagerMeaning.continuityMove === "backtrack" ||
+            contextualManagerMeaning.continuityMove === "previous-referent" ||
+            contextualManagerMeaning.continuityMove === "resume-parked" ||
+            contextualManagerMeaning.continuityMove === "other-referent"
           ? contextualManagerMeaning.objectReference?.subjectId ??
             managerObjectTurn.activeObjectId ??
             args.contextResult.context.primarySubject?.subjectId ??
             null
-          : managerObjectTurn.activeObjectId ??
-            args.contextResult.context.primarySubject?.subjectId ??
-            contextualManagerMeaning.objectReference?.subjectId ??
-            null),
+          : contextualManagerMeaning.provenance === "EXPLICIT_CURRENT_TURN"
+            ? contextualManagerMeaning.objectReference?.subjectId ??
+              managerObjectTurn.activeObjectId ??
+              args.contextResult.context.primarySubject?.subjectId ??
+              null
+            : managerObjectTurn.activeObjectId ??
+              args.contextResult.context.primarySubject?.subjectId ??
+              contextualManagerMeaning.objectReference?.subjectId ??
+              null),
     resolvedSubjectKind:
       args.clarificationTurn?.resumeReference?.subjectKind ??
       args.contextResult.context.primarySubject?.subjectKind ??
@@ -4046,7 +4103,8 @@ function finalize(args: {
             canonicalFocusName)),
   );
   const canonicalAdvisorSubjectIsExplicit = Boolean(
-    naturalLanguageUnderstanding.requestedOperation === "EXPLAIN" &&
+    args.intentResult.intent.kind !== "explain-scenario" &&
+      naturalLanguageUnderstanding.requestedOperation === "EXPLAIN" &&
       naturalLanguageUnderstanding.objectReference?.subjectId &&
       semanticTurn.references.primary?.id ===
         naturalLanguageUnderstanding.objectReference.subjectId,
@@ -4057,13 +4115,40 @@ function finalize(args: {
       (clarificationTurn.correctionDetected &&
         clarificationTurn.correctionAfterId),
   );
+  const topicSwitchSubjectId = namedSubjectTargetUnresolved(contextualManagerMeaning)
+    ? null
+    : (contextualManagerMeaning.continuityMove === "previous-referent" ||
+      contextualManagerMeaning.continuityMove === "backtrack"
+        ? contextualManagerMeaning.objectReference?.subjectId
+        : null) ??
+      naturalLanguageUnderstanding.objectReference?.subjectId ??
+      args.contextResult.context.primarySubject?.subjectId ??
+      semanticTurn.references.primary?.id ??
+      null;
+  const topicSwitchIsCatalogSubject = Boolean(
+    topicSwitchSubjectId &&
+      (catalog.objects.some((entry) => entry.id === topicSwitchSubjectId) ||
+        catalog.contextSubjects.some((entry) => entry.id === topicSwitchSubjectId)),
+  );
+  const topicSwitchCue = /^(?:what about|return to|go back to|switch to|what (?:were we|was i) (?:saying|talking) about)\b/i.test(
+    normalizeNexoraConversationalUtterance(args.utterance),
+  );
+  const topicSwitchPresentation = Boolean(
+    topicSwitchCue &&
+      topicSwitchIsCatalogSubject &&
+      semanticTurn.owner !== "COLLECTION_QUERY" &&
+      collectionOrdinalIndex(args.utterance) == null &&
+      !/^go back to overview\b/i.test(normalizeNexoraConversationalUtterance(args.utterance)),
+  );
   const explicitSingularFocus =
     (canonicalSingleSubjectHandoff ||
+      topicSwitchPresentation ||
       (args.intentResult.intent.kind === "focus" &&
         nxaResponseContract.navigationAllowed &&
         semanticTurn.owner === "BUSINESS")) &&
     !/\b(?:problems|risks|opportunities|scenarios|decisions|executions|goals)\b/i.test(args.utterance) &&
     (canonicalSingleSubjectHandoff ||
+      topicSwitchPresentation ||
       isExplicitPresentationRequest(args.utterance, args.intentResult.intent.kind) ||
       incomingStage.visibleMembers.some(
         (member) => member.id === args.contextResult.context.primarySubject?.subjectId,
@@ -4298,6 +4383,21 @@ function finalize(args: {
     collectionPresentationRequested
       ? (args.runtimeStateBeforeTurn ?? args.nextRuntimeState)
       : args.nextRuntimeState;
+  const directorPrimaryReference =
+    semanticTurn.references.primary ??
+    (topicSwitchPresentation && topicSwitchSubjectId
+      ? Object.freeze({
+          id: topicSwitchSubjectId,
+          name:
+            catalog.objects.find((entry) => entry.id === topicSwitchSubjectId)?.label ??
+            catalog.contextSubjects.find((entry) => entry.id === topicSwitchSubjectId)?.label ??
+            topicSwitchSubjectId,
+          kind:
+            catalog.objects.find((entry) => entry.id === topicSwitchSubjectId)?.kind ??
+            catalog.contextSubjects.find((entry) => entry.id === topicSwitchSubjectId)?.kind ??
+            null,
+        })
+      : null);
   const directorPlan = directNexoraPresentation({
     owner: semanticTurn.owner,
     presentationRequest:
@@ -4306,7 +4406,7 @@ function finalize(args: {
         : collectionPresentationRequested
           ? "COLLECTION"
           : "NONE",
-    primaryReference: semanticTurn.references.primary,
+    primaryReference: directorPrimaryReference,
     references: semanticTurn.references.references,
     collectionKind,
     collectionScope: semanticTurn.diagnostics.collectionScope,
@@ -4328,6 +4428,37 @@ function finalize(args: {
     state: presentationStage,
     catalog: args.catalog,
   });
+  if (
+    !args.lockPresentedResponse &&
+    !comparisonMeaning.active &&
+    explicitSingularFocus &&
+    directorRuntimeState.focusedSubject?.id &&
+    directorRuntimeState.focusedSubject.id !== nextExecutiveContext.currentSubject?.subjectId &&
+    (contextualManagerMeaning.continuityMove === "previous-referent" ||
+      contextualManagerMeaning.continuityMove === "backtrack" ||
+      /^(?:what about|what (?:were we|was i) (?:saying|talking) about)\b/i.test(args.utterance.trim()))
+  ) {
+    executiveContextUpdate = updateNexoraExecutiveContext({
+      previousContext: nextExecutiveContext,
+      intentResult: args.intentResult,
+      resolvedContext: args.contextResult,
+      experienceResult: args.experienceResult,
+      commandResult: args.commandResult,
+      runtimeResult: args.runtimeResult,
+      runtimeFocusedSubjectId: directorRuntimeState.focusedSubject.id,
+      runtimeFocusedSubjectKind: focusedKind(directorRuntimeState),
+      runtimeFocusedCanonicalName: directorRuntimeState.focusedSubject.label ?? null,
+      runtimeWorkspaceId: directorRuntimeState.workspace,
+      executiveSubjects: args.executiveSubjects,
+      trustedSuccess: true,
+      syncSource: "runtime",
+    });
+    nextExecutiveContext = freezeExecutiveContextSnapshot({
+      ...executiveContextUpdate.nextContext,
+      pendingTurnExpectation: derivedPendingTurnExpectation,
+    });
+    nextConversationContext = toNexoraConversationContextSnapshot(nextExecutiveContext);
+  }
   const executiveSituation = composeExecutiveSituation({
     utterance: args.utterance,
     executiveContext: nextExecutiveContext,
@@ -6206,6 +6337,10 @@ function finalize(args: {
     locked:
       explicitManagerIntentOwnsFinalAnswer ||
       ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+    recommendationInDiscourse: Boolean(
+      args.previousManagerObjectSession?.ecaRecommendationSession?.delivered ||
+        args.previousManagerObjectSession?.ecaRecommendationSession?.lastOptionId,
+    ),
   });
   const previousPending = args.previousManagerObjectSession?.ecaCommitmentSession?.pendingTargetId ?? null;
   const npsDecisionCommitment = composeNpsRuntimeDecisionCommitment({
@@ -6405,7 +6540,10 @@ function finalize(args: {
     utterance: args.utterance,
     experiment: vai8Experiment,
     session: args.previousVai8PromotionSession ?? null,
-    scenarioSession: scenarioResult?.nextSession ?? null,
+    scenarioSession: retainActiveScenarioOptionCollection(
+      scenarioResult?.nextSession ?? null,
+      args.previousScenarioSession ?? null,
+    ),
     currentReferentId: focusedSubject?.id ?? args.vaiAdvisorBundle?.focalObject.id ?? null,
     locked:
       explicitManagerIntentOwnsFinalAnswer ||
@@ -6478,7 +6616,10 @@ function finalize(args: {
     recommendationResult,
     scenarioResult,
     decisionCommitmentResult,
-    nextScenarioSession: vai8Overlay.result.scenarioSession ?? scenarioResult?.nextSession ?? null,
+    nextScenarioSession: retainActiveScenarioOptionCollection(
+      vai8Overlay.result.scenarioSession ?? scenarioResult?.nextSession ?? null,
+      args.previousScenarioSession ?? null,
+    ),
     nextDecisionSession:
       args.nextDecisionSession !== undefined
         ? args.nextDecisionSession

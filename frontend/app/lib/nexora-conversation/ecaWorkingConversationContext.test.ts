@@ -332,4 +332,28 @@ describe("NPA-T ECA:1 working conversation context", () => {
     assert.equal(result.activeSubject?.id, "capacity-gap");
     assert.equal(result.activeSubject?.label, gap.label);
   });
+
+  it("stale lastCollection is not an ordinal pool after an out-of-collection subject", () => {
+    const inventory = { id: "obj-inventory", label: "Inventory", kind: "object" } as const;
+    const result = composeEcaWorkingConversationContext({
+      utterance: "The first one.",
+      meaning: meaning({
+        rawUtterance: "The first one.",
+        preparedUtterance: "the first one",
+        objectReference: { subjectId: null, canonicalName: null, lexicalHint: "first one", subjectKind: null },
+        subject: { subjectId: null, canonicalName: null, lexicalHint: "first one", subjectKind: null },
+      }),
+      stage,
+      subjects: [...subjects, inventory],
+      conversationState: {
+        activeSubject: { id: inventory.id, name: inventory.label, kind: "object" },
+        lastCollection: {
+          kind: "PROBLEM",
+          items: ["Capacity Gap", "Margin Pressure"],
+          memberIds: ["capacity-gap", "margin-pressure"],
+        },
+      } as never,
+    });
+    assert.notEqual(result.activeSubject?.id, "capacity-gap");
+  });
 });

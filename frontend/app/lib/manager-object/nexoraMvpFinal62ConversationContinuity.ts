@@ -122,6 +122,13 @@ export function applyContextualMeaningToIntent(
   if (PROTECTED_INTENT_KINDS.has(resolution.intent.kind)) {
     return resolution;
   }
+  if (
+    resolution.intent.kind === "focus" &&
+    resolution.intent.targetHints.length > 0 &&
+    contextual.provenance === "EXPLICIT_CURRENT_TURN"
+  ) {
+    return resolution;
+  }
   // A rejected hypothetical grammar must remain unknown; contextual NLU may
   // enrich a recognized Scenario intent but cannot manufacture one.
   if (
@@ -139,6 +146,8 @@ export function applyContextualMeaningToIntent(
   );
   const deicticContinuity =
     contextual.continuityMove === "pronoun" ||
+    contextual.continuityMove === "previous-referent" ||
+    contextual.continuityMove === "backtrack" ||
     contextual.provenance === "CONTEXT_ACTIVE_SUBJECT" ||
     contextual.provenance === "CONTEXT_ACTIVE_INVESTIGATION" ||
     contextual.provenance === "CONTEXT_RECENT_SUBJECT" ||
