@@ -1,0 +1,18 @@
+{
+  "executed": true,
+  "skipped": false,
+  "status": "ok",
+  "provider": "openai",
+  "model": "gpt-4o-mini-2024-07-18",
+  "requestIdPresent": true,
+  "latencyMs": 1755.36,
+  "contributionNonEmpty": true,
+  "contributionEqualsDeterministicResponse": true,
+  "usage": {
+    "inputTokens": 270,
+    "outputTokens": 5,
+    "totalTokens": 275
+  },
+  "cost": null,
+  "providerCompleteCalls": 1
+}

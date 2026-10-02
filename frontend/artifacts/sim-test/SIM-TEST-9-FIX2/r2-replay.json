@@ -1,0 +1,120 @@
+{
+  "remaining": [],
+  "rows": [
+    {
+      "journeyId": "sim-test-9-r2-c_scenario_sets",
+      "family": "C_SCENARIO_SETS",
+      "signature": "fnv1a32:25066a89",
+      "matched": true,
+      "confusion": [],
+      "decisions": []
+    },
+    {
+      "journeyId": "sim-test-9-r2-d_multi_decision",
+      "family": "D_MULTI_DECISION",
+      "signature": "fnv1a32:af1a3e7d",
+      "matched": true,
+      "confusion": [],
+      "decisions": [
+        {
+          "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+          "title": "No Action on Capacity",
+          "status": "Approved",
+          "subjectIds": [
+            "obj-budget"
+          ],
+          "scenarioId": "cc9:scenario:do-nothing:do-nothing:v1"
+        },
+        {
+          "decisionId": "cc10:decision:cc9:scenario:intervention:obj-delivery:v1",
+          "title": "Investigate Delivery",
+          "status": "Approved",
+          "subjectIds": [
+            "obj-capacity"
+          ],
+          "scenarioId": "cc9:scenario:intervention:obj-delivery:v1"
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-9-r2-e_decision_execution_concurrency",
+      "family": "E_DECISION_EXECUTION_CONCURRENCY",
+      "signature": "fnv1a32:2107609d",
+      "matched": true,
+      "confusion": [],
+      "decisions": [
+        {
+          "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+          "title": "No Action on Capacity",
+          "status": "Approved",
+          "subjectIds": [
+            "obj-budget"
+          ],
+          "scenarioId": "cc9:scenario:do-nothing:do-nothing:v1"
+        },
+        {
+          "decisionId": "cc10:decision:cc9:scenario:intervention:obj-delivery:v1",
+          "title": "Investigate Delivery",
+          "status": "Approved",
+          "subjectIds": [
+            "obj-capacity"
+          ],
+          "scenarioId": "cc9:scenario:intervention:obj-delivery:v1"
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-9-r2-f_multi_outcome",
+      "family": "F_MULTI_OUTCOME",
+      "signature": "fnv1a32:50001a1f",
+      "matched": true,
+      "confusion": [],
+      "decisions": [
+        {
+          "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+          "title": "No Action on Capacity",
+          "status": "Approved",
+          "subjectIds": [
+            "obj-budget"
+          ],
+          "scenarioId": "cc9:scenario:do-nothing:do-nothing:v1"
+        },
+        {
+          "decisionId": "cc10:decision:cc9:scenario:intervention:obj-delivery:v1",
+          "title": "Investigate Delivery",
+          "status": "Approved",
+          "subjectIds": [
+            "obj-capacity"
+          ],
+          "scenarioId": "cc9:scenario:intervention:obj-delivery:v1"
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-9-r2-j_ordinal_stress",
+      "family": "J_ORDINAL_STRESS",
+      "signature": "fnv1a32:2bddcdbd",
+      "matched": true,
+      "confusion": [],
+      "decisions": []
+    },
+    {
+      "journeyId": "sim-test-9-r2-k_long_session",
+      "family": "K_LONG_SESSION",
+      "signature": "fnv1a32:7af2dd36",
+      "matched": true,
+      "confusion": [],
+      "decisions": [
+        {
+          "decisionId": "cc10:decision:cc9:scenario:intervention:obj-delivery:v1",
+          "title": "Investigate Delivery",
+          "status": "Approved",
+          "subjectIds": [
+            "obj-capacity"
+          ],
+          "scenarioId": "cc9:scenario:intervention:obj-delivery:v1"
+        }
+      ]
+    }
+  ]
+}

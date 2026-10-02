@@ -6,9 +6,10 @@
  */
 
 import type { DataRealityAwareAdvisorBindingResult } from "../data-reality/dataRealityAwareAdvisorExperienceBinding.ts";
-import type {
-  CausalAssessment,
-  ConstraintAssessment,
+import {
+  projectGroundedCausalConstraintIntelligence,
+  type CausalAssessment,
+  type ConstraintAssessment,
 } from "../executive-intelligence/nexoraGroundedCausalConstraintIntelligence.ts";
 import {
   projectLiveOutcomeIntelligence,
@@ -47,7 +48,11 @@ import {
   resolveDecisionExpectedOutcomeBinding,
   type DecisionExpectedOutcomeBinding,
 } from "./nexoraDecisionExpectedOutcomeBinding.ts";
-import { registerPostDecisionCaptureContext } from "./nexoraPostDecisionObservationCapture.ts";
+import {
+  listLiveExecutionCaptureContextsForTests,
+  registerPostDecisionCaptureContext,
+  syncLiveExecutionCaptureContexts,
+} from "./nexoraPostDecisionObservationCapture.ts";
 import {
   isPostBoundaryObservation,
   resolveDecisionOutcomeCommitment,
@@ -549,4 +554,114 @@ export function coordinateNexoraOutcomeLearningRuntime(
   input: IntegrateNexoraOutcomeLearningRuntimeInput,
 ): NexoraOutcomeLearningRuntimeIntegration {
   return integrateNexoraOutcomeLearningRuntime(input);
+}
+
+export type LiveExecutionOutcomeEvaluationSyncInput = Readonly<{
+  readonly executions: readonly {
+    readonly executionId: string;
+    readonly decisionId: string;
+    readonly title: string;
+    readonly status: string;
+  }[];
+  readonly decisions: readonly {
+    readonly decisionId: string;
+    readonly subjectIds: readonly string[];
+    readonly scenarioId?: string | null;
+    readonly committedAt?: string | null;
+    readonly status?: string;
+  }[];
+  readonly scenarioSourceById?: Readonly<Record<string, string | null | undefined>>;
+  readonly scenarioImpactsById?: Parameters<typeof syncLiveExecutionCaptureContexts>[0]["scenarioImpactsById"];
+  readonly focusedSubjectId?: string | null;
+}>;
+
+export type LiveExecutionOutcomeEvaluationSync = Readonly<{
+  readonly assessments: readonly ExecutiveOutcomeAssessment[];
+  readonly answers: Readonly<{
+    readonly didItWork?: string;
+    readonly outcome?: string;
+    readonly whatHappened?: string;
+    readonly whatExpected?: string;
+    readonly whyOutcome?: string;
+    readonly learning?: string;
+    readonly outcomeConfidence?: string;
+  }>;
+}>;
+
+/**
+ * CC:5 host for MVP-OUT:1 — forwards live Execution context into CORE-OUT:1.
+ * Does not decide SUCCESS/FAILURE in conversation control.
+ */
+export function synchronizeLiveExecutionOutcomeEvaluation(
+  input: LiveExecutionOutcomeEvaluationSyncInput,
+): LiveExecutionOutcomeEvaluationSync {
+  syncLiveExecutionCaptureContexts(input);
+  const assessments: ExecutiveOutcomeAssessment[] = [];
+  let answers: LiveExecutionOutcomeEvaluationSync["answers"] = {};
+  for (const context of listLiveExecutionCaptureContextsForTests()) {
+    if (context.window == null || context.window.status === "timing-incomplete") continue;
+    const decision = input.decisions.find((item) => item.decisionId === context.decisionId) ?? null;
+    const execution = input.executions.find((item) => item.executionId === context.executionId) ?? null;
+    const intelligence = projectGroundedCausalConstraintIntelligence({
+      subjectId: context.subjectId,
+      subjectLabel: context.subjectId,
+      subjectKind: "object",
+      isOverview: false,
+      relationships: [],
+    });
+    const integrated = integrateNexoraOutcomeLearningRuntime({
+      workspaceId: "nexora-mvp",
+      subjectId: context.subjectId,
+      subjectKind: "object",
+      expected: context.expected,
+      collectLiveExpected: false,
+      window: context.window,
+      linkBasis: context.linkBasis,
+      committedAt: decision?.committedAt ?? context.window?.openedAt ?? null,
+      executionStartedAt: context.window?.openedAt ?? null,
+      decision:
+        context.decisionId != null
+          ? {
+              decisionId: context.decisionId,
+              status: decision?.status ?? "Approved",
+              committed: true,
+              committedAt: decision?.committedAt ?? context.window?.openedAt ?? null,
+              source: "explicit",
+            }
+          : null,
+      execution:
+        context.executionId != null
+          ? {
+              executionId: context.executionId,
+              status: execution?.status ?? "in-progress",
+              progress: null,
+              startedAt: context.window?.openedAt ?? null,
+              completedAt: null,
+              sourceDecisionId: context.decisionId,
+              complete: /complete/i.test(execution?.status ?? ""),
+              source: "explicit",
+            }
+          : null,
+      causal: intelligence.causal,
+      constraint: intelligence.constraint,
+    });
+    assessments.push(integrated.assessment);
+    const focused =
+      input.focusedSubjectId == null || context.subjectId === input.focusedSubjectId;
+    if (focused) {
+      answers = {
+        didItWork: integrated.experience.didItWorkStatement,
+        outcome: integrated.experience.outcomeAssessment,
+        whatHappened: integrated.experience.whatHappenedStatement,
+        whatExpected: integrated.experience.expectedOutcome,
+        whyOutcome: integrated.experience.whyStatement,
+        learning: integrated.experience.learningStatement,
+        outcomeConfidence: integrated.experience.confidenceStatement,
+      };
+    }
+  }
+  return Object.freeze({
+    assessments: Object.freeze(assessments),
+    answers: Object.freeze({ ...answers }),
+  });
 }

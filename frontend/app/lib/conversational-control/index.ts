@@ -212,6 +212,94 @@ export {
 } from "./conversationalExperienceOrchestrator.ts";
 
 export {
+  nexoraLlmConversationParticipantIdentity,
+  nexoraLlmConversationParticipantVersion,
+  nexoraLlmConversationParticipantNamespace,
+  NEXORA_LLM_PARTICIPANT_BOUNDARY,
+  NEXORA_LLM_PARTICIPANT_STATUSES,
+  invokeNexoraLlmConversationParticipant,
+  type NexoraLlmParticipantRequest,
+  type NexoraLlmParticipantResult,
+  type NexoraLlmConversationParticipant,
+  type NexoraLlmParticipantTurn,
+  type NexoraLlmParticipantStatus,
+  type NexoraLlmManagementContext,
+  type NexoraLlmManagementContextInput,
+} from "./nexoraLlmConversationParticipant.ts";
+
+export {
+  nexoraLlmManagementContextIdentity,
+  NEXORA_LLM_CONTEXT_OWNERS,
+  NEXORA_LLM_CONTEXT_BOUNDARY,
+  NEXORA_LLM_CONTEXT_BOUNDS,
+  emptyNexoraLlmManagementContext,
+  projectNexoraLlmManagementContext,
+  readActiveScenarioContext,
+  readDecisionContext,
+  subjectFieldsForResolvedId,
+  type NexoraLlmContextRef,
+  type NexoraLlmConversationFrameRef,
+  type NexoraLlmScenarioContextSource,
+  type NexoraLlmDecisionContextSource,
+} from "./nexoraLlmManagementContext.ts";
+
+export {
+  nexoraLlmRuntimeIdentity,
+  nexoraLlmFirstCertifiedAdapterIdentity,
+  nexoraLlmFirstCertifiedAdapterProvider,
+  NEXORA_LLM_RUNTIME_BOUNDARY,
+  NEXORA_LLM_RUNTIME_FAILURES,
+  NEXORA_LLM_RUNTIME_DEFAULT_TIMEOUT_MS,
+  NEXORA_LLM_PARTICIPANT_SYSTEM_INSTRUCTION,
+  NexoraLlmRuntimeAdapterError,
+  type NexoraLlmRuntimeFailureCategory,
+  type NexoraLlmRuntimeRequest,
+  type NexoraLlmRuntimeUsage,
+  type NexoraLlmRuntimeMeta,
+  type NexoraLlmRuntimeCost,
+  type NexoraLlmRuntimeFailure,
+  type NexoraLlmRuntimeResult,
+  type NexoraLlmProviderCompletion,
+  type NexoraLlmRuntimeAdapterInput,
+  type NexoraLlmRuntimeAdapter,
+} from "./nexoraLlmRuntimeContract.ts";
+
+export {
+  buildNexoraLlmRuntimeUserPayload,
+  executeNexoraLlmRuntime,
+} from "./nexoraLlmRuntime.ts";
+
+export { createNexoraLlmRuntimeParticipant } from "./nexoraLlmRuntimeParticipant.ts";
+
+export {
+  completeNexoraLlmManagerPresentation,
+  NEXORA_LLM_RUNTIME_HTTP_PATH,
+} from "./nexoraLlmManagerPresentation.ts";
+
+export {
+  nexoraLlmGovernedOutputIdentity,
+  NEXORA_LLM_GOVERNED_OUTPUT_BOUNDARY,
+  NEXORA_LLM_MANAGER_TEXT_MAX_CHARS,
+  NEXORA_LLM_GOVERNED_REASONS,
+  governNexoraLlmOutput,
+  type NexoraLlmGovernedReason,
+  type NexoraGovernedLlmOutput,
+} from "./nexoraLlmGovernedOutput.ts";
+
+export {
+  nexoraLlmUsagePolicyIdentity,
+  NEXORA_LLM_USAGE_POLICY_BOUNDARY,
+  NEXORA_LLM_USAGE_SKIP_REASONS,
+  type NexoraLlmUsageSkipReason,
+  type NexoraLlmUsageDecision,
+} from "./nexoraLlmUsagePolicy.ts";
+
+export {
+  createNexoraLlmUsageGuardedParticipant,
+  createInMemoryCallAllowancePolicy,
+} from "./nexoraLlmUsageGuard.ts";
+
+export {
   conversationalExperienceControlIdentity,
   conversationalExperienceControlVersion,
   conversationalExperienceControlNamespace,
@@ -423,6 +511,10 @@ export {
 export {
   resolveNexoraExecutiveScenarioConversation,
   createEmptyNexoraExecutiveScenarioSession,
+  scenarioSourceManagementSubjectId,
+  scopeScenarioSessionToManagementContext,
+  withLearningInformedReassessmentProvenance,
+  type NexoraLearningInformedReassessmentProvenance,
   type NexoraExecutiveScenarioSession,
   type NexoraExecutiveScenarioConversationResult,
   type NexoraExecutiveScenarioConversationInput,

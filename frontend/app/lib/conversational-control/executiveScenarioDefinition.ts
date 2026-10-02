@@ -72,6 +72,8 @@ export type NexoraExecutiveScenario = {
   readonly revision: number;
   readonly baseContextId?: string;
   readonly subjectIds: readonly string[];
+  /** Problem/object that established this Scenario. Related subjects are not this identity. */
+  readonly sourceSubjectId?: string | null;
   readonly assumptions: readonly NexoraScenarioAssumption[];
   readonly interventions: readonly NexoraScenarioIntervention[];
   readonly horizon: NexoraScenarioHorizon | null;
@@ -348,6 +350,8 @@ export function defineNexoraExecutiveScenario(
       input.executiveContext.currentWorkspaceId ??
       undefined,
     subjectIds,
+    sourceSubjectId:
+      previous?.sourceSubjectId ?? primarySubjectId ?? null,
     assumptions,
     interventions,
     horizon,

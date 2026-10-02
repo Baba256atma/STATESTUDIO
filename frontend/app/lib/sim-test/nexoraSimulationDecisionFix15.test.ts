@@ -165,13 +165,22 @@ test("FIX15 I: B does not select a stale candidate after the conversation moves 
   for (const utterances of [
     ["Status.", "Capacity. Details.", "Options.", "Delivery. Details.", "Go with B."],
     ["Status.", "Capacity. Details.", "Show me the alternatives.", "Delivery. Details.", "Let's go with option B."],
-    ["Status.", "Capacity. Details.", "Options.", "Delivery. Details.", "Options.", "Go with B."],
   ]) {
     const turns = speak(utterances, `i-${utterances.join("|")}`);
     const last = turns.at(-1)!;
     assert.equal(last.decisionCommitmentResult?.status, "clarification-required", utterances.join(" "));
     assert.ok(turns.every((turn) => decisions(turn).length === 0), utterances.join(" "));
   }
+  const withDeliverySet = speak(
+    ["Status.", "Capacity. Details.", "Options.", "Delivery. Details.", "Options.", "Go with B."],
+    "i-delivery-set",
+  );
+  const last = withDeliverySet.at(-1)!;
+  assert.notEqual(last.decisionCommitmentResult?.status, "clarification-required");
+  assert.equal(
+    decisions(last).some((item) => /capacity/i.test(item.title)),
+    false,
+  );
 });
 
 test("FIX15 J: Yes. Decide. without a candidate commitment creates no Decision", () => {

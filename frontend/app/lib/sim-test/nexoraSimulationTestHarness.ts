@@ -24,6 +24,11 @@ import {
   resolveRmsScenario,
 } from "../rms/rmsScenarioRunner.ts";
 import { resetCsvRealDataImportStoreForTests } from "../data-reality/csvRealDataImportStore.ts";
+import { resetPostDecisionCaptureForTests } from "../nex-mvp/nexoraPostDecisionObservationCapture.ts";
+import {
+  listCapturedObservations,
+  resetOutcomeObservationCaptureForTests,
+} from "../executive-intelligence/nexoraLiveOutcomeObservationCapture.ts";
 import {
   createRmsFoundationSession,
   inspectRmsEventSchedule,
@@ -227,6 +232,10 @@ function lifecycleSlice(result: RmsCc5Turn) {
     npsLearningStatus: learning?.learningStatus ?? null,
     npsLearningDurable: Boolean(learning?.learningDurable),
     nxa3OutcomeState: scenarioRecord.nxa3OutcomeState ?? null,
+    capturedOutcomeObservationCount: listCapturedObservations().length,
+    npsExpectedOutcome: learning?.expectedOutcome ?? null,
+    npsObservedOutcome: learning?.observedOutcome ?? null,
+    npsAttribution: learning?.attribution ?? null,
   });
 }
 
@@ -347,6 +356,8 @@ export function runNexoraSimulationTestJourney(input: {
 }): NexoraSimulationTestRunReport {
   validateNexoraSimulationTestJourney(input.journey);
   resetCsvRealDataImportStoreForTests();
+  resetOutcomeObservationCaptureForTests();
+  resetPostDecisionCaptureForTests();
   if (SIM_TEST_1_BOUNDARY.ingestionImplemented || SIM_TEST_1_BOUNDARY.autoRepairs) throw new Error("SIM-TEST:1 boundary violation");
   if (RMS_REAL_CONVERSATION_ENTRY_NAME !== "executeNexoraConversationalExperience") throw new Error("SIM-TEST:1 requires real CC:5");
 
@@ -560,7 +571,47 @@ export function runNexoraSimulationTestJourney(input: {
             visibleNumbers: latestVisibleNumbers(ledger),
             observerHiddenNumbers: observerHiddenNumbers(session),
             worldAdvancedUnpublished: unpublishedWorld,
+            activeScenarioId: turn.result.nextScenarioSession?.activeScenarioId ?? null,
+            scenarioCandidateIds: Object.freeze([
+              ...(turn.result.nextScenarioSession?.candidateScenarioIds ?? []),
+            ]),
+            scenarioLedger: Object.freeze(
+              Object.values(turn.result.nextScenarioSession?.scenariosById ?? {}).map((scenario) => Object.freeze({
+                scenarioId: scenario.scenarioId,
+                title: scenario.name,
+                subjectIds: Object.freeze([...scenario.subjectIds]),
+                sourceSubjectId: scenario.sourceSubjectId ?? scenario.interventions[0]?.subjectId ?? null,
+                parentScenarioId: scenario.parentScenarioId ?? null,
+              })),
+            ),
+            decisionLedger: Object.freeze(
+              (turn.result.decisionRuntime?.listDecisions() ?? []).map((decision) => Object.freeze({
+                decisionId: decision.decisionId,
+                title: decision.title,
+                status: decision.status,
+                subjectIds: Object.freeze([...decision.subjectIds]),
+                scenarioId: decision.scenarioId ?? null,
+              })),
+            ),
+            executionLedger: Object.freeze(
+              (turn.result.executionRuntime?.listExecutions() ?? []).map((execution) => Object.freeze({
+                executionId: execution.executionId,
+                decisionId: execution.decisionId,
+                status: execution.status,
+              })),
+            ),
             ...lifecycleSlice(turn.result),
+            focusedSubjectId: turn.result.nextRuntimeState.focusedSubject?.id ?? null,
+            consumedSupportedLearning: turn.result.ecaLearningClosureJudgment?.consumedSupportedLearning === true,
+            coreOut2LearningIds: Object.freeze([...(turn.result.ecaLearningClosureJudgment?.coreOut2LearningIds ?? [])]),
+            ecaLearningStatement: turn.result.ecaLearningClosureJudgment?.learningStatement ?? null,
+            ecaLastLearningNote: turn.result.managerObjectTurn.session.ecaLearningClosureSession?.lastLearningNote ?? null,
+            ecaLastFingerprint: turn.result.managerObjectTurn.session.ecaLearningClosureSession?.lastFingerprint ?? null,
+            scenarioLearningInformedSubjectId:
+              turn.result.nextScenarioSession?.learningInformedReassessment?.subjectId ?? null,
+            scenarioLearningInformedIds: Object.freeze([
+              ...(turn.result.nextScenarioSession?.learningInformedReassessment?.coreOut2LearningIds ?? []),
+            ]),
           }));
         }
       } else if (step.kind === "INTERACT_VISIBLE") {

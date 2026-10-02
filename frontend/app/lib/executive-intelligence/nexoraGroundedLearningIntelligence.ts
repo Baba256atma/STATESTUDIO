@@ -294,6 +294,34 @@ export function groundedLearningHistory(
   return Object.freeze([...(byFamily.get(family)?.versions ?? [])]);
 }
 
+/**
+ * Read-only CORE-OUT:2 query: latest supported, promotion-eligible Learning
+ * per family for one canonical subject. Not global-latest across subjects.
+ */
+export function listSupportedGroundedLearningForSubject(input: {
+  readonly workspaceId: string;
+  readonly subjectId: string;
+}): readonly GroundedLearningCandidate[] {
+  if (!input.subjectId) return Object.freeze([]);
+  const prefix = `${input.workspaceId}:${input.subjectId}:`;
+  const selected: GroundedLearningCandidate[] = [];
+  for (const [family, stored] of byFamily) {
+    if (!family.startsWith(prefix)) continue;
+    const latest = byId.get(stored.latestId);
+    if (
+      latest &&
+      latest.workspaceId === input.workspaceId &&
+      latest.subjectId === input.subjectId &&
+      latest.status === "supported" &&
+      latest.promotionEligibility === "promotion-eligible"
+    ) {
+      selected.push(latest);
+    }
+  }
+  selected.sort((left, right) => left.learningId.localeCompare(right.learningId));
+  return Object.freeze(selected);
+}
+
 function outcomeUnknown(assessment: ExecutiveOutcomeAssessment): boolean {
   return (
     assessment.status === "not-observed" ||

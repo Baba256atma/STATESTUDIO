@@ -217,6 +217,22 @@ export const SIM_TEST_8_BOUNDARY = Object.freeze({
   startsFix: false as const,
 });
 
+export const SIM_TEST_10_BOUNDARY = Object.freeze({
+  identity: "NPA-T SIM-TEST:10/OutcomeManagementLearningSimulation" as const,
+  baseline: "NPA-T SIM-TEST:9 R3 CERTIFIED" as const,
+  outcomeOwner: "CORE-OUT:1 / CORE-OUT:1A / ECA:11" as const,
+  learningOwner: "CORE-OUT:2 / ECA:12 / DTH:12" as const,
+  npsRole: "NPS:8 read-only projection" as const,
+  integrationSeam: "MVP-OUT:1 / EXI experience, not CC:5" as const,
+  conversationEntry: "executeNexoraConversationalExperience" as const,
+  createsOutcomeEngine: false as const,
+  createsLearningAuthority: false as const,
+  writesOutcome: false as const,
+  writesLearning: false as const,
+  autoRepairs: false as const,
+  startsFix: false as const,
+});
+
 export const SIM_TEST_JOURNEY_FINDING_TYPES = Object.freeze([
   "SUBJECT_LOSS",
   "STALE_REFERENT",
@@ -308,17 +324,50 @@ export type NexoraSimulationJourneyTurnObservation = Readonly<{
   observerHiddenNumbers?: Readonly<Record<string, number>>;
   problemId?: string | null;
   scenarioId?: string | null;
+  activeScenarioId?: string | null;
+  scenarioCandidateIds?: readonly string[];
+  scenarioLedger?: readonly {
+    readonly scenarioId: string;
+    readonly title: string;
+    readonly subjectIds: readonly string[];
+    readonly sourceSubjectId?: string | null;
+    readonly parentScenarioId: string | null;
+  }[];
   decisionId?: string | null;
   decisionCount?: number;
+  decisionLedger?: readonly {
+    readonly decisionId: string;
+    readonly title: string;
+    readonly status: string;
+    readonly subjectIds: readonly string[];
+    readonly scenarioId: string | null;
+  }[];
   executionId?: string | null;
   executionCount?: number;
   executionStatus?: string | null;
+  executionLedger?: readonly {
+    readonly executionId: string;
+    readonly decisionId: string;
+    readonly status: string;
+  }[];
   npsOutcomeStatus?: string | null;
   npsResolutionStatus?: string | null;
   npsLearningStatus?: string | null;
   npsLearningDurable?: boolean;
   nxa3OutcomeState?: string | null;
+  capturedOutcomeObservationCount?: number;
+  npsExpectedOutcome?: number | null;
+  npsObservedOutcome?: number | null;
+  npsAttribution?: string | null;
   worldAdvancedUnpublished?: boolean;
+  consumedSupportedLearning?: boolean;
+  coreOut2LearningIds?: readonly string[];
+  ecaLearningStatement?: string | null;
+  ecaLastLearningNote?: string | null;
+  ecaLastFingerprint?: string | null;
+  focusedSubjectId?: string | null;
+  scenarioLearningInformedSubjectId?: string | null;
+  scenarioLearningInformedIds?: readonly string[];
   epistemicMarks: readonly string[];
 }>;
 

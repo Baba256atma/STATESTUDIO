@@ -6,11 +6,17 @@
  */
 
 import type { NexoraExecutiveEvidenceReference } from "../conversational-control/executiveRecommendation.ts";
+import { EXECUTIVE_OPERATIONS_KPI_DEFINITIONS } from "../data-reality/demo/executiveOperationsKPIDefinitions.ts";
+import { EXECUTIVE_OPERATIONS_OBJECT_IDENTITY_MAP } from "../data-reality/demo/executiveOperationsObjectBindings.ts";
 import type {
   ExecutiveOutcomeExpectation,
   OutcomeNumericComparator,
   OutcomeDirectionExpected,
 } from "../executive-intelligence/nexoraLiveOutcomeIntelligence.ts";
+import {
+  canonicalExpectedOutcomeId,
+  outcomeComparisonDimension,
+} from "../executive-intelligence/nexoraLiveOutcomeObservationCapture.ts";
 
 export const nexoraDecisionExpectedOutcomeBindingIdentity =
   "MVP-OUT:1-R2/DecisionExpectedOutcomeBinding" as const;
@@ -55,6 +61,109 @@ export type DecisionExpectedOutcomeBinding = Readonly<{
 
 function freezeList<T>(values: readonly T[]): readonly T[] {
   return Object.freeze([...values]);
+}
+
+export type LiveScenarioImpactHint = Readonly<{
+  readonly subjectId: string;
+  readonly direction: string;
+  readonly metricKey?: string;
+  readonly unit?: string;
+  readonly evidenceRefs?: readonly NexoraExecutiveEvidenceReference[];
+}>;
+
+function objectIdentityForSubject(subjectId: string | null): (typeof EXECUTIVE_OPERATIONS_OBJECT_IDENTITY_MAP)[number] | null {
+  if (!subjectId) return null;
+  return (
+    EXECUTIVE_OPERATIONS_OBJECT_IDENTITY_MAP.find(
+      (item) =>
+        item.mvpStageObjectId === subjectId ||
+        item.nexoraObjectId === subjectId ||
+        item.objectKey === subjectId,
+    ) ?? null
+  );
+}
+
+function subjectsAlias(subjectId: string | null): readonly string[] {
+  const identity = objectIdentityForSubject(subjectId);
+  return freezeList(
+    [...new Set([subjectId, identity?.mvpStageObjectId, identity?.nexoraObjectId, identity?.objectKey].filter(
+      (item): item is string => Boolean(item),
+    ))],
+  );
+}
+
+function expectedDirectionFromImpact(
+  direction: string,
+): OutcomeDirectionExpected | null {
+  if (direction === "increase") return "improve";
+  if (direction === "decrease") return "reduce";
+  if (direction === "stable") return "maintain";
+  return null;
+}
+
+/**
+ * Live Decision expected Outcome from existing Scenario impact direction
+ * plus the subject's unique Data Reality KPI. Does not invent numeric targets.
+ */
+export function resolveLiveSubjectExpectedOutcome(input: {
+  readonly decisionId?: string | null;
+  readonly subjectId?: string | null;
+  readonly scenarioId?: string | null;
+  readonly impacts?: readonly LiveScenarioImpactHint[];
+  readonly capturedAt?: string | null;
+}): ExecutiveOutcomeExpectation | null {
+  const subjectId = input.subjectId ?? null;
+  const identity = objectIdentityForSubject(subjectId);
+  if (!identity) return null;
+  const kpis = EXECUTIVE_OPERATIONS_KPI_DEFINITIONS.filter(
+    (item) => item.objectKey === identity.objectKey,
+  );
+  if (kpis.length !== 1) return null;
+  const kpi = kpis[0]!;
+  const aliases = subjectsAlias(subjectId);
+  const impact =
+    (input.impacts ?? []).find((item) => aliases.includes(item.subjectId)) ?? null;
+  const expectedDirection = impact
+    ? expectedDirectionFromImpact(impact.direction)
+    : null;
+  if (expectedDirection == null) return null;
+  const dimension = outcomeComparisonDimension(kpi.id);
+  const unit = kpi.unit || impact?.unit || null;
+  if (!unit) return null;
+  const verb =
+    expectedDirection === "improve"
+      ? "improve"
+      : expectedDirection === "reduce"
+        ? "reduce"
+        : "hold";
+  return Object.freeze({
+    expectationId: canonicalExpectedOutcomeId(
+      `${input.decisionId ?? subjectId ?? "none"}:${dimension}`,
+    ),
+    statement: `${identity.caption} ${kpi.name} is expected to ${verb}.`,
+    claimKind: "PREDICTION",
+    dimension,
+    source: input.decisionId ? "decision" : "scenario",
+    numericTarget: null,
+    comparator: null,
+    unit,
+    expectedDirection,
+    capturedAt: input.capturedAt ?? null,
+    evidenceRefs: freezeList([
+      ...(impact?.evidenceRefs ?? []),
+      Object.freeze({
+        sourceKind: "kpi" as const,
+        sourceId: kpi.id,
+        subjectId: subjectId ?? undefined,
+        factKey: dimension,
+      }),
+    ]),
+    provenanceRefs: freezeList([
+      `data-reality-kpi:${kpi.id}`,
+      ...(input.scenarioId ? [`scenario:${input.scenarioId}`] : []),
+      ...(input.decisionId ? [`decision:${input.decisionId}`] : []),
+    ]),
+  });
 }
 
 function isMeasurable(expected: ExecutiveOutcomeExpectation): boolean {

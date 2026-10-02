@@ -118,6 +118,22 @@ export type EcaExecutiveLearningClosureJudgment = Readonly<{
   managerFacingNoteDuplicate: false;
   boundaries: typeof BOUNDARIES;
   provenance: Readonly<{ sources: readonly string[]; rationale: string }>;
+  consumedSupportedLearning: boolean;
+  coreOut2LearningIds: readonly string[];
+}>;
+
+export type EcaCoreOut2LearningProjection = Readonly<{
+  readonly learningId: string;
+  readonly subjectId: string | null;
+  readonly statement: string;
+  readonly status: string;
+  readonly learningType: string;
+  readonly decisionRefs: readonly string[];
+  readonly executionRefs: readonly string[];
+  readonly observationRefs: readonly string[];
+  readonly outcomeAssessmentRefs: readonly string[];
+  readonly promotionEligibility: string;
+  readonly establishesCausation: false;
 }>;
 
 export type EcaLearningClosureInput = Readonly<{
@@ -134,6 +150,10 @@ export type EcaLearningClosureInput = Readonly<{
   hypothesisObservation?: "supports" | "challenges" | "inconclusive" | null;
   recommendedOption?: string | null;
   chosenOption?: string | null;
+  /** CC-resolved object subject only. Empty when ambiguous or wrong thread. */
+  coreOut2SupportedLearning?: readonly EcaCoreOut2LearningProjection[];
+  /** True only for legitimate CC/ECA reassessment turns. */
+  reassessmentTurn?: boolean;
 }>;
 
 function freeze<T>(value: T): T {
@@ -204,11 +224,29 @@ export function judgeEcaExecutiveLearningClosure(
   input: EcaLearningClosureInput,
 ): EcaExecutiveLearningClosureJudgment {
   const text = input.utterance.trim();
-  const managerIntent = classifyIntent(text);
+  let managerIntent = classifyIntent(text);
+  if (
+    input.reassessmentTurn === true &&
+    (managerIntent === "NONE" || managerIntent === "LEARNING")
+  ) {
+    managerIntent = "REASSESS";
+  }
   const outcome = input.outcome;
   const session = input.session ?? emptyEcaLearningClosureSession();
   const sideQuestion = /\bwhat does cap_av mean\b/i.test(text);
   const sources = freeze(["ECA:11", "CORE-OUT:2", "DTH:12", "ECA:6", "NPA-T ECA:12"]);
+  const supportedCoreOut2 = freeze(
+    (input.coreOut2SupportedLearning ?? []).filter(
+      (item) =>
+        item.status === "supported" &&
+        item.promotionEligibility === "promotion-eligible" &&
+        item.establishesCausation === false,
+    ),
+  );
+  const consumeCoreOut2 =
+    input.reassessmentTurn === true &&
+    managerIntent === "REASSESS" &&
+    supportedCoreOut2.length > 0;
   const conflicted = outcome.observationState === "CONFLICTED";
   const missingBaselineImprove =
     /\b(?:did (?:the decision |this )?improve|whether (?:delivery )?improved|did this improve)\b/i.test(text) ||
@@ -354,13 +392,20 @@ export function judgeEcaExecutiveLearningClosure(
     primaryResult = "bounded Learning";
   } else if (managerIntent === "REASSESS") {
     speak = true;
-    if (reassessmentWarranted) {
+    if (consumeCoreOut2) {
+      learningState = "SUPPORTED";
+      note = `${supportedCoreOut2.map((item) => item.statement).join(" ")} This remains case-specific evidence for the current subject. It does not replace current published Data Reality, create a Decision, or establish causation.`;
+      primaryResult = "supported Learning consumed";
+      rationale = "ECA:12 projects existing CORE-OUT:2 supported Learning into reassessment without writing Learning.";
+    } else if (reassessmentWarranted) {
       note =
         "The result is material enough to reassess the approach before repeating or extending it. That does not create a new Decision or change the Goal.";
     } else {
       note = "Nothing in the current Outcome requires immediate reassessment.";
     }
-    primaryResult = reassessmentWarranted ? "reassessment candidate" : "no reassessment required";
+    if (!consumeCoreOut2) {
+      primaryResult = reassessmentWarranted ? "reassessment candidate" : "no reassessment required";
+    }
   } else if (managerIntent === "REPEAT") {
     speak = true;
     note = mixed
@@ -432,7 +477,9 @@ export function judgeEcaExecutiveLearningClosure(
     identity: ECA_LEARNING_CLOSURE_IDENTITY,
     managerIntent,
     learningState,
-    learningStatement: note,
+    learningStatement: consumeCoreOut2
+      ? supportedCoreOut2.map((item) => item.statement).join(" ")
+      : note,
     learningScope: "case-specific",
     hypothesisEffect,
     reassessmentWarranted,
@@ -448,7 +495,18 @@ export function judgeEcaExecutiveLearningClosure(
     stickyStaleObjective: false,
     managerFacingNoteDuplicate: false,
     boundaries: BOUNDARIES,
-    provenance: freeze({ sources, rationale }),
+    provenance: freeze({
+      sources: freeze(
+        consumeCoreOut2
+          ? [...sources, ...supportedCoreOut2.map((item) => item.learningId)]
+          : [...sources],
+      ),
+      rationale,
+    }),
+    consumedSupportedLearning: consumeCoreOut2,
+    coreOut2LearningIds: freeze(
+      consumeCoreOut2 ? supportedCoreOut2.map((item) => item.learningId) : [],
+    ),
   });
 }
 

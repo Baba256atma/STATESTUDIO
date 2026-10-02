@@ -1,0 +1,20 @@
+{
+  "executed": true,
+  "skipped": false,
+  "policyReasonAllowed": "ALLOWED",
+  "policyReasonExhausted": "ALLOWANCE_EXHAUSTED",
+  "provider": "openai",
+  "model": "gpt-4o-mini-2024-07-18",
+  "status": "ok",
+  "requestIdPresent": true,
+  "latencyMs": 3077.805,
+  "usage": {
+    "inputTokens": 270,
+    "outputTokens": 5,
+    "totalTokens": 275
+  },
+  "cost": null,
+  "allowedProviderCalls": 1,
+  "exhaustedProviderCalls": 0,
+  "totalProviderCalls": 1
+}

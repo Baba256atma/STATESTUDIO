@@ -307,4 +307,11 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
       .includes("answerAdvisorDataInquiry");
     assert.equal(dataInquiryBeforeCc5, false);
   });
+
+  it("22. live Chat completes LLM through Nexora server, not OpenAI", () => {
+    const source = readFileSync(join(HERE, "NexoraExecutiveShell.tsx"), "utf8");
+    assert.match(source, /completeNexoraLlmManagerPresentation/);
+    assert.doesNotMatch(source, /api\.openai\.com|from\s+["']openai["']/);
+    assert.doesNotMatch(source, /OPENAI_API_KEY/);
+  });
 });

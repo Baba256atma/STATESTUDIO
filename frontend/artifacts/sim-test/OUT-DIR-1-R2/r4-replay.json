@@ -1,0 +1,22 @@
+{
+  "journeyId": "sim-test-10-a_expected_positive",
+  "harnessStatus": "PASS",
+  "rdiObservedDirection": "increase",
+  "baseline": 90.9090909090909,
+  "actual": 100,
+  "expectedDirection": "maintain",
+  "observedDirection": "increase",
+  "numericTarget": null,
+  "comparator": null,
+  "status": "comparison-ready",
+  "comparable": true,
+  "reason": null,
+  "result": "not-met",
+  "missingEvidence": [],
+  "establishesCausation": false,
+  "createsLearning": false,
+  "comparisonStatus": "comparison-ready",
+  "learningCandidates": 1,
+  "promotionEligible": true,
+  "learningRejectionReasons": []
+}

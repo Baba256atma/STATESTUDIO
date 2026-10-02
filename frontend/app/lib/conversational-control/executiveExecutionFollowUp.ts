@@ -39,7 +39,7 @@ export type NexoraExecutionFollowUpRequest = {
 export function resolveNexoraExecutionFollowUpRequest(utterance: string): NexoraExecutionFollowUpRequest | null {
   const text = utterance.trim().toLowerCase().replace(/[?.!]+$/, "");
   const target = (pattern: RegExp) => text.match(pattern)?.[1]?.trim() || null;
-  if (/^(?:start|begin)(?: execution| implementation)?(?: for)?(?: this decision| it)?$/.test(text)) return Object.freeze({ action: "start", targetHint: null, requiresContext: true });
+  if (/^(?:(?:start|begin)(?: execution| implementation)?(?: for)?(?: this decision| it| that)?|do it|proceed(?: with it)?|go ahead(?: with it)?|run it)$/.test(text)) return Object.freeze({ action: "start", targetHint: null, requiresContext: true });
   if (
     /^(?:put (?:the |this |that )?(?:decision|it) into action|execute(?: it| this| that| the decision)?|yes,? execute)$/.test(
       text,
@@ -47,7 +47,7 @@ export function resolveNexoraExecutionFollowUpRequest(utterance: string): Nexora
   ) {
     return Object.freeze({ action: "start" as const, targetHint: null, requiresContext: true });
   }
-  const startTarget = target(/^(?:start|begin)(?: execution| implementation)?(?: for)? (.+)$/);
+  const startTarget = target(/^(?:(?:start|begin)(?: execution| implementation)?(?: for)?|execute|run|proceed with) (.+)$/);
   if (startTarget) return Object.freeze({ action: "start", targetHint: startTarget, requiresContext: false });
   if (/^(?:create (?:an? )?(?:execution|implementation) plan|track)(?: this decision| it)?$/.test(text)) return Object.freeze({ action: text.startsWith("track") ? "track" : "create", targetHint: null, requiresContext: true });
   if (/^(?:how is (?:it|this) going|are we on track|what needs my attention)$/.test(text)) return Object.freeze({ action: "review", targetHint: null, requiresContext: true });

@@ -32,6 +32,12 @@ import {
 import { NEXORA_MVP_CONTEXT_SUBJECT_FIXTURES } from "@/app/lib/nex-mvp/nexoraMVPObjectInteractionFixtures.ts";
 import { NEXORA_MVP_STAGE_OBJECT_FIXTURES } from "@/app/lib/nex-mvp/nexoraMVPStageFixtures.ts";
 
+export type NexoraLearningInformedReassessmentProvenance = Readonly<{
+  readonly subjectId: string;
+  readonly coreOut2LearningIds: readonly string[];
+  readonly source: "eca-12-reassessment";
+}>;
+
 export type NexoraExecutiveScenarioSession = {
   readonly scenariosById: Readonly<Record<string, NexoraExecutiveScenario>>;
   readonly evaluationsById: Readonly<
@@ -42,6 +48,8 @@ export type NexoraExecutiveScenarioSession = {
   readonly lastComparison: NexoraScenarioComparison | null;
   readonly baseline: NexoraScenarioBaselineSnapshot;
   readonly recommendationHandoffId: string | null;
+  /** Read-only LEARN-CYCLE:1 handoff. Not a Learning store or Decision edge. */
+  readonly learningInformedReassessment?: NexoraLearningInformedReassessmentProvenance | null;
 };
 
 export type NexoraExecutiveScenarioConversationStatus =
@@ -121,6 +129,100 @@ export function createEmptyNexoraExecutiveScenarioSession(input?: {
       attentionBySubject: input?.baselineAttentionBySubject ?? {},
     }),
     recommendationHandoffId: input?.recommendationHandoffId ?? null,
+    learningInformedReassessment: null,
+  });
+}
+
+export function withLearningInformedReassessmentProvenance(
+  session: NexoraExecutiveScenarioSession,
+  provenance: NexoraLearningInformedReassessmentProvenance | null,
+): NexoraExecutiveScenarioSession {
+  return Object.freeze({
+    ...session,
+    learningInformedReassessment: provenance
+      ? Object.freeze({
+          subjectId: provenance.subjectId,
+          coreOut2LearningIds: Object.freeze([...provenance.coreOut2LearningIds]),
+          source: "eca-12-reassessment" as const,
+        })
+      : null,
+  });
+}
+
+/** Originating Problem/object for a Scenario. Related subjects and evidence are not this identity. */
+export function scenarioSourceManagementSubjectId(
+  scenario: NexoraExecutiveScenario | null | undefined,
+): string | null {
+  if (!scenario) return null;
+  if (scenario.sourceSubjectId && !scenario.sourceSubjectId.startsWith("cc9:")) {
+    return scenario.sourceSubjectId;
+  }
+  const intervention = scenario.interventions.find(
+    (item) => item.subjectId && !item.subjectId.startsWith("cc9:"),
+  )?.subjectId;
+  return intervention ?? null;
+}
+
+export function isManagementContextSubjectId(
+  subjectId: string | null | undefined,
+): boolean {
+  return Boolean(
+    subjectId &&
+      !subjectId.startsWith("cc9:") &&
+      (subjectId.startsWith("obj-") || subjectId.startsWith("ctx-problem")),
+  );
+}
+
+/**
+ * Deictic/ordinal Scenario reuse is valid only when the presented collection
+ * belongs to the current management context. Other Scenarios remain in the session.
+ */
+export function scopeScenarioSessionToManagementContext(
+  session: NexoraExecutiveScenarioSession,
+  contextSubjectId: string | null,
+): NexoraExecutiveScenarioSession {
+  if (!isManagementContextSubjectId(contextSubjectId)) {
+    return session;
+  }
+  const provenance =
+    session.learningInformedReassessment?.subjectId === contextSubjectId
+      ? session.learningInformedReassessment
+      : null;
+  const compatible = Object.values(session.scenariosById).filter(
+    (scenario) => scenarioSourceManagementSubjectId(scenario) === contextSubjectId,
+  );
+  if (compatible.length === 0) {
+    return Object.freeze({
+      ...session,
+      candidateScenarioIds: Object.freeze([] as string[]),
+      activeScenarioId: null,
+      lastComparison: null,
+      learningInformedReassessment: provenance,
+    });
+  }
+  const compatibleIds = new Set(compatible.map((scenario) => scenario.scenarioId));
+  const ordered = Object.freeze([
+    ...session.candidateScenarioIds.filter((id) => compatibleIds.has(id)),
+    ...compatible
+      .map((scenario) => scenario.scenarioId)
+      .filter((id) => !session.candidateScenarioIds.includes(id)),
+  ]);
+  const active =
+    session.activeScenarioId && compatibleIds.has(session.activeScenarioId)
+      ? session.activeScenarioId
+      : (ordered[0] ?? null);
+  const comparison = session.lastComparison;
+  const comparedIds = comparison?.scenarioIds ?? [];
+  const comparisonSafe =
+    comparison != null &&
+    comparedIds.length > 0 &&
+    comparedIds.every((id) => compatibleIds.has(id));
+  return Object.freeze({
+    ...session,
+    candidateScenarioIds: ordered,
+    activeScenarioId: active,
+    lastComparison: comparisonSafe ? comparison : null,
+    learningInformedReassessment: provenance,
   });
 }
 
@@ -348,12 +450,25 @@ export function resolveNexoraExecutiveScenarioConversation(
         })
       : session.baseline;
 
-  const baseSession: NexoraExecutiveScenarioSession = Object.freeze({
+  const preservedSession: NexoraExecutiveScenarioSession = Object.freeze({
     ...session,
     baseline,
     recommendationHandoffId:
       input.recommendationId ?? session.recommendationHandoffId,
   });
+  const deicticRead =
+    input.operation === "compare" || input.operation === "open-candidate";
+  const requestContextId =
+    isManagementContextSubjectId(input.primarySubjectId)
+      ? input.primarySubjectId
+      : isManagementContextSubjectId(input.executiveContext.currentSubject?.subjectId)
+        ? input.executiveContext.currentSubject!.subjectId
+        : isManagementContextSubjectId(input.executiveContext.currentProblem?.subjectId)
+          ? input.executiveContext.currentProblem!.subjectId
+          : null;
+  const baseSession = deicticRead
+    ? scopeScenarioSessionToManagementContext(preservedSession, requestContextId)
+    : preservedSession;
 
   if (input.operation === "commitment-attempt") {
     return Object.freeze({

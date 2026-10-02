@@ -6,9 +6,14 @@
  */
 
 import type { NexoraExecutiveContextSnapshot } from "./executiveContextSnapshot.ts";
-import type { NexoraExecutiveScenarioSession } from "./executiveScenarioResolver.ts";
 import type { NexoraExecutiveScenario } from "./executiveScenarioDefinition.ts";
 import type { NexoraExecutiveScenarioEvaluation } from "./executiveScenarioEvaluation.ts";
+import {
+  isManagementContextSubjectId,
+  scenarioSourceManagementSubjectId,
+  scopeScenarioSessionToManagementContext,
+  type NexoraExecutiveScenarioSession,
+} from "./executiveScenarioResolver.ts";
 import {
   EXECUTIVE_DECISION_REASON,
   type NexoraDecisionCommitmentStatus,
@@ -150,20 +155,57 @@ function resolveUniqueInterventionPlan(
   return tokens.some((token) => haystack.includes(token)) ? scenario : null;
 }
 
+function commitmentManagementContextId(
+  session: NexoraExecutiveScenarioSession,
+  context: NexoraExecutiveContextSnapshot,
+): string | null {
+  if (isManagementContextSubjectId(context.currentSubject?.subjectId)) {
+    return context.currentSubject!.subjectId;
+  }
+  if (context.currentSubject?.subjectId?.startsWith("cc9:")) {
+    return scenarioSourceManagementSubjectId(
+      session.scenariosById[context.currentSubject.subjectId],
+    );
+  }
+  if (context.currentScenario?.subjectId) {
+    return scenarioSourceManagementSubjectId(
+      session.scenariosById[context.currentScenario.subjectId],
+    );
+  }
+  if (isManagementContextSubjectId(context.currentProblem?.subjectId)) {
+    return context.currentProblem!.subjectId;
+  }
+  return null;
+}
+
+function presentedScenarioSourceCount(session: NexoraExecutiveScenarioSession): number {
+  return new Set(
+    session.candidateScenarioIds
+      .map((id) => scenarioSourceManagementSubjectId(session.scenariosById[id]))
+      .filter((id): id is string => Boolean(id)),
+  ).size;
+}
+
+function presentedSessionForOrdinals(
+  session: NexoraExecutiveScenarioSession,
+  context: NexoraExecutiveContextSnapshot,
+): NexoraExecutiveScenarioSession | null {
+  const currentId = commitmentManagementContextId(session, context);
+  if (currentId) return scopeScenarioSessionToManagementContext(session, currentId);
+  if (presentedScenarioSourceCount(session) > 1) return null;
+  return session;
+}
+
 /**
  * A retained option collection answers ordinal references ("B", "the second
- * option") only while the conversation still addresses what it intervenes on.
+ * option") only while the conversation still addresses the management context
+ * that established that collection.
  */
 function optionCollectionAnchoredToContext(
   session: NexoraExecutiveScenarioSession,
   context: NexoraExecutiveContextSnapshot,
 ): boolean {
-  const current = context.currentSubject;
-  if (current?.subjectKind !== "object" || !current.subjectId) return true;
-  const intervened = session.candidateScenarioIds.flatMap(
-    (id) => session.scenariosById[id]?.interventions.map((item) => item.subjectId) ?? [],
-  );
-  return intervened.length === 0 || intervened.includes(current.subjectId);
+  return (presentedSessionForOrdinals(session, context)?.candidateScenarioIds.length ?? 0) > 0;
 }
 
 function resolveScenarioFromHint(
@@ -192,12 +234,21 @@ function resolveScenarioFromHint(
   } else {
     const ordinal = resolveOrdinalLetter(raw);
     if (ordinal != null) {
-      if (!optionCollectionAnchoredToContext(session, context)) return null;
-      const id = session.candidateScenarioIds[ordinal];
-      if (id) return session.scenariosById[id] ?? null;
+      const scoped = presentedSessionForOrdinals(session, context);
+      if (!scoped || scoped.candidateScenarioIds.length === 0) return null;
+      const id = scoped.candidateScenarioIds[ordinal];
+      if (id) return scoped.scenariosById[id] ?? null;
       return null;
     }
-    const uniquePlan = resolveUniqueInterventionPlan(session, raw);
+    const uniquePlan = resolveUniqueInterventionPlan(
+      (() => {
+        const currentId = commitmentManagementContextId(session, context);
+        return currentId
+          ? scopeScenarioSessionToManagementContext(session, currentId)
+          : session;
+      })(),
+      raw,
+    );
     if (uniquePlan) return uniquePlan;
     for (const scenario of Object.values(session.scenariosById)) {
       if (scenario.name.toLowerCase() === raw) return scenario;
@@ -207,23 +258,31 @@ function resolveScenarioFromHint(
     return null;
   }
 
+  const currentId = commitmentManagementContextId(session, context);
+  const accept = (scenario: NexoraExecutiveScenario | null) => {
+    if (!scenario) return null;
+    if (!currentId) {
+      return presentedScenarioSourceCount(session) > 1 ? null : scenario;
+    }
+    return scenarioSourceManagementSubjectId(scenario) === currentId ? scenario : null;
+  };
+
   if (
     raw === "the preferred scenario" ||
     raw === "preferred scenario" ||
     raw.includes("preferred")
   ) {
     const preferred = session.lastComparison?.preferredScenarioId;
-    if (preferred) return session.scenariosById[preferred] ?? null;
+    if (preferred) return accept(session.scenariosById[preferred] ?? null);
   }
 
   if (context.currentScenario?.subjectId) {
-    const fromCtx =
-      session.scenariosById[context.currentScenario.subjectId] ?? null;
+    const fromCtx = accept(session.scenariosById[context.currentScenario.subjectId] ?? null);
     if (fromCtx) return fromCtx;
   }
 
   if (session.activeScenarioId) {
-    return session.scenariosById[session.activeScenarioId] ?? null;
+    return accept(session.scenariosById[session.activeScenarioId] ?? null);
   }
 
   return null;

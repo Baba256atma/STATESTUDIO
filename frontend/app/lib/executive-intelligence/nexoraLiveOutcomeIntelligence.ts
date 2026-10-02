@@ -9,6 +9,7 @@
 import type { NexoraExecutiveEvidenceReference } from "../conversational-control/executiveRecommendation.ts";
 import type { SemanticConfidence } from "./problemRiskOpportunityIntelligence.ts";
 import type { SharedEpistemicEvidenceStatus } from "./nexoraSharedEpistemicFoundation.ts";
+import type { NexoraPublishedKpiObservedDirection } from "../data-reality/dataRealityContracts.ts";
 
 export const nexoraLiveOutcomeIntelligenceIdentity =
   "CORE-OUT:1/LiveOutcomeIntelligence" as const;
@@ -73,6 +74,9 @@ export type OutcomeActualSource =
   | "canonical-outcome-writer";
 export type OutcomeDirectionExpected = "improve" | "reduce" | "maintain";
 export type OutcomeDirectionActual = "improved" | "worsened" | "unchanged";
+export type OutcomeObservedDirection =
+  | OutcomeDirectionActual
+  | NexoraPublishedKpiObservedDirection;
 export type OutcomeNumericComparator = "lt" | "lte" | "gt" | "gte" | "eq";
 
 export type ExecutiveOutcomeExpectation = Readonly<{
@@ -98,7 +102,7 @@ export type ExecutiveOutcomeObservation = Readonly<{
   readonly source: OutcomeActualSource;
   readonly numericValue: number | null;
   readonly unit: string | null;
-  readonly observedDirection: OutcomeDirectionActual | null;
+  readonly observedDirection: OutcomeObservedDirection | null;
   readonly observedAt: string | null;
   readonly freshness: "current" | "stale" | "unknown";
   readonly validationStatus: "validated" | "unvalidated" | "partial" | "conflicting";
@@ -187,6 +191,11 @@ function unique(values: readonly string[]): readonly string[] {
   return Object.freeze([...new Set(values.filter(Boolean))]);
 }
 
+function outcomeComparisonDimension(metricOrDimension: string): string {
+  const parts = metricOrDimension.split(".");
+  return parts[parts.length - 1] || metricOrDimension;
+}
+
 function numericMet(
   actual: number,
   target: number,
@@ -215,7 +224,7 @@ function numericPartial(
 
 function qualitativeResult(
   expected: OutcomeDirectionExpected,
-  actual: OutcomeDirectionActual,
+  actual: OutcomeObservedDirection,
 ): OutcomeComparisonResult {
   if (expected === "maintain") {
     return actual === "unchanged" ? "met" : "not-met";
@@ -277,7 +286,7 @@ function compareOutcomes(input: {
   }
   const expected = input.expected!;
   const actual = input.actual!;
-  if (expected.dimension !== actual.dimension) {
+  if (outcomeComparisonDimension(expected.dimension) !== outcomeComparisonDimension(actual.dimension)) {
     return Object.freeze({
       result: "insufficient-comparable-evidence",
       comparable: false,

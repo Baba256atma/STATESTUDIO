@@ -90,6 +90,69 @@ let pendingByWorkspace: Readonly<Record<WorkspaceId, Readonly<Record<string, Csv
 let version = 0;
 let commitInvocationCount = 0;
 let lastLifecycleKind: CsvStoreLifecycleKind | null = null;
+let csvPublishedKpiObservations: readonly CsvPublishedKpiObservation[] = Object.freeze([]);
+
+export type CsvPublishedKpiObservation = Readonly<{
+  observationId: string;
+  workspaceId: WorkspaceId;
+  sourceContextId: string;
+  importId: string;
+  kpiId: string;
+  objectKey: string;
+  nexoraObjectId: string;
+  value: number;
+  unit: string;
+  observedAt: string;
+  committedAt: string;
+}>;
+
+function recordCsvPublishedKpiObservations(committed: CsvCommittedImport): void {
+  const kpis = committed.prepared.dataReality?.kpis ?? [];
+  const observedAt =
+    committed.prepared.handoff?.dataset.capturedAt ??
+    committed.prepared.snapshot?.source.identity.observedAt ??
+    committed.committedAt;
+  const next = [...csvPublishedKpiObservations];
+  for (const kpi of kpis) {
+    if (!Number.isFinite(kpi.value)) continue;
+    const identityKey = `${committed.sourceContextId}:${kpi.kpiId}:${kpi.nexoraObjectId}:${observedAt}`;
+    const observation: CsvPublishedKpiObservation = Object.freeze({
+      observationId: `csv:${committed.importId}:${kpi.kpiId}`,
+      workspaceId: committed.workspaceId,
+      sourceContextId: committed.sourceContextId,
+      importId: committed.importId,
+      kpiId: kpi.kpiId,
+      objectKey: kpi.objectKey,
+      nexoraObjectId: kpi.nexoraObjectId,
+      value: kpi.value,
+      unit: kpi.unit,
+      observedAt,
+      committedAt: committed.committedAt,
+    });
+    const existingIndex = next.findIndex(
+      (entry) =>
+        `${entry.sourceContextId}:${entry.kpiId}:${entry.nexoraObjectId}:${entry.observedAt}` === identityKey,
+    );
+    if (existingIndex >= 0) {
+      const existing = next[existingIndex]!;
+      if (
+        existing.importId === observation.importId &&
+        existing.value === observation.value &&
+        existing.unit === observation.unit
+      ) {
+        continue;
+      }
+      next[existingIndex] = observation;
+      continue;
+    }
+    next.push(observation);
+  }
+  csvPublishedKpiObservations = Object.freeze(next);
+}
+
+export function listCsvPublishedKpiObservations(): readonly CsvPublishedKpiObservation[] {
+  return csvPublishedKpiObservations;
+}
 
 function notify(kind: CsvStoreLifecycleKind): void {
   lastLifecycleKind = kind;
@@ -121,6 +184,14 @@ export function getCsvRealDataImportVersion(): number {
 export function listCsvRealDataImports(workspaceId: WorkspaceId): readonly CsvCommittedImport[] {
   const imports = Object.values(committedByWorkspace[workspaceId] ?? {});
   return Object.freeze([...imports].sort((a, b) => a.sourceContextId.localeCompare(b.sourceContextId)));
+}
+
+export function listAllCsvRealDataImports(): readonly CsvCommittedImport[] {
+  return Object.freeze(
+    Object.values(committedByWorkspace)
+      .flatMap((workspace) => Object.values(workspace))
+      .sort((left, right) => left.committedAt.localeCompare(right.committedAt) || left.sourceContextId.localeCompare(right.sourceContextId)),
+  );
 }
 
 export function getCsvRealDataImport(
@@ -228,6 +299,7 @@ export function commitPreparedCsvRealDataImport(input: Readonly<{
     [input.expectedWorkspaceId]: Object.freeze(workspacePending),
   });
   commitInvocationCount += 1;
+  recordCsvPublishedKpiObservations(committed);
   publish({ ...committedByWorkspace, [input.expectedWorkspaceId]: workspaceImports }, "commit");
   return Object.freeze({ committed: true, reason: existing ? "replaced" : "committed", previous: existing, current: committed });
 }
@@ -360,6 +432,7 @@ export function clearCsvRealDataImportStore(): void {
   committedByWorkspace = Object.freeze({});
   removedByWorkspace = Object.freeze({});
   pendingByWorkspace = Object.freeze({});
+  csvPublishedKpiObservations = Object.freeze([]);
   notify("clear");
 }
 
@@ -367,6 +440,7 @@ export function resetCsvRealDataImportStoreForTests(): void {
   committedByWorkspace = Object.freeze({});
   removedByWorkspace = Object.freeze({});
   pendingByWorkspace = Object.freeze({});
+  csvPublishedKpiObservations = Object.freeze([]);
   version = 0;
   commitInvocationCount = 0;
   lastLifecycleKind = null;

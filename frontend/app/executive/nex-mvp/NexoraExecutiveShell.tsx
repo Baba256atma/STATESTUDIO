@@ -116,6 +116,7 @@ import {
 import type { NexoraConversationalCommand } from "@/app/lib/conversational-control/conversationalCommand";
 import type { NexoraConversationalWorkspaceActionPayload } from "@/app/lib/conversational-control/conversationalIntent";
 import { executeNexoraConversationalExperience } from "@/app/lib/conversational-control/conversationalExperienceOrchestrator";
+import { completeNexoraLlmManagerPresentation } from "@/app/lib/conversational-control/nexoraLlmManagerPresentation";
 import {
   ECA_EXECUTIVE_ACTION_PLAN_IDENTITY,
   planEcaExecutiveConversationAction,
@@ -1869,6 +1870,8 @@ export function NexoraExecutiveShell({
         // DATA-ADV and CSV field Q&A are owned by CC:5 (same as isolated).
         // A live-only early return skipped NCA / continuity / executive writes
         // and let an older Scenario referent outrank a newer explicit Problem.
+        // LLM-MVP:2 keeps this deterministic CSV semantic return. It does not
+        // open a second LLM participant or context authority. Grounding stays on CC:5.
         if (activeCsvImport) {
           const libraryClass = classifyAdvisorDataConversation(trimmed);
           const deicticFollowUp =
@@ -1943,6 +1946,7 @@ export function NexoraExecutiveShell({
           theatreProposedCandidateId: proposedCandidateId,
           nmiAdvisorBundle: nmiLiveRef.current.advisorBundle,
         });
+        const presented = await completeNexoraLlmManagerPresentation(result);
 
         const workspaceCommand = result.commandResult?.command;
         const workspaceResponse =
@@ -1961,11 +1965,12 @@ export function NexoraExecutiveShell({
             ...msgs,
             workspaceResponse
               ? Object.freeze({
-                  ...result.nexoraMessage,
+                  ...presented.nexoraMessage,
                   text: workspaceResponse,
                   status: "applied" as const,
                 })
-              : result.nexoraMessage,
+              // LLM-MVP:FINAL: nexoraMessage.text is governed M via CC and/or server completion.
+              : presented.nexoraMessage,
           ]).slice(-20),
         );
         setExecutiveContext(result.nextExecutiveContext);

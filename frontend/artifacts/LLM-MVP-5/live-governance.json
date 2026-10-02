@@ -1,0 +1,19 @@
+{
+  "provider": "openai",
+  "model": "gpt-4o-mini-2024-07-18",
+  "policyReason": "ALLOWED",
+  "providerCalls": 1,
+  "llmStatus": "succeeded",
+  "governanceStatus": "accepted",
+  "reason": "ACCEPTED",
+  "llmContributionUsed": true,
+  "dRecoverable": true,
+  "mEqualsD": false,
+  "managerText": "Capacity is currently constrained, acting as the active limitation. You can compare two scenarios: - **Scenario A** (Overtime): This scenario may allow for a quicker response, and subcontracting options could help maintain internal capacity. - **Scenario B**: Details not provided. Let me know if you need further information on these scenarios.",
+  "usage": {
+    "inputTokens": 459,
+    "outputTokens": 70,
+    "totalTokens": 529
+  },
+  "cost": null
+}

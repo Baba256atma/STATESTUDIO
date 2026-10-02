@@ -1,0 +1,12 @@
+{
+  "subject": "obj-capacity",
+  "metric": "kpi.production.capacity-utilization",
+  "previousValue": 90.9090909090909,
+  "currentValue": 100,
+  "previousObservedAt": "2026-09-16T00:00:00.000Z",
+  "currentObservedAt": "2026-10-01T00:00:00.000Z",
+  "observedDirection": "increase",
+  "previousObservationId": "csv:indep:PRODUCTION:0:import:kpi.production.capacity-utilization",
+  "currentObservationId": "csv:indep:PRODUCTION:15:import:kpi.production.capacity-utilization",
+  "expectedDirectionNotUsed": true
+}

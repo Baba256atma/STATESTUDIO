@@ -1,0 +1,2474 @@
+{
+  "phase": "NPA-T SIM-TEST:10-R1",
+  "certificationMode": "MEASUREMENT_ONLY",
+  "baseline": "OUT-LIVE:1 CERTIFIED",
+  "architecture": {
+    "outcomeOwner": "CORE-OUT:1 / CORE-OUT:1A / ECA:11",
+    "learningOwner": "CORE-OUT:2 / ECA:12 / DTH:12",
+    "npsWritesOutcome": false,
+    "cc5RegistersMvpOut1Capture": true,
+    "coreOut1AStoreObservedMax": 0,
+    "eligibleAsActualOutcomeCount": 0,
+    "captureIsOutcomeCount": 0
+  },
+  "population": {
+    "journeys": 33,
+    "coreFamilies": 14,
+    "journeyFamilies": [
+      "A_EXPECTED_POSITIVE",
+      "B_PARTIAL_SUCCESS",
+      "C_NEGATIVE_TRADEOFF",
+      "D_NO_OBSERVABLE_EFFECT",
+      "E_DELAYED_OUTCOME",
+      "F_EXTERNAL_CONFOUNDER",
+      "G_COMPETING_EXECUTIONS",
+      "H_MULTIPLE_OUTCOME_CHAINS",
+      "I_HISTORICAL_RETURN",
+      "J_REASSESSMENT",
+      "K_LEARNING_ASSUMPTION",
+      "L_LOOP_REENTRY",
+      "M_EXECUTIVE_OVERVIEW",
+      "N_INCOMPLETE_EVIDENCE"
+    ],
+    "scenarios": [
+      "manufacturing-capacity-pressure",
+      "project-delivery-pressure",
+      "logistics-delivery-pressure",
+      "service-capacity-pressure"
+    ],
+    "profiles": [
+      "DECISION_ORIENTED_MANAGER",
+      "INVESTIGATIVE_MANAGER",
+      "SKEPTICAL_MANAGER",
+      "DATA_CHALLENGING_MANAGER",
+      "IMPATIENT_MANAGER",
+      "NONLINEAR_MANAGER",
+      "AMBIGUOUS_MANAGER",
+      "EXECUTIVE_MANAGER",
+      "STRUCTURED_MANAGER",
+      "DISTRACTED_MANAGER",
+      "DATA_DRIVEN_MANAGER",
+      "STANDARD_MANAGER"
+    ],
+    "seeds": [
+      11,
+      29,
+      47
+    ],
+    "managerTurns": 356,
+    "nexoraTurns": 356,
+    "longSessions": 6,
+    "adaptiveEvents": 39,
+    "operatorPublications": 68,
+    "unpublishedChanges": 28,
+    "unpublishedAsks": 13,
+    "postPublicationAsks": 50,
+    "harnessFailures": 0
+  },
+  "multiplicity": {
+    "distinctDecisions": 0,
+    "maxDecisions": 0,
+    "distinctExecutions": 0,
+    "maxExecutions": 0,
+    "hMaxExecutions": 0,
+    "distinctObservations": 0,
+    "capturedOutcomeObservationsMax": 0,
+    "npsEstablishedOutcomeRows": 0,
+    "npsObservedNumericRows": 0,
+    "eligibleEvaluations": 0,
+    "captureIsOutcomeCount": 0,
+    "learningDurableRows": 0
+  },
+  "delayedFamilyE": [
+    {
+      "turn": 5,
+      "tick": 0,
+      "unpublished": false,
+      "nps": "TOO_EARLY",
+      "captured": 0,
+      "expected": null,
+      "observed": null,
+      "response": "I can help investigate that, but I need to know which business outcome you're referring to. What is the latest observed delivery rate? There is not enough Outcome evidence yet to determine whether it worked."
+    },
+    {
+      "turn": 6,
+      "tick": 8,
+      "unpublished": true,
+      "nps": "TOO_EARLY",
+      "captured": 0,
+      "expected": null,
+      "observed": null,
+      "response": "I can help investigate that, but I need to know which business outcome you're referring to. There is not enough Outcome evidence yet to determine whether it worked."
+    },
+    {
+      "turn": 7,
+      "tick": 12,
+      "unpublished": true,
+      "nps": "TOO_EARLY",
+      "captured": 0,
+      "expected": null,
+      "observed": null,
+      "response": "I can help investigate that, but I need to know which business outcome you're referring to. There is not enough Outcome evidence yet to determine whether it worked."
+    },
+    {
+      "turn": 8,
+      "tick": 15,
+      "unpublished": false,
+      "nps": "TOO_EARLY",
+      "captured": 0,
+      "expected": null,
+      "observed": null,
+      "response": "I can help investigate that, but I need to know which business outcome you're referring to. There is not enough Outcome evidence yet to determine whether it worked."
+    },
+    {
+      "turn": 9,
+      "tick": 15,
+      "unpublished": false,
+      "nps": "TOO_EARLY",
+      "captured": 0,
+      "expected": null,
+      "observed": null,
+      "response": "I can help investigate that, but I need to know which business outcome you're referring to."
+    }
+  ],
+  "reassessmentFamilyJ": [
+    {
+      "turn": 7,
+      "utterance": "Is this still a problem?",
+      "subject": null,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE",
+      "inventedTitle": false,
+      "response": "I can help investigate that, but I need to know which business outcome you're referring to."
+    },
+    {
+      "turn": 8,
+      "utterance": "Is this risk still relevant?",
+      "subject": null,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE",
+      "inventedTitle": false,
+      "response": "I can inspect Risk as a registered subject. I don't have loaded evidence to produce a business result for it yet."
+    },
+    {
+      "turn": 9,
+      "utterance": "Does this decision still make sense?",
+      "subject": null,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE",
+      "inventedTitle": false,
+      "response": "I can help investigate that, but I need to know which business outcome you're referring to."
+    }
+  ],
+  "loopFamilyL": [
+    {
+      "turn": 1,
+      "utterance": "Capacity. Details.",
+      "intent": "FOCUS_PROBLEM",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 2,
+      "utterance": "Options.",
+      "intent": "EXPLORE_OPTIONS",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 3,
+      "utterance": "Go with B.",
+      "intent": "COMMIT_DECISION",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 4,
+      "utterance": "Start it.",
+      "intent": "REQUEST_EXECUTION",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 5,
+      "utterance": "Did it work?",
+      "intent": "ASK_OUTCOME",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 6,
+      "utterance": "What did we learn?",
+      "intent": "ASK_LEARNING",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 7,
+      "utterance": "Is this still a problem?",
+      "intent": "REASSESS",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 8,
+      "utterance": "Options.",
+      "intent": "EXPLORE_OPTIONS",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 9,
+      "utterance": "Go with A.",
+      "intent": "COMMIT_DECISION",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    },
+    {
+      "turn": 10,
+      "utterance": "Go back to the Capacity decision.",
+      "intent": "RETURN_TO_SUBJECT",
+      "decisions": 0,
+      "executions": 0,
+      "captured": 0,
+      "nps": "TOO_EARLY",
+      "learning": "NONE"
+    }
+  ],
+  "chains": [
+    {
+      "journeyId": "sim-test-10-a_expected_positive",
+      "family": "A_EXPECTED_POSITIVE",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-b_partial_success",
+      "family": "B_PARTIAL_SUCCESS",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-c_negative_tradeoff",
+      "family": "C_NEGATIVE_TRADEOFF",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-d_no_observable_effect",
+      "family": "D_NO_OBSERVABLE_EFFECT",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-f_external_confounder",
+      "family": "F_EXTERNAL_CONFOUNDER",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-g_competing_executions",
+      "family": "G_COMPETING_EXECUTIONS",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-i_historical_return",
+      "family": "I_HISTORICAL_RETURN",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-j_reassessment",
+      "family": "J_REASSESSMENT",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-k_learning_assumption",
+      "family": "K_LEARNING_ASSUMPTION",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-l_loop_reentry",
+      "family": "L_LOOP_REENTRY",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-m_executive_overview",
+      "family": "M_EXECUTIVE_OVERVIEW",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-n_incomplete_evidence",
+      "family": "N_INCOMPLETE_EVIDENCE",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-ambiguous",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-investigative",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-decision_oriented",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-skeptical",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-executive",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-data_challenging",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-nonlinear",
+      "family": "E_DELAYED_OUTCOME",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-a_expected_positive-seed-29",
+      "family": "A_EXPECTED_POSITIVE",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-a_expected_positive-seed-47",
+      "family": "A_EXPECTED_POSITIVE",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-seed-29",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-seed-47",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-project",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-logistics",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-10-a_expected_positive-service",
+      "family": "A_EXPECTED_POSITIVE",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-5-manufacturing-lifecycle",
+      "family": "SIM5",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-5-project-lifecycle",
+      "family": "SIM5",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-5-logistics-parity",
+      "family": "SIM5",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-5-service-parity",
+      "family": "SIM5",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    },
+    {
+      "journeyId": "sim-test-5-fast-lifecycle",
+      "family": "SIM5",
+      "decisions": [],
+      "executions": [],
+      "observations": [],
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsExpected": null,
+      "npsObserved": null,
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "observationExecutionIds": []
+    }
+  ],
+  "hExecutionBindings": [],
+  "wrongExecutionBindings": [],
+  "prematureOutcomeClaims": [],
+  "causalOverreach": [
+    {
+      "turn": 7,
+      "utterance": "Did the Capacity decision cause the delivery change?",
+      "response": "No. An observed KPI improvement is an observation and may show association or plausible contribution, but it does not by itself prove the Decision caused it. Confirmed causality requires the existing evidence standard to rule out credible alternative explanations."
+    }
+  ],
+  "groundTruthLeakRows": [],
+  "inventedDurableLearning": 0,
+  "npsWriterHits": 0,
+  "fix1Replay": {
+    "signature": "fnv1a32:1c7c7144",
+    "replayMatched": true,
+    "capacityDecisionPresent": false,
+    "wrongThreadCapacityExecutions": 0,
+    "executionCount": 0,
+    "response": "Which approved Decision do you want to start?"
+  },
+  "fix2Replay": {
+    "capacityNames": [],
+    "deliveryNames": [],
+    "revenueNames": [],
+    "staleCapacityUnderDelivery": false,
+    "staleCapacityUnderRevenue": false
+  },
+  "rawFindings": {
+    "counts": {
+      "S0": 0,
+      "S1": 73,
+      "S2": 5,
+      "S3": 1
+    },
+    "classificationCounts": {
+      "OPERATOR_ERROR/OBSERVATION_GAP": 25,
+      "JOURNEY/MISSING_DECISION": 33,
+      "JOURNEY/FAILURE_TO_HANDLE_AMBIGUITY": 5,
+      "CONVERSATION_ERROR/REFERENT_ERROR": 5,
+      "JOURNEY/ADVISOR_DIVERGENCE": 5,
+      "JOURNEY/REPEATED_CLARIFICATION": 1,
+      "JOURNEY/STALE_REFERENT": 1,
+      "JOURNEY/WRONG_REFERENT": 3,
+      "JOURNEY/SUBJECT_LOSS": 1
+    }
+  },
+  "deterministicReplays": [
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome",
+      "first": "fnv1a32:ea83e110",
+      "second": "fnv1a32:ea83e110",
+      "matched": true
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains",
+      "first": "fnv1a32:51e95c2b",
+      "second": "fnv1a32:51e95c2b",
+      "matched": true
+    },
+    {
+      "journeyId": "sim-test-10-j_reassessment",
+      "first": "fnv1a32:c4a018fc",
+      "second": "fnv1a32:c4a018fc",
+      "matched": true
+    },
+    {
+      "journeyId": "sim-test-10-l_loop_reentry",
+      "first": "fnv1a32:660224d8",
+      "second": "fnv1a32:660224d8",
+      "matched": true
+    },
+    {
+      "journeyId": "sim-test-10-a_expected_positive",
+      "first": "fnv1a32:dcc8bf19",
+      "second": "fnv1a32:dcc8bf19",
+      "matched": true
+    },
+    {
+      "journeyId": "sim-test-10-g_competing_executions",
+      "first": "fnv1a32:05eaee24",
+      "second": "fnv1a32:05eaee24",
+      "matched": true
+    }
+  ],
+  "productionIntegrity": {
+    "before": {
+      "digest": "fcda5e4221ec33b047359d0e2167385fd64c7fc7eb5b69cd50273ef687a1d7a9",
+      "fileCount": 12704,
+      "protectedFiles": {
+        "app/lib/conversational-control/conversationalExperienceOrchestrator.ts": "5062e4c78f560c1de52d8d424f39c3f924e5b57e827c2ce4790cd1cda8a6b15a",
+        "app/lib/conversational-control/executiveDecisionCommitmentResolver.ts": "a457a1e23d4c5e04488defd581ea55cb678c5887be681ffc59fea40caf0ae2f3",
+        "app/lib/conversational-control/executiveDecisionRuntimeAdapter.ts": "4841cb77f06ca219013a3664cbb8f509d5ecd42b0e7a0acf154d63944eff70d6",
+        "app/lib/conversational-control/executiveExecutionFollowUp.ts": "3014add9c544cfa3c245c1192ee523c3407aa591f650dbe8477ce37d501cb4e4",
+        "app/lib/conversational-control/executiveExecutionRuntimeAdapter.ts": "99c6e140c46c81dee6de159297f71b1f3ae26013405a326bd59db046b19f6321",
+        "app/lib/conversational-control/executiveScenarioDefinition.ts": "c89de88c4278426613a6ba5bfce6f7e704690dcea5ee6f2ea7745be19a67853b",
+        "app/lib/conversational-control/executiveScenarioResolver.ts": "00fb4871ef844902522ef5b3f9ada143506019c5a18997d60f17e046bb28f24d",
+        "app/lib/data-reality/csvRealDataImportStore.ts": "cdf45c238cc613878138015199c967eec57bbfccd86fcafdc5e31d95fad28708",
+        "app/lib/executive-intelligence/nexoraGroundedLearningIntelligence.ts": "02fb03a38e19babc45b5bf26eab0c673cb41375d255cbca01bc7c275409dea9d",
+        "app/lib/executive-intelligence/nexoraLiveOutcomeIntelligence.ts": "08473d9456dc58300ce6c10eb764c24d7fd55541485fc4c8048172469cfad8ce",
+        "app/lib/executive-intelligence/nexoraLiveOutcomeObservationCapture.ts": "71a974224a2f84bb5a9b110dd2100f007f81e20175906caecffd04e0eb755f89",
+        "app/lib/nex-mvp/nexoraOutcomeLearningRuntimeIntegration.ts": "0814926c0599e9c44611c0a9482cc5acf3183499b1f22f28582ca9b791dab3a9",
+        "app/lib/nex-mvp/nexoraPostDecisionObservationCapture.ts": "01db1b2eacc1b0476e151b25d1d811f2c199b2afa245e2d9a60fb971c75d8c14",
+        "app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts": "d4d7c9367dda1665134f0a3ee7b5c75250d979bedf8c56671c8f61722aec070b",
+        "app/lib/nexora-conversation/ecaExecutiveOutcome.ts": "f531ea46668087de5cdf5a3548113a01b6cf94b2e33ff36f23b55ddd7989ce14",
+        "app/lib/nexora-problem-solving/npsExecutionMonitoring.ts": "c7dc8871015803410896dbe63760c046237c3cc74c5c5fe91b43d3208e018657",
+        "app/lib/nexora-problem-solving/npsOutcomeLearning.ts": "9f7b105cf3140df134e4240cd2382485eaa9cafd3c3b20c4f0dec92de4619111",
+        "app/lib/nexora-problem-solving/npsOutcomeLearningRuntime.ts": "454825a12db4915f75f3c197c986d5ec3c57f6fccc840cc6f3502eca52256ec9",
+        "app/lib/rms/rmsManagerCc5Adapter.ts": "34fbbfaa6667729b3191e66d7274b7a3b859e404727f4ed43694e3beddbb3c3d"
+      }
+    },
+    "after": {
+      "digest": "fcda5e4221ec33b047359d0e2167385fd64c7fc7eb5b69cd50273ef687a1d7a9",
+      "fileCount": 12704,
+      "protectedFiles": {
+        "app/lib/conversational-control/conversationalExperienceOrchestrator.ts": "5062e4c78f560c1de52d8d424f39c3f924e5b57e827c2ce4790cd1cda8a6b15a",
+        "app/lib/conversational-control/executiveDecisionCommitmentResolver.ts": "a457a1e23d4c5e04488defd581ea55cb678c5887be681ffc59fea40caf0ae2f3",
+        "app/lib/conversational-control/executiveDecisionRuntimeAdapter.ts": "4841cb77f06ca219013a3664cbb8f509d5ecd42b0e7a0acf154d63944eff70d6",
+        "app/lib/conversational-control/executiveExecutionFollowUp.ts": "3014add9c544cfa3c245c1192ee523c3407aa591f650dbe8477ce37d501cb4e4",
+        "app/lib/conversational-control/executiveExecutionRuntimeAdapter.ts": "99c6e140c46c81dee6de159297f71b1f3ae26013405a326bd59db046b19f6321",
+        "app/lib/conversational-control/executiveScenarioDefinition.ts": "c89de88c4278426613a6ba5bfce6f7e704690dcea5ee6f2ea7745be19a67853b",
+        "app/lib/conversational-control/executiveScenarioResolver.ts": "00fb4871ef844902522ef5b3f9ada143506019c5a18997d60f17e046bb28f24d",
+        "app/lib/data-reality/csvRealDataImportStore.ts": "cdf45c238cc613878138015199c967eec57bbfccd86fcafdc5e31d95fad28708",
+        "app/lib/executive-intelligence/nexoraGroundedLearningIntelligence.ts": "02fb03a38e19babc45b5bf26eab0c673cb41375d255cbca01bc7c275409dea9d",
+        "app/lib/executive-intelligence/nexoraLiveOutcomeIntelligence.ts": "08473d9456dc58300ce6c10eb764c24d7fd55541485fc4c8048172469cfad8ce",
+        "app/lib/executive-intelligence/nexoraLiveOutcomeObservationCapture.ts": "71a974224a2f84bb5a9b110dd2100f007f81e20175906caecffd04e0eb755f89",
+        "app/lib/nex-mvp/nexoraOutcomeLearningRuntimeIntegration.ts": "0814926c0599e9c44611c0a9482cc5acf3183499b1f22f28582ca9b791dab3a9",
+        "app/lib/nex-mvp/nexoraPostDecisionObservationCapture.ts": "01db1b2eacc1b0476e151b25d1d811f2c199b2afa245e2d9a60fb971c75d8c14",
+        "app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts": "d4d7c9367dda1665134f0a3ee7b5c75250d979bedf8c56671c8f61722aec070b",
+        "app/lib/nexora-conversation/ecaExecutiveOutcome.ts": "f531ea46668087de5cdf5a3548113a01b6cf94b2e33ff36f23b55ddd7989ce14",
+        "app/lib/nexora-problem-solving/npsExecutionMonitoring.ts": "c7dc8871015803410896dbe63760c046237c3cc74c5c5fe91b43d3208e018657",
+        "app/lib/nexora-problem-solving/npsOutcomeLearning.ts": "9f7b105cf3140df134e4240cd2382485eaa9cafd3c3b20c4f0dec92de4619111",
+        "app/lib/nexora-problem-solving/npsOutcomeLearningRuntime.ts": "454825a12db4915f75f3c197c986d5ec3c57f6fccc840cc6f3502eca52256ec9",
+        "app/lib/rms/rmsManagerCc5Adapter.ts": "34fbbfaa6667729b3191e66d7274b7a3b859e404727f4ed43694e3beddbb3c3d"
+      }
+    },
+    "productionChangesDuringR1": 0
+  },
+  "records": [
+    {
+      "journeyId": "sim-test-10-a_expected_positive",
+      "family": "A_EXPECTED_POSITIVE",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:dcc8bf19",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 9,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        },
+        {
+          "classification": "JOURNEY/FAILURE_TO_HANDLE_AMBIGUITY",
+          "rawSeverity": "S2",
+          "owner": "CC5_CONVERSATION",
+          "turn": 8
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-b_partial_success",
+      "family": "B_PARTIAL_SUCCESS",
+      "profileId": "INVESTIGATIVE_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 29,
+      "signature": "fnv1a32:4119e5bf",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 12,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 8
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-c_negative_tradeoff",
+      "family": "C_NEGATIVE_TRADEOFF",
+      "profileId": "SKEPTICAL_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 47,
+      "signature": "fnv1a32:9188f224",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 8,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 4
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-d_no_observable_effect",
+      "family": "D_NO_OBSERVABLE_EFFECT",
+      "profileId": "DATA_CHALLENGING_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:7472e0ed",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 5
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "IMPATIENT_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 29,
+      "signature": "fnv1a32:ea83e110",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 9,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 2,
+        "publications": 2,
+        "unpublishedAsks": 2,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 7
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-f_external_confounder",
+      "family": "F_EXTERNAL_CONFOUNDER",
+      "profileId": "INVESTIGATIVE_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:9d5d861b",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 8,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 5
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        },
+        {
+          "classification": "JOURNEY/FAILURE_TO_HANDLE_AMBIGUITY",
+          "rawSeverity": "S2",
+          "owner": "CC5_CONVERSATION",
+          "turn": 6
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-g_competing_executions",
+      "family": "G_COMPETING_EXECUTIONS",
+      "profileId": "NONLINEAR_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 47,
+      "signature": "fnv1a32:05eaee24",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 11,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 8
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:51e95c2b",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 14,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 9
+        },
+        {
+          "classification": "CONVERSATION_ERROR/REFERENT_ERROR",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 13
+        },
+        {
+          "classification": "JOURNEY/ADVISOR_DIVERGENCE",
+          "rawSeverity": "S1",
+          "owner": "ADVISOR",
+          "turn": 14
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-i_historical_return",
+      "family": "I_HISTORICAL_RETURN",
+      "profileId": "AMBIGUOUS_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 29,
+      "signature": "fnv1a32:9930ff70",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 13,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY",
+        "UNKNOWN"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 10
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-j_reassessment",
+      "family": "J_REASSESSMENT",
+      "profileId": "EXECUTIVE_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:c4a018fc",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 9,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 4
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-k_learning_assumption",
+      "family": "K_LEARNING_ASSUMPTION",
+      "profileId": "DATA_CHALLENGING_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 47,
+      "signature": "fnv1a32:dfe84f28",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 8,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 4
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-l_loop_reentry",
+      "family": "L_LOOP_REENTRY",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 29,
+      "signature": "fnv1a32:660224d8",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 10,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 4
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-m_executive_overview",
+      "family": "M_EXECUTIVE_OVERVIEW",
+      "profileId": "EXECUTIVE_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:32afe51c",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 13,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 8
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-n_incomplete_evidence",
+      "family": "N_INCOMPLETE_EVIDENCE",
+      "profileId": "SKEPTICAL_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 29,
+      "signature": "fnv1a32:ed913790",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 12,
+      "adaptiveTrace": {
+        "worldAdvances": 0,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-ambiguous",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "AMBIGUOUS_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:d66d7e10",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-investigative",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "INVESTIGATIVE_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:39b31f08",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-decision_oriented",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:d5693098",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-skeptical",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "SKEPTICAL_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:507c326c",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-executive",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "EXECUTIVE_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:5a7cae08",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-data_challenging",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "DATA_CHALLENGING_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:63153caa",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-e_delayed_outcome-nonlinear",
+      "family": "E_DELAYED_OUTCOME",
+      "profileId": "NONLINEAR_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:c1664688",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 7,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-a_expected_positive-seed-29",
+      "family": "A_EXPECTED_POSITIVE",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 29,
+      "signature": "fnv1a32:d5ede1ac",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 9,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        },
+        {
+          "classification": "JOURNEY/FAILURE_TO_HANDLE_AMBIGUITY",
+          "rawSeverity": "S2",
+          "owner": "CC5_CONVERSATION",
+          "turn": 8
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-a_expected_positive-seed-47",
+      "family": "A_EXPECTED_POSITIVE",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 47,
+      "signature": "fnv1a32:5d1278d8",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 9,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 6
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        },
+        {
+          "classification": "JOURNEY/FAILURE_TO_HANDLE_AMBIGUITY",
+          "rawSeverity": "S2",
+          "owner": "CC5_CONVERSATION",
+          "turn": 8
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-seed-29",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 29,
+      "signature": "fnv1a32:5e8b9ab8",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 14,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 9
+        },
+        {
+          "classification": "CONVERSATION_ERROR/REFERENT_ERROR",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 13
+        },
+        {
+          "classification": "JOURNEY/ADVISOR_DIVERGENCE",
+          "rawSeverity": "S1",
+          "owner": "ADVISOR",
+          "turn": 14
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-seed-47",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "profileId": "DECISION_ORIENTED_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": 47,
+      "signature": "fnv1a32:5f8c1454",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 14,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 9
+        },
+        {
+          "classification": "CONVERSATION_ERROR/REFERENT_ERROR",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 13
+        },
+        {
+          "classification": "JOURNEY/ADVISOR_DIVERGENCE",
+          "rawSeverity": "S1",
+          "owner": "ADVISOR",
+          "turn": 14
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-project",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "profileId": "STRUCTURED_MANAGER",
+      "scenarioId": "project-delivery-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:cba25ef1",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 14,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 2,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "CONVERSATION_ERROR/REFERENT_ERROR",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 13
+        },
+        {
+          "classification": "JOURNEY/ADVISOR_DIVERGENCE",
+          "rawSeverity": "S1",
+          "owner": "ADVISOR",
+          "turn": 14
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-h_multiple_outcome_chains-logistics",
+      "family": "H_MULTIPLE_OUTCOME_CHAINS",
+      "profileId": "DISTRACTED_MANAGER",
+      "scenarioId": "logistics-delivery-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:a90e5d0c",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 14,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "OPERATOR_ERROR/OBSERVATION_GAP",
+          "rawSeverity": "S1",
+          "owner": "OPERATOR",
+          "turn": 9
+        },
+        {
+          "classification": "CONVERSATION_ERROR/REFERENT_ERROR",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 13
+        },
+        {
+          "classification": "JOURNEY/ADVISOR_DIVERGENCE",
+          "rawSeverity": "S1",
+          "owner": "ADVISOR",
+          "turn": 14
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-10-a_expected_positive-service",
+      "family": "A_EXPECTED_POSITIVE",
+      "profileId": "STRUCTURED_MANAGER",
+      "scenarioId": "service-capacity-pressure",
+      "seed": 11,
+      "signature": "fnv1a32:0ee99c87",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 9,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 1,
+        "publications": 2,
+        "unpublishedAsks": 1,
+        "eventTraces": 2,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 3
+        },
+        {
+          "classification": "JOURNEY/FAILURE_TO_HANDLE_AMBIGUITY",
+          "rawSeverity": "S2",
+          "owner": "CC5_CONVERSATION",
+          "turn": 8
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-5-manufacturing-lifecycle",
+      "family": "SIM5",
+      "profileId": "DATA_DRIVEN_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": null,
+      "signature": "fnv1a32:17470fea",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 39,
+      "ticks": 21,
+      "adaptiveTrace": {
+        "worldAdvances": 0,
+        "publications": 3,
+        "unpublishedAsks": 0,
+        "eventTraces": 2,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "UNKNOWN",
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "JOURNEY/REPEATED_CLARIFICATION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 19
+        },
+        {
+          "classification": "JOURNEY/STALE_REFERENT",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 32
+        },
+        {
+          "classification": "JOURNEY/WRONG_REFERENT",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 33
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 13
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-5-project-lifecycle",
+      "family": "SIM5",
+      "profileId": "STANDARD_MANAGER",
+      "scenarioId": "project-delivery-pressure",
+      "seed": null,
+      "signature": "fnv1a32:495932cf",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 17,
+      "ticks": 15,
+      "adaptiveTrace": {
+        "worldAdvances": 0,
+        "publications": 3,
+        "unpublishedAsks": 0,
+        "eventTraces": 2,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "UNKNOWN",
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "JOURNEY/WRONG_REFERENT",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 12
+        },
+        {
+          "classification": "JOURNEY/WRONG_REFERENT",
+          "rawSeverity": "S1",
+          "owner": "REFERENT",
+          "turn": 13
+        },
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 9
+        },
+        {
+          "classification": "JOURNEY/SUBJECT_LOSS",
+          "rawSeverity": "S3",
+          "owner": "NPS",
+          "turn": 5
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-5-logistics-parity",
+      "family": "SIM5",
+      "profileId": "STANDARD_MANAGER",
+      "scenarioId": "logistics-delivery-pressure",
+      "seed": null,
+      "signature": "fnv1a32:23a8a135",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 10,
+      "ticks": 12,
+      "adaptiveTrace": {
+        "worldAdvances": 0,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 1,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "UNKNOWN",
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 7
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-5-service-parity",
+      "family": "SIM5",
+      "profileId": "STANDARD_MANAGER",
+      "scenarioId": "service-capacity-pressure",
+      "seed": null,
+      "signature": "fnv1a32:76e47045",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 10,
+      "ticks": 12,
+      "adaptiveTrace": {
+        "worldAdvances": 0,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 2,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "UNKNOWN",
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 7
+        }
+      ]
+    },
+    {
+      "journeyId": "sim-test-5-fast-lifecycle",
+      "family": "SIM5",
+      "profileId": "DATA_DRIVEN_MANAGER",
+      "scenarioId": "manufacturing-capacity-pressure",
+      "seed": null,
+      "signature": "fnv1a32:7a2ffed0",
+      "harnessStatus": "PASS",
+      "stopReason": "JOURNEY_COMPLETE",
+      "turns": 10,
+      "ticks": 21,
+      "adaptiveTrace": {
+        "worldAdvances": 0,
+        "publications": 2,
+        "unpublishedAsks": 0,
+        "eventTraces": 2,
+        "hiddenFromNexora": true,
+        "hiddenFromManager": true,
+        "writeAttempted": false
+      },
+      "maxDecisions": 0,
+      "maxExecutions": 0,
+      "maxCaptured": 0,
+      "captureSnapshot": [],
+      "npsStatuses": [
+        "UNKNOWN",
+        "TOO_EARLY"
+      ],
+      "learningStatuses": [
+        "NONE"
+      ],
+      "finalDecisionLedger": [],
+      "finalExecutionLedger": [],
+      "findings": [
+        {
+          "classification": "JOURNEY/MISSING_DECISION",
+          "rawSeverity": "S1",
+          "owner": "CC5_CONVERSATION",
+          "turn": 7
+        }
+      ]
+    }
+  ]
+}

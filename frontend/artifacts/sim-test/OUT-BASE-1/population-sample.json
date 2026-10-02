@@ -1,0 +1,39 @@
+{
+  "journeyId": "sim-test-10-a_expected_positive",
+  "harnessStatus": "PASS",
+  "decisions": 1,
+  "executions": 1,
+  "captures": 2,
+  "baseline": {
+    "measured": "capacity-utilization",
+    "measuredAt": "2026-09-16T00:00:00.000Z",
+    "source": "sim-test-2:manufacturing-capacity-pressure:rms:out-base-1-family-a:production",
+    "numericValue": 90.9090909090909,
+    "unit": "%",
+    "confidence": "medium",
+    "provenanceRefs": [
+      "sim-test-2:manufacturing-capacity-pressure:rms:out-base-1-family-a:production",
+      "rms:out-base-1-family-a:PRODUCTION:0:import",
+      "2026-09-16T00:00:00.000Z"
+    ]
+  },
+  "evaluationStatus": "comparison-ready",
+  "comparison": {
+    "result": "not-met",
+    "comparable": true,
+    "numericDelta": null,
+    "incompatibilityReason": null,
+    "statement": "Expected result not observed."
+  },
+  "missingEvidence": [],
+  "numericTarget": null,
+  "expectedDirection": "maintain",
+  "actual": 100,
+  "learningCandidates": [
+    "supported"
+  ],
+  "promotion": [
+    "promotion-eligible"
+  ],
+  "createsLearning": false
+}

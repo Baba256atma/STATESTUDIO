@@ -149,6 +149,19 @@ export type NexoraKPIResult = {
   readonly calculatedAt: string;
 };
 
+/**
+ * Descriptive published KPI change. Not success/failure, expected direction,
+ * executive object state, or causation.
+ */
+export const NEXORA_PUBLISHED_KPI_OBSERVED_DIRECTIONS = Object.freeze([
+  "increase",
+  "decrease",
+  "stable",
+] as const);
+
+export type NexoraPublishedKpiObservedDirection =
+  (typeof NEXORA_PUBLISHED_KPI_OBSERVED_DIRECTIONS)[number];
+
 // ─── Executive state (business meaning) ─────────────────────────────────────
 
 /**

@@ -1,0 +1,82 @@
+{
+  "executed": true,
+  "deterministicResponse": "Capacity remains the active constraint. Scenario A and Scenario B are available for comparison.",
+  "contribution": "Capacity is currently constrained, identified as the active constraint. Two scenarios available for comparison are:\n\n- **Scenario A (Overtime)**: This may respond faster and allow subcontracting to preserve internal capacity.\n- **Scenario B**: Details are unspecified but can be compared.\n\nIf you need further analysis on these scenarios, please let me know.",
+  "policyReason": "ALLOWED",
+  "provider": "openai",
+  "model": "gpt-4o-mini-2024-07-18",
+  "status": "ok",
+  "providerCalls": 1,
+  "usage": {
+    "inputTokens": 459,
+    "outputTokens": 69,
+    "totalTokens": 528
+  },
+  "cost": null,
+  "latencyMs": 2644.949,
+  "managementContext": {
+    "identity": "LLM-MVP:2/ManagementContextProjection",
+    "subject": {
+      "canonicalId": "obj-capacity",
+      "label": "Capacity",
+      "kind": "object",
+      "epistemic": null
+    },
+    "referent": {
+      "canonicalId": "obj-capacity",
+      "provenance": "test-fixture"
+    },
+    "management": {
+      "projection": null,
+      "refs": [
+        {
+          "id": "obj-capacity",
+          "kind": "object",
+          "label": "Capacity",
+          "value": "constrained",
+          "provenanceId": "nmi-capacity",
+          "epistemic": "known"
+        }
+      ]
+    },
+    "dataReality": {
+      "projections": [
+        "catalog-primaryValue"
+      ],
+      "refs": [
+        {
+          "id": "obj-delivery",
+          "kind": "object",
+          "label": "Delivery",
+          "value": "elevated pressure",
+          "provenanceId": "dr-delivery",
+          "epistemic": "known"
+        }
+      ]
+    },
+    "conversation": {
+      "projection": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+      "currentUtterance": "Explain the Capacity constraint and the available scenarios.",
+      "previousUtterance": null,
+      "frames": []
+    },
+    "evidence": {
+      "refs": []
+    },
+    "scenario": {
+      "refs": [
+        {
+          "id": "scn-a",
+          "kind": "scenario",
+          "label": "Overtime",
+          "value": "overtime may respond faster; subcontracting may preserve internal capacity",
+          "provenanceId": "scn-a",
+          "epistemic": "draft"
+        }
+      ]
+    },
+    "decision": {
+      "refs": []
+    }
+  }
+}

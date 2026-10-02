@@ -1,0 +1,26 @@
+# SIM-TEST:9-R2 production integrity (post-execution)
+
+Independent aggregate sha256 of production `frontend/app` sources excluding `sim-test` and `*.test.*`:
+
+`93c0cc07365d6aa7780e5ef5e23fc25db506446df2340326c9d3e0b69abff521`
+
+fileCount: 12704
+
+This matches `SOURCE-INTEGRITY-BEFORE.md` exactly.
+
+Harness-internal snapshot (`nexoraSimulationMultiThreadR2.test.ts` `productionSnapshot`, also excluding `.next`):
+
+before digest = after digest  
+`2d9f6fcf9df26fe322a0848c3b0cbcc3ea4c73998268d67febde20cd665cf42a`
+
+`productionChangesDuringR2`: **0**
+
+Protected content hashes unchanged from before:
+
+- conversationalExperienceOrchestrator.ts `8b81d09f81bcbd098419917f5968ec1f2032390190a71bdbff9d52a4fe53d2d6`
+- executiveExecutionFollowUp.ts `3014add9c544cfa3c245c1192ee523c3407aa591f650dbe8477ce37d501cb4e4`
+- conversationalIntentResolver.ts `b373de80e4b936638f1c89cee4fe9fa3ad3a75cb70e170f2936a8e21d48fc316`
+- conversationalIntentNormalization.ts `c439f47b1b857899450370fd41e3cd90258b9f8a9ca49d015d4e962d6811c3cd`
+- canonicalManagerMeaningInterpreter.ts `dfb6d10be6568ccc237fb530fa48a982ad7751da5f69d5789851e6c40c511b93`
+- executiveDecisionRuntimeAdapter.ts `4841cb77f06ca219013a3664cbb8f509d5ecd42b0e7a0acf154d63944eff70d6`
+- executiveExecutionRuntimeAdapter.ts `99c6e140c46c81dee6de159297f71b1f3ae26013405a326bd59db046b19f6321`

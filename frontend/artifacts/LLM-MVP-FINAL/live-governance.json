@@ -1,0 +1,8 @@
+{
+  "governanceStatus": "rejected",
+  "reason": "AUTHORITY_VIOLATION",
+  "llmContributionUsed": false,
+  "dRecoverable": true,
+  "mEqualsD": true,
+  "managerText": "Capacity remains the active constraint. Scenario A and Scenario B are available for comparison."
+}

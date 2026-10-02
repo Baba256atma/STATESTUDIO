@@ -472,6 +472,22 @@ export type NexoraConversationalExperienceResult = {
   readonly vaiAdvisorAnalysis?: import("@/app/lib/vai/vaiAdvisorComposer.ts").VaiAdvisorComposition | null;
   /** NPA-T NMI:7 read-only management intelligence overlay. Not a second Advisor. */
   readonly nmiAdvisorComposition?: import("@/app/lib/nmi/nmiAdvisorCompose.ts").NmiAdvisorComposition | null;
+  /**
+   * LLM-MVP:1 optional language participant outcome.
+   * Contribution L is non-authoritative.
+   */
+  readonly llmParticipantTurn?: import("./nexoraLlmConversationParticipant.ts").NexoraLlmParticipantTurn;
+  /**
+   * LLM-MVP:5 governed manager-facing presentation M.
+   * `response` / `nexoraMessage.text` equal `managerText`.
+   * `deterministicResponse` remains D.
+   */
+  readonly llmGovernedOutput?: import("./nexoraLlmGovernedOutput.ts").NexoraGovernedLlmOutput;
+  /**
+   * LLM-MVP:2 bounded projection used by the optional LLM participant.
+   * Read-only. Shell may send it to the certified server runtime.
+   */
+  readonly llmManagementContext?: import("./nexoraLlmManagementContext.ts").NexoraLlmManagementContext;
   /** NPA-T VAI:5 read-only Theatre Variable Symbol projection. */
   readonly vaiTheatreProjection?: import("@/app/lib/vai/vaiTheatreProjector.ts").VaiTheatreProjection | null;
   /** NPA-T VAI:6 read-only Director Impact Scene projection. */

@@ -7,6 +7,10 @@
  */
 
 import type { NexoraKPIResult } from "../data-reality/dataRealityContracts.ts";
+import {
+  listPublishedKpiObservations,
+  projectPublishedKpiObservedDirection,
+} from "../data-reality/publishedKpiObservedDirection.ts";
 import type { NexoraExecutiveEvidenceReference } from "../conversational-control/executiveRecommendation.ts";
 import type { SemanticConfidence } from "./problemRiskOpportunityIntelligence.ts";
 import type { NexoraDataSourceValidationState } from "../data-reality/realDataIntegrationFoundation.ts";
@@ -44,6 +48,8 @@ export const LIVE_OUTCOME_OBSERVATION_BOUNDARY = Object.freeze({
   temporalSequenceEqualsCausation: false as const,
   inventsTimestamps: false as const,
   inventsProvenance: false as const,
+  infersObservedDirection: false as const,
+  consumesRdiPublishedDirection: true as const,
   isExiWriter: false as const,
   storageLifetime: "session" as const,
 });
@@ -195,8 +201,13 @@ export function observationIdentity(input: {
   return `obs:${input.sourceId ?? "none"}:${input.datasetId ?? "none"}:${input.metricId}:${input.observedAt ?? "untimed"}`;
 }
 
+export function outcomeComparisonDimension(metricOrDimension: string): string {
+  const parts = metricOrDimension.split(".");
+  return parts[parts.length - 1] || metricOrDimension;
+}
+
 export function dimensionsCompatible(left: string, right: string): boolean {
-  return left === right;
+  return outcomeComparisonDimension(left) === outcomeComparisonDimension(right);
 }
 
 export function unitsCompatible(
@@ -401,7 +412,7 @@ export function captureOutcomeObservation(input: {
     observationId,
     subjectId: input.observation.subjectId,
     metricId: input.observation.metricId,
-    dimension: input.observation.dimension,
+    dimension: outcomeComparisonDimension(input.observation.dimension),
     unit: input.observation.unit,
     value: input.observation.value,
     qualitativeState: input.observation.qualitativeState,
@@ -500,12 +511,57 @@ export function observationInputFromKpi(input: {
   });
 }
 
+function resolvePublishedObservedDirection(
+  captured: CapturedOutcomeObservation,
+): {
+  readonly observedDirection: NonNullable<ExecutiveOutcomeObservation["observedDirection"]> | null;
+  readonly provenance: readonly string[];
+} {
+  if (!captured.sourceId || !captured.observedAt || !captured.metricId) {
+    return { observedDirection: null, provenance: freezeList([]) };
+  }
+  const matches = listPublishedKpiObservations({ subjectId: captured.subjectId }).filter((entry) => {
+    const exactKpi = entry.kpiId === captured.metricId;
+    const shortMetric = !captured.metricId.includes("kpi.");
+    const kpiMatch =
+      exactKpi ||
+      (shortMetric &&
+        (dimensionsCompatible(entry.kpiId, captured.metricId) ||
+          dimensionsCompatible(entry.kpiId, captured.dimension)));
+    return (
+      kpiMatch &&
+      entry.sourceContextId === captured.sourceId &&
+      entry.observedAt === captured.observedAt
+    );
+  });
+  if (matches.length !== 1) {
+    return { observedDirection: null, provenance: freezeList([]) };
+  }
+  const current = matches[0]!;
+  const projected = projectPublishedKpiObservedDirection({
+    kpiId: current.kpiId,
+    subjectId: captured.subjectId,
+    currentObservationId: current.observationId,
+  });
+  if (
+    projected.currentSourceContextId !== captured.sourceId ||
+    projected.currentObservedAt !== captured.observedAt
+  ) {
+    return { observedDirection: null, provenance: freezeList([]) };
+  }
+  return {
+    observedDirection: projected.observedDirection,
+    provenance: freezeList(projected.provenance),
+  };
+}
+
 export function toEvaluatorObservation(
   captured: CapturedOutcomeObservation,
 ): ExecutiveOutcomeObservation | null {
   if (!captured.eligibleAsActualOutcome || captured.outcomeLink == null) {
     return null;
   }
+  const published = resolvePublishedObservedDirection(captured);
   return Object.freeze({
     observationId: captured.observationId,
     statement:
@@ -517,7 +573,7 @@ export function toEvaluatorObservation(
     source: "canonical-outcome-writer",
     numericValue: captured.value,
     unit: captured.unit,
-    observedDirection: null,
+    observedDirection: published.observedDirection,
     observedAt: captured.observedAt,
     freshness: captured.freshnessState,
     validationStatus:
@@ -528,7 +584,7 @@ export function toEvaluatorObservation(
           : "validated",
     outcomeLinked: true,
     evidenceRefs: captured.evidenceRefs,
-    provenanceRefs: captured.provenanceRefs,
+    provenanceRefs: freezeList([...captured.provenanceRefs, ...published.provenance]),
   });
 }
 

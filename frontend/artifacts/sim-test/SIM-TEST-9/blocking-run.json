@@ -1,0 +1,791 @@
+{
+  "phase": "NPA-T SIM-TEST:9",
+  "status": "NOT CERTIFIED",
+  "stopReason": "GENUINE_CROSS_THREAD_S1",
+  "summary": {
+    "journeys": 1,
+    "scenarioFamilies": 1,
+    "profiles": 1,
+    "seeds": [
+      11
+    ],
+    "managerTurns": 8,
+    "nexoraTurns": 8,
+    "longSessions": 0,
+    "adaptiveEvents": 0,
+    "operatorPublications": 1,
+    "replayTargets": 1,
+    "replayMismatches": 0
+  },
+  "multiplicity": {
+    "simultaneousProblemsObserved": 1,
+    "risksExercised": 0,
+    "variablesExercised": 0,
+    "scenarioSetsOpened": 2,
+    "correctlyScopedScenarioSets": 1,
+    "scenarioOptionsObserved": 2,
+    "decisionsCreated": 1,
+    "executionsCreated": 1,
+    "outcomesObserved": 0
+  },
+  "blocker": {
+    "id": "ST9-S1-WRONG-EXECUTION-BINDING",
+    "severity": "S1",
+    "classification": "WRONG_EXECUTION_REFERENT / CROSS_THREAD_REFERENT",
+    "expected": "With Delivery active and no Delivery Decision committed, `Start it.` must clarify or refuse; it must not execute the Capacity Decision.",
+    "actual": "CC:11 created an Execution for the sole Approved Capacity Decision while canonical subject, L1, and Stage remained Delivery.",
+    "firstDivergentLayer": "CC:5 execution handoff selection before CC:11",
+    "owningSeam": "conversationalExperienceOrchestrator execution-request Decision binding",
+    "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+    "executionId": "execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+    "turn": 8,
+    "tick": 0,
+    "canonicalSubjectId": "obj-delivery",
+    "l1SubjectId": "obj-delivery",
+    "stageSubjectId": "obj-delivery",
+    "advisorSubjectId": "obj-delivery",
+    "managerUtterance": "Start it.",
+    "nexoraReply": "Execution has started. This Decision already has an active Execution. We should review its progress rather than start another one. That would be an execution step. Check execution readiness next; nothing has started running yet.",
+    "dataRealityPublicationIds": [
+      "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+      "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+    ],
+    "csvVersions": [
+      {
+        "sourceType": "ERP",
+        "version": 1,
+        "tick": 0
+      },
+      {
+        "sourceType": "PRODUCTION",
+        "version": 1,
+        "tick": 0
+      },
+      {
+        "sourceType": "INVENTORY",
+        "version": 1,
+        "tick": 0
+      },
+      {
+        "sourceType": "MAINTENANCE",
+        "version": 1,
+        "tick": 0
+      }
+    ],
+    "publicationState": "CURRENTLY_PUBLISHED",
+    "conversationHistory": [
+      "Status.",
+      "Capacity. Details.",
+      "Options.",
+      "Go with B.",
+      "Delivery. Details.",
+      "Options.",
+      "Go with A.",
+      "Start it."
+    ]
+  },
+  "counts": {
+    "wrongProblemBindings": 0,
+    "wrongRiskBindings": 0,
+    "scenarioSetConfusion": 1,
+    "wrongOrdinalResolution": 0,
+    "wrongHistoricalReturn": 0,
+    "crossThreadReferentFailures": 1,
+    "inventedSubjects": 0,
+    "reassessmentRecurrence": 0,
+    "duplicateDecisions": 0,
+    "decisionIdentityDrift": 0,
+    "silentDecisionReplacement": 0,
+    "wrongScenarioDecisionAssociations": 0,
+    "ambiguousCommitmentWrites": 0,
+    "historicalDecisionMutation": 0,
+    "wrongDecisionExecutionLinks": 0,
+    "wrongExecutionReferents": 1,
+    "duplicateExecutions": 0,
+    "prematureExecutions": 1,
+    "wrongExecutionOutcomeLinks": 0,
+    "outcomeConfusion": 0,
+    "unpublishedAsks": 0,
+    "leakHits": 0,
+    "staleEvidence": 0,
+    "currentStateIgnored": 0,
+    "temporalConfusion": 0,
+    "canonicalSubjectMismatches": 0,
+    "mlevelIdentityFailures": 0,
+    "stageIdentityFailures": 0,
+    "stageDensityFailures": 0,
+    "newAdvisorDivergence": 0,
+    "rawS1": 1,
+    "rawS2": 1,
+    "rawS3": 4,
+    "productS1": 1,
+    "productS2": 1,
+    "productS3": 4,
+    "knownDebt": 4,
+    "observerErrors": 0,
+    "testExpectationErrors": 0,
+    "expectedClarifications": 1
+  },
+  "deterministicReplay": {
+    "first": "fnv1a32:61197640",
+    "second": "fnv1a32:61197640",
+    "matched": true
+  },
+  "observations": [
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": null,
+      "scenarioId": null,
+      "decisionId": null,
+      "decisionCount": 0,
+      "executionId": null,
+      "executionCount": 0,
+      "executionStatus": null,
+      "npsOutcomeStatus": "UNKNOWN",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 1,
+      "tick": 0,
+      "intent": "ORIENT",
+      "utterance": "Status.",
+      "deictic": false,
+      "intendedSubject": null,
+      "response": "Revenue needs attention.",
+      "conversationSubjectId": null,
+      "canonicalSubjectId": null,
+      "focusedSubjectLabel": null,
+      "nmiCanonicalId": null,
+      "advisorReferentId": null,
+      "advisorReferentName": null,
+      "mlevelL1": null,
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 0,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": null,
+      "stageSelectedObjectId": null,
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": false,
+      "decisionStatus": null,
+      "npsState": null,
+      "npsProblemLabel": null,
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    },
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": "ctx-problem-capacity",
+      "scenarioId": null,
+      "decisionId": null,
+      "decisionCount": 0,
+      "executionId": null,
+      "executionCount": 0,
+      "executionStatus": null,
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 2,
+      "tick": 0,
+      "intent": "FOCUS_PROBLEM",
+      "utterance": "Capacity. Details.",
+      "deictic": false,
+      "intendedSubject": "Capacity",
+      "response": "Focused on Capacity.",
+      "conversationSubjectId": "obj-capacity",
+      "canonicalSubjectId": "obj-capacity",
+      "focusedSubjectLabel": "Capacity",
+      "nmiCanonicalId": null,
+      "advisorReferentId": "obj-capacity",
+      "advisorReferentName": "Capacity",
+      "mlevelL1": "obj-capacity",
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 1,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": "obj-capacity",
+      "stageSelectedObjectId": "obj-capacity",
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": false,
+      "decisionStatus": null,
+      "npsState": "AWAITING_COMMITMENT",
+      "npsProblemLabel": "Capacity Gap",
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    },
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": "ctx-problem-capacity",
+      "scenarioId": "cc9:scenario:intervention:obj-capacity:v1",
+      "decisionId": null,
+      "decisionCount": 0,
+      "executionId": null,
+      "executionCount": 0,
+      "executionStatus": null,
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 3,
+      "tick": 0,
+      "intent": "EXPLORE_OPTIONS",
+      "utterance": "Options.",
+      "deictic": false,
+      "intendedSubject": "Capacity",
+      "response": "Comparison complete. Investigate Capacity aligns better under current evidence, but this is not a Decision commitment.",
+      "conversationSubjectId": "obj-capacity",
+      "canonicalSubjectId": "obj-capacity",
+      "focusedSubjectLabel": "Capacity",
+      "nmiCanonicalId": null,
+      "advisorReferentId": null,
+      "advisorReferentName": "Capacity",
+      "mlevelL1": "obj-capacity",
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 1,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": "obj-capacity",
+      "stageSelectedObjectId": "obj-capacity",
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": false,
+      "decisionStatus": null,
+      "npsState": "AWAITING_COMMITMENT",
+      "npsProblemLabel": "Capacity Gap",
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    },
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": null,
+      "scenarioId": "cc9:scenario:intervention:obj-capacity:v1",
+      "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "decisionCount": 1,
+      "executionId": null,
+      "executionCount": 0,
+      "executionStatus": null,
+      "npsOutcomeStatus": "UNKNOWN",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 4,
+      "tick": 0,
+      "intent": "COMMIT_DECISION",
+      "utterance": "Go with B.",
+      "deictic": false,
+      "intendedSubject": "Capacity",
+      "response": "No Action on Capacity is now the Approved decision. Scenario B is already the committed Decision.",
+      "conversationSubjectId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "canonicalSubjectId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "focusedSubjectLabel": "Capacity",
+      "nmiCanonicalId": null,
+      "advisorReferentId": null,
+      "advisorReferentName": "Capacity",
+      "mlevelL1": "obj-capacity",
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 1,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": "obj-capacity",
+      "stageSelectedObjectId": "obj-capacity",
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": false,
+      "decisionStatus": "applied",
+      "npsState": null,
+      "npsProblemLabel": null,
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    },
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": "ctx-problem-capacity",
+      "scenarioId": "cc9:scenario:intervention:obj-capacity:v1",
+      "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "decisionCount": 1,
+      "executionId": null,
+      "executionCount": 0,
+      "executionStatus": null,
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 5,
+      "tick": 0,
+      "intent": "FOCUS_PROBLEM",
+      "utterance": "Delivery. Details.",
+      "deictic": false,
+      "intendedSubject": "Delivery",
+      "response": "Focused on Delivery.",
+      "conversationSubjectId": "obj-delivery",
+      "canonicalSubjectId": "obj-delivery",
+      "focusedSubjectLabel": "Delivery",
+      "nmiCanonicalId": null,
+      "advisorReferentId": "obj-delivery",
+      "advisorReferentName": "Delivery",
+      "mlevelL1": "obj-delivery",
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 1,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": "obj-delivery",
+      "stageSelectedObjectId": "obj-delivery",
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": false,
+      "decisionStatus": null,
+      "npsState": "AWAITING_COMMITMENT",
+      "npsProblemLabel": "Capacity Gap",
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    },
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": "ctx-problem-capacity",
+      "scenarioId": "cc9:scenario:intervention:obj-capacity:v1",
+      "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "decisionCount": 1,
+      "executionId": null,
+      "executionCount": 0,
+      "executionStatus": null,
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 6,
+      "tick": 0,
+      "intent": "EXPLORE_OPTIONS",
+      "utterance": "Options.",
+      "deictic": false,
+      "intendedSubject": "Delivery",
+      "response": "Comparison complete. Investigate Capacity aligns better under current evidence, but this is not a Decision commitment.",
+      "conversationSubjectId": "obj-delivery",
+      "canonicalSubjectId": "obj-delivery",
+      "focusedSubjectLabel": "Delivery",
+      "nmiCanonicalId": null,
+      "advisorReferentId": null,
+      "advisorReferentName": "Delivery",
+      "mlevelL1": "obj-delivery",
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 1,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": "obj-delivery",
+      "stageSelectedObjectId": "obj-delivery",
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": false,
+      "decisionStatus": null,
+      "npsState": "AWAITING_COMMITMENT",
+      "npsProblemLabel": "Capacity Gap",
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    },
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": "ctx-problem-capacity",
+      "scenarioId": "cc9:scenario:intervention:obj-capacity:v1",
+      "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "decisionCount": 1,
+      "executionId": null,
+      "executionCount": 0,
+      "executionStatus": null,
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 7,
+      "tick": 0,
+      "intent": "COMMIT_DECISION",
+      "utterance": "Go with A.",
+      "deictic": false,
+      "intendedSubject": "Delivery",
+      "response": "Which option do you want to commit to? Capacity Expansion Plan is already the committed Decision.",
+      "conversationSubjectId": "obj-delivery",
+      "canonicalSubjectId": "obj-delivery",
+      "focusedSubjectLabel": "Delivery",
+      "nmiCanonicalId": null,
+      "advisorReferentId": null,
+      "advisorReferentName": "Delivery",
+      "mlevelL1": "obj-delivery",
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 1,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": "obj-delivery",
+      "stageSelectedObjectId": "obj-delivery",
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": true,
+      "decisionStatus": "clarification-required",
+      "npsState": "AWAITING_COMMITMENT",
+      "npsProblemLabel": "Capacity Gap",
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    },
+    {
+      "observerHiddenNumbers": {
+        "demand": 100,
+        "availableCapacity": 110,
+        "inventory": 420,
+        "machineAvailability": 1
+      },
+      "problemId": "ctx-problem-capacity",
+      "scenarioId": "cc9:scenario:intervention:obj-capacity:v1",
+      "decisionId": "cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "decisionCount": 1,
+      "executionId": "execution-cc10:decision:cc9:scenario:do-nothing:do-nothing:v1",
+      "executionCount": 1,
+      "executionStatus": "in-progress",
+      "npsOutcomeStatus": "TOO_EARLY",
+      "npsResolutionStatus": "UNKNOWN",
+      "npsLearningStatus": "NONE",
+      "npsLearningDurable": false,
+      "nxa3OutcomeState": null,
+      "worldAdvancedUnpublished": false,
+      "turn": 8,
+      "tick": 0,
+      "intent": "REQUEST_EXECUTION",
+      "utterance": "Start it.",
+      "deictic": false,
+      "intendedSubject": "Delivery",
+      "response": "Execution has started. This Decision already has an active Execution. We should review its progress rather than start another one. That would be an execution step. Check execution readiness next; nothing has started running yet.",
+      "conversationSubjectId": "obj-delivery",
+      "canonicalSubjectId": "obj-delivery",
+      "focusedSubjectLabel": "Delivery",
+      "nmiCanonicalId": null,
+      "advisorReferentId": "obj-delivery",
+      "advisorReferentName": "Delivery",
+      "mlevelL1": "obj-delivery",
+      "mlevelL2": null,
+      "mlevelL3": null,
+      "mlevelVisibleDepth": 1,
+      "ancestorApplicable": "NOT_APPLICABLE",
+      "stageActiveSubjectId": "obj-delivery",
+      "stageSelectedObjectId": "obj-delivery",
+      "sceneIntent": "NO_CHANGE",
+      "clarificationRequired": false,
+      "decisionStatus": null,
+      "npsState": "EXECUTING",
+      "npsProblemLabel": "Capacity Gap",
+      "vaiFocalObjectId": null,
+      "vaiRoleSummaries": [],
+      "dataPublicationIds": [
+        "rdi2:snapshot:rms:sim9-blocker:ERP:0:import",
+        "rdi2:snapshot:rms:sim9-blocker:PRODUCTION:0:import"
+      ],
+      "csvVersions": [
+        {
+          "sourceType": "ERP",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "PRODUCTION",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "INVENTORY",
+          "version": 1,
+          "tick": 0
+        },
+        {
+          "sourceType": "MAINTENANCE",
+          "version": 1,
+          "tick": 0
+        }
+      ],
+      "visibleNumbers": {
+        "orders_received": 100,
+        "requested_quantity": 100,
+        "CAP_AV": 110,
+        "produced_quantity": 100
+      },
+      "epistemicMarks": []
+    }
+  ],
+  "harnessFindings": [],
+  "architecture": {
+    "duplicateAuthorityStoreOrRuntimeIntroduced": false,
+    "productionFilesChanged": 0,
+    "observerWriteAttempted": false,
+    "autoRepairAttempted": false
+  }
+}
