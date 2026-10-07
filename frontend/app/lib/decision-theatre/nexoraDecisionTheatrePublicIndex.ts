@@ -217,6 +217,18 @@ export {
 export { NEXORA_DECISION_THEATRE_LEARNING_REASSESSMENT_ACTION_ROUTES } from "./nexoraDecisionTheatreLearningReassessmentRegistry.ts";
 export { projectNexoraDecisionTheatreLearningReassessment } from "./nexoraDecisionTheatreLearningReassessmentComposer.ts";
 export type { NexoraDecisionTheatreAuthoritativeAssumption } from "./nexoraDecisionTheatreLearningReassessmentComposer.ts";
+export {
+  applyNexoraDecisionTheatreAdvisorGuidance,
+  NEXORA_DECISION_THEATRE_ADVISOR_GUIDANCE_PHASES,
+  nexoraDecisionTheatreAdvisorGuidanceProjectionIdentity,
+  projectNexoraDecisionTheatreAdvisorGuidance,
+} from "./nexoraDecisionTheatreAdvisorGuidanceProjection.ts";
+export type {
+  NexoraDecisionTheatreAdvisorGuidance,
+  NexoraDecisionTheatreAdvisorGuidancePhase,
+  NexoraDecisionTheatreAdvisorHierarchy,
+  NexoraDecisionTheatreAdvisorReadinessRow,
+} from "./nexoraDecisionTheatreAdvisorGuidanceProjection.ts";
 
 export const nexoraDecisionTheatrePublicIndexIdentity =
   "DTH:1/DecisionTheatrePublicIndex" as const;

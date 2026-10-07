@@ -180,9 +180,34 @@ function fieldsFromMapping(
   }));
 }
 
+function relatedLabelsFromConfirmedMapping(mapping: CsvMappingReview | null | undefined): readonly string[] {
+  const aliases: Readonly<Record<string, string>> = Object.freeze({
+    production: "Capacity",
+    warehouse: "Inventory",
+    shipping: "Delivery",
+    inventory: "Inventory",
+    customer: "Customer",
+    revenue: "Revenue",
+  });
+  const labels = (mapping?.mappings ?? []).flatMap((entry) => {
+    if (!entry.confirmed || entry.ignored || !entry.targetId) return [];
+    const target = CSV_MAPPING_TARGETS.find((item) => item.targetId === entry.targetId);
+    if (!target?.objectKey) return [];
+    const known = aliases[target.objectKey];
+    if (known) return [known];
+    return [`${target.objectKey[0]!.toUpperCase()}${target.objectKey.slice(1)}`];
+  });
+  return Object.freeze([...new Set(labels)]);
+}
+
 function projectCommitted(entry: CsvCommittedImport): AdvisorDataSource {
   const esi = projectExecutiveSourceIntelligence(entry);
-  const related = Object.freeze([...new Set(esi.affectedObjects.map((item) => item.objectLabel))]);
+  const related = Object.freeze([
+    ...new Set([
+      ...esi.affectedObjects.map((item) => item.objectLabel),
+      ...relatedLabelsFromConfirmedMapping(entry.prepared.mapping),
+    ]),
+  ]);
   return Object.freeze({
     sourceContextId: entry.sourceContextId,
     sourceType: "csv" as const,

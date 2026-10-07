@@ -1,0 +1,72 @@
+{
+  "identity": "NPA-T STAGE-LAYOUT:1/CollisionSafeExecutiveStage",
+  "url": "http://localhost:3000/executive?cei3=1&stageLayout=1",
+  "browser": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/3.21.18 Chrome/148.0.7778.280 Electron/42.10.0 Safari/537.36",
+    "environment": "Cursor embedded Chromium, live Next.js http://localhost:3000/executive"
+  },
+  "journeys": {
+    "inventoryChart": {
+      "utterances": ["Show me Inventory.", "Show me a chart.", "Bar chart."],
+      "focused": "obj-inventory",
+      "visualView": "present",
+      "representation": "COMPARISON_BARS",
+      "canonicalObjectIds": "obj-inventory",
+      "metric": "Inventory On Hand",
+      "observationCount": 6,
+      "source": "inventory-observations.csv"
+    },
+    "inventoryReportAndChart": {
+      "presentation": "report",
+      "stage": { "x": 56, "y": 70.9, "width": 1024, "height": 798.5 },
+      "investigation": { "x": 796, "y": 142.9, "width": 272, "height": 198.4 },
+      "report": { "x": 68, "y": 709.2, "width": 296, "height": 140.2 },
+      "chart": { "x": 648, "y": 563.6, "width": 420, "height": 285.8 },
+      "intersections": {
+        "reportChart": false,
+        "investigationChart": false,
+        "reportInvestigation": false
+      },
+      "insideStage": { "chart": true, "report": true, "investigation": true }
+    },
+    "capacityGapAfterInventoryChart": {
+      "method": "Stage object control click nexora-stage-object-control-ctx-problem-capacity",
+      "focused": "ctx-problem-capacity",
+      "visualView": "none",
+      "chartPresent": false,
+      "contextualFamily": "STATUS_CARD",
+      "staleInventoryChart": false
+    },
+    "capacityGapActionsOpen": {
+      "presentation": "operation",
+      "stage": { "x": 56, "y": 87.4, "width": 1024, "height": 782 },
+      "investigation": { "x": 796, "y": 159.4, "width": 272, "height": 227.3 },
+      "operation": { "x": 596, "y": 159.4, "width": 192, "height": 169.1 },
+      "report": { "x": 68, "y": 687, "width": 296, "height": 162.4 },
+      "statusCard": { "x": 648, "y": 705.3, "width": 420, "height": 144.1 },
+      "trigger": { "x": 946.4, "y": 99.4, "width": 120, "height": 32.2 },
+      "operationLeftOfInvestigation": true,
+      "operationSlot": "transient-actions",
+      "operationSubject": "ctx-problem-capacity",
+      "rightPanelOpen": true,
+      "intersections": {
+        "reportStatus": false,
+        "investigationStatus": false,
+        "reportInvestigation": false,
+        "operationInvestigation": false,
+        "operationReport": false,
+        "operationStatus": false
+      },
+      "insideStage": {
+        "status": true,
+        "report": true,
+        "investigation": true,
+        "operation": true
+      }
+    }
+  },
+  "screenshots": [
+    "inventory-report-chart.png",
+    "capacity-gap-composed.png"
+  ]
+}

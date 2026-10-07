@@ -428,8 +428,8 @@ export const EXECUTIVE_OBJECT_SURFACE_COLORS = Object.freeze({
 export const EXECUTIVE_OBJECT_EDGE_COLORS = Object.freeze({
   "object.edge.normal": "#64748b",
   "object.edge.hover": "#e2e8f0",
-  "object.edge.selected": "#94a3b8",
-  "object.edge.focus": "#e2e8f0",
+  "object.edge.selected": "#7ebfd4",
+  "object.edge.focus": "#a9d7ea",
   "object.edge.attention": "#d4b45a",
   "object.edge.watch": "#d4b45a",
   "object.edge.critical": "#d08080",

@@ -1,0 +1,59 @@
+{
+  "identity": "NPA-T RIGHT-OBJECT:1/MoveObjectCardToSelectedObjectTab",
+  "url": "http://localhost:3000/executive?rightObject=1",
+  "browser": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/3.21.18 Chrome/148.0.7778.280 Electron/42.10.0 Safari/537.36",
+    "environment": "Cursor embedded Chromium, live Next.js http://localhost:3000/executive"
+  },
+  "journeys": {
+    "capacityGap": {
+      "method": "NMI nmi-map-node-ctx-problem-capacity, then Right tab Capacity Gap",
+      "focused": "ctx-problem-capacity",
+      "stageObjectControl": "nexora-stage-object-control-ctx-problem-capacity",
+      "stageObjectCardHost": false,
+      "rightObjectCardHost": "right-panel",
+      "rightOwner": "right-selected-object-tab",
+      "tabs": ["Advisor", "Details", "Capacity Gap"],
+      "selectedTab": "Capacity Gap",
+      "cardText": "PROBLEM\nCapacity Gap\nCapacity Gap is a problem.\nCurrent state: watch.\nUnderstand / What is related to it? / What should I investigate next?",
+      "openInRight": false,
+      "viewOnStage": "VIEW FOCUS (nexora-presentation-state-selector)",
+      "actionsOnStage": "Actions (nexora-presentation-option-operation)"
+    },
+    "expandCapacity": {
+      "method": "NMI nmi-map-node-ctx-decision-capacity",
+      "focused": "ctx-decision-capacity",
+      "stageObjectControl": "nexora-stage-object-control-ctx-decision-capacity",
+      "stageObjectCardHost": false,
+      "rightObjectCardHost": "right-panel",
+      "tabs": ["Advisor", "Details", "Expand Capacity"],
+      "selectedTab": "Expand Capacity",
+      "cardText": "DECISION\nExpand Capacity\nExpand Capacity is a decision.\nCurrent state: under-review.\nUnderstand / What would we be committing to?",
+      "openInRight": false
+    },
+    "inventory": {
+      "method": "Stage object control nexora-stage-object-control-obj-inventory",
+      "focused": "obj-inventory",
+      "stageObjectControl": "nexora-stage-object-control-obj-inventory",
+      "stageObjectCardHost": false,
+      "rightObjectCardHost": "right-panel",
+      "tabs": ["Advisor", "Details", "Inventory"],
+      "selectedTab": "Inventory",
+      "cardText": "KPI\nInventory\nInventory is a kpi.\nCurrent state: watch.\nUnderstand / Why is this important? / What is related to it?",
+      "openInRight": false,
+      "sceneEvidenceOnStage": true
+    },
+    "advisorAndDetails": {
+      "advisorSelected": true,
+      "advisorAskPresent": true,
+      "detailsShowsInsightInventory": true,
+      "stageObjectCardReturned": false
+    }
+  },
+  "screenshots": [
+    "capacity-gap-stage.png",
+    "expand-capacity-stage.png",
+    "inventory-stage.png",
+    "inventory-right-object-card.png"
+  ]
+}

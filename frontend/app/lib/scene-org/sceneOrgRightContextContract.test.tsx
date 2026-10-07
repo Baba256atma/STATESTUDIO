@@ -22,6 +22,10 @@ import {
   projectSceneOrgRightContext,
   updateSceneOrgRightPanelChrome,
 } from "./sceneOrgRightContextContract.ts";
+import {
+  createEmptySceneOrgRightPackageTabSession,
+  openSceneOrgRightPackageTab,
+} from "./sceneOrgRightPackageTabContract.ts";
 
 const catalog = getDefaultNexoraMVPObjectInteractionCatalog();
 
@@ -160,6 +164,50 @@ test("ORG:5 renders collection Details without stale Overview while preserving A
   assert.match(html, /data-collection-category="scenario"/);
   assert.match(html, /Scenarios Collection/);
   assert.doesNotMatch(html, /nexora-insight-view-title[^>]*>Overview/);
+});
+
+test("ORG:5 package tab working context keeps Advisor/Details in the same header", () => {
+  const initial = createInitialNexoraMVPObjectInteractionState({
+    workspace: "overview",
+    presentationState: "report",
+    environmentIntent: "neutral",
+  });
+  const focused = selectNexoraMVPInteractionSubject(initial, "ctx-problem-capacity", catalog);
+  const bridge = bridgeOf(focused);
+  const vm = deriveNexoraMVPPresentationViewModel({
+    presentationState: focused.presentationState,
+    workspace: focused.workspace,
+    environmentIntent: focused.environmentIntent,
+    subjectId: focused.selectedSubject?.id ?? null,
+    subjectKind: focused.selectedSubject?.kind ?? null,
+    subjectLabel: focused.selectedSubject?.label ?? null,
+  });
+  const session = openSceneOrgRightPackageTab(
+    createEmptySceneOrgRightPackageTabSession(),
+    {
+      package: "investigation",
+      canonicalId: "ctx-problem-capacity",
+      label: "Capacity Gap",
+    },
+  );
+  const html = renderToStaticMarkup(
+    React.createElement(NexoraAdvisorInsightRegion, {
+      tab: "Assist",
+      onTabChange: () => undefined,
+      advisorBridge: bridge,
+      presentationViewModel: vm,
+      focusedSubject: focused.focusedSubject,
+      selectedSubject: focused.selectedSubject,
+      onIntelligenceAction: () => undefined,
+      packageTabSession: session,
+    }),
+  );
+  assert.match(html, /data-testid="executive-advisor-tab-assist"/);
+  assert.match(html, /data-testid="executive-advisor-tab-insight"/);
+  assert.match(html, /data-testid="nexora-right-package-tab-ctx-problem-capacity"/);
+  assert.match(html, /data-testid="nexora-right-package-working-context"/);
+  assert.match(html, /data-right-package-canonical-id="ctx-problem-capacity"/);
+  assert.doesNotMatch(html, /nexora-theatre-investigation/);
 });
 
 test("ORG:5 introduces no second context, referent, or Advisor authority", () => {

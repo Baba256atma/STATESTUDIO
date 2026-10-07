@@ -508,6 +508,7 @@ export type NexoraConversationalExperienceResult = {
   readonly nextEntranceSession?: import("@/app/lib/nexora-entrance/nexoraEntranceTypes.ts").NexoraEntranceSession | null;
   readonly guidedAttention?: import("@/app/lib/director/nexoraGuidedAttentionPresentation.ts").NexoraGuidedAttentionRuntime | null;
   readonly visualView?: import("@/app/lib/director/nexoraVisualIntelligence.ts").NexoraVisualViewRuntime | null;
+  readonly visualizationRoute?: import("@/app/lib/stage-prod/stageProdExecutiveVisualizationRoute.ts").StageProdExecutiveVisualizationRoute | null;
 };
 
 export const CONVERSATIONAL_EXPERIENCE_REASON = Object.freeze({

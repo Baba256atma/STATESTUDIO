@@ -35,6 +35,10 @@ import {
   resolveExecutiveObjectVisualIdentity,
 } from "@/app/lib/spatial-presentation/executiveObjectPresenceIdentity";
 import { isExecutive3DObjectTerritoryVisible } from "@/app/lib/spatial-presentation/executive3DObjectPremiumForm";
+import {
+  EXECUTIVE_OVS_BODY_READ_POSE,
+  isExecutiveOvsObjectVisualLanguageEnabled,
+} from "@/app/lib/spatial-presentation/executiveOvsObjectVisualLanguage";
 import { NexoraExecutiveObjectLabel } from "./NexoraExecutiveObjectLabel";
 import {
   ExecutiveObjectEdgeGeometry,
@@ -565,7 +569,8 @@ export function NexoraStageObject({
       />
 
       {/* STAGE-PRESENCE:FIX1 — horizontal ground presence (not state, not focus). */}
-      {isExecutive3DObjectTerritoryVisible() &&
+      {!isExecutiveOvsObjectVisualLanguageEnabled() &&
+      isExecutive3DObjectTerritoryVisible() &&
       visualIdentity &&
       visualIdentity.territoryStyle === "ground" &&
       !isCollectionMember &&
@@ -601,37 +606,47 @@ export function NexoraStageObject({
       ) : null}
 
       {/* SP:2.6 — planar focus ring on front face (not a depth shell, not territory). */}
-      {emphasis.showFocusPedestal ? (
-        <mesh
-          position={[0, 0, geometryProfile.frontZ + 0.02]}
-          rotation={[0, 0, 0]}
-          raycast={() => null}
-          userData={{
-            visualLayerRole: "selection-indication",
-            decorative: true,
-            interactive: false,
-          }}
+      {!isExecutiveOvsObjectVisualLanguageEnabled() &&
+      emphasis.showFocusPedestal ? (
+        <group
+          rotation={[
+            EXECUTIVE_OVS_BODY_READ_POSE.pitchX,
+            EXECUTIVE_OVS_BODY_READ_POSE.yawY,
+            0,
+          ]}
         >
-          <ringGeometry
-            args={[
-              Math.max(geometryProfile.width, geometryProfile.height) * 0.52 +
-                0.04,
-              Math.max(geometryProfile.width, geometryProfile.height) * 0.52 +
-                0.1,
-              48,
-            ]}
-          />
-          <meshBasicMaterial
-            color="#94a3b8"
+          <mesh
+            position={[0, 0, geometryProfile.frontZ + 0.02]}
+            rotation={[0, 0, 0]}
+            raycast={() => null}
+            userData={{
+              visualLayerRole: "selection-indication",
+              decorative: true,
+              interactive: false,
+            }}
+          >
+            <ringGeometry
+              args={[
+                Math.max(geometryProfile.width, geometryProfile.height) * 0.52 +
+                  0.04,
+                Math.max(geometryProfile.width, geometryProfile.height) * 0.52 +
+                  0.1,
+                48,
+              ]}
+            />
+            <meshBasicMaterial
+            color="#7ebfd4"
             transparent
-            opacity={0.32}
-            depthWrite={false}
-          />
-        </mesh>
+            opacity={0.38}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
       ) : null}
 
       {/* STAGE-OBJ:2 — small state marker (does not redefine silhouette). */}
-      {visualIdentity &&
+      {!isExecutiveOvsObjectVisualLanguageEnabled() &&
+      visualIdentity &&
       visualIdentity.stateMarkerStyle !== "none" &&
       !presentation.focused ? (
         <mesh
@@ -663,7 +678,9 @@ export function NexoraStageObject({
       ) : null}
 
       {/* Edge channel — planar outline outside body. */}
-      {edge.mode !== "none" && edge.wireframe ? (
+      {!isExecutiveOvsObjectVisualLanguageEnabled() &&
+      edge.mode !== "none" &&
+      edge.wireframe ? (
         <ExecutiveObjectEdgeGeometry
           family={geometry.family}
           dimensions={dimensions}

@@ -11,7 +11,7 @@ import type {
   NexoraConversationalSubjectKind,
   NexoraConversationalSubjectRecord,
 } from "./conversationalContext.ts";
-import { normalizeNexoraConversationalUtterance, expandControlledManagerLanguageKeys } from "./conversationalIntentNormalization.ts";
+import { normalizeNexoraConversationalUtterance, expandControlledManagerLanguageKeys, stripConversationalCompositionModifiers } from "./conversationalIntentNormalization.ts";
 import { resolveRegisteredReference } from "@/app/lib/manager-object/nexoraRegisteredReferenceRecovery.ts";
 
 export type NexoraConversationalSubjectMatchIndex = {
@@ -81,6 +81,16 @@ export function findCanonicalSubjectMatchesForHint(
 
   const exact = matchSubjectsByKey(key, index);
   if (exact.length > 0) return exact;
+
+  const composed = normalizeConversationalMatchKey(
+    stripConversationalCompositionModifiers(hintRaw),
+  );
+  if (composed && composed !== key) {
+    const composedExact = matchSubjectsByKey(composed, index);
+    if (composedExact.length > 0) return composedExact;
+    const composedMorph = matchMorphologicalKeys(composed, index);
+    if (composedMorph.length > 0) return composedMorph;
+  }
 
   const fillerStripped = interfaceFillerStrippedKey(key);
   if (fillerStripped) {

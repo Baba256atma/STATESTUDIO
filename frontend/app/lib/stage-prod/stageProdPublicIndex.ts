@@ -38,7 +38,16 @@ export type {
   StageProdSceneFamily,
 } from "./stageProdDirectorComposition.ts";
 export {
+  projectStageProdExecutiveVisualizationRoute,
+  stageProdExecutiveVisualizationRouteIdentity,
+} from "./stageProdExecutiveVisualizationRoute.ts";
+export type {
+  StageProdExecutiveVisualizationRoute,
+  StageProdNexoVisualFamily,
+} from "./stageProdExecutiveVisualizationRoute.ts";
+export {
   projectStageProdContextualVisuals,
+  stageProdRequestedVisualRemainsValid,
   stageProdVisualSpecificationIdentity,
 } from "./stageProdVisualSpecification.ts";
 export type {
@@ -47,6 +56,19 @@ export type {
   StageProdVisualProjection,
   StageProdVisualSpec,
 } from "./stageProdVisualSpecification.ts";
+export {
+  projectStageProdOverlayRects,
+  resolveStageProdOverlayPlacement,
+  stageProdOverlayPlacementIdentity,
+  stageProdOverlayRectsIntersect,
+  STAGE_PROD_OVERLAY_LAYER,
+  STAGE_PROD_OVERLAY_PLACEMENT_BOUNDARY,
+} from "./stageProdOverlayPlacement.ts";
+export type {
+  StageProdOverlayPlacement,
+  StageProdOverlayRect,
+  StageProdOverlayStyle,
+} from "./stageProdOverlayPlacement.ts";
 export {
   projectStageProdInteractiveDisclosure,
   stageProdInteractiveDisclosureIdentity,

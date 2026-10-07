@@ -40,9 +40,11 @@ import {
 import {
   bindCsvRealDataImportDurabilityPersistence,
   getCsvDurabilityHealth,
+  persistCsvRealDataImportDurabilityBrowser,
   recoverCsvRealDataImportDurabilityBrowser,
   subscribeCsvDurabilityHealth,
 } from "@/app/lib/data-reality/csvRealDataImportDurability";
+import { ensureCsvMvpDemoBootstrap } from "@/app/lib/data-reality/csvRealDataMvpDemoBootstrap";
 import type {
   CsvSemanticClarification,
   CsvSemanticClarificationResult,
@@ -315,7 +317,7 @@ import { NexoraFlowFloatingContent } from "./flow/NexoraFlowFloatingContent";
 import { NexoraFlowJournalExplorer } from "./flow/NexoraFlowJournalExplorer";
 import { NexoraStageMount } from "./NexoraStageMount";
 import { hostNmiLiveManagementIntelligence } from "@/app/lib/nmi/nmiLivePipeline";
-import { projectStageProdLiveFoundation } from "@/app/lib/stage-prod/stageProdPublicIndex";
+import { projectStageProdLiveFoundation, stageProdRequestedVisualRemainsValid } from "@/app/lib/stage-prod/stageProdPublicIndex";
 import {
   presentationByParticipantId,
   mapCapturedObservationsForTheatre,
@@ -357,6 +359,13 @@ import {
   createSceneOrgRightPanelChromeState,
   updateSceneOrgRightPanelChrome,
 } from "@/app/lib/scene-org/sceneOrgRightContextContract";
+import {
+  activateSceneOrgRightPackageTab,
+  closeSceneOrgRightPackageTab,
+  createEmptySceneOrgRightPackageTabSession,
+  openSceneOrgRightPackageTab,
+  syncSceneOrgRightSelectedObjectTab,
+} from "@/app/lib/scene-org/sceneOrgRightPackageTabContract";
 
 const DEFAULT_CONTEXT = Object.freeze({
   company: "Nexora",
@@ -448,6 +457,9 @@ export function NexoraExecutiveShell({
     void (async () => {
       await recoverCsvRealDataImportDurabilityBrowser();
       if (cancelled) return;
+      ensureCsvMvpDemoBootstrap({ workspaceId: application.workspace });
+      await persistCsvRealDataImportDurabilityBrowser();
+      if (cancelled) return;
       setCsvHydrated(true);
       unbind = bindCsvRealDataImportDurabilityPersistence();
     })();
@@ -455,7 +467,7 @@ export function NexoraExecutiveShell({
       cancelled = true;
       unbind?.();
     };
-  }, []);
+  }, [application.workspace]);
   const committedCsvImports = useMemo(
     () => listCsvRealDataImports(interaction.workspace),
     [csvImportStoreVersion, interaction.workspace],
@@ -635,6 +647,18 @@ export function NexoraExecutiveShell({
   const [activeSavedSceneId, setActiveSavedSceneId] = useState<string | null>(null);
   const [explorerWidth, setExplorerWidth] = useState(300);
   const [advisorTab, setAdvisorTab] = useState<ExecutiveAdvisorTab>("Assist");
+  const [packageTabSession, setPackageTabSession] = useState(
+    createEmptySceneOrgRightPackageTabSession,
+  );
+  const selectAdvisorTab = useCallback((nextTab: ExecutiveAdvisorTab) => {
+    setAdvisorTab(nextTab);
+    setPackageTabSession((session) =>
+      activateSceneOrgRightPackageTab(
+        session,
+        nextTab === "Insight" ? "details" : "advisor",
+      ),
+    );
+  }, []);
   const [timelineLens, setTimelineLens] =
     useState<ExecutiveTimelineLens>("week");
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
@@ -833,6 +857,9 @@ export function NexoraExecutiveShell({
   const [visualView, setVisualView] = useState<NexoraVisualViewRuntime>(emptyNexoraVisualViewRuntime);
   const visualViewRef = useRef(visualView);
   visualViewRef.current = visualView;
+  const [visualizationRoute, setVisualizationRoute] = useState<
+    import("@/app/lib/stage-prod/stageProdExecutiveVisualizationRoute").StageProdExecutiveVisualizationRoute | null
+  >(null);
   const canStepBackRef = useRef(false);
   useEffect(() => {
     const presentation = guidedAttention.presentation;
@@ -859,6 +886,17 @@ export function NexoraExecutiveShell({
   const [investigationDismissedId, setInvestigationDismissedId] = useState<string | null>(
     null,
   );
+  const selectedObject = interaction.focusedSubject ?? interaction.selectedSubject;
+  useEffect(() => {
+    if (selectedObject == null) return;
+    setPackageTabSession((session) =>
+      syncSceneOrgRightSelectedObjectTab(session, {
+        package: "investigation",
+        canonicalId: selectedObject.id,
+        label: selectedObject.label,
+      }),
+    );
+  }, [selectedObject?.id, selectedObject?.label]);
   const [comparisonAuthority, setComparisonAuthority] =
     useState<NexoraDecisionTheatreComparisonAuthority | null>(null);
   const [decisionReviewOpen, setDecisionReviewOpen] = useState(false);
@@ -1454,6 +1492,18 @@ export function NexoraExecutiveShell({
         );
         setInvestigationDismissedId(null);
         setInvestigationLevel("glance");
+        const nextFocal = next.focusedSubject?.id ?? subjectId;
+        const currentView = visualViewRef.current.view;
+        if (
+          currentView != null &&
+          !stageProdRequestedVisualRemainsValid({
+            view: currentView,
+            focalSubjectId: nextFocal,
+          })
+        ) {
+          setVisualView(emptyNexoraVisualViewRuntime());
+          setVisualizationRoute(null);
+        }
         const ack = acknowledgeNexoraStageEducationInteraction({
           session: entranceSessionRef.current,
           runtimeState: next,
@@ -1589,7 +1639,7 @@ export function NexoraExecutiveShell({
           setActiveNav("Home");
           return "Closed Detail Workspace.";
         case "SHOW_RIGHT_DETAILS":
-          setAdvisorTab("Insight");
+          selectAdvisorTab("Insight");
           setRightPanelChrome((chrome) =>
             chrome.collapsed
               ? updateSceneOrgRightPanelChrome(chrome, {
@@ -1599,7 +1649,7 @@ export function NexoraExecutiveShell({
           );
           return "Showing contextual details.";
         case "OPEN_ADVISOR":
-          setAdvisorTab("Assist");
+          selectAdvisorTab("Assist");
           setRightPanelChrome((chrome) =>
             chrome.collapsed
               ? updateSceneOrgRightPanelChrome(chrome, {
@@ -1741,6 +1791,7 @@ export function NexoraExecutiveShell({
       activeSavedSceneId,
       dataRealityExperience.catalog,
       rightPanelChrome.collapsed,
+      selectAdvisorTab,
     ],
   );
 
@@ -1984,6 +2035,7 @@ export function NexoraExecutiveShell({
         if (result.visualView) {
           setVisualView(result.visualView);
         }
+        setVisualizationRoute(result.visualizationRoute ?? null);
         if (result.nextScenarioSession) {
           setScenarioSession(result.nextScenarioSession);
         }
@@ -2300,7 +2352,7 @@ export function NexoraExecutiveShell({
         return;
       }
       if (action.kind === "acknowledge") {
-        setAdvisorTab("Assist");
+        selectAdvisorTab("Assist");
         return;
       }
       if (action.kind === "review") {
@@ -2351,6 +2403,24 @@ export function NexoraExecutiveShell({
     [onOverview],
   );
 
+  const onOpenInvestigationInRight = useCallback(
+    (input: { readonly canonicalId: string; readonly label: string }) => {
+      setPackageTabSession((session) =>
+        openSceneOrgRightPackageTab(session, {
+          package: "investigation",
+          canonicalId: input.canonicalId,
+          label: input.label,
+        }),
+      );
+      setRightPanelChrome((chrome) =>
+        chrome.collapsed
+          ? updateSceneOrgRightPanelChrome(chrome, { kind: "TOGGLE_COLLAPSE" })
+          : chrome,
+      );
+    },
+    [],
+  );
+
   const onExplorerClose = useCallback(() => {
     setActiveNav("Home");
   }, []);
@@ -2359,14 +2429,14 @@ export function NexoraExecutiveShell({
     setActiveCsvImport(committed);
     setActiveLiveObservation(null);
     setSourceAdvisorContext(null);
-    setAdvisorTab("Assist");
+    selectAdvisorTab("Assist");
   }, []);
 
   const onLiveObservationActivated = useCallback((observation: NexoraLiveCommittedObservation) => {
     setActiveLiveObservation(observation);
     setActiveCsvImport(null);
     setSourceAdvisorContext(null);
-    setAdvisorTab("Assist");
+    selectAdvisorTab("Assist");
   }, []);
 
   const onViewSourceOnStage = useCallback((stageObjectId: string) => {
@@ -2410,7 +2480,7 @@ export function NexoraExecutiveShell({
 
   const onSourceAdvisorContext = useCallback((context: ExecutiveSourceAdvisorContext) => {
     setSourceAdvisorContext(context);
-    setAdvisorTab("Assist");
+    selectAdvisorTab("Assist");
     setActiveNav("Home");
     const focusId = context.affectedStageObjectIds[0];
     if (focusId) onSelectSubject(focusId);
@@ -2437,7 +2507,7 @@ export function NexoraExecutiveShell({
         status: "confirmation-required" as const,
       })]).slice(-20);
     });
-    setAdvisorTab("Assist");
+    selectAdvisorTab("Assist");
   }, []);
 
   const onCsvSemanticClarificationCancel = useCallback((sourceContextId: string) => {
@@ -2451,7 +2521,7 @@ export function NexoraExecutiveShell({
 
   const onProactiveInvestigate = useCallback((brief: NexoraProactiveAdvisorBrief) => {
     setSourceAdvisorContext(brief.advisorContext);
-    setAdvisorTab("Assist");
+    selectAdvisorTab("Assist");
   }, []);
 
   const onFloatingClose = useCallback(() => {
@@ -2894,6 +2964,12 @@ export function NexoraExecutiveShell({
       data-visual-view={visualView.view ? "present" : "none"}
       data-visual-purpose={visualView.view?.purpose ?? "none"}
       data-visual-representation={visualView.view?.representation ?? "none"}
+      data-cei2-subject={visualizationRoute?.subjectId ?? "none"}
+      data-cei2-nexo-family={visualizationRoute?.nexoFamily ?? "none"}
+      data-cei2-recipe-family={visualizationRoute?.recipeFamily ?? "none"}
+      data-cei2-route-status={visualizationRoute?.stageProjection.status ?? "none"}
+      data-cei2-observation-count={String(visualizationRoute?.observationIds.length ?? 0)}
+      data-cei2-dir-vi={visualView.view?.representation ?? "none"}
       data-guided-attention-target={guidedAttention.presentation?.target ?? "none"}
       data-guided-attention-availability={
         guidedAttention.presentation?.availability ?? "none"
@@ -3529,9 +3605,10 @@ export function NexoraExecutiveShell({
               sceneScriptId={theatreProjection.sceneScript.scriptId}
               theatreComposition={theatreProjection}
               requestedVisual={visualView.view}
-              onDismissVisual={() =>
-                setVisualView(emptyNexoraVisualViewRuntime())
-              }
+              onDismissVisual={() => {
+                setVisualView(emptyNexoraVisualViewRuntime());
+                setVisualizationRoute(null);
+              }}
               objectInvestigation={theatreProjection.objectInvestigation}
               investigationVisible={
                 theatreProjection.objectInvestigation != null &&
@@ -3544,6 +3621,7 @@ export function NexoraExecutiveShell({
                 );
               }}
               onAskInvestigationQuestion={onSubmitConversationalUtterance}
+              onOpenInvestigationInRight={onOpenInvestigationInRight}
               decisionComparison={theatreProjection.decisionComparison}
               onComparisonLevelChange={setComparisonLevel}
               onReviewDecision={() => {
@@ -3596,9 +3674,24 @@ export function NexoraExecutiveShell({
         >
           <NexoraAdvisorInsightRegion
             tab={advisorTab}
-            onTabChange={setAdvisorTab}
+            onTabChange={selectAdvisorTab}
             panelChrome={rightPanelChrome}
             onPanelChromeChange={setRightPanelChrome}
+            packageTabSession={packageTabSession}
+            onSelectPackageTab={(tabId) =>
+              setPackageTabSession((session) =>
+                activateSceneOrgRightPackageTab(session, tabId),
+              )
+            }
+            onClosePackageTab={(tabId) =>
+              setPackageTabSession((session) =>
+                closeSceneOrgRightPackageTab(session, tabId),
+              )
+            }
+            theatreComposition={theatreProjection}
+            investigationLevel={investigationLevel}
+            onInvestigationLevelChange={setInvestigationLevel}
+            onAskObjectCard={onSubmitConversationalUtterance}
             advisorBridge={advisorBridge}
             presentationViewModel={presentationViewModel}
             focusedSubject={advisorFocusedSubject}

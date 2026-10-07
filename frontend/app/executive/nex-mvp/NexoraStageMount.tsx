@@ -21,25 +21,21 @@ import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision
 import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
 import { Nexora3DExecutiveStage } from "./stage/Nexora3DExecutiveStage";
-import { NexoraDecisionTheatreInvestigationSurface } from "./stage/NexoraDecisionTheatreInvestigationSurface";
 import { NexoraDecisionTheatreComparisonSurface } from "./stage/NexoraDecisionTheatreComparisonSurface";
-import { NexoraDecisionTheatreCommitmentSurface } from "./stage/NexoraDecisionTheatreCommitmentSurface";
 import type { NexoraDecisionTheatreDecisionCommitment } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionCommitment.ts";
 import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
 import type { NexoraVisualView } from "@/app/lib/director/nexoraVisualIntelligence.ts";
 import type { NexoraDecisionTheatreExecutionReadiness } from "@/app/lib/decision-theatre/nexoraDecisionTheatreExecutionReadiness.ts";
-import { NexoraDecisionTheatreExecutionReadinessSurface } from "./stage/NexoraDecisionTheatreExecutionReadinessSurface";
 import type { NexoraDecisionTheatreLiveExecution } from "@/app/lib/decision-theatre/nexoraDecisionTheatreLiveExecution.ts";
-import { NexoraDecisionTheatreLiveExecutionSurface } from "./stage/NexoraDecisionTheatreLiveExecutionSurface";
 import type { NexoraDecisionTheatreOutcomeObservation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreOutcomeObservation.ts";
-import { NexoraDecisionTheatreOutcomeObservationSurface } from "./stage/NexoraDecisionTheatreOutcomeObservationSurface";
 import type { NexoraDecisionTheatreLearningReassessment } from "@/app/lib/decision-theatre/nexoraDecisionTheatreLearningReassessment.ts";
-import { NexoraDecisionTheatreLearningReassessmentSurface } from "./stage/NexoraDecisionTheatreLearningReassessmentSurface";
 import { NexoraStageDataObjectInspection } from "./stage/NexoraStageDataObjectInspection";
 import {
+  projectStageProdContextualVisuals,
   projectStageProdDirectorComposition,
   projectStageProdLiveFoundation,
   projectStageProdInteractiveDisclosure,
+  resolveStageProdOverlayPlacement,
   type StageProdLiveFoundationProjection,
 } from "@/app/lib/stage-prod/stageProdPublicIndex";
 import type { ManagementLevelSpatialComposition } from "@/app/lib/nmi/nmiManagementLevelSpatialContract.ts";
@@ -81,6 +77,10 @@ type Props = {
   readonly onInvestigationLevelChange?: (level: NexoraDecisionTheatreInvestigationLevel) => void;
   readonly onCloseInvestigation?: () => void;
   readonly onAskInvestigationQuestion?: (question: string) => void;
+  readonly onOpenInvestigationInRight?: (input: {
+    readonly canonicalId: string;
+    readonly label: string;
+  }) => void;
   readonly decisionComparison?: NexoraDecisionTheatreDecisionComparison | null;
   readonly onComparisonLevelChange?: (level: NexoraDecisionTheatreComparisonLevel) => void;
   readonly onReviewDecision?: () => void;
@@ -134,22 +134,15 @@ export function NexoraStageMount({
   onDismissVisual,
   objectInvestigation = null,
   investigationVisible = true,
-  onInvestigationLevelChange,
-  onCloseInvestigation,
   onAskInvestigationQuestion,
   decisionComparison = null,
   onComparisonLevelChange,
   onReviewDecision,
   decisionCommitment = null,
-  onCancelDecisionReview,
-  onChangeDecisionCandidate,
-  onCommitDecision,
   executionReadiness = null,
   liveExecution = null,
   outcomeObservation = null,
   learningReassessment = null,
-  onRequestStartExecution,
-  onShowDecisionHistory,
   dataObjectStage,
   onSelectDataObject,
   onRemoveDataObjectFromStage,
@@ -185,10 +178,41 @@ export function NexoraStageMount({
     investigation: objectInvestigation,
     disclosureVisible: investigationVisible,
   });
-  const disclosedInvestigation = disclosure.investigation;
+  const overlayPlacement = useMemo(() => {
+    const visuals = projectStageProdContextualVisuals({
+      theatre: theatreComposition,
+      composition: disclosureComposition,
+      requestedVisual,
+      focalSubjectId:
+        interaction.focusedSubjectId ?? interaction.selectedSubjectId ?? null,
+    });
+    return resolveStageProdOverlayPlacement({
+      investigation: false,
+      report:
+        presentationViewModel.showReportSurface &&
+        presentationViewModel.subjectId != null,
+      operation: presentationViewModel.showOperationSurface,
+      chart: visuals.specs.some(
+        (spec) =>
+          spec.family === "TREND" ||
+          spec.family === "COMPARISON" ||
+          spec.family === "STATUS_CARD",
+      ),
+    });
+  }, [
+    disclosureComposition,
+    interaction.focusedSubjectId,
+    interaction.selectedSubjectId,
+    presentationViewModel.showOperationSurface,
+    presentationViewModel.showReportSurface,
+    presentationViewModel.subjectId,
+    requestedVisual,
+    theatreComposition,
+  ]);
   return (
     <div
       data-testid="nexora-stage-mount"
+      data-stage-overlay-placement={overlayPlacement.identity}
       data-stage-prod-live={foundation.identity}
       data-stage-prod-status={foundation.status}
       data-stage-prod-host={foundation.host}
@@ -320,6 +344,7 @@ export function NexoraStageMount({
         theatreComposition={theatreComposition}
         dthExpSpatial={dthExpSpatial}
         requestedVisual={requestedVisual}
+        overlayPlacement={overlayPlacement}
         onDismissVisual={onDismissVisual}
         dataObjectStage={dataObjectStage}
         onSelectDataObject={onSelectDataObject}
@@ -339,82 +364,6 @@ export function NexoraStageMount({
           onLevelChange={onComparisonLevelChange ?? (() => undefined)}
           onAsk={onAskInvestigationQuestion ?? (() => undefined)}
           onReviewDecision={onReviewDecision}
-        />
-      ) : null}
-      {disclosedInvestigation != null ? (
-        <NexoraDecisionTheatreInvestigationSurface
-          investigation={disclosedInvestigation}
-          onLevelChange={onInvestigationLevelChange ?? (() => undefined)}
-          onClose={onCloseInvestigation ?? (() => undefined)}
-          onAsk={onAskInvestigationQuestion ?? (() => undefined)}
-        />
-      ) : null}
-      {decisionCommitment != null &&
-      executionReadiness == null &&
-      disclosedInvestigation == null ? (
-        <NexoraDecisionTheatreCommitmentSurface
-          commitment={decisionCommitment}
-          onCancel={onCancelDecisionReview ?? (() => undefined)}
-          onChangeCandidate={onChangeDecisionCandidate ?? (() => undefined)}
-          onCommit={onCommitDecision ?? (() => undefined)}
-          onAsk={onAskInvestigationQuestion ?? (() => undefined)}
-          onInvestigate={() => {
-            const id = decisionCommitment.candidateId;
-            if (id) onSelectSubject(id);
-          }}
-        />
-      ) : null}
-      {executionReadiness != null &&
-      liveExecution == null &&
-      disclosedInvestigation == null ? (
-        <NexoraDecisionTheatreExecutionReadinessSurface
-          readiness={executionReadiness}
-          onAsk={onAskInvestigationQuestion ?? (() => undefined)}
-          onInspectDecision={() => {
-            const id = decisionCommitment?.candidateId;
-            if (id) onSelectSubject(id);
-          }}
-          onRequestStart={onRequestStartExecution ?? (() => undefined)}
-          onShowHistory={onShowDecisionHistory ?? (() => undefined)}
-        />
-      ) : null}
-      {liveExecution != null &&
-      outcomeObservation == null &&
-      disclosedInvestigation == null ? (
-        <NexoraDecisionTheatreLiveExecutionSurface
-          liveExecution={liveExecution}
-          onAsk={onAskInvestigationQuestion ?? (() => undefined)}
-          onInspectDecision={() => {
-            const id = decisionCommitment?.candidateId;
-            if (id) onSelectSubject(id);
-          }}
-          onShowHistory={onShowDecisionHistory ?? (() => undefined)}
-        />
-      ) : null}
-      {outcomeObservation != null &&
-      (learningReassessment == null || learningReassessment.evidenceQuality === "insufficient") &&
-      disclosedInvestigation == null ? (
-        <NexoraDecisionTheatreOutcomeObservationSurface
-          observation={outcomeObservation}
-          onAsk={onAskInvestigationQuestion ?? (() => undefined)}
-          onInspectDecision={() => {
-            const id = decisionCommitment?.candidateId;
-            if (id) onSelectSubject(id);
-          }}
-          onShowHistory={onShowDecisionHistory ?? (() => undefined)}
-        />
-      ) : null}
-      {learningReassessment != null &&
-      learningReassessment.evidenceQuality !== "insufficient" &&
-      disclosedInvestigation == null ? (
-        <NexoraDecisionTheatreLearningReassessmentSurface
-          learning={learningReassessment}
-          onAsk={onAskInvestigationQuestion ?? (() => undefined)}
-          onInspectDecision={() => {
-            const id = decisionCommitment?.candidateId;
-            if (id) onSelectSubject(id);
-          }}
-          onShowHistory={onShowDecisionHistory ?? (() => undefined)}
         />
       ) : null}
     </div>

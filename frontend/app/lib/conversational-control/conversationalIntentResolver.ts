@@ -29,7 +29,10 @@ import {
   normalizeNexoraConversationalUtterance,
   normalizeNexoraConversationalUtteranceWithDiagnostics,
   stripConversationalArticles,
+  stripConversationalCompositionModifiers,
   stripConversationalSignificanceQualifier,
+  utteranceHasEvidenceConstraint,
+  isConversationalVisualizationLanguage,
 } from "./conversationalIntentNormalization.ts";
 import { parseNexoraWhatIfUtterance } from "./conversationalWhatIfStateGrammar.ts";
 import { getNexoraRegisteredExecutiveExperiences } from "./conversationalExperienceRegistry.ts";
@@ -113,7 +116,7 @@ function hint(
   raw: string,
   role: NexoraConversationalTargetHint["role"] = "primary",
 ): NexoraConversationalTargetHint | null {
-  const cleaned = stripConversationalArticles(raw.trim());
+  const cleaned = stripConversationalCompositionModifiers(raw);
   if (!cleaned) return null;
   return Object.freeze({ raw: cleaned, role });
 }
@@ -209,7 +212,7 @@ function matchNamedSubjectInquiry(normalized: string): MatchResult | null {
     /^(?:what\s+is|what(?:'| i)?s|tell\s+me\s+about|describe)\s+(?:the\s+)?(.+)$/,
   );
   if (!named) return null;
-  const raw = (named[1] ?? "").trim();
+  const raw = stripConversationalCompositionModifiers((named[1] ?? "").trim());
   if (!raw || isAmbiguousConversationalReference(raw)) return null;
   if (
     /^(?:(?:the|this|that)\s+)?(?:problem|issue|situation)(?:\s+(?:here|there|now))?$/.test(
@@ -631,14 +634,49 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:what\s+evidence\s+do\s+we\s+have|what(?:\s+is|s)\s+the\s+evidence|show\s+(?:me\s+)?(?:the\s+)?evidence|what\s+don'?t\s+we\s+know|what\s+do\s+we\s+not\s+know|what\s+is\s+unknown|what\s+remains\s+unknown)$/.test(
+    /^(?:what\s+evidence\s+do\s+we\s+have|what(?:\s+is|s)\s+the\s+evidence|show\s+(?:me\s+)?(?:its|this|that|the\s+current|the)?\s*evidence|what\s+don'?t\s+we\s+know|what\s+do\s+we\s+not\s+know|what\s+is\s+unknown|what\s+remains\s+unknown)$/.test(
       normalized,
     )
   ) {
     return advisoryQuery(
       "evidence",
       CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
-      false,
+      true,
+    );
+  }
+  const selectedSubjectEvidence = normalized.match(
+    /^for\s+the\s+currently\s+selected\s+(.+?)\s+subject[, ]+(?:list|show|explain)\b/,
+  );
+  if (
+    selectedSubjectEvidence &&
+    /\b(?:observations?|evidence|data)\b/.test(normalized)
+  ) {
+    const primary = hint(selectedSubjectEvidence[1] ?? "", "primary");
+    return {
+      kind: "evidence",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+        ...(primary
+          ? [CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED]
+          : [CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE]),
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: Boolean(primary),
+      candidateKinds: Object.freeze(["evidence"] as const),
+    };
+  }
+  if (
+    /\blist\b/.test(normalized) &&
+    /\b(?:supported\s+)?observations?\b/.test(normalized)
+  ) {
+    return advisoryQuery(
+      "evidence",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+      true,
     );
   }
   if (
@@ -1363,6 +1401,9 @@ function matchFocusOrOpen(normalized: string): MatchResult | null {
 
   const raw = (matched[1] ?? "").trim();
   if (!raw) return null;
+  if (isConversationalVisualizationLanguage(normalized) || isConversationalVisualizationLanguage(raw)) {
+    return null;
+  }
 
   // Collection phrases already handled; guard if they slipped through.
   if (
@@ -1410,7 +1451,19 @@ function matchFocusOrOpen(normalized: string): MatchResult | null {
     };
   }
 
-  const primary = hint(raw, "primary");
+  const composedShowTarget = stripConversationalCompositionModifiers(raw);
+  if (!composedShowTarget) {
+    if (utteranceHasEvidenceConstraint(normalized) || /\bevidence\b/.test(raw)) {
+      return advisoryQuery(
+        "evidence",
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+        true,
+      );
+    }
+    return null;
+  }
+
+  const primary = hint(composedShowTarget, "primary");
   const fromFocus = focus != null;
   return {
     kind: "focus",
@@ -1732,8 +1785,8 @@ function matchRecommendExplainPrioritize(
     /^(?:why(?:\s+is)?|explain)\s+(.+)$/,
   );
   if (explainAbout) {
-    const raw = stripConversationalArticles(
-      stripConversationalSignificanceQualifier((explainAbout[1] ?? "").trim()),
+    const raw = stripConversationalCompositionModifiers(
+      (explainAbout[1] ?? "").trim(),
     );
     if (raw && !isAmbiguousConversationalReference(raw)) {
       const primary = hint(raw, "primary");
@@ -1747,8 +1800,8 @@ function matchRecommendExplainPrioritize(
           CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
         ],
         targetHints: Object.freeze(primary ? [primary] : []),
-        requiresContext: false,
-        requiresTarget: true,
+        requiresContext: !primary,
+        requiresTarget: Boolean(primary),
         candidateKinds: Object.freeze(["explain"] as const),
       };
     }

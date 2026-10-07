@@ -67,8 +67,8 @@ test("B — All five intents resolve deterministic environment presentation", ()
 
 test("C — Neutral uses deep graphite/navy", () => {
   const visual = deriveNexoraMVPSceneEnvironmentVisualState("neutral");
-  assert.equal(visual.background, "#080c14");
-  assert.equal(visual.groundColor, "#141b26");
+  assert.equal(visual.background, "#152033");
+  assert.equal(visual.groundColor, "#223446");
   assert.notEqual(visual.background, visual.groundColor);
   assert.equal(visual.objectSurfaceTreatment, "balanced");
   assert.notEqual(visual.background.toLowerCase(), "#000000");
@@ -106,23 +106,23 @@ test("G — Execute is restrained steel/teal, not bright green", () => {
 });
 
 test("H — Context does not alter Object family material tokens", () => {
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#4a5563");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.goal.baseColor, "#445a72");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.kpi.baseColor, "#3f5c6e");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.risk_problem.baseColor, "#5a5248");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.risk.baseColor, "#5a454c");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.scenario.baseColor, "#4f4a62");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.decision.baseColor, "#3f5868");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.execution.baseColor, "#3f5a58");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.outcome.baseColor, "#42564e");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.context.baseColor, "#4e5a66");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#7e92a8");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.goal.baseColor, "#627892");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.kpi.baseColor, "#567888");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.risk_problem.baseColor, "#6e5e4e");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.risk.baseColor, "#a45c6a");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.scenario.baseColor, "#62748a");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.decision.baseColor, "#567488");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.execution.baseColor, "#56786e");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.outcome.baseColor, "#5c7a6c");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.context.baseColor, "#687480");
   assert.equal(NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.encodesObjectFamily, false);
 });
 
 test("I — Context does not alter Object state", () => {
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.07);
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint, 0.18);
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.unresolved.surfaceTint, 0.08);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.22);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint, 0.26);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.unresolved.surfaceTint, 0.1);
   assert.equal(EXECUTIVE_OVS_OBJECT_STATE_VISUAL_BOUNDARY.changesGeometryFamily, false);
   assert.equal(NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.encodesObjectState, false);
   assert.equal(NEXORA_MVP_WORKSPACE_PRESENTATION_BOUNDARY.encodesObjectState, false);

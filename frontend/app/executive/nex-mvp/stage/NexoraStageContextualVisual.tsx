@@ -1,15 +1,18 @@
 "use client";
 
 import { cockpit } from "@/app/executive/exs1/shell/executiveCockpitTheme";
+import type { StageProdOverlayStyle } from "@/app/lib/stage-prod/stageProdOverlayPlacement.ts";
 import type { StageProdVisualSpec } from "@/app/lib/stage-prod/stageProdVisualSpecification.ts";
 import { NexoraEvidenceVisualView } from "./NexoraEvidenceVisualView";
 
 export function NexoraStageContextualVisual({
   spec,
   onDismiss,
+  overlayPlacement,
 }: Readonly<{
   readonly spec: StageProdVisualSpec;
   readonly onDismiss?: () => void;
+  readonly overlayPlacement?: StageProdOverlayStyle;
 }>) {
   const audit = {
     "data-testid": "nexora-stage-contextual-visual",
@@ -29,6 +32,7 @@ export function NexoraStageContextualVisual({
           view={spec.view}
           reducedMotion
           onDismiss={onDismiss}
+          overlayPlacement={overlayPlacement}
           inspection={Object.freeze({
             canonicalObjectIds: spec.canonicalObjectIds,
             sourceIds: spec.sourceIds,
@@ -45,10 +49,6 @@ export function NexoraStageContextualVisual({
       aria-label={`${spec.title} status and evidence`}
       style={{
         position: "absolute",
-        right: "1.25rem",
-        bottom: "1.35rem",
-        zIndex: 3,
-        width: "min(300px, calc(100% - 2.5rem))",
         padding: "0.8rem 0.9rem",
         borderRadius: cockpit.radius.lg,
         border: `1px solid ${cockpit.border}`,
@@ -56,6 +56,13 @@ export function NexoraStageContextualVisual({
         boxShadow: cockpit.elevation.raised,
         color: cockpit.text,
         pointerEvents: "auto",
+        overflow: "auto",
+        zIndex: 4,
+        ...(overlayPlacement ?? {
+          right: "1.25rem",
+          bottom: "1.35rem",
+          width: "min(300px, calc(100% - 2.5rem))",
+        }),
       }}
     >
       <p style={{ margin: 0, color: cockpit.muted, fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>

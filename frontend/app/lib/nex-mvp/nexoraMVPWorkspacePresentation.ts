@@ -127,7 +127,7 @@ type SceneAtmosphereTokens = {
  */
 export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
   neutral: Object.freeze({
-    background: "#080c14",
+    background: "#152033",
     fogNear: 14,
     fogFar: 28,
     ambientIntensity: 0.55,
@@ -135,8 +135,8 @@ export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
     keyLightColor: "#f3f5f7",
     fillLightIntensity: 0.28,
     fillLightColor: "#8aa0b4",
-    groundColor: "#141b26",
-    groundOpacity: 0.72,
+    groundColor: "#223446",
+    groundOpacity: 0.88,
     connectionEmphasis: 1,
     objectSurfaceTreatment: "balanced",
   }),

@@ -40,6 +40,10 @@ import {
   projectExecutiveOvsIsometricTheatreVisual,
 } from "@/app/lib/spatial-presentation/executiveOvsIsometricTheatreVisual";
 import { projectStageProdContextualVisuals } from "@/app/lib/stage-prod/stageProdVisualSpecification.ts";
+import {
+  resolveStageProdOverlayPlacement,
+  type StageProdOverlayPlacement,
+} from "@/app/lib/stage-prod/stageProdOverlayPlacement.ts";
 import type { NexoraVisualView } from "@/app/lib/director/nexoraVisualIntelligence.ts";
 import { NexoraStageContextualVisual } from "./NexoraStageContextualVisual";
 import { NexoraStagePerformanceProbe } from "./NexoraStagePerformanceProbe";
@@ -205,6 +209,7 @@ export type Nexora3DExecutiveStageProps = {
   readonly theatreComposition?: NexoraDecisionTheatreFoundation | null;
   readonly dthExpSpatial?: DthExpSpatialLayoutProjection | null;
   readonly requestedVisual?: NexoraVisualView | null;
+  readonly overlayPlacement?: StageProdOverlayPlacement | null;
   readonly onDismissVisual?: () => void;
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
@@ -375,6 +380,7 @@ export function Nexora3DExecutiveStage({
   theatreComposition = null,
   dthExpSpatial = null,
   requestedVisual = null,
+  overlayPlacement = null,
   onDismissVisual,
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
@@ -504,8 +510,41 @@ export function Nexora3DExecutiveStage({
         theatre: theatreComposition,
         composition: directorComposition,
         requestedVisual,
+        focalSubjectId:
+          interaction.focusedSubjectId ?? interaction.selectedSubjectId ?? null,
       }),
-    [directorComposition, requestedVisual, theatreComposition],
+    [
+      directorComposition,
+      interaction.focusedSubjectId,
+      interaction.selectedSubjectId,
+      requestedVisual,
+      theatreComposition,
+    ],
+  );
+  const resolvedOverlayPlacement = useMemo(
+    () =>
+      overlayPlacement ??
+      resolveStageProdOverlayPlacement({
+        investigation: false,
+        report:
+          presentationViewModel.showReportSurface &&
+          presentationViewModel.subjectId != null,
+        operation: presentationViewModel.showOperationSurface,
+        chart: contextualVisuals.specs.some(
+          (spec) =>
+            spec.family === "TREND" ||
+            spec.family === "COMPARISON" ||
+            spec.family === "STATUS_CARD",
+        ),
+      }),
+    [
+      contextualVisuals.specs,
+      overlayPlacement,
+      presentationViewModel.showOperationSurface,
+      presentationViewModel.showReportSurface,
+      presentationViewModel.subjectId,
+      theatreComposition?.objectInvestigation,
+    ],
   );
 
   const readabilityObservability =
@@ -1771,15 +1810,20 @@ export function Nexora3DExecutiveStage({
         </button>
       </details>
 
-      <NexoraSubjectReport viewModel={presentationViewModel} />
+      <NexoraSubjectReport
+        viewModel={presentationViewModel}
+        overlayPlacement={resolvedOverlayPlacement.report}
+      />
       <NexoraSubjectOperation
         viewModel={presentationViewModel}
+        overlayPlacement={resolvedOverlayPlacement.operation}
         onAction={onPresentationAction}
       />
 
       {contextualVisuals.specs[0] ? (
         <NexoraStageContextualVisual
           spec={contextualVisuals.specs[0]}
+          overlayPlacement={resolvedOverlayPlacement.chart ?? undefined}
           onDismiss={requestedVisual ? onDismissVisual : undefined}
         />
       ) : null}

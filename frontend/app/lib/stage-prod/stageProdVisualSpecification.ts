@@ -148,26 +148,67 @@ function comparisonView(
   });
 }
 
-function associationIds(
-  theatre: NexoraDecisionTheatreFoundation,
-  composition: StageProdDirectorComposition,
-): readonly string[] {
-  if (theatre.decisionComparison?.candidateIds.length) {
-    return Object.freeze([...theatre.decisionComparison.candidateIds]);
+function normalizeSubjectToken(id: string): string {
+  return id.replace(/^(obj-|ctx-problem-|ctx-)/, "").toLowerCase();
+}
+
+export function stageProdRequestedVisualRemainsValid(input: Readonly<{
+  readonly view: NexoraVisualView;
+  readonly focalSubjectId?: string | null;
+  readonly comparisonIds?: readonly string[];
+  readonly pinned?: boolean;
+}>): boolean {
+  if (input.pinned === true) return true;
+  const comparisonIds = input.comparisonIds ?? [];
+  if (comparisonIds.length >= 2) {
+    const focal = input.focalSubjectId;
+    if (focal != null && comparisonIds.includes(focal)) return true;
+    if (
+      input.view.purpose === "COMPARE" &&
+      input.view.series.some((series) => comparisonIds.includes(series.id))
+    ) {
+      return true;
+    }
   }
-  const id =
-    theatre.objectInvestigation?.objectId ??
-    composition.presentation.focusedSubjectId ??
-    theatre.primaryExecutiveObjectId;
-  return Object.freeze(id == null ? [] : [id]);
+  const focal = input.focalSubjectId;
+  if (focal == null || focal.length === 0) return true;
+  const focalToken = normalizeSubjectToken(focal);
+  return input.view.series.some((series) => {
+    const seriesToken = normalizeSubjectToken(series.id);
+    return (
+      series.id === focal ||
+      seriesToken === focalToken ||
+      series.displayLabel.toLowerCase() === focalToken
+    );
+  });
+}
+
+function requestedVisualAssociationIds(view: NexoraVisualView): readonly string[] {
+  return Object.freeze([...new Set(view.series.map((series) => series.id))]);
 }
 
 function requestedChartSpec(
   theatre: NexoraDecisionTheatreFoundation,
   composition: StageProdDirectorComposition,
   view: NexoraVisualView,
+  focalSubjectId?: string | null,
 ): StageProdChartVisualSpec | null {
-  const objectIds = associationIds(theatre, composition);
+  const focal =
+    focalSubjectId ??
+    composition.presentation.focusedSubjectId ??
+    composition.presentation.selectedSubjectId ??
+    theatre.objectInvestigation?.objectId ??
+    theatre.primaryExecutiveObjectId;
+  if (
+    !stageProdRequestedVisualRemainsValid({
+      view,
+      focalSubjectId: focal,
+      comparisonIds: theatre.decisionComparison?.candidateIds,
+    })
+  ) {
+    return null;
+  }
+  const objectIds = requestedVisualAssociationIds(view);
   if (objectIds.length === 0) return null;
   return Object.freeze({
     identity: `${stageProdVisualSpecificationIdentity}:${view.viewId}`,
@@ -247,6 +288,7 @@ export function projectStageProdContextualVisuals(input: Readonly<{
   theatre?: NexoraDecisionTheatreFoundation | null;
   composition: StageProdDirectorComposition;
   requestedVisual?: NexoraVisualView | null;
+  focalSubjectId?: string | null;
 }>): StageProdVisualProjection {
   const theatre = input.theatre ?? null;
   if (theatre == null) {
@@ -261,14 +303,30 @@ export function projectStageProdContextualVisuals(input: Readonly<{
     });
   }
 
-  const spec = input.requestedVisual
-    ? requestedChartSpec(theatre, input.composition, input.requestedVisual)
-    : comparisonSpec(theatre) ?? statusCardSpec(theatre);
+  const requestedSpec = input.requestedVisual
+    ? requestedChartSpec(
+        theatre,
+        input.composition,
+        input.requestedVisual,
+        input.focalSubjectId,
+      )
+    : null;
+  const spec =
+    requestedSpec ??
+    (input.requestedVisual
+      ? null
+      : comparisonSpec(theatre) ?? statusCardSpec(theatre));
+  const omittedRequested =
+    input.requestedVisual != null && requestedSpec == null;
   return Object.freeze({
     identity: stageProdVisualSpecificationIdentity,
     status: spec == null ? "omitted" : "renderable",
     specs: Object.freeze(spec == null ? [] : [spec]),
-    omissionReason: spec == null ? "no-supported-contextual-visual" : null,
+    omissionReason: spec == null
+      ? omittedRequested
+        ? "requested-visual-not-valid-for-focal-subject"
+        : "no-supported-contextual-visual"
+      : null,
     writesCanonicalManagementState: false,
     parallelChartTruth: false,
     fabricatedValues: false,

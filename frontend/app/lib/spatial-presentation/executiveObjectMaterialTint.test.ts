@@ -84,7 +84,7 @@ test("A — Family material profiles remain one existing registry", () => {
 });
 
 test("B — Operational base remains neutral", () => {
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#4a5563");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#7e92a8");
   assert.equal(
     EXECUTIVE_OBJECT_MATERIAL_DNA.baseBodyColor,
     EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor,
@@ -113,7 +113,7 @@ test("C — Representative family colors differ but remain restrained", () => {
 });
 
 test("D — Watch body tint contribution is reduced", () => {
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.07);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.22);
   assert.ok(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint < 0.26);
   const stable = resolveExecutiveObjectMaterialPresentation({
     geometryFamily: "block",
@@ -158,7 +158,7 @@ test("F — Critical remains stronger than Watch", () => {
 });
 
 test("G — Unresolved remains restrained", () => {
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.unresolved.surfaceTint, 0.08);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.unresolved.surfaceTint, 0.1);
   assert.ok(
     EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.unresolved.surfaceTint <
       EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint,
@@ -204,8 +204,8 @@ test("J — Geometry map unchanged", () => {
   assert.equal(EXECUTIVE_OVS_FAMILY_TO_PRIMITIVE.decision, "hex-prism");
   assert.equal(EXECUTIVE_OVS_FAMILY_TO_PRIMITIVE.operational, "rounded-block");
   assert.equal(EXECUTIVE_OVS_FAMILY_TO_PRIMITIVE.risk, "diamond");
-  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.metalness, 0.22);
-  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.roughness, 0.46);
+  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.metalness, 0.16);
+  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.roughness, 0.36);
 });
 
 test("K — Object Z unchanged", () => {

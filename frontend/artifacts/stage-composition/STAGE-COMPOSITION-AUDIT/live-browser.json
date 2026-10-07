@@ -1,0 +1,37 @@
+{
+  "identity": "NPA-T STAGE-COMPOSITION:AUDIT/ReportEvidenceActionSurface",
+  "url": "http://localhost:3000/executive?reset=1",
+  "productionChanges": 0,
+  "primaryCase": {
+    "utterance": "Show Capacity.",
+    "view": "operation",
+    "subject": "obj-capacity",
+    "stage": { "x": 56, "y": 87.4, "width": 1024, "height": 782 },
+    "report": {
+      "present": true,
+      "box": { "x": 68, "y": 598.8, "width": 296, "height": 250.6 },
+      "stageSharePct": 9.3,
+      "text": "REPORT Capacity Watch UTILIZATION 88% Target 80% blocks Delivery constrained-by Capacity Gap"
+    },
+    "operation": {
+      "present": true,
+      "box": { "x": 876, "y": 159.4, "width": 192, "height": 169.1 },
+      "stageSharePct": 4.1,
+      "text": "ACTIONS Capacity Investigate Problem Review Decision Open Scenario"
+    },
+    "sceneEvidence": {
+      "family": "STATUS_CARD",
+      "box": { "x": 648, "y": 705.3, "width": 420, "height": 144.1 },
+      "stageSharePct": 7.6,
+      "text": "SCENE EVIDENCE Capacity watch Nexora does not yet have enough evidence to determine this."
+    },
+    "investigateProblemPersistsActions": true,
+    "afterInvestigateProblem": {
+      "presentation": "operation",
+      "advisorSubject": "Capacity Gap",
+      "operationTitle": "Capacity Gap"
+    }
+  },
+  "priorLayoutProof": "artifacts/stage-layout/STAGE-LAYOUT-1/live-browser.json",
+  "screenshot": "capacity-actions-report-evidence.png"
+}

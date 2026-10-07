@@ -4,12 +4,22 @@ import type { ExecutiveAdvisorTab } from "../shell/executiveCockpitTypes";
 import { cockpit } from "../shell/executiveCockpitTheme";
 import { ExecutiveAdvisorCollapseButton } from "./ExecutiveAdvisorCollapseButton";
 
+type PackageTab = Readonly<{
+  tabId: string;
+  label: string;
+  canonicalId: string;
+}>;
+
 type Props = {
   readonly tab: ExecutiveAdvisorTab;
   readonly onTabChange: (tab: ExecutiveAdvisorTab) => void;
   readonly collapsed: boolean;
   readonly onToggleCollapse: () => void;
   readonly accent?: string;
+  readonly packageTabs?: readonly PackageTab[];
+  readonly activePackageTabId?: string | null;
+  readonly onSelectPackageTab?: (tabId: string) => void;
+  readonly onClosePackageTab?: (tabId: string) => void;
 };
 
 const TABS: readonly ExecutiveAdvisorTab[] = ["Assist", "Insight"];
@@ -31,6 +41,10 @@ export function ExecutiveAdvisorHeader({
   collapsed,
   onToggleCollapse,
   accent = cockpit.accent,
+  packageTabs = [],
+  activePackageTabId = null,
+  onSelectPackageTab,
+  onClosePackageTab,
 }: Props) {
   if (collapsed) {
     return (
@@ -61,7 +75,7 @@ export function ExecutiveAdvisorHeader({
           }}
         >
           {TABS.map((item) => {
-            const active = item === tab;
+            const active = activePackageTabId == null && item === tab;
             return (
               <button
                 key={item}
@@ -87,6 +101,36 @@ export function ExecutiveAdvisorHeader({
                 }}
               >
                 {TAB_ICON[item]}
+              </button>
+            );
+          })}
+          {packageTabs.map((item) => {
+            const active = item.tabId === activePackageTabId;
+            return (
+              <button
+                key={item.tabId}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={item.label}
+                data-testid={`nexora-right-package-tab-${item.canonicalId}`}
+                data-right-package-canonical-id={item.canonicalId}
+                onClick={() => onSelectPackageTab?.(item.tabId)}
+                style={{
+                  width: "100%",
+                  padding: "0.45rem 0.2rem",
+                  borderRadius: cockpit.radius.sm,
+                  border: active
+                    ? `1px solid ${accent}`
+                    : `1px solid ${cockpit.border}`,
+                  background: active ? `${accent}18` : "transparent",
+                  color: active ? accent : cockpit.muted,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "0.62rem",
+                }}
+              >
+                {item.label.slice(0, 1)}
               </button>
             );
           })}
@@ -141,7 +185,7 @@ export function ExecutiveAdvisorHeader({
         }}
       >
         {TABS.map((item) => {
-          const active = item === tab;
+          const active = activePackageTabId == null && item === tab;
           return (
             <button
               key={item}
@@ -170,6 +214,62 @@ export function ExecutiveAdvisorHeader({
             >
               {TAB_LABEL[item]}
             </button>
+          );
+        })}
+        {packageTabs.map((item) => {
+          const active = item.tabId === activePackageTabId;
+          return (
+            <span
+              key={item.tabId}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.2rem" }}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={active}
+                data-testid={`nexora-right-package-tab-${item.canonicalId}`}
+                data-right-package-canonical-id={item.canonicalId}
+                onClick={() => onSelectPackageTab?.(item.tabId)}
+                style={{
+                  padding: "0.15rem 0",
+                  borderRadius: 0,
+                  border: "none",
+                  borderBottom: active
+                    ? `1px solid ${accent}`
+                    : "1px solid transparent",
+                  background: "transparent",
+                  color: active ? cockpit.textSoft : cockpit.lowMuted,
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.02em",
+                  fontWeight: active ? 600 : 450,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {item.label}
+              </button>
+              <button
+                type="button"
+                aria-label={`Close ${item.label}`}
+                data-testid={`nexora-right-package-tab-close-${item.canonicalId}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClosePackageTab?.(item.tabId);
+                }}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: cockpit.lowMuted,
+                  cursor: "pointer",
+                  fontSize: "0.7rem",
+                  lineHeight: 1,
+                  padding: "0.05rem 0.1rem",
+                  fontFamily: "inherit",
+                }}
+              >
+                ×
+              </button>
+            </span>
           );
         })}
       </div>

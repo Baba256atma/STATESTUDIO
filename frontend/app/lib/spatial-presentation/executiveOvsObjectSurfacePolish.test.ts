@@ -77,7 +77,8 @@ test("D — No independent animation loop", () => {
   );
   const language = readFileSync(join(here, "./executiveOvsObjectVisualLanguage.ts"), "utf8");
   assert.doesNotMatch(body, /useFrame/);
-  assert.match(body, /ContactPresence/);
+  assert.match(body, /InnerLight/);
+  assert.doesNotMatch(body, /ringGeometry|circleGeometry|ContactPresence/);
   assert.match(body, /raycast=\{\(\) => null\}/);
   assert.doesNotMatch(language, /useFrame/);
 });
@@ -96,7 +97,7 @@ test("E — Shared rendering: no per-Object lights", () => {
   }
   assert.ok(EXECUTIVE_OVS_MATERIAL_LANGUAGE.metalness < 0.4);
   assert.ok(EXECUTIVE_OVS_MATERIAL_LANGUAGE.roughness > 0.35);
-  assert.ok(EXECUTIVE_OVS_MATERIAL_LANGUAGE.emissiveScale < 0.5);
+  assert.ok(EXECUTIVE_OVS_MATERIAL_LANGUAGE.emissiveScale < 2.2);
 });
 
 test("F — Single Canvas is preserved", () => {

@@ -281,9 +281,15 @@ export function resolveExecutiveOvsObjectStateVisual(
     maxEmissive: stabilize(
       clamp(
         EXECUTIVE_OVS_MATERIAL_LANGUAGE.maxEmissive *
-          (managementClass === "critical" ? 1.35 : 1),
-        0.12,
-        0.22,
+          (managementClass === "critical"
+            ? 1.2
+            : managementClass === "unresolved"
+              ? 1.1
+              : managementClass === "watch"
+                ? 1.05
+                : 1),
+        0.2,
+        0.62,
       ),
     ),
     roughnessBias: stabilize(clamp(roughnessBias, -0.12, 0.14)),

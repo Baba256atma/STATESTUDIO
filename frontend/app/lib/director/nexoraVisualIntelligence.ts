@@ -72,7 +72,7 @@ export type NexoraVisualSeries = {
 };
 
 export type NexoraVisualEvidenceBundle = {
-  readonly acceptedIntoDataReality: false;
+  readonly acceptedIntoDataReality: boolean;
   readonly series: readonly NexoraVisualSeries[];
 };
 
@@ -429,9 +429,23 @@ function selectSeries(
   | { readonly status: "OK"; readonly selected: NexoraVisualSeries }
   | { readonly status: "AMBIGUOUS"; readonly resolution: NexoraVisualResolution } {
   if (subjectId) {
-    const named = evidence.series.find((item) => item.id === subjectId);
+    const needle = subjectId.replace(/^obj-/, "").toLowerCase();
+    const named = evidence.series.find((item) => {
+      const id = item.id.toLowerCase();
+      const field = item.fieldLabel.toLowerCase();
+      const display = item.displayLabel.toLowerCase();
+      return (
+        item.id === subjectId ||
+        id === needle ||
+        id === `obj-${needle}` ||
+        field === needle ||
+        display === needle ||
+        field.includes(needle) ||
+        display.includes(needle)
+      );
+    });
     if (named) return { status: "OK", selected: named };
-    if (subjectId === "delivery") {
+    if (needle === "delivery") {
       const otd = evidence.series.find((item) => item.id === "otd");
       if (otd) return { status: "OK", selected: otd };
     }

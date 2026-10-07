@@ -1,5 +1,6 @@
 "use client";
 
+import type { StageProdOverlayStyle } from "@/app/lib/stage-prod/stageProdOverlayPlacement.ts";
 import type {
   NexoraMVPPresentationAvailableAction,
   NexoraMVPPresentationViewModel,
@@ -8,27 +9,37 @@ import { cockpit } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
   readonly viewModel: NexoraMVPPresentationViewModel;
+  readonly overlayPlacement?: StageProdOverlayStyle | null;
   readonly onAction: (action: NexoraMVPPresentationAvailableAction) => void;
 };
 
 /**
  * Operation action surface — only real or explicitly disabled actions.
  */
-export function NexoraSubjectOperation({ viewModel, onAction }: Props) {
+export function NexoraSubjectOperation({
+  viewModel,
+  overlayPlacement,
+  onAction,
+}: Props) {
   if (!viewModel.showOperationSurface) return null;
+  if (overlayPlacement === null) return null;
 
   return (
     <div
       data-testid="nexora-subject-operation"
       data-presentation-state="operation"
       data-subject-id={viewModel.subjectId ?? "none"}
+      data-stage-overlay-slot="transient-actions"
+      data-stage-overlay-layer="transient"
       aria-label="Subject operations"
       style={{
         position: "absolute",
         right: "0.85rem",
         top: "6.4rem",
-        zIndex: 7,
+        zIndex: 8,
         width: "min(12rem, calc(100% - 1.7rem))",
+        maxHeight: "40%",
+        overflow: "auto",
         display: "flex",
         flexDirection: "column",
         gap: "0.35rem",
@@ -39,6 +50,7 @@ export function NexoraSubjectOperation({ viewModel, onAction }: Props) {
         boxShadow: cockpit.elevation.raised,
         backdropFilter: "blur(10px)",
         pointerEvents: "auto",
+        ...(overlayPlacement ?? {}),
       }}
     >
       <p

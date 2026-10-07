@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Color, DoubleSide } from "three";
+import { CanvasTexture, Color, DoubleSide } from "three";
 import type { Fog, MeshStandardMaterial } from "three";
 import {
   NEXORA_MVP_STAGE_ATMOSPHERE_FIELD,
@@ -19,6 +19,35 @@ type Props = {
 
 function lerp(current: number, target: number, alpha: number): number {
   return current + (target - current) * alpha;
+}
+
+/** One shared field gradient. Soft center haze, darker edges, no hard disc. */
+function createStageCenterHazeTexture(): CanvasTexture | null {
+  if (typeof document === "undefined") return null;
+  const size = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (context == null) return null;
+  const center = size / 2;
+  const gradient = context.createRadialGradient(
+    center,
+    center,
+    size * 0.04,
+    center,
+    center,
+    size * 0.72,
+  );
+  gradient.addColorStop(0, "rgba(118, 158, 196, 0.42)");
+  gradient.addColorStop(0.32, "rgba(46, 78, 112, 0.2)");
+  gradient.addColorStop(0.68, "rgba(8, 14, 24, 0.46)");
+  gradient.addColorStop(1, "rgba(2, 5, 10, 0.84)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, size, size);
+  const texture = new CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
 }
 
 /**
@@ -38,6 +67,7 @@ export function NexoraSceneEnvironmentController({
   const targetBg = useRef(new Color(environment.background));
   const targetGround = useRef(new Color(environment.groundColor));
   const groundShadow = EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION.stageGround;
+  const centerHaze = useMemo(() => createStageCenterHazeTexture(), []);
 
   useEffect(() => {
     targetBg.current.set(environment.background);
@@ -126,6 +156,28 @@ export function NexoraSceneEnvironmentController({
           toneMapped={false}
         />
       </mesh>
+      {centerHaze ? (
+        <mesh
+          position={[0, 0, -5.4]}
+          renderOrder={-28}
+          raycast={() => null}
+        >
+          <planeGeometry
+            args={[
+              NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.extent,
+              NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.extent,
+            ]}
+          />
+          <meshBasicMaterial
+            map={centerHaze}
+            transparent
+            depthWrite={false}
+            depthTest={false}
+            side={DoubleSide}
+            toneMapped={false}
+          />
+        </mesh>
+      ) : null}
     </group>
   );
 }

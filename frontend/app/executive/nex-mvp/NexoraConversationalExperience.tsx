@@ -140,7 +140,7 @@ export function NexoraConversationalExperience({
         display: "flex",
         flexDirection: "column",
         gap: "0.4rem",
-        marginTop: "0.55rem",
+        marginTop: "0.35rem",
         minHeight: 0,
       }}
     >
@@ -161,16 +161,18 @@ export function NexoraConversationalExperience({
       <div
         ref={messageLogRef}
         data-testid="nexora-conversational-messages"
+        data-advisor-history="true"
         role="log"
         aria-live="polite"
         aria-busy={processing}
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "0.35rem",
-          maxHeight: "9.5rem",
+          gap: "0.28rem",
+          maxHeight: "7rem",
           overflowY: "auto",
           paddingRight: "0.15rem",
+          paddingTop: "0.2rem",
         }}
       >
         {messages.length === 0 ? (
@@ -192,9 +194,9 @@ export function NexoraConversationalExperience({
               data-testid={`nexora-conversational-message-${message.role}`}
               data-message-status={message.status ?? ""}
               style={{
-                fontSize: "0.74rem",
+                fontSize: "0.66rem",
                 lineHeight: 1.35,
-                color: message.role === "nexora" ? cockpit.text : cockpit.muted,
+                color: cockpit.muted,
               }}
             >
               <span

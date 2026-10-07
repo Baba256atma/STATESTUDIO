@@ -310,18 +310,18 @@ export const EXECUTIVE_LIGHTING_OBJECT_IDENTITY_PRESERVATION = Object.freeze({
 
 export const EXECUTIVE_DEFAULT_LIGHTING_TOKENS: ExecutiveLightingTokens =
   Object.freeze({
-    ambientIntensity: 0.26,
-    keyIntensity: 1.08,
+    ambientIntensity: 0.42,
+    keyIntensity: 1.35,
     keyPosition: Object.freeze({ x: 4.4, y: 8.2, z: 4.6 }),
     keyColor: "#f3f5f7",
-    fillIntensity: 0.36,
+    fillIntensity: 0.4,
     fillPosition: Object.freeze({ x: -5.4, y: 3.1, z: -2.9 }),
     fillColor: "#9aadc0",
-    rimIntensity: 0.18,
+    rimIntensity: 0.34,
     rimPosition: Object.freeze({ x: -1.8, y: 5.8, z: -6.2 }),
-    rimColor: "#c9d4e0",
+    rimColor: "#d5e4f2",
     groundResponse: Object.freeze({
-      hemisphereIntensity: 0.16,
+      hemisphereIntensity: 0.24,
       skyColor: "#d7dee8",
       groundColor: "#1a2230",
       receiveShadows: true,

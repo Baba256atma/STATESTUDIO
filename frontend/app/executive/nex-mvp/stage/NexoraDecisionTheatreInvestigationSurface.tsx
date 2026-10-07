@@ -1,5 +1,6 @@
 "use client";
 
+import type { StageProdOverlayStyle } from "@/app/lib/stage-prod/stageProdOverlayPlacement.ts";
 import type { NexoraDecisionTheatreObjectInvestigation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreObjectInvestigation.ts";
 import type { NexoraDecisionTheatreInvestigationLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreObjectInvestigation.ts";
 import { OBJECT_PANEL_WIDTH } from "@/app/lib/hud/hudPanelDesignContract.ts";
@@ -7,16 +8,25 @@ import { cockpit, typeScale } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
   readonly investigation: NexoraDecisionTheatreObjectInvestigation;
+  readonly host?: "stage" | "right-panel";
+  readonly overlayPlacement?: StageProdOverlayStyle;
   readonly onLevelChange: (level: NexoraDecisionTheatreInvestigationLevel) => void;
   readonly onClose: () => void;
   readonly onAsk: (question: string) => void;
+  readonly onOpenInRight?: (input: {
+    readonly canonicalId: string;
+    readonly label: string;
+  }) => void;
 };
 
 export function NexoraDecisionTheatreInvestigationSurface({
   investigation,
+  host = "stage",
+  overlayPlacement,
   onLevelChange,
   onClose,
   onAsk,
+  onOpenInRight,
 }: Props) {
   const showUnderstand = investigation.level === "understand" || investigation.level === "investigate";
   const showInvestigate = investigation.level === "investigate";
@@ -29,9 +39,12 @@ export function NexoraDecisionTheatreInvestigationSurface({
       : investigation.educationalExample
         ? "Educational example"
         : investigation.canonicalObjectType.replace(/-/g, " ");
+  const hostedInRight = host === "right-panel";
+  const showOpenInRight = !hostedInRight && onOpenInRight != null;
   return (
     <aside
       data-testid="nexora-theatre-investigation"
+      data-object-card-host={host}
       data-theatre-investigation-object-id={investigation.objectId}
       data-theatre-investigation-object-type={investigation.canonicalObjectType}
       data-theatre-investigation-level={investigation.level}
@@ -46,27 +59,47 @@ export function NexoraDecisionTheatreInvestigationSurface({
       data-nex-stage-card-status-source={investigation.statusSource}
       data-nex-stage-card-evidence={investigation.evidenceApplicability}
       data-nex-stage-card-relationships={investigation.relationshipApplicability}
+      data-stage-overlay-slot="context-card"
       aria-label={`${investigation.managerReadableName} investigation`}
-      style={{
-        position: "absolute",
-        top: "4.5rem",
-        right: "0.75rem",
-        width: OBJECT_PANEL_WIDTH,
-        maxWidth: "42%",
-        maxHeight: "58%",
-        zIndex: 4,
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.45rem",
-        padding: "0.7rem 0.8rem",
-        borderRadius: "0.5rem",
-        border: `1px solid ${cockpit.borderStrong}`,
-        background: cockpit.panel,
-        color: cockpit.text,
-        boxShadow: "0 10px 28px rgba(0, 0, 0, 0.32)",
-        pointerEvents: "auto",
-        overflow: "hidden",
-      }}
+      style={
+        hostedInRight
+          ? {
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.45rem",
+              padding: "0.15rem 0 0",
+              border: "none",
+              background: "transparent",
+              color: cockpit.text,
+              boxShadow: "none",
+              pointerEvents: "auto",
+              overflow: "visible",
+              width: "100%",
+            }
+          : {
+              position: "absolute",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.45rem",
+              padding: "0.7rem 0.8rem",
+              borderRadius: "0.5rem",
+              border: `1px solid ${cockpit.borderStrong}`,
+              background: cockpit.panel,
+              color: cockpit.text,
+              boxShadow: "0 10px 28px rgba(0, 0, 0, 0.32)",
+              pointerEvents: "auto",
+              overflow: "hidden",
+              ...(overlayPlacement ?? {
+                top: "4.5rem",
+                right: "0.75rem",
+                width: OBJECT_PANEL_WIDTH,
+                maxWidth: "42%",
+                maxHeight: "58%",
+                zIndex: 4,
+              }),
+            }
+      }
     >
       <header style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
         <div>
@@ -77,6 +110,7 @@ export function NexoraDecisionTheatreInvestigationSurface({
             {investigation.managerReadableName}
           </div>
         </div>
+        {!hostedInRight ? (
         <button
           type="button"
           data-testid="nexora-theatre-investigation-close"
@@ -92,6 +126,7 @@ export function NexoraDecisionTheatreInvestigationSurface({
         >
           Close
         </button>
+        ) : null}
       </header>
       <p style={{ fontSize: typeScale.body.size, color: cockpit.textSoft, margin: 0 }}>{investigation.glance.identity}</p>
       {investigation.glance.state ? (
@@ -159,6 +194,21 @@ export function NexoraDecisionTheatreInvestigationSurface({
             {question}
           </button>
         ))}
+        {showOpenInRight ? (
+          <button
+            type="button"
+            data-testid="nexora-theatre-investigation-open-in-right"
+            onClick={() =>
+              onOpenInRight({
+                canonicalId: investigation.objectId,
+                label: investigation.managerReadableName,
+              })
+            }
+            style={chipStyle}
+          >
+            Open in Right
+          </button>
+        ) : null}
       </div>
     </aside>
   );

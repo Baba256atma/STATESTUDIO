@@ -8,6 +8,10 @@ import type {
   NexoraVisualPurpose,
   NexoraVisualRepresentation,
 } from "@/app/lib/director/nexoraVisualIntelligence.ts";
+import {
+  isConversationalVisualizationLanguage,
+  stripConversationalCompositionModifiers,
+} from "@/app/lib/conversational-control/conversationalIntentNormalization.ts";
 
 export type NexoraVisualGuidanceKind =
   | "RESOLVE"
@@ -105,14 +109,33 @@ export function resolveNexoraVisualGuidanceIntent(input: {
     ? ("COMPARISON_BARS" as const)
     : /as a line chart|line chart/.test(text)
       ? ("TREND_LINE" as const)
-      : null;
+      : /(?:show me (?:a |the )?chart|visualize (?:this|it|that)|visualize this|\bcharts?\b)/.test(
+            text,
+          )
+        ? ("TREND_LINE" as const)
+        : null;
 
   const requestedMonths = /\b(?:six|6) months?\b/.test(text) ? 6 : null;
+  const composedSubject = stripConversationalCompositionModifiers(
+    text
+      .replace(
+        /^(?:show(?:\s+me)?|visualize|open|look\s+at)\s+/u,
+        "",
+      )
+      .replace(/\b(?:over time|as a (?:bar|line) chart|bar chart|line chart|a chart|the chart|charts?|visualize)\b/gu, " ")
+      .replace(/^(?:a|an|the|of)\s+/u, "")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
   const subjectId = /\bvalue\b/.test(text) && !/delivery|otd/.test(text)
     ? "value"
     : /delivery|otd/.test(text)
       ? "delivery"
-      : null;
+      : composedSubject &&
+          !/^(?:this|that|it|them|these|those|here|there|chart|visual|how|what|why)$/.test(composedSubject) &&
+          composedSubject.split(/\s+/).length <= 3
+        ? composedSubject
+        : null;
 
   if (
     /compare (?:these|them|the two)|compare delivery/.test(text) ||
@@ -146,7 +169,7 @@ export function resolveNexoraVisualGuidanceIntent(input: {
   const visualShape =
     /over time|how has .+ changed|how .+ changed|\btrend\b|last (?:six|6) months|history visually|what does this data look like|show me delivery over time|show delivery over time/.test(
       text,
-    );
+    ) || isConversationalVisualizationLanguage(text);
   if (visualShape || requestedRepresentation) {
     return Object.freeze({
       kind: "RESOLVE" as const,

@@ -238,14 +238,14 @@ test("L — No OVS:2 / OVS:3 ownership change", () => {
   assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG, 10);
   assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE, 11);
   assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_FOV, 42);
-  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.metalness, 0.22);
-  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.roughness, 0.46);
-  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.highlightLift, 0.12);
+  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.metalness, 0.16);
+  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.roughness, 0.36);
+  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.highlightLift, 0.1);
   const lighting = readFileSync(
     join(here, "./executiveLightingFoundation.ts"),
     "utf8",
   );
-  assert.match(lighting, /ambientIntensity: 0\.26/);
+  assert.match(lighting, /ambientIntensity: 0\.42/);
   const environment = readFileSync(
     join(here, "../../executive/nex-mvp/workspace/NexoraSceneEnvironmentController.tsx"),
     "utf8",

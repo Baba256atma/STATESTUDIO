@@ -76,11 +76,56 @@ function investigation() {
   return { state, theatre, composition };
 }
 
+function inventoryFocus() {
+  const state = selectNexoraMVPInteractionSubject(
+    initial(),
+    "obj-inventory",
+    catalog,
+  );
+  const theatre = projectNexoraDecisionTheatreFoundation({
+    stageState: state,
+    catalog,
+    investigationLevel: "understand",
+  });
+  const composition = projectStageProdDirectorComposition({
+    presentation: presentation(state),
+    theatre,
+  });
+  return { state, theatre, composition };
+}
+
 function trendView(): NexoraVisualView {
   const resolution = resolveNexoraVisualView({
     purpose: "TREND",
     evidence: nexoraExampleOperationsVisualEvidence(),
     subjectId: "otd",
+  });
+  assert.equal(resolution.status, "SUPPORTED");
+  return resolution.view;
+}
+
+function inventoryTrendView(): NexoraVisualView {
+  const resolution = resolveNexoraVisualView({
+    purpose: "TREND",
+    evidence: Object.freeze({
+      acceptedIntoDataReality: false,
+      series: Object.freeze([
+        Object.freeze({
+          id: "obj-inventory",
+          fieldLabel: "Inventory On Hand",
+          displayLabel: "Inventory",
+          confidence: "LIKELY" as const,
+          unit: null,
+          sourceLabel: "stage-prod-4-fixture",
+          example: false,
+          points: Object.freeze([
+            Object.freeze({ periodLabel: "2026-01-01", value: 89.8 }),
+            Object.freeze({ periodLabel: "2026-01-02", value: 90.1 }),
+          ]),
+        }),
+      ]),
+    }),
+    subjectId: "obj-inventory",
   });
   assert.equal(resolution.status, "SUPPORTED");
   return resolution.view;
@@ -164,19 +209,19 @@ function renderStage(
 }
 
 test("A — canonical evidence reaches a visible visual in the production Stage", () => {
-  const context = investigation();
-  const html = renderStage(context.state, context.theatre, trendView());
+  const context = inventoryFocus();
+  const html = renderStage(context.state, context.theatre, inventoryTrendView());
   assert.match(html, /data-stage-prod-visual="NPA-T STAGE-PROD:4\/ContextualVisualSpecification"/);
   assert.match(html, /data-testid="nexora-stage-contextual-visual"/);
   assert.match(html, /data-visual-representation="TREND_LINE"/);
 });
 
 test("B — valid ordered fixture observations produce a Trend", () => {
-  const context = investigation();
+  const context = inventoryFocus();
   const projection = projectStageProdContextualVisuals({
     theatre: context.theatre,
     composition: context.composition,
-    requestedVisual: trendView(),
+    requestedVisual: inventoryTrendView(),
   });
   const spec = projection.specs[0];
   assert.equal(spec?.family, "TREND");
@@ -234,26 +279,38 @@ test("E — contextual visuals appear only with a supported need", () => {
   assert.doesNotMatch(renderStage(state, theatre), /data-testid="nexora-stage-contextual-visual"/);
 });
 
-test("F — visual association preserves the Capacity Gap canonical referent", () => {
-  const context = investigation();
-  const projection = projectStageProdContextualVisuals({
-    theatre: context.theatre,
-    composition: context.composition,
+test("F — visual association preserves series identity and omits remapped stale charts", () => {
+  const inventory = inventoryFocus();
+  const matching = projectStageProdContextualVisuals({
+    theatre: inventory.theatre,
+    composition: inventory.composition,
+    requestedVisual: inventoryTrendView(),
+  });
+  assert.deepEqual(matching.specs[0]?.canonicalObjectIds, ["obj-inventory"]);
+  assert.match(
+    renderStage(inventory.state, inventory.theatre, inventoryTrendView()),
+    /data-stage-visual-object-ids="obj-inventory"/,
+  );
+  const capacity = investigation();
+  const stale = projectStageProdContextualVisuals({
+    theatre: capacity.theatre,
+    composition: capacity.composition,
     requestedVisual: trendView(),
   });
-  assert.deepEqual(projection.specs[0]?.canonicalObjectIds, ["ctx-problem-capacity"]);
-  assert.match(
-    renderStage(context.state, context.theatre, trendView()),
-    /data-stage-visual-object-ids="ctx-problem-capacity"/,
+  assert.equal(stale.status, "omitted");
+  assert.equal(stale.omissionReason, "requested-visual-not-valid-for-focal-subject");
+  assert.doesNotMatch(
+    renderStage(capacity.state, capacity.theatre, trendView()),
+    /data-visual-representation="TREND_LINE"/,
   );
 });
 
 test("G — evidence confidence and expectation semantics remain unchanged", () => {
-  const investigate = investigation();
+  const inventory = inventoryFocus();
   const trend = projectStageProdContextualVisuals({
-    theatre: investigate.theatre,
-    composition: investigate.composition,
-    requestedVisual: trendView(),
+    theatre: inventory.theatre,
+    composition: inventory.composition,
+    requestedVisual: inventoryTrendView(),
   });
   assert.deepEqual(trend.specs[0]?.evidenceStates, ["LIKELY"]);
   const compare = comparison();

@@ -126,9 +126,9 @@ export const EXECUTIVE_OVS_FAMILY_TO_PRIMITIVE = Object.freeze({
 
 /** Corner softness for shared rounded-block families — not a second primitive. */
 export const EXECUTIVE_OVS_ROUNDED_CORNER_BY_FAMILY = Object.freeze({
-  operational: 0.055,
-  scenario: 0.16,
-  execution: 0.045,
+  operational: 0.09,
+  scenario: 0.18,
+  execution: 0.05,
 } as const);
 
 /**
@@ -151,14 +151,23 @@ export const EXECUTIVE_OVS_PRIMITIVE_CONSTRUCTION = Object.freeze({
   contactDiscIsNotObjectGeometry: true as const,
 });
 
+/**
+ * Local body pose so thickness and side faces read at the locked Stage camera.
+ * Language rotationX/Y stay 0. This does not own the camera.
+ */
+export const EXECUTIVE_OVS_BODY_READ_POSE = Object.freeze({
+  pitchX: 0.46,
+  yawY: 0.2,
+});
+
 export const EXECUTIVE_OVS_MATERIAL_LANGUAGE = Object.freeze({
-  metalness: 0.22,
-  roughness: 0.46,
-  envMapIntensity: 0.34,
-  emissiveScale: 0.32,
-  maxEmissive: 0.16,
-  highlightLift: 0.12,
-  sideDarken: 0.22,
+  metalness: 0.16,
+  roughness: 0.36,
+  envMapIntensity: 0.5,
+  emissiveScale: 2,
+  maxEmissive: 0.58,
+  highlightLift: 0.1,
+  sideDarken: 0.1,
 });
 
 /** Local +Z depth as a fraction of the existing XY footprint — not a second layout. */

@@ -250,8 +250,8 @@ export const EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES = Object.freeze({
   watch: Object.freeze({
     surfaceTone: "object.surface.watch" as const,
     surfaceAccent: "#c4a035",
-    surfaceTint: 0.07,
-    emissiveLift: 0.06,
+    surfaceTint: 0.22,
+    emissiveLift: 0.12,
     edgeColor: "#d4b45a",
     edgeOpacity: 0.32,
     edgeTone: "object.state.watch.edge" as const,
@@ -266,8 +266,8 @@ export const EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES = Object.freeze({
   critical: Object.freeze({
     surfaceTone: "object.surface.risk" as const,
     surfaceAccent: "#c07070",
-    surfaceTint: 0.18,
-    emissiveLift: 0.12,
+    surfaceTint: 0.26,
+    emissiveLift: 0.16,
     edgeColor: "#d08080",
     edgeOpacity: 0.48,
     edgeTone: "object.state.critical.edge" as const,
@@ -282,8 +282,8 @@ export const EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES = Object.freeze({
   unresolved: Object.freeze({
     surfaceTone: "object.surface.unresolved" as const,
     surfaceAccent: "#94a3b8",
-    surfaceTint: 0.08,
-    emissiveLift: 0.02,
+    surfaceTint: 0.1,
+    emissiveLift: 0.06,
     edgeColor: "#a8b4c4",
     edgeOpacity: 0.28,
     edgeTone: "object.state.unresolved.edge" as const,

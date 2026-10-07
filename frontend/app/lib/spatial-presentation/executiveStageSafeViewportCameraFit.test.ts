@@ -298,7 +298,7 @@ test("P — Director / Nexo unchanged", () => {
 
 test("Q — Visual systems unchanged", () => {
   assert.equal(EXECUTIVE_OVS_FAMILY_TO_PRIMITIVE.operational, "rounded-block");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#4a5563");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#7e92a8");
   assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.normal, 0.88);
   assert.equal(NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.extent, 48);
   assert.equal(EXECUTIVE_STAGE_DEEP_Z_RANGE.particleCount, 0);

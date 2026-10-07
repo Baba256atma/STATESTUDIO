@@ -9,6 +9,7 @@ import {
   type ExecutiveObject3DPresentationLevel,
 } from "@/app/lib/spatial-presentation/executiveObject3DGeometry";
 import {
+  EXECUTIVE_OVS_BODY_READ_POSE,
   isExecutiveOvsObjectVisualLanguageEnabled,
   resolveExecutiveOvsObjectVisualLanguage,
 } from "@/app/lib/spatial-presentation/executiveOvsObjectVisualLanguage";
@@ -330,12 +331,18 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
 
     const bodyMaterialNode = profile.enabled ? (
       <meshStandardMaterial
-        color={ovs.enabled ? mixHexToward(material.color, "#ffffff", ovs.material.highlightLift) : visual.enabled ? sideColor : material.color}
+        color={
+          ovs.enabled
+            ? mixHexToward(material.color, "#0b121c", 0.62)
+            : visual.enabled
+              ? sideColor
+              : material.color
+        }
         emissive={material.emissiveColor ?? material.color}
         emissiveIntensity={Math.min(
           (material.emissiveIntensity ?? 0.2) *
             (ovs.enabled
-              ? ovs.material.emissiveScale * ovsState.emissiveScale
+              ? ovs.material.emissiveScale * ovsState.emissiveScale * 0.22
               : visual.enabled
                 ? (form.enabled ? 0.55 : 0.85)
                 : 1) +
@@ -359,7 +366,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
           ovs.enabled
             ? Math.min(
                 0.84,
-                Math.max(0.42, ovs.material.roughness + ovsState.roughnessBias),
+                Math.max(0.34, ovs.material.roughness + ovsState.roughnessBias),
               )
             : Math.max(
                 (material.roughness ?? 0.7) +
@@ -373,10 +380,10 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
                 form.enabled ? 0.58 : 0.62,
               )
         }
-        transparent={material.transparent || (ovs.enabled && ovsState.opacityScale < 0.999)}
+        transparent={material.transparent || ovs.enabled}
         opacity={
           ovs.enabled
-            ? material.opacity * ovsState.opacityScale
+            ? Math.min(0.74, material.opacity * ovsState.opacityScale)
             : material.opacity
         }
         envMapIntensity={
@@ -388,9 +395,10 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
                 ? 0.28
                 : 0.22
         }
-        depthWrite={material.depthWrite ?? true}
+        depthWrite={ovs.enabled ? false : (material.depthWrite ?? true)}
         depthTest={material.depthTest ?? true}
         toneMapped={material.toneMapped ?? true}
+        flatShading={ovs.enabled && ovs.primitive === "diamond"}
       />
     ) : (
       <meshBasicMaterial
@@ -573,6 +581,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
             language={ovs}
             bodyMaterial={bodyMaterialNode}
             interactiveHandlers={handlers}
+            innerLightColor={material.emissiveColor ?? material.color}
           />
         </group>
       );
@@ -670,7 +679,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
       );
     }
 
-    if (!formOn && visualOn && visual.layers.frontFace && !surfaceOn) {
+    if (!ovsOn && !formOn && visualOn && visual.layers.frontFace && !surfaceOn) {
       frontFace =
         renderShape === "disc-slab" ? (
           <mesh
@@ -760,7 +769,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
       ) : null;
 
     const contactCue =
-      visualOn && visual.layers.contactCue && !formOn ? (
+      !ovsOn && visualOn && visual.layers.contactCue && !formOn ? (
         <mesh
           raycast={() => null}
           position={[0, 0, 0.002]}
@@ -932,14 +941,22 @@ export function ExecutiveObjectEdgeGeometry({
           ? 4
           : 48;
     return (
-      <mesh
-        raycast={() => null}
-        position={[0, 0, frontZ]}
-        rotation={[0, 0, ovs.primitive === "diamond" ? Math.PI / 4 : 0]}
+      <group
+        rotation={[
+          EXECUTIVE_OVS_BODY_READ_POSE.pitchX,
+          EXECUTIVE_OVS_BODY_READ_POSE.yawY,
+          0,
+        ]}
       >
-        <ringGeometry args={[radius * 0.9, radius * 1.08, segments]} />
-        {edgeMaterial}
-      </mesh>
+        <mesh
+          raycast={() => null}
+          position={[0, 0, frontZ]}
+          rotation={[0, 0, ovs.primitive === "diamond" ? Math.PI / 4 : 0]}
+        >
+          <ringGeometry args={[radius * 0.9, radius * 1.08, segments]} />
+          {edgeMaterial}
+        </mesh>
+      </group>
     );
   }
 

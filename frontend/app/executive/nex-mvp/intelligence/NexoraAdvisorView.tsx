@@ -15,6 +15,7 @@ import type {
   NexoraExi4OptionCard,
   NexoraExi4OptionLine,
 } from "@/app/lib/nex-mvp/nexoraExecutiveIntelligenceExperienceExi4";
+import type { NexoraDecisionTheatreAdvisorGuidance } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAdvisorGuidanceProjection";
 import { cockpit } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
@@ -25,17 +26,36 @@ type Props = {
   /** UX:3 — composed executive narrative. Falls back to view-model composition. */
   readonly narrative?: NexoraProfessionalAdvisorNarrative;
   readonly intelligenceExperience?: NexoraExecutiveIntelligenceExperience | null;
+  readonly theatreGuidance?: NexoraDecisionTheatreAdvisorGuidance | null;
   readonly onExecuteNextBestAction?: (actionId: string) => void;
 };
 
 function sectionLabelStyle(): CSSProperties {
   return {
     margin: 0,
-    fontSize: "0.62rem",
-    letterSpacing: "0.04em",
+    fontSize: "0.58rem",
+    letterSpacing: "0.1em",
     color: cockpit.lowMuted,
     fontWeight: 550,
+    textTransform: "uppercase",
   };
+}
+
+function stripReadinessDimensionProse(
+  why: string | null,
+  readinessNote: string | null,
+): string | null {
+  if (why == null) return null;
+  let text = why;
+  if (readinessNote) {
+    text = text.replace(readinessNote, " ");
+  }
+  text = text.replace(
+    /\b(owner|timing|resources|dependencies|constraints|risk)\s+is not established\.?/gi,
+    " ",
+  );
+  text = text.replace(/\s+/g, " ").replace(/^[.\s]+|[.\s]+$/g, "").trim();
+  return text.length > 0 ? text : null;
 }
 
 function bodyStyle(): CSSProperties {
@@ -174,6 +194,7 @@ export function NexoraAdvisorView({
   deferActions = false,
   narrative,
   intelligenceExperience = null,
+  theatreGuidance = null,
   onExecuteNextBestAction,
 }: Props) {
   const composed =
@@ -200,11 +221,29 @@ export function NexoraAdvisorView({
   const showPrimary = composed.primaryAction != null && deferActions !== true;
   const showSecondary =
     composed.secondaryActions.length > 0 && deferActions !== true;
+  const hierarchy = theatreGuidance?.hierarchy ?? null;
+  const situationHeadline = hierarchy?.situationHeadline ?? null;
+  const situationStatus = hierarchy?.situationStatus ?? null;
+  const readinessRows = hierarchy?.readinessRows ?? [];
+  const readinessNote = hierarchy?.readinessNote ?? null;
+  const showHeadline =
+    situationHeadline != null &&
+    situationHeadline.toLowerCase() !== subjectTitle.toLowerCase();
+  const showCompactSituation = situationStatus != null || showHeadline;
+  const whySupporting =
+    readinessRows.length > 0
+      ? stripReadinessDimensionProse(composed.whyItMatters, readinessNote)
+      : composed.whyItMatters;
+  const recommendationHeading =
+    hierarchy?.recommendationHeading ??
+    intelligenceExperience?.presentation.recommendationTitle ??
+    composed.headings.recommendation;
 
   return (
     <div
       data-testid="nexora-advisor-view"
       data-ux3="professional-advisor"
+      data-right-panel-polish="1"
       data-exi4="presentation"
       data-context-key={viewModel.contextKey}
       data-subject-id={composed.currentSubjectId ?? "none"}
@@ -217,19 +256,13 @@ export function NexoraAdvisorView({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "0.85rem",
+        gap: theatreGuidance != null ? "0.48rem" : "0.62rem",
       }}
     >
       <header>
         <p
           data-testid="nexora-advisor-view-title"
-          style={{
-            margin: 0,
-            fontSize: "0.62rem",
-            letterSpacing: "0.04em",
-            color: cockpit.lowMuted,
-            fontWeight: 550,
-          }}
+          style={sectionLabelStyle()}
         >
           {composed.isOverview ? "Current Subject" : "Subject"}
         </p>
@@ -267,7 +300,7 @@ export function NexoraAdvisorView({
         ) : null}
       </header>
 
-      {composed.isOverview &&
+      {theatreGuidance == null && composed.isOverview &&
       intelligenceExperience?.presentation.topPriorityLabel ? (
         <section
           data-testid="nexora-advisor-top-priority"
@@ -300,7 +333,7 @@ export function NexoraAdvisorView({
         </section>
       ) : null}
 
-      {composed.isOverview && composed.attentionSubjectLabel ? (
+      {theatreGuidance == null && composed.isOverview && composed.attentionSubjectLabel ? (
         <section data-testid="nexora-advisor-attention" data-exi4="attention">
           <p style={sectionLabelStyle()}>Needs Attention</p>
           <p
@@ -326,16 +359,204 @@ export function NexoraAdvisorView({
             {intelligenceExperience?.presentation.situationTitle ??
               composed.headings.situation}
           </p>
-          <p data-testid="nexora-advisor-observation" style={bodyStyle()}>
-            {composed.situation}
+          {showHeadline ? (
+            <p
+              data-testid="nexora-advisor-situation-headline"
+              style={{
+                margin: "0.22rem 0 0",
+                fontSize: "0.92rem",
+                color: cockpit.text,
+                fontWeight: 600,
+                lineHeight: 1.3,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {situationHeadline}
+            </p>
+          ) : null}
+          {showCompactSituation && situationStatus ? (
+            <p
+              data-testid="nexora-advisor-observation"
+              style={{
+                margin: "0.18rem 0 0",
+                fontSize: "0.78rem",
+                color: cockpit.textSoft,
+                lineHeight: 1.35,
+              }}
+            >
+              {situationStatus}
+            </p>
+          ) : (
+            <p data-testid="nexora-advisor-observation" style={bodyStyle()}>
+              {composed.situation}
+            </p>
+          )}
+        </section>
+      ) : null}
+
+      {readinessRows.length > 0 ? (
+        <section data-testid="nexora-advisor-readiness">
+          <p style={sectionLabelStyle()}>Readiness</p>
+          <dl
+            data-testid="nexora-advisor-readiness-rows"
+            style={{
+              margin: "0.28rem 0 0",
+              display: "grid",
+              gridTemplateColumns: "minmax(4.5rem, 38%) minmax(0, 1fr)",
+              columnGap: "0.55rem",
+              rowGap: "0.18rem",
+            }}
+          >
+            {readinessRows.map((row) => (
+              <div
+                key={row.dimension}
+                data-testid={`nexora-advisor-readiness-${row.dimension.toLowerCase()}`}
+                data-readiness-status={row.status}
+                style={{ display: "contents" }}
+              >
+                <dt
+                  style={{
+                    margin: 0,
+                    fontSize: "0.7rem",
+                    color: cockpit.muted,
+                    fontWeight: 500,
+                  }}
+                >
+                  {row.dimension}
+                </dt>
+                <dd
+                  style={{
+                    margin: 0,
+                    fontSize: "0.7rem",
+                    color:
+                      row.status === "blocked" ? cockpit.warning : cockpit.textSoft,
+                    fontWeight: 500,
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {row.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {readinessNote ? (
+            <p
+              data-testid="nexora-advisor-readiness-note"
+              style={{
+                margin: "0.32rem 0 0",
+                fontSize: "0.68rem",
+                color: cockpit.muted,
+                lineHeight: 1.4,
+              }}
+            >
+              {readinessNote}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {composed.recommendation ? (
+        <section
+          data-testid="nexora-advisor-recommendation"
+          data-exi4="recommendation"
+        >
+          <p style={sectionLabelStyle()}>{recommendationHeading}</p>
+          <p
+            data-testid="nexora-advisor-recommendation-primary"
+            style={{
+              margin: "0.28rem 0 0",
+              fontSize: "0.86rem",
+              color: cockpit.text,
+              fontWeight: 600,
+              lineHeight: 1.35,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {composed.recommendation}
+          </p>
+          {composed.recommendationRationale && theatreGuidance == null ? (
+            <p data-testid="nexora-advisor-rationale" style={bodyStyle()}>
+              {composed.recommendationRationale}
+            </p>
+          ) : null}
+        </section>
+      ) : composed.noRecommendationReason && hierarchy == null ? (
+        <section data-testid="nexora-advisor-empty">
+          <p style={sectionLabelStyle()}>{recommendationHeading}</p>
+          <p
+            style={{
+              margin: "0.28rem 0 0",
+              fontSize: "0.82rem",
+              color: cockpit.text,
+              fontWeight: 600,
+            }}
+          >
+            No recommendation yet
+          </p>
+          <p style={bodyStyle()}>{composed.noRecommendationReason}</p>
+        </section>
+      ) : null}
+
+      {whySupporting ? (
+        <section
+          data-testid="nexora-advisor-why"
+          style={{
+            borderTop: `1px solid ${cockpit.border}`,
+            paddingTop: "0.55rem",
+          }}
+        >
+          <p style={sectionLabelStyle()}>{composed.headings.why}</p>
+          <p style={bodyStyle()}>{whySupporting}</p>
+        </section>
+      ) : null}
+
+      {theatreGuidance != null &&
+      intelligenceExperience?.presentation.topPriorityLabel ? (
+        <section
+          data-testid="nexora-advisor-top-priority"
+          data-core-int4="priority"
+          data-exi4="priority"
+          data-advisor-weight="secondary"
+          style={{
+            borderTop: `1px solid ${cockpit.border}`,
+            paddingTop: "0.42rem",
+          }}
+        >
+          <p style={sectionLabelStyle()}>
+            {priorityHeading(intelligenceExperience)}
+          </p>
+          <p
+            style={{
+              margin: "0.14rem 0 0",
+              fontSize: "0.78rem",
+              color: cockpit.textSoft,
+              fontWeight: 550,
+              lineHeight: 1.3,
+            }}
+          >
+            {intelligenceExperience.presentation.topPriorityLabel}
           </p>
         </section>
       ) : null}
 
-      {composed.whyItMatters ? (
-        <section data-testid="nexora-advisor-why">
-          <p style={sectionLabelStyle()}>{composed.headings.why}</p>
-          <p style={bodyStyle()}>{composed.whyItMatters}</p>
+      {theatreGuidance != null && composed.attentionSubjectLabel ? (
+        <section
+          data-testid="nexora-advisor-attention"
+          data-exi4="attention"
+          data-advisor-weight="secondary"
+        >
+          <p style={sectionLabelStyle()}>Needs Attention</p>
+          <p
+            data-testid="nexora-advisor-attention-subject"
+            style={{
+              margin: "0.14rem 0 0",
+              fontSize: "0.78rem",
+              color: cockpit.muted,
+              fontWeight: 500,
+            }}
+          >
+            {composed.attentionSubjectLabel}
+          </p>
         </section>
       ) : null}
 
@@ -447,54 +668,9 @@ export function NexoraAdvisorView({
         </details>
       ) : null}
 
-      {composed.recommendation ? (
-        <section
-          data-testid="nexora-advisor-recommendation"
-          data-exi4="recommendation"
-        >
-          <p style={sectionLabelStyle()}>
-            {intelligenceExperience?.presentation.recommendationTitle ??
-              composed.headings.recommendation}
-          </p>
-          <p
-            style={{
-              margin: "0.32rem 0 0",
-              fontSize: "0.92rem",
-              color: cockpit.text,
-              fontWeight: 600,
-              lineHeight: 1.35,
-            }}
-          >
-            {composed.recommendation}
-          </p>
-          {composed.recommendationRationale ? (
-            <p data-testid="nexora-advisor-rationale" style={bodyStyle()}>
-              {composed.recommendationRationale}
-            </p>
-          ) : null}
-        </section>
-      ) : composed.noRecommendationReason ? (
-        <section data-testid="nexora-advisor-empty">
-          <p style={sectionLabelStyle()}>
-            {intelligenceExperience?.presentation.recommendationTitle ??
-              composed.headings.recommendation}
-          </p>
-          <p
-            style={{
-              margin: "0.28rem 0 0",
-              fontSize: "0.82rem",
-              color: cockpit.text,
-              fontWeight: 600,
-            }}
-          >
-            No recommendation yet
-          </p>
-          <p style={bodyStyle()}>{composed.noRecommendationReason}</p>
-        </section>
-      ) : null}
-
       {composed.evidenceSummary &&
       composed.evidenceState !== "strong" &&
+      readinessRows.length === 0 &&
       !(composed.isOverview && composed.evidenceState === "none") ? (
         <p
           data-testid="nexora-advisor-evidence"
@@ -549,7 +725,7 @@ export function NexoraAdvisorView({
         </span>
       ) : null}
 
-      {composed.recentChange ? (
+      {composed.recentChange && theatreGuidance == null ? (
         <section data-testid="nexora-advisor-recent-change">
           <p style={sectionLabelStyle()}>Recent Change</p>
           <p style={bodyStyle()}>{composed.recentChange}</p>

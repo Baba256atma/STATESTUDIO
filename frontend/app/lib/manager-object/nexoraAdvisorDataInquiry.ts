@@ -268,6 +268,15 @@ export function classifyAdvisorDataConversation(utterance: string): AdvisorDataC
   if (/\bwhat data (?:is|are) this using\b/.test(query) || /\bwhat data (?:is|are) you using\b/.test(query) || /\bwhat data supports\b/.test(query) || /\bwhere did .+(come from|from)\b/.test(query)) {
     return "object-provenance";
   }
+  if (/\blist\b/.test(query) && /\b(?:supported\s+)?observations?\b/.test(query)) {
+    return "object-provenance";
+  }
+  if (/\bcurrently selected\b/.test(query) && /\b(?:observations?|evidence)\b/.test(query) && /\b(?:list|show|explain)\b/.test(query)) {
+    return "object-provenance";
+  }
+  if (/^show(?: me)? (?:its|the current) evidence$/.test(query)) {
+    return "object-provenance";
+  }
   if (
     /\b(?:what|which) csv\b/.test(query) &&
     /\b(?:using|used by|supports?)\b/.test(query) &&
@@ -697,7 +706,11 @@ function objectDataAnswer(context: AdvisorDataContext, objectLabel: string): str
   const accepted = matches.filter((source) => source.acceptedEvidence);
   const pending = matches.filter((source) => source.lifecycle === "pending");
   if (accepted.length === 0 && pending.length === 0) {
-    return `I don't see an accepted source currently supporting ${objectLabel}.`;
+    return composeGovernedSubjectEvidenceGap({
+      subjectLabel: objectLabel,
+      requestedOperation: "observations",
+      context,
+    });
   }
   const acceptedText = accepted.length
     ? `${accepted.map((source) => source.label).join(", ")} ${accepted.length === 1 ? "provides" : "provide"} accepted ${objectLabel} data.`
@@ -706,6 +719,46 @@ function objectDataAnswer(context: AdvisorDataContext, objectLabel: string): str
     ? ` ${pending.map((source) => source.label).join(", ")} ${pending.length === 1 ? "is" : "are"} under review and may become relevant, but ${pending.length === 1 ? "is" : "are"} not accepted evidence yet.`
     : "";
   return `${acceptedText}${pendingText}`;
+}
+
+export function composeGovernedSubjectEvidenceGap(input: {
+  readonly subjectLabel: string;
+  readonly requestedOperation: "visualization" | "observations" | "explain";
+  readonly workspaceId?: WorkspaceId;
+  readonly context?: AdvisorDataContext;
+}): string {
+  const context = input.context ?? (input.workspaceId ? projectAdvisorDataContext(input.workspaceId) : null);
+  const label = input.subjectLabel.trim() || "this subject";
+  const csv = context ? csvSources(context) : [];
+  const compact = compactDataToken(label);
+  const related = csv.filter((source) =>
+    source.relatedObjectLabels.some((item) => {
+      const token = compactDataToken(item);
+      return token === compact || token.includes(compact) || compact.includes(token);
+    }),
+  );
+  const acceptedRelated = related.filter((source) => source.acceptedEvidence);
+  if (acceptedRelated.length > 0) {
+    return objectDataAnswer(context!, label);
+  }
+  const requested =
+    input.requestedOperation === "visualization"
+      ? `I can't create a ${label} visualization yet because ${label} has no accepted numeric observations.`
+      : input.requestedOperation === "observations"
+        ? `I don't have supported observations for ${label} yet.`
+        : `I can focus ${label}, but I don't have accepted evidence to support that request yet.`;
+  const pending = csv.filter((source) => source.lifecycle === "pending");
+  const pendingUnrelated = pending.filter((source) => !related.includes(source) || !source.acceptedEvidence);
+  if (pendingUnrelated.length === 0) {
+    return acceptedRelated.length === 0 && csv.length === 0
+      ? requested
+      : `${requested} No pending source has a confirmed evidence relationship to ${label}.`;
+  }
+  const names = pendingUnrelated.map((source) => source.label);
+  const listed = joinNames(names);
+  const verb = names.length === 1 ? "is" : "are";
+  const has = names.length === 1 ? "has" : "have";
+  return `${requested} ${listed} ${verb} available for inspection, but ${verb} still under review and ${has} no confirmed evidence relationship to ${label}.`;
 }
 
 function missingDataAnswer(context: AdvisorDataContext, utterance: string): string {
@@ -747,7 +800,8 @@ export function answerAdvisorDataInquiry(input: Readonly<{
   });
 
   if (kind === "object-provenance") {
-    const named = query.match(/\b(?:what|which) csv is (.+?) using\b/)?.[1]?.trim();
+    const named = query.match(/\b(?:what|which) csv is (.+?) using\b/)?.[1]?.trim()
+      ?? query.match(/\bcurrently selected (.+?) subject\b/)?.[1]?.trim();
     const objectLabel = named || input.focusedObjectLabel || "this";
     return answer(objectDataAnswer(context, objectLabel), dialogue, kind, context, csvSources(context).filter((source) =>
       source.relatedObjectLabels.some((label) => compactDataToken(label) === compactDataToken(objectLabel)),

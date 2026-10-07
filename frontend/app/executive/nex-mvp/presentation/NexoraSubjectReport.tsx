@@ -1,17 +1,22 @@
 "use client";
 
+import type { StageProdOverlayStyle } from "@/app/lib/stage-prod/stageProdOverlayPlacement.ts";
 import type { NexoraMVPPresentationViewModel } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import { cockpit } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
   readonly viewModel: NexoraMVPPresentationViewModel;
+  readonly overlayPlacement?: StageProdOverlayStyle | null;
 };
 
 /**
  * Compact subject Report surface — DOM overlay beside Stage, not a dashboard.
  */
-export function NexoraSubjectReport({ viewModel }: Props) {
+export function NexoraSubjectReport({ viewModel, overlayPlacement }: Props) {
   if (!viewModel.showReportSurface || viewModel.subjectId == null) {
+    return null;
+  }
+  if (overlayPlacement === null) {
     return null;
   }
 
@@ -20,12 +25,13 @@ export function NexoraSubjectReport({ viewModel }: Props) {
       data-testid="nexora-subject-report"
       data-presentation-state={viewModel.state}
       data-subject-id={viewModel.subjectId}
+      data-stage-overlay-slot="report-detail"
       aria-label="Subject report"
       style={{
         position: "absolute",
         left: "0.85rem",
         bottom: "0.85rem",
-        zIndex: 7,
+        zIndex: 4,
         width: "min(18.5rem, calc(100% - 12rem))",
         maxHeight: "42%",
         overflow: "auto",
@@ -37,6 +43,7 @@ export function NexoraSubjectReport({ viewModel }: Props) {
         backdropFilter: "blur(10px)",
         pointerEvents: "auto",
         color: cockpit.textSoft,
+        ...(overlayPlacement ?? {}),
       }}
     >
       <p

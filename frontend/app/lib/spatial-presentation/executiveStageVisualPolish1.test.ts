@@ -94,9 +94,9 @@ test("D — Five intents remain distinct and restrained", () => {
 });
 
 test("E — Family material protection", () => {
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#4a5563");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.decision.baseColor, "#3f5868");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.execution.baseColor, "#3f5a58");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#7e92a8");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.decision.baseColor, "#567488");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.execution.baseColor, "#56786e");
 });
 
 test("F — Ring ownership maps to existing systems", () => {
@@ -114,8 +114,8 @@ test("G — State rings remain ordered", () => {
     EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.edgeOpacity >
       EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.normal.edgeOpacity,
   );
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.07);
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint, 0.18);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.22);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint, 0.26);
 });
 
 test("H — Focus/selection remains an interaction class, not a new ring system", () => {
@@ -140,10 +140,9 @@ test("J — Contact grounding is darker/weaker than state rings", () => {
     join(here, "../../executive/nex-mvp/stage/ExecutiveOvsObjectBody.tsx"),
     "utf8",
   );
-  assert.match(body, /ContactPresence/);
-  assert.match(body, /opacity=\{0\.14\}/);
-  assert.match(body, /#050910/);
-  assert.ok(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.edgeOpacity >= 0.3);
+  assert.match(body, /InnerLight/);
+  assert.doesNotMatch(body, /ringGeometry|circleGeometry|ContactPresence/);
+  assert.ok(0.3 <= EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.edgeOpacity);
 });
 
 test("K — Normal active label is readable without hover", () => {

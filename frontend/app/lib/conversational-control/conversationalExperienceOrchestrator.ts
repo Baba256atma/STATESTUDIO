@@ -64,8 +64,11 @@ import type {
   NexoraConversationalSubjectKind,
   NexoraConversationalSubjectRecord,
 } from "./conversationalContext.ts";
-import type { NexoraMVPObjectInteractionState } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
-import type { NexoraMVPObjectInteractionCatalog } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
+import {
+  deriveNexoraMVPStageInteractionPresentation,
+  type NexoraMVPObjectInteractionCatalog,
+  type NexoraMVPObjectInteractionState,
+} from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
 import type { NexoraMVPWorkspaceKind } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation.ts";
 import { isNexoraMVPWorkspaceKind } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation.ts";
 import { applyNexoraMVPConversationalCommand } from "@/app/lib/nex-mvp/nexoraMVPConversationalRuntimeBridge.ts";
@@ -208,6 +211,7 @@ import {
 import {
   answerAdvisorDataInquiry,
   assistantIntroducedDataSourceIds,
+  composeGovernedSubjectEvidenceGap,
   emptyAdvisorDataDialogue,
 } from "../manager-object/nexoraAdvisorDataInquiry.ts";
 import {
@@ -439,6 +443,9 @@ import {
   type NexoraVisualView,
   type NexoraVisualViewRuntime,
 } from "@/app/lib/director/nexoraVisualIntelligence.ts";
+import { projectAdvisorAcceptedVisualEvidence } from "@/app/lib/manager-object/nexoraAdvisorVisualEvidence.ts";
+import { projectStageProdDirectorComposition } from "@/app/lib/stage-prod/stageProdDirectorComposition.ts";
+import { projectStageProdExecutiveVisualizationRoute } from "@/app/lib/stage-prod/stageProdExecutiveVisualizationRoute.ts";
 
 
 export type NexoraConversationalExperienceInput = {
@@ -1847,20 +1854,47 @@ export function executeNexoraConversationalExperience(
           nextEntranceSession: persistEntranceSession,
         });
       }
+      const visualSubject =
+        (visualIntent.subjectId
+          ? input.executiveSubjects.find((item) => {
+              const hint = visualIntent.subjectId!.toLowerCase();
+              return (
+                item.subjectId.toLowerCase() === hint ||
+                item.subjectId.toLowerCase() === `obj-${hint}` ||
+                item.canonicalName.toLowerCase() === hint
+              );
+            })
+          : null) ??
+        input.executiveSubjects.find((item) => item.subjectId === previousContext.currentSubjectId) ??
+        contextResult.context.primarySubject ??
+        null;
+      const acceptedVisual = projectAdvisorAcceptedVisualEvidence({
+        workspaceId: input.runtimeState.workspace,
+        subjectId: visualSubject?.subjectId ?? visualIntent.subjectId,
+        subjectLabel: visualSubject?.canonicalName ?? visualIntent.subjectId,
+      });
       const resolution = resolveNexoraVisualView({
         purpose: visualIntent.purpose,
-        evidence: input.visualEvidence ?? null,
-        subjectId: visualIntent.subjectId,
+        evidence: input.visualEvidence ?? acceptedVisual.bundle,
+        subjectId: visualSubject?.subjectId ?? visualIntent.subjectId,
         requestedMonths: visualIntent.requestedMonths,
         requestedRepresentation: visualIntent.requestedRepresentation,
         comparableIds: visualIntent.comparableIds,
       });
+      const visualResponse =
+        resolution.status === "INSUFFICIENT_EVIDENCE" && visualSubject
+          ? composeGovernedSubjectEvidenceGap({
+              workspaceId: input.runtimeState.workspace,
+              subjectLabel: visualSubject.canonicalName,
+              requestedOperation: "visualization",
+            })
+          : composeNexoraVisualAdvisorCopy(
+              resolution,
+              resolution.status === "SUPPORTED" ? "PRESENT" : "PRESENT",
+            );
       return finish({
         status: "applied",
-        response: composeNexoraVisualAdvisorCopy(
-          resolution,
-          resolution.status === "SUPPORTED" ? "PRESENT" : "PRESENT",
-        ),
+        response: visualResponse,
         intentResult,
         contextResult,
         experienceResult: null,
@@ -1879,8 +1913,13 @@ export function executeNexoraConversationalExperience(
         lockPresentedResponse: true,
         nextEntranceSession: persistEntranceSession,
         visualViewRequest:
-          resolution.status === "SUPPORTED" ? resolution.view : previousVisualView.view,
-        dismissVisualView: false,
+          resolution.status === "SUPPORTED" ? resolution.view : null,
+        dismissVisualView: resolution.status !== "SUPPORTED",
+        visualFocalSubjectId: visualSubject?.subjectId ?? null,
+        visualObservationIds:
+          resolution.status === "SUPPORTED"
+            ? acceptedVisual.observationProvenance.map((item) => item.observationId)
+            : Object.freeze([]),
       });
     }
 
@@ -3525,6 +3564,8 @@ function finalize(args: {
   readonly visualViewRequest?: NexoraVisualView | null;
   readonly dismissVisualView?: boolean;
   readonly visualView?: NexoraVisualViewRuntime | null;
+  readonly visualFocalSubjectId?: string | null;
+  readonly visualObservationIds?: readonly string[];
   readonly subjectCompositionFidelity?: import("./subjectCompositionFidelity.ts").SubjectCompositionFidelityDecision | null;
 }): NexoraConversationalExperienceResult & {
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
@@ -4904,7 +4945,8 @@ function finalize(args: {
     !dataLibraryOwnsResponse &&
     args.contextResult.context.resolutionStatus === "not-found" &&
     semanticTurn.owner === "BUSINESS" &&
-    (args.intentResult.intent.kind === "explain-scenario" || /^explain\b/i.test(args.utterance))
+    (args.intentResult.intent.kind === "explain-scenario" || /^explain\b/i.test(args.utterance)) &&
+    !naturalLanguageUnderstanding.objectReference?.subjectId
   ) {
     const missing = args.intentResult.intent.targetHints.find((item) => item.role === "primary")?.raw;
     presentedResponse = missing
@@ -5721,6 +5763,36 @@ function finalize(args: {
     decisionTheatre,
     decisionTheatreProjectionInput,
   );
+  const visualizationRoute =
+    args.visualView?.view && args.catalog
+      ? projectStageProdExecutiveVisualizationRoute({
+          view: args.visualView.view,
+          subjectId:
+            args.visualFocalSubjectId ??
+            nextExecutiveContext.currentSubject?.subjectId ??
+            args.visualView.view.series[0]?.id ??
+            "unknown",
+          subjectLabel:
+            args.executiveSubjects.find(
+              (item) =>
+                item.subjectId ===
+                (args.visualFocalSubjectId ??
+                  nextExecutiveContext.currentSubject?.subjectId),
+            )?.canonicalName ??
+            args.visualView.view.series[0]?.displayLabel ??
+            null,
+          theatre: decisionTheatre,
+          composition: projectStageProdDirectorComposition({
+            presentation: deriveNexoraMVPStageInteractionPresentation(
+              directorRuntimeState,
+              args.catalog,
+              { consultExecutiveChangeSessionStore: false },
+            ),
+            theatre: decisionTheatre,
+          }),
+          observationIds: args.visualObservationIds ?? Object.freeze([]),
+        })
+      : null;
   const theatreInvestigation = decisionTheatre.objectInvestigation;
   if (
     theatreInvestigation?.advisorReadable.comparison &&
@@ -7169,6 +7241,7 @@ function finalize(args: {
     nextEntranceSession: args.nextEntranceSession ?? null,
     guidedAttention: args.guidedAttention ?? emptyNexoraGuidedAttentionRuntime(),
     visualView: args.visualView ?? emptyNexoraVisualViewRuntime(),
+    visualizationRoute,
     naturalLanguageUnderstanding,
     contextualManagerMeaning,
     clarificationTurn,

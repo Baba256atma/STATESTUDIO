@@ -457,3 +457,60 @@ export function stripConversationalSignificanceQualifier(phrase: string): string
     )
     .trim();
 }
+
+const COMPOSITION_EVIDENCE_CONSTRAINT =
+  /\s+(?:using|with|from|based\s+on)\s+(?:the\s+)?(?:available|accepted|supported|current)\s+(?:evidence|data|observations)(?:\s+you\s+currently\s+have)?$/iu;
+
+const COMPOSITION_VISUAL_TAIL =
+  /\s+(?:over\s+time|(?:as\s+)?(?:a\s+)?(?:bar|line)?\s*charts?)$/iu;
+
+/**
+ * Strip presentation/evidence/visualization modifiers from a lexical target.
+ * Composition before entity fallback. Never invents a subject id.
+ */
+export function stripConversationalCompositionModifiers(phrase: string): string {
+  let text = stripConversationalArticles(phrase.trim());
+  if (!text) return "";
+  text = text.replace(
+    /^(?:the\s+)?(?:currently\s+selected|currently|current|selected)\s+/iu,
+    "",
+  );
+  text = text.replace(/^(?:of|for)\s+/iu, "");
+  text = text.replace(/\s+subject$/iu, "");
+  text = text.replace(COMPOSITION_EVIDENCE_CONSTRAINT, "");
+  text = text.replace(/\s+supported\s+observations(?:\s+you\s+currently\s+have)?$/iu, "");
+  text = text.replace(COMPOSITION_VISUAL_TAIL, "");
+  text = text.replace(/\s+(?:situation|status|state)$/iu, "");
+  return stripConversationalSignificanceQualifier(text);
+}
+
+export function utteranceHasEvidenceConstraint(normalized: string): boolean {
+  return /(?:using|with|from|based\s+on)\s+(?:the\s+)?(?:available|accepted|supported|current)\s+(?:evidence|data|observations)|supported\s+observations/i.test(
+    normalized,
+  );
+}
+
+export function isConversationalVisualizationLanguage(normalized: string): boolean {
+  const text = normalized.trim();
+  if (!text) return false;
+  if (
+    /^(?:show(?:\s+me)?|open|focus(?:\s+on)?|look\s+at|switch\s+to)\s+(?:the\s+)?(?!chart\b|visual\b).+$/.test(
+      text,
+    ) &&
+    !/\b(?:over\s+time|charts?|visualize|visual|trend|bar\s+chart|line\s+chart)\b/.test(text)
+  ) {
+    return false;
+  }
+  if (
+    /^(?:(?:show(?:\s+me)?|visualize)\s+(?:(?:a|the)\s+)?(?:bar\s+|line\s+)?(?:charts?|visual(?:ization)?)|visualize(?:\s+(?:this|it|that))?|(?:a\s+)?(?:bar|line)\s+charts?|show(?:\s+me)?\s+(?:this|it|that)\s+over\s+time)$/.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  return (
+    /\b(?:visualize|visualization|bar\s+chart|line\s+chart)\b/.test(text) ||
+    (/\bcharts?\b/.test(text) && /\b(?:show|visualize|a\s+chart)\b/.test(text)) ||
+    (/\bover\s+time\b/.test(text) && /\b(?:show|visualize|chart|trend)\b/.test(text))
+  );
+}

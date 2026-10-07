@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
 import type {
@@ -35,20 +35,20 @@ function directionMarkerPoints(
     target[1] - uy * 0.08,
     target[2] - uz * 0.08,
   ];
-  const side = 0.11;
+  const side = 0.04;
   const px = -uy;
   const py = ux;
   return [
     [
-      tip[0] - ux * 0.16 + px * side,
-      tip[1] - uy * 0.16 + py * side,
-      tip[2] - uz * 0.16,
+      tip[0] - ux * 0.07 + px * side,
+      tip[1] - uy * 0.07 + py * side,
+      tip[2] - uz * 0.07,
     ],
     tip,
     [
-      tip[0] - ux * 0.16 - px * side,
-      tip[1] - uy * 0.16 - py * side,
-      tip[2] - uz * 0.16,
+      tip[0] - ux * 0.07 - px * side,
+      tip[1] - uy * 0.07 - py * side,
+      tip[2] - uz * 0.07,
     ],
   ];
 }
@@ -72,6 +72,102 @@ function edgeAttach(
   ];
 }
 
+function curveBias(id: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = Math.imul(hash ^ id.charCodeAt(index), 16777619);
+  }
+  const unit = (hash >>> 0) / 4294967295;
+  return (unit - 0.5) * 2;
+}
+
+function sampleCubic(
+  start: Point,
+  controlA: Point,
+  controlB: Point,
+  end: Point,
+): Point[] {
+  const steps = 18;
+  const points: Point[] = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const t = step / steps;
+    const u = 1 - t;
+    const lift = Math.sin(t * Math.PI) * 0.045;
+    points.push([
+      u * u * u * start[0] +
+        3 * u * u * t * controlA[0] +
+        3 * u * t * t * controlB[0] +
+        t * t * t * end[0],
+      u * u * u * start[1] +
+        3 * u * u * t * controlA[1] +
+        3 * u * t * t * controlB[1] +
+        t * t * t * end[1],
+      u * u * u * start[2] +
+        3 * u * u * t * controlA[2] +
+        3 * u * t * t * controlB[2] +
+        t * t * t * end[2] +
+        lift,
+    ]);
+  }
+  return points;
+}
+
+/**
+ * Presentation curve only. Endpoints stay on the existing edge attach.
+ * Curvature is deterministic from the connection id and the live span.
+ */
+function smoothSpatialArc(
+  source: Point,
+  target: Point,
+  id: string,
+  mid?: Point,
+): Point[] {
+  const dx = target[0] - source[0];
+  const dy = target[1] - source[1];
+  const length = Math.hypot(dx, dy) || 1;
+  const ux = dx / length;
+  const uy = dy / length;
+  let bow =
+    curveBias(id) *
+    Math.min(0.52, Math.max(0.22, length * 0.34));
+  if (mid) {
+    const side = (mid[0] - source[0]) * -uy + (mid[1] - source[1]) * ux;
+    if (Math.abs(side) > 0.04) {
+      bow = Math.sign(side) * Math.max(Math.abs(bow) * 0.65, Math.min(0.52, Math.abs(side)));
+    }
+  }
+  if (length < 0.7) bow *= length / 0.7;
+  const px = -uy * bow;
+  const py = ux * bow;
+  const controlA: Point = [
+    source[0] + ux * length * 0.3 + px,
+    source[1] + uy * length * 0.3 + py,
+    source[2],
+  ];
+  const controlB: Point = [
+    source[0] + ux * length * 0.7 + px * 0.7,
+    source[1] + uy * length * 0.7 + py * 0.7,
+    target[2],
+  ];
+  return sampleCubic(source, controlA, controlB, target);
+}
+
+function flowHighlight(points: Point[], travel: number): Point[] {
+  const last = points.length - 1;
+  const cursor = travel * last;
+  const index = Math.min(last - 1, Math.floor(cursor));
+  const blend = cursor - index;
+  const from = points[index]!;
+  const to = points[Math.min(last, index + 1)]!;
+  const next = points[Math.min(last, index + 2)]!;
+  const mix = (a: Point, b: Point): Point => [
+    a[0] + (b[0] - a[0]) * blend,
+    a[1] + (b[1] - a[1]) * blend,
+    a[2] + (b[2] - a[2]) * blend,
+  ];
+  return [mix(from, to), mix(to, next)];
+}
+
 function resolveLiveRoute(
   connection: NexoraMVPStageConnectionPresentation,
   fallbackSource: readonly [number, number, number],
@@ -92,24 +188,17 @@ function resolveLiveRoute(
     motion != null &&
     !motion.settled &&
     (motion.phase === "transitioning" || motion.phase === "settling");
-  // STAGE-MOTION:1 — during travel prefer live→live straight endpoints to avoid
-  // bent-route midpoints popping to the final semantic path early.
+  // STAGE-MOTION:1 — during travel follow live endpoints. The curve is
+  // rebuilt from those endpoints so a semantic midpoint cannot pop early.
   if (
     inFlight ||
     !connection.routePoints ||
     connection.routePoints.length < 3
   ) {
-    return [
-      [source[0], source[1], source[2]],
-      [target[0], target[1], target[2]],
-    ];
+    return smoothSpatialArc(source, target, connection.id);
   }
   const mid = connection.routePoints[Math.floor(connection.routePoints.length / 2)]!;
-  return [
-    [source[0], source[1], source[2]],
-    [mid[0], mid[1], mid[2]],
-    [target[0], target[1], target[2]],
-  ];
+  return smoothSpatialArc(source, target, connection.id, [mid[0], mid[1], mid[2]]);
 }
 
 function pointsChanged(a: Point[], b: Point[], epsilon = 0.012): boolean {
@@ -122,6 +211,19 @@ function pointsChanged(a: Point[], b: Point[], epsilon = 0.012): boolean {
   return false;
 }
 
+function usePrefersReducedStageMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+  return reduced;
+}
+
 function LiveStageConnection({
   connection,
   fallbackSource,
@@ -131,13 +233,21 @@ function LiveStageConnection({
   readonly fallbackSource: readonly [number, number, number];
   readonly fallbackTarget: readonly [number, number, number];
 }) {
+  const reducedMotion = usePrefersReducedStageMotion();
   const [points, setPoints] = useState<Point[]>(() =>
     resolveLiveRoute(connection, fallbackSource, fallbackTarget),
   );
+  const [flowTravel, setFlowTravel] = useState(0);
+  const flowClock = useRef(0);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const next = resolveLiveRoute(connection, fallbackSource, fallbackTarget);
     setPoints((previous) => (pointsChanged(previous, next) ? next : previous));
+    if (!connection.emphasized || reducedMotion) return;
+    flowClock.current += delta;
+    if (flowClock.current < 0.16) return;
+    flowClock.current = 0;
+    setFlowTravel((travel) => (travel + 0.02) % 1);
   });
 
   const visualRole =
@@ -148,14 +258,13 @@ function LiveStageConnection({
         ? "background"
         : "context");
   const directionCue = connection.directionCue ?? "none";
-  const lineWidth =
-    connection.lineWidth ?? (connection.emphasized ? 1.45 : 0.95);
-  const color =
-    visualRole === "anchor-incident"
-      ? "#e2e8f0"
-      : visualRole === "context"
-        ? "#94a3b8"
-        : "#64748b";
+  const active = connection.emphasized || visualRole === "anchor-incident";
+  const lineWidth = active ? 1.05 : 0.72;
+  const color = active ? "#b9d7ea" : visualRole === "background" ? "#6d8498" : "#8eabc2";
+  const flowPoints =
+    active && !reducedMotion && points.length > 2
+      ? flowHighlight(points, flowTravel)
+      : null;
 
   return (
     <group
@@ -182,6 +291,15 @@ function LiveStageConnection({
         points={points}
         color={color}
         transparent
+        opacity={Math.min(0.22, connection.opacity * 0.28)}
+        lineWidth={2.4}
+        depthWrite={false}
+        raycast={() => null}
+      />
+      <Line
+        points={points}
+        color={color}
+        transparent
         opacity={connection.opacity}
         lineWidth={lineWidth}
         dashed={connection.linePattern === "dashed"}
@@ -196,16 +314,30 @@ function LiveStageConnection({
           event.stopPropagation();
         }}
       />
+      {flowPoints ? (
+        <Line
+          points={flowPoints}
+          color="#d7eef8"
+          transparent
+          opacity={Math.min(0.55, connection.opacity)}
+          lineWidth={1.15}
+          depthWrite={false}
+          raycast={() => null}
+        />
+      ) : null}
       {directionCue === "source-to-target" ? (
         <Line
-          points={directionMarkerPoints(points[0]!, points[points.length - 1]!)}
+          points={directionMarkerPoints(
+            points[Math.max(0, points.length - 2)]!,
+            points[points.length - 1]!,
+          )}
           color={color}
           transparent
           opacity={Math.min(
             connection.opacity + (connection.emphasized ? 0.08 : 0.02),
-            0.85,
+            0.55,
           )}
-          lineWidth={Math.max(lineWidth - 0.25, 0.85)}
+          lineWidth={0.7}
           depthWrite={false}
           onClick={(event) => {
             event.stopPropagation();

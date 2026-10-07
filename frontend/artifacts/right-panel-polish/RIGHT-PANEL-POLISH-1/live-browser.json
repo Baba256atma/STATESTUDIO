@@ -1,0 +1,57 @@
+{
+  "identity": "NPA-T RIGHT-PANEL-POLISH:1/ExecutiveAdvisorInformationHierarchy",
+  "url": "http://localhost:3000/executive?reset=1",
+  "after": {
+    "polish": true,
+    "subject": "Executive Overview",
+    "situation": "Committed Decision · Execution not started",
+    "readinessPresent": true,
+    "readinessRows": [
+      {
+        "id": "nexora-advisor-readiness-owner",
+        "status": "unknown",
+        "text": "OwnerNot established"
+      },
+      {
+        "id": "nexora-advisor-readiness-timing",
+        "status": "unknown",
+        "text": "TimingNot established"
+      },
+      {
+        "id": "nexora-advisor-readiness-resources",
+        "status": "unknown",
+        "text": "ResourcesNot established"
+      },
+      {
+        "id": "nexora-advisor-readiness-dependencies",
+        "status": "unknown",
+        "text": "DependenciesNot established"
+      },
+      {
+        "id": "nexora-advisor-readiness-constraints",
+        "status": "unknown",
+        "text": "ConstraintsNot established"
+      },
+      {
+        "id": "nexora-advisor-readiness-risk",
+        "status": "unknown",
+        "text": "RiskNot established"
+      }
+    ],
+    "recommendation": "Next Best ActionReview what is known and unknown, then start execution only through an explicit start. Starting work requires an explicit start. Viewing this scene does not start execution.",
+    "why": "",
+    "ask": true,
+    "detailsTab": true,
+    "stageReadinessCard": false,
+    "view": true,
+    "guidance": "execution-readiness"
+  },
+  "gates": {
+    "g2": true,
+    "g3": true,
+    "g4": true,
+    "g5": true,
+    "g11": true,
+    "g12": true
+  }
+}

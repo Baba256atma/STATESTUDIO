@@ -63,6 +63,19 @@ import {
   updateSceneOrgRightPanelChrome,
   type SceneOrgRightPanelChromeState,
 } from "@/app/lib/scene-org/sceneOrgRightContextContract";
+import {
+  createEmptySceneOrgRightPackageTabSession,
+  resolveSceneOrgRightActivePackageTab,
+  type SceneOrgRightPackageTabSession,
+} from "@/app/lib/scene-org/sceneOrgRightPackageTabContract";
+import { projectNexoraDecisionTheatreObjectInvestigation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreObjectInvestigationComposer";
+import type { NexoraDecisionTheatreInvestigationLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreObjectInvestigation";
+import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract";
+import {
+  applyNexoraDecisionTheatreAdvisorGuidance,
+  projectNexoraDecisionTheatreAdvisorGuidance,
+} from "@/app/lib/decision-theatre/nexoraDecisionTheatreAdvisorGuidanceProjection";
+import { NexoraRightPackageWorkingContext } from "./NexoraRightPackageWorkingContext";
 
 type Props = {
   readonly tab: ExecutiveAdvisorTab;
@@ -104,6 +117,15 @@ type Props = {
   readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
   readonly panelChrome?: SceneOrgRightPanelChromeState;
   readonly onPanelChromeChange?: (state: SceneOrgRightPanelChromeState) => void;
+  readonly packageTabSession?: SceneOrgRightPackageTabSession;
+  readonly onSelectPackageTab?: (tabId: string) => void;
+  readonly onClosePackageTab?: (tabId: string) => void;
+  readonly theatreComposition?: NexoraDecisionTheatreFoundation | null;
+  readonly investigationLevel?: NexoraDecisionTheatreInvestigationLevel;
+  readonly onInvestigationLevelChange?: (
+    level: NexoraDecisionTheatreInvestigationLevel,
+  ) => void;
+  readonly onAskObjectCard?: (question: string) => void;
 };
 
 function projectConversationalAction(
@@ -180,6 +202,13 @@ export function NexoraAdvisorInsightRegion({
   decisionRuntime,
   panelChrome: controlledPanelChrome,
   onPanelChromeChange,
+  packageTabSession = createEmptySceneOrgRightPackageTabSession(),
+  onSelectPackageTab,
+  onClosePackageTab,
+  theatreComposition = null,
+  investigationLevel = "glance",
+  onInvestigationLevelChange,
+  onAskObjectCard,
 }: Props) {
   const [internalPanelChrome, setInternalPanelChrome] = useState(() =>
     createSceneOrgRightPanelChromeState(),
@@ -233,6 +262,18 @@ export function NexoraAdvisorInsightRegion({
       }),
     [advisorBridge, focusedSubject, selectedSubject],
   );
+  const activePackageTab = resolveSceneOrgRightActivePackageTab(packageTabSession);
+  const packageInvestigation = useMemo(() => {
+    if (activePackageTab == null || theatreComposition == null) return null;
+    return projectNexoraDecisionTheatreObjectInvestigation({
+      theatre: Object.freeze({
+        ...theatreComposition,
+        selectedExecutiveObjectId: activePackageTab.canonicalId,
+        primaryExecutiveObjectId: activePackageTab.canonicalId,
+      }),
+      level: investigationLevel,
+    });
+  }, [activePackageTab, investigationLevel, theatreComposition]);
 
   const intelligence = useMemo(() => {
     const narrativeBridge =
@@ -288,9 +329,9 @@ export function NexoraAdvisorInsightRegion({
       flowExecutions,
       decisionRuntime: decisionRuntime ?? null,
     });
-    const narrative = applyNexoraExecutiveIntelligenceExperienceToAdvisor(
-      composed,
-      experience,
+    const narrative = applyNexoraDecisionTheatreAdvisorGuidance(
+      applyNexoraExecutiveIntelligenceExperienceToAdvisor(composed, experience),
+      theatreComposition,
     );
 
     return Object.freeze({
@@ -299,6 +340,9 @@ export function NexoraAdvisorInsightRegion({
       context,
       narrative,
       experience,
+      theatreGuidance: projectNexoraDecisionTheatreAdvisorGuidance(
+        theatreComposition,
+      ),
     });
   }, [
     advisorBridge,
@@ -311,6 +355,7 @@ export function NexoraAdvisorInsightRegion({
     flowDecisions,
     flowExecutions,
     decisionRuntime,
+    theatreComposition,
   ]);
 
   useEffect(() => {
@@ -398,6 +443,11 @@ export function NexoraAdvisorInsightRegion({
         data-mvp-surface="advisor"
         data-nex-mvp="7"
         data-advisor-tab={tab}
+        data-right-active-surface={
+          activePackageTab?.tabId ??
+          (tab === "Insight" ? "details" : "advisor")
+        }
+        data-right-package-canonical-id={activePackageTab?.canonicalId ?? "none"}
         data-right-context-key={rightContext.contextKey}
         data-right-context-kind={rightContext.kind}
         data-right-context-canonical-id={rightContext.canonicalId ?? "none"}
@@ -439,6 +489,12 @@ export function NexoraAdvisorInsightRegion({
         }
         data-advisor-kind={advisorBridge.subjectKind ?? "none"}
         data-advisor-mode={advisorBridge.interactionMode}
+        data-theatre-advisor-guidance={
+          intelligence.theatreGuidance?.phase ?? "none"
+        }
+        data-theatre-advisor-guidance-source={
+          intelligence.theatreGuidance?.source ?? "none"
+        }
         data-advisor-grammar={intelligence.narrative.grammarKind}
         data-advisor-presentation={presentationViewModel.state}
         data-mo1="advisor-reader"
@@ -485,6 +541,10 @@ export function NexoraAdvisorInsightRegion({
           onTabChange={onTabChange}
           collapsed={collapsed}
           onToggleCollapse={onToggleCollapse}
+          packageTabs={packageTabSession.tabs}
+          activePackageTabId={activePackageTab?.tabId ?? null}
+          onSelectPackageTab={onSelectPackageTab}
+          onClosePackageTab={onClosePackageTab}
         />
 
         <div
@@ -692,11 +752,20 @@ export function NexoraAdvisorInsightRegion({
               </details>
             ) : null}
 
-            {advisorBridge.presentationMode === "preparation" ? null : tab === "Assist" ? (
+            {activePackageTab ? (
+              <NexoraRightPackageWorkingContext
+                tab={activePackageTab}
+                investigation={packageInvestigation}
+                onInvestigationLevelChange={onInvestigationLevelChange}
+                onAsk={onAskObjectCard ?? onSubmitConversationalUtterance}
+              />
+            ) : advisorBridge.presentationMode === "preparation" ? null : tab === "Assist" ? (
               <NexoraAdvisorView
                 viewModel={intelligence.advisor}
                 narrative={intelligence.narrative}
                 intelligenceExperience={intelligence.experience}
+                theatreGuidance={intelligence.theatreGuidance}
+                deferActions={intelligence.theatreGuidance != null}
                 onAction={onIntelligenceAction}
                 onExecuteNextBestAction={onExecuteNextBestAction}
               />

@@ -152,7 +152,7 @@ test("E — Normal Object has no unexplained attention frame", () => {
 });
 
 test("F — Watch remains readable through certified OVS:2 / SP:2.4 cues", () => {
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.07);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.surfaceTint, 0.22);
   assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.watch.edgeOpacity, 0.32);
   const ovs = resolveExecutiveOvsObjectStateVisual({ status: "watch" });
   assert.equal(ovs.edgeOpacity, 0.34);
@@ -202,8 +202,8 @@ test("I — Hover does not invent an AABB; OVS edges stay primitive rings", () =
 });
 
 test("J — Critical / Unresolved cues remain", () => {
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint, 0.18);
-  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.unresolved.surfaceTint, 0.08);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.critical.surfaceTint, 0.26);
+  assert.equal(EXECUTIVE_OBJECT_STATE_VISUAL_PROFILES.unresolved.surfaceTint, 0.1);
   const critical = resolveExecutiveOvsObjectStateVisual({ status: "risk" });
   const unresolved = resolveExecutiveOvsObjectStateVisual({
     executiveVisualState: "unresolved",
@@ -228,8 +228,8 @@ test("L — Geometry families unchanged", () => {
 });
 
 test("M — Material palette unchanged", () => {
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#4a5563");
-  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.decision.baseColor, "#3f5868");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.operational.baseColor, "#7e92a8");
+  assert.equal(EXECUTIVE_OBJECT_MATERIAL_PROFILES.decision.baseColor, "#567488");
 });
 
 test("N — Label hierarchy unchanged", () => {
@@ -241,8 +241,8 @@ test("N — Label hierarchy unchanged", () => {
 
 test("O — Background atmosphere unchanged", () => {
   const visual = deriveNexoraMVPSceneEnvironmentVisualState("neutral");
-  assert.equal(visual.background, "#080c14");
-  assert.equal(visual.groundColor, "#141b26");
+  assert.equal(visual.background, "#152033");
+  assert.equal(visual.groundColor, "#223446");
   assert.equal(NEXORA_MVP_STAGE_ATMOSPHERE_FIELD.extent, 48);
   assert.equal(getNexoraMVPSceneEnvironmentIntent("overview"), "neutral");
 });

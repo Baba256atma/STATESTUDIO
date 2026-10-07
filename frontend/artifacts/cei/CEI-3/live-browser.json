@@ -1,0 +1,109 @@
+{
+  "identity": "NPA-T CEI:3/LiveExecutiveVisualization",
+  "url": "http://localhost:3000/executive?cei3=1",
+  "workspace": "overview",
+  "browser": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/3.21.18 Chrome/148.0.7778.280 Electron/42.10.0 Safari/537.36",
+    "environment": "Cursor embedded Chromium, live Next.js http://localhost:3000/executive"
+  },
+  "dataset": {
+    "source": "inventory-observations.csv",
+    "lifecycle": "committed/accepted",
+    "demo": true,
+    "subjectId": "obj-inventory",
+    "metric": "Inventory On Hand",
+    "observationCount": 6,
+    "values": [
+      { "periodLabel": "2026-01-01", "value": 80 },
+      { "periodLabel": "2026-02-01", "value": 95 },
+      { "periodLabel": "2026-03-01", "value": 88 },
+      { "periodLabel": "2026-04-01", "value": 72 },
+      { "periodLabel": "2026-05-01", "value": 67 },
+      { "periodLabel": "2026-06-01", "value": 74 }
+    ]
+  },
+  "pendingGuard": {
+    "source": "data-ux3-ambiguous.csv",
+    "lifecycle": "preview",
+    "acceptedEvidence": false
+  },
+  "journeys": {
+    "B1": {
+      "utterance": "Show me Inventory.",
+      "response": "Focused on Inventory.",
+      "subjectId": "obj-inventory"
+    },
+    "B2": {
+      "utterance": "Show me a chart.",
+      "subjectId": "obj-inventory",
+      "dirVi": "TREND_LINE",
+      "nexoFamily": "NexoTime",
+      "recipeFamily": "NEXO_TIME",
+      "stageStatus": "renderable",
+      "observationCount": 6,
+      "visibleValues": [80, 95, 88, 72, 67, 74]
+    },
+    "B3": {
+      "utterance": "Bar chart.",
+      "subjectId": "obj-inventory",
+      "dirVi": "COMPARISON_BARS",
+      "nexoFamily": "NexoBars",
+      "recipeFamily": "NEXO_BARS",
+      "visibleBars": 6,
+      "visibleValues": [80, 95, 88, 72, 67, 74]
+    },
+    "B4": {
+      "utterance": "Show Inventory over time.",
+      "subjectId": "obj-inventory",
+      "dirVi": "TREND_LINE",
+      "nexoFamily": "NexoTime",
+      "recipeFamily": "NEXO_TIME",
+      "visibleCircles": 6
+    },
+    "B5": {
+      "disclosure": "Show evidence",
+      "copy": {
+        "Source": "inventory-observations.csv",
+        "Status": "Accepted",
+        "Subject": "Inventory",
+        "Metric": "Inventory On Hand",
+        "Observations": 6
+      },
+      "writes": false
+    },
+    "B6": {
+      "utterance": "Show me a chart.",
+      "subjectId": "obj-capacity",
+      "visual": null,
+      "response": "I can't create a Capacity visualization yet because Capacity has no accepted numeric observations. data-ux3-ambiguous.csv is available for inspection, but is still under review and has no confirmed evidence relationship to Capacity."
+    },
+    "B7": {
+      "utterances": ["Show me Inventory.", "Show me a chart.", "What about Capacity?", "Show me a chart."],
+      "inventoryChartSubject": "obj-inventory",
+      "capacitySubject": "obj-capacity",
+      "staleInventoryChartAfterCapacityRequest": false
+    },
+    "B8": {
+      "why": "Inventory is Stable. Inventory is associated with Capacity.",
+      "itsEvidence": "inventory-observations.csv provides accepted Inventory data.",
+      "subjectRetainedUntilCapacitySwitch": true
+    },
+    "B9": {
+      "animation": "not-applicable",
+      "productionVisualMotion": "static",
+      "prefersReducedMotion": false
+    },
+    "B10": {
+      "method": "requestAnimationFrame timestamps for 1500ms during live /executive with chart mounted",
+      "instrumentation": "NPA-T STAGE-PROD:8A summarizeStageProdFrameTimestamps contract (same interval/FPS math)",
+      "datasetSize": 6,
+      "stageComplexity": "one STAGE-PROD overlay SVG (6 points) plus 3D Inventory object",
+      "fps": 120,
+      "averageFrameIntervalMs": 8.333,
+      "maxFrameIntervalMs": 9.4,
+      "framesOver33_4Ms": 0,
+      "framesOver50Ms": 0,
+      "classification": "acceptable"
+    }
+  }
+}

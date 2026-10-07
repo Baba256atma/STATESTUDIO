@@ -182,12 +182,12 @@ test("D — Existing selection/focus/status styling still reaches the Object", (
   assert.match(renderer, /material\.color/);
   assert.match(renderer, /material\.emissiveIntensity/);
   assert.match(renderer, /ExecutiveObjectEdgeGeometry/);
-  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.metalness, 0.22);
+  assert.equal(EXECUTIVE_OVS_MATERIAL_LANGUAGE.metalness, 0.16);
   const language = resolveExecutiveOvsObjectVisualLanguage({
     objectKind: "problem",
     enabled: true,
   });
-  assert.equal(language.material.roughness, 0.46);
+  assert.equal(language.material.roughness, 0.36);
 });
 
 test("E — Relationships still bind by canonical Object IDs", () => {
