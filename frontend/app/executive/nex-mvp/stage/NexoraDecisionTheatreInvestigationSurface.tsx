@@ -78,7 +78,6 @@ export function NexoraDecisionTheatreInvestigationSurface({
               width: "100%",
             }
           : {
-              position: "absolute",
               display: "flex",
               flexDirection: "column",
               gap: "0.45rem",
@@ -91,6 +90,7 @@ export function NexoraDecisionTheatreInvestigationSurface({
               pointerEvents: "auto",
               overflow: "hidden",
               ...(overlayPlacement ?? {
+                position: "absolute",
                 top: "4.5rem",
                 right: "0.75rem",
                 width: OBJECT_PANEL_WIDTH,
@@ -210,6 +210,24 @@ export function NexoraDecisionTheatreInvestigationSurface({
           </button>
         ) : null}
       </div>
+      <details
+        data-testid="nexora-theatre-investigation-source"
+        data-stage-visual-inspection-writes="false"
+        style={{ marginTop: "0.15rem", color: cockpit.muted, fontSize: "0.66rem" }}
+      >
+        <summary style={{ cursor: "pointer" }}>Inspect source</summary>
+        <div data-stage-visual-inspection-object-ids={investigation.objectId}>
+          Objects: {investigation.objectId}
+        </div>
+        <div data-stage-visual-inspection-source-ids={investigation.provenance.join("|") || "none"}>
+          Sources: {investigation.provenance.join(", ") || "none"}
+        </div>
+        <div data-stage-visual-inspection-evidence={
+          investigation.evidence.map((item) => item.epistemicStatus).join("|") || "none"
+        }>
+          Evidence: {investigation.evidence.map((item) => item.epistemicStatus).join(", ") || "none"}
+        </div>
+      </details>
     </aside>
   );
 }

@@ -201,8 +201,16 @@ test("J — HANDOFF-FIX1 behavior unchanged", () => {
     projectExecutiveOvsObjectKindHandoff({
       id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
       kind: "object",
+      objectKind: "risk",
     }),
     "risk",
+  );
+  assert.equal(
+    projectExecutiveOvsObjectKindHandoff({
+      id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
+      kind: "object",
+    }),
+    "object",
   );
   assert.equal(
     projectExecutiveOvsObjectKindHandoff({

@@ -66,6 +66,7 @@ import type {
 } from "./conversationalContext.ts";
 import {
   deriveNexoraMVPStageInteractionPresentation,
+  selectNexoraMVPInteractionSubject,
   type NexoraMVPObjectInteractionCatalog,
   type NexoraMVPObjectInteractionState,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
@@ -1892,6 +1893,21 @@ export function executeNexoraConversationalExperience(
               resolution,
               resolution.status === "SUPPORTED" ? "PRESENT" : "PRESENT",
             );
+      const visualSucceeded = resolution.status === "SUPPORTED";
+      const visualSubjectId = visualSubject?.subjectId ?? null;
+      const nextVisualRuntimeState =
+        visualSucceeded && visualSubjectId != null && input.catalog
+          ? selectNexoraMVPInteractionSubject(
+              input.runtimeState,
+              visualSubjectId,
+              input.catalog,
+            )
+          : input.runtimeState;
+      const shouldCommitVisualSubject =
+        visualSucceeded &&
+        nextVisualRuntimeState.focusedSubject?.id != null &&
+        nextVisualRuntimeState.focusedSubject.id !==
+          input.runtimeState.focusedSubject?.id;
       return finish({
         status: "applied",
         response: visualResponse,
@@ -1901,8 +1917,8 @@ export function executeNexoraConversationalExperience(
         commandResult: null,
         runtimeResult: null,
         previousExecutiveContext,
-        nextRuntimeState: input.runtimeState,
-        shouldCommitRuntime: false,
+        nextRuntimeState: nextVisualRuntimeState,
+        shouldCommitRuntime: shouldCommitVisualSubject,
         trustedAdvisorySuccess: true,
         ids,
         utterance,
@@ -3690,7 +3706,14 @@ function finalize(args: {
               runtimeFocusedSubjectKind: "scenario" as const,
               runtimeFocusedCanonicalName: scenarioRef.canonicalName ?? null,
             }
-          : {}),
+          : args.shouldCommitRuntime && args.nextRuntimeState.focusedSubject
+            ? {
+                runtimeFocusedSubjectId: args.nextRuntimeState.focusedSubject.id,
+                runtimeFocusedSubjectKind: focusedKind(args.nextRuntimeState),
+                runtimeFocusedCanonicalName:
+                  args.nextRuntimeState.focusedSubject.label ?? null,
+              }
+            : {}),
     });
     nextExecutiveContext = executiveContextUpdate.nextContext;
   } else {
@@ -3841,6 +3864,7 @@ function finalize(args: {
       }).decision
     : null;
   const executionTargetNeedsClarification =
+    !args.lockPresentedResponse &&
     preProjectionExecutionRequest?.action === "start" &&
     contextSafeExecutionDecision == null;
   const effectiveStatus = executionTargetNeedsClarification

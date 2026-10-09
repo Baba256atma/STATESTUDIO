@@ -265,6 +265,32 @@ test("G — overlay placement honors the existing 0–3 card rule", () => {
   assert.equal(STAGE_PROD_OVERLAY_PLACEMENT_BOUNDARY.createsCardSystem, false);
 });
 
+test("STAGE-COMPOSITION:5 DTH:7 comparison reuses the existing context overlay slot", () => {
+  const placement = resolveStageProdOverlayPlacement({
+    investigation: false,
+    comparison: true,
+    report: true,
+    operation: true,
+    chart: true,
+  });
+  assert.ok(placement.comparison);
+  assert.equal(placement.investigation, null);
+  assert.match(String(placement.operation?.right), /min\(272px, 42%\)/);
+  const rects = projectStageProdOverlayRects({
+    investigation: false,
+    comparison: true,
+    report: true,
+    operation: true,
+    chart: true,
+    viewportWidth: 1100,
+    viewportHeight: 640,
+  });
+  assert.equal(stageProdOverlayRectsIntersect(rects.rects.comparison!, rects.rects.report!), false);
+  assert.equal(stageProdOverlayRectsIntersect(rects.rects.comparison!, rects.rects.chart!), false);
+  assert.equal(stageProdOverlayRectsIntersect(rects.rects.comparison!, rects.rects.operation!), false);
+  assert.deepEqual(rects.persistentIntersections, []);
+});
+
 test("H — omitting a stale visual does not change the canonical subject", () => {
   const capacity = focus("ctx-problem-capacity");
   const before = capacity.composition.presentation.focusedSubjectId;
@@ -345,4 +371,40 @@ test("J — Saved Scene layout is not a second overlay authority", () => {
   assert.match(html, /data-testid="nexora-subject-report"/);
   assert.match(html, /data-stage-overlay-slot="evidence-visual"/);
   assert.match(html, /data-stage-overlay-slot="report-detail"/);
+});
+
+test("STAGE-COMPOSITION:2 Actions does not activate Report while a chart remains", () => {
+  const inventory = focus("obj-inventory");
+  const html = renderToStaticMarkup(
+    React.createElement(Nexora3DExecutiveStage, {
+      workspaceLabel: "Overview",
+      interaction: deriveNexoraMVPStageInteractionPresentation(inventory.state, catalog, {
+        consultExecutiveChangeSessionStore: false,
+      }),
+      environment: deriveNexoraMVPSceneEnvironmentVisualState("neutral"),
+      presentationViewModel: deriveNexoraMVPPresentationViewModel({
+        presentationState: "operation",
+        workspace: "overview",
+        environmentIntent: "neutral",
+        subjectId: "obj-inventory",
+        subjectKind: "object",
+        subjectLabel: "Inventory",
+      }),
+      advisorBridge: buildNexoraMVPAdvisorContextBridge(
+        inventory.state,
+        deriveNexoraMVPStageInteractionPresentation(inventory.state, catalog, {
+          consultExecutiveChangeSessionStore: false,
+        }),
+      ),
+      theatreComposition: inventory.theatre,
+      requestedVisual: inventoryView(),
+      onSelectSubject: () => undefined,
+      onStepBack: () => undefined,
+      onOverview: () => undefined,
+      onPresentationStateChange: () => undefined,
+      onPresentationAction: () => undefined,
+    }),
+  );
+  assert.match(html, /data-testid="nexora-evidence-visual-view"/);
+  assert.doesNotMatch(html, /data-testid="nexora-subject-report"/);
 });

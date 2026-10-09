@@ -22,7 +22,9 @@ function lerp(current: number, target: number, alpha: number): number {
 }
 
 /** One shared field gradient. Soft center haze, darker edges, no hard disc. */
-function createStageCenterHazeTexture(): CanvasTexture | null {
+function createStageCenterHazeTexture(
+  haze: NexoraMVPSceneEnvironmentVisualState["atmosphereHaze"],
+): CanvasTexture | null {
   if (typeof document === "undefined") return null;
   const size = 512;
   const canvas = document.createElement("canvas");
@@ -39,10 +41,10 @@ function createStageCenterHazeTexture(): CanvasTexture | null {
     center,
     size * 0.72,
   );
-  gradient.addColorStop(0, "rgba(118, 158, 196, 0.42)");
-  gradient.addColorStop(0.32, "rgba(46, 78, 112, 0.2)");
-  gradient.addColorStop(0.68, "rgba(8, 14, 24, 0.46)");
-  gradient.addColorStop(1, "rgba(2, 5, 10, 0.84)");
+  gradient.addColorStop(0, haze.center);
+  gradient.addColorStop(0.32, haze.mid);
+  gradient.addColorStop(0.68, haze.edge);
+  gradient.addColorStop(1, haze.rim);
   context.fillStyle = gradient;
   context.fillRect(0, 0, size, size);
   const texture = new CanvasTexture(canvas);
@@ -67,7 +69,15 @@ export function NexoraSceneEnvironmentController({
   const targetBg = useRef(new Color(environment.background));
   const targetGround = useRef(new Color(environment.groundColor));
   const groundShadow = EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION.stageGround;
-  const centerHaze = useMemo(() => createStageCenterHazeTexture(), []);
+  const centerHaze = useMemo(() => {
+    const texture = createStageCenterHazeTexture(environment.atmosphereHaze);
+    return texture;
+  }, [
+    environment.atmosphereHaze.center,
+    environment.atmosphereHaze.edge,
+    environment.atmosphereHaze.mid,
+    environment.atmosphereHaze.rim,
+  ]);
 
   useEffect(() => {
     targetBg.current.set(environment.background);

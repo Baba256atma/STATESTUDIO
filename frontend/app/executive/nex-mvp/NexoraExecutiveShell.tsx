@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   createInitialNexoraExecutiveShellApplicationState,
   getNexoraExecutiveShellIdentity,
@@ -285,6 +285,8 @@ import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/exec
 import {
   applyNexoraMVPPresentationDensity,
   applyNexoraMVPPresentationStateChange,
+  completeNexoraMVPOperationPresentation,
+  nexoraMVPAcceptedVisualPresentationChanged,
   deriveNexoraMVPPresentationViewModel,
   type NexoraMVPPresentationAvailableAction,
 } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
@@ -302,6 +304,14 @@ import { ExecutiveStageFrame } from "../exs1/shell/ExecutiveStageFrame";
 import { ExecutiveStatusBar } from "../exs1/shell/ExecutiveStatusBar";
 import { ExecutiveTimelineDock } from "../exs1/shell/ExecutiveTimelineDock";
 import { cockpit } from "../exs1/shell/executiveCockpitTheme";
+import {
+  applyResolvedUiThemeToDocument,
+  getSystemPrefersDark,
+  persistThemeMode,
+  readStoredThemeMode,
+  resolveThemeMode,
+} from "@/app/lib/ui/nexoraUiTheme";
+import { bindMediaQueryListener } from "@/app/lib/dom/domListenerLifecycle";
 import {
   explorerTitle,
   navToExplorer,
@@ -381,6 +391,9 @@ function applyInteractionToApplication(
   const subjects = mapNexoraMVPInteractionStateToApplicationSubjects(interaction);
   return Object.freeze({
     ...previous,
+    presentationState: interaction.presentationState,
+    workspace: interaction.workspace,
+    environmentIntent: interaction.environmentIntent,
     selectedSubject: subjects.selectedSubject,
     focusedSubject: subjects.focusedSubject,
     activeSurface: "stage" as const,
@@ -631,7 +644,42 @@ export function NexoraExecutiveShell({
   const [flowDomain, setFlowDomain] = useState(
     createInitialNexoraMVPFlowDomainState,
   );
-  const [theme, setTheme] = useState<ExecutiveThemeMode>("night");
+  const [theme, setThemeState] = useState<ExecutiveThemeMode>("night");
+  const [prefersDark, setPrefersDark] = useState(false);
+
+  useLayoutEffect(() => {
+    const stored = readStoredThemeMode();
+    const dark = getSystemPrefersDark();
+    setThemeState(stored);
+    setPrefersDark(dark);
+    applyResolvedUiThemeToDocument(resolveThemeMode(stored, dark));
+  }, []);
+
+  useEffect(() => {
+    if (theme !== "auto") return undefined;
+    return bindMediaQueryListener(
+      "(prefers-color-scheme: dark)",
+      (event) => {
+        setPrefersDark(event.matches);
+        applyResolvedUiThemeToDocument(resolveThemeMode("auto", event.matches));
+      },
+      {
+        component: "NexoraExecutiveShell",
+        elementId: "prefers-color-scheme: dark",
+        eventType: "change",
+      },
+    );
+  }, [theme]);
+
+  const setTheme = useCallback((next: ExecutiveThemeMode) => {
+    setThemeState(next);
+    persistThemeMode(next);
+    applyResolvedUiThemeToDocument(
+      resolveThemeMode(next, getSystemPrefersDark()),
+    );
+  }, []);
+
+  const resolvedUiTheme = resolveThemeMode(theme, prefersDark);
   const [activeNav, setActiveNav] = useState<ExecutiveNavId>("Home");
   const [nmiPanelOpen, setNmiPanelOpen] = useState(false);
   const [detailLaunchReference, setDetailLaunchReference] =
@@ -1187,8 +1235,9 @@ export function NexoraExecutiveShell({
     () =>
       deriveNexoraMVPSceneEnvironmentVisualState(
         interaction.environmentIntent,
+        { uiTheme: resolvedUiTheme },
       ),
-    [interaction.environmentIntent],
+    [interaction.environmentIntent, resolvedUiTheme],
   );
 
   const focusedSubject =
@@ -1424,10 +1473,11 @@ export function NexoraExecutiveShell({
     const session = entranceSessionRef.current;
     const experience = resolveExecutiveExperienceContext(session);
     setInteraction((previous) => {
-      const next = resetNexoraExperienceAwareStageOverview({
+      const reset = resetNexoraExperienceAwareStageOverview({
         state: previous,
         session,
       });
+      const next = completeNexoraMVPOperationPresentation(reset, true);
       setApplication((app) => applyInteractionToApplication(app, next));
       // Overview is presentation reset — preserve executive structure (CC:7).
       syncExecutiveContextFromRuntime(next, "runtime");
@@ -1480,10 +1530,14 @@ export function NexoraExecutiveShell({
     (subjectId: string | null) => {
       setSelectedDataObjectId(null);
       setInteraction((previous) => {
-        const next = selectNexoraMVPInteractionSubject(
+        const selected = selectNexoraMVPInteractionSubject(
           previous,
           subjectId,
           dataRealityExperience.catalog,
+        );
+        const next = completeNexoraMVPOperationPresentation(
+          selected,
+          selected !== previous,
         );
         setApplication((app) => applyInteractionToApplication(app, next));
         syncExecutiveContextFromRuntime(next, "runtime");
@@ -2032,10 +2086,18 @@ export function NexoraExecutiveShell({
         if (result.guidedAttention) {
           setGuidedAttention(result.guidedAttention);
         }
+        const previousVisualView = visualViewRef.current;
         if (result.visualView) {
           setVisualView(result.visualView);
         }
         setVisualizationRoute(result.visualizationRoute ?? null);
+        const acceptedVisualPresentation = nexoraMVPAcceptedVisualPresentationChanged(
+          previousVisualView,
+          result.visualView,
+        );
+        const completeOperationIfVisual = (
+          state: typeof previous,
+        ) => completeNexoraMVPOperationPresentation(state, acceptedVisualPresentation);
         if (result.nextScenarioSession) {
           setScenarioSession(result.nextScenarioSession);
         }
@@ -2119,8 +2181,8 @@ export function NexoraExecutiveShell({
           activeComparison.candidateIds.length >= 2;
 
         if (comparisonRequiresStageReferentRelease) {
-          const comparisonState = resetNexoraMVPObjectInteractionOverview(
-            result.nextRuntimeState,
+          const comparisonState = completeOperationIfVisual(
+            resetNexoraMVPObjectInteractionOverview(result.nextRuntimeState),
           );
           setInteraction(comparisonState);
           setApplication((app) =>
@@ -2139,26 +2201,32 @@ export function NexoraExecutiveShell({
             education.state === "AWAITING_FOCUS" &&
             !reducedMotion
           ) {
-            const overview = Object.freeze({
-              ...result.nextRuntimeState,
-              mode: "overview" as const,
-              focusedSubject: null,
-              selectedSubject: null,
-            });
+            const overview = completeOperationIfVisual(
+              Object.freeze({
+                ...result.nextRuntimeState,
+                mode: "overview" as const,
+                focusedSubject: null,
+                selectedSubject: null,
+              }),
+            );
             setInteraction(overview);
             setApplication((app) => applyInteractionToApplication(app, overview));
             requestAnimationFrame(() => {
-              setInteraction(result.nextRuntimeState);
-              setApplication((app) =>
-                applyInteractionToApplication(app, result.nextRuntimeState),
-              );
+              const next = completeOperationIfVisual(result.nextRuntimeState);
+              setInteraction(next);
+              setApplication((app) => applyInteractionToApplication(app, next));
             });
           } else {
-            setInteraction(result.nextRuntimeState);
-            setApplication((app) =>
-              applyInteractionToApplication(app, result.nextRuntimeState),
-            );
+            const next = completeOperationIfVisual(result.nextRuntimeState);
+            setInteraction(next);
+            setApplication((app) => applyInteractionToApplication(app, next));
           }
+        } else if (acceptedVisualPresentation) {
+          setInteraction((current) => {
+            const next = completeNexoraMVPOperationPresentation(current, true);
+            setApplication((app) => applyInteractionToApplication(app, next));
+            return next;
+          });
         }
       } catch {
         const failedMessage: NexoraConversationalMessage = Object.freeze({
@@ -2305,38 +2373,44 @@ export function NexoraExecutiveShell({
       const request = classifyNexoraMVPFlowDomainAction(action, focusedId);
       if (request == null) return false;
 
-      setFlowDomain((current) => {
-        if (
-          current.pendingActionId != null &&
-          current.pendingActionId !== action.id
-        ) {
-          return failNexoraMVPFlowPendingAction(
-            current,
+      if (
+        flowDomain.pendingActionId != null &&
+        flowDomain.pendingActionId !== action.id
+      ) {
+        setFlowDomain(
+          failNexoraMVPFlowPendingAction(
+            flowDomain,
             "Another executive action is already pending.",
-          );
-        }
-        const pending = beginNexoraMVPFlowPendingAction(current, action.id);
-        const result = applyNexoraMVPFlowDomainAction(pending, request, {
-          decisionRuntime: decisionRuntime.adapter,
-          occurredAt: new Date().toISOString(),
-        });
-        if (!result.ok) {
-          return failNexoraMVPFlowPendingAction(result.state, result.message);
-        }
-        return result.state;
+          ),
+        );
+        return false;
+      }
+      const pending = beginNexoraMVPFlowPendingAction(flowDomain, action.id);
+      const result = applyNexoraMVPFlowDomainAction(pending, request, {
+        decisionRuntime: decisionRuntime.adapter,
+        occurredAt: new Date().toISOString(),
       });
+      if (!result.ok) {
+        setFlowDomain(
+          failNexoraMVPFlowPendingAction(result.state, result.message),
+        );
+        return false;
+      }
+      setFlowDomain(result.state);
       return true;
     },
     [
       interaction.focusedSubject?.id,
       interaction.selectedSubject?.id,
       decisionRuntime,
+      flowDomain,
     ],
   );
 
   const onPresentationAction = useCallback(
     (action: NexoraMVPPresentationAvailableAction) => {
       if (!action.available) return;
+      let accepted = false;
       if (action.kind === "select-subject" && action.targetSubjectId) {
         onSelectSubject(action.targetSubjectId);
         return;
@@ -2349,17 +2423,18 @@ export function NexoraExecutiveShell({
           data: "data-wizard",
         } as const;
         setFloatingKind(panelMap[action.panelKind]);
-        return;
+        accepted = true;
       }
       if (action.kind === "acknowledge") {
         selectAdvisorTab("Assist");
-        return;
+        accepted = true;
       }
       if (action.kind === "review") {
-        applyFlowAction(action);
+        accepted = applyFlowAction(action);
       }
+      if (accepted) onPresentationStateChange("minimum");
     },
-    [applyFlowAction, onSelectSubject],
+    [applyFlowAction, onPresentationStateChange, onSelectSubject],
   );
 
   const onIntelligenceAction = useCallback(
@@ -3373,6 +3448,7 @@ export function NexoraExecutiveShell({
       data-workflow-outcome={workflowPresentation.outcomeAvailability}
       data-workflow-learning={workflowPresentation.learningAvailability}
       data-theme-mode={theme}
+      data-resolved-ui-theme={resolvedUiTheme}
       data-ux1="simplify-executive-page"
       data-mo1="interaction"
       data-mo1-active-object-id={managerObjectSession.activeObjectId ?? "none"}

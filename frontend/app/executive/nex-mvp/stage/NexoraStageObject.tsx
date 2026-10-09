@@ -52,6 +52,7 @@ import {
 import { sampleExecutiveStageMotionObject } from "@/app/lib/spatial-presentation/executiveStageMotion";
 import { projectStageProdObjectMotion } from "@/app/lib/stage-prod/stageProdObjectMotion.ts";
 import { projectExecutiveOvsObjectKindHandoff } from "@/app/lib/spatial-presentation/projectExecutiveOvsObjectKindHandoff.ts";
+import { useResolvedDocumentUiTheme } from "@/app/lib/ui/executiveThemeCssBridge";
 
 type Props = {
   readonly presentation: NexoraMVPStageObjectPresentation;
@@ -87,6 +88,7 @@ export function NexoraStageObject({
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
   const hovered = hoveredId === presentation.id;
+  const uiTheme = useResolvedDocumentUiTheme();
   const objectMotion = useMemo(
     () =>
       projectStageProdObjectMotion({
@@ -117,6 +119,7 @@ export function NexoraStageObject({
   const ovsObjectKind = projectExecutiveOvsObjectKindHandoff({
     id: presentation.id,
     kind: presentation.kind,
+    objectKind: presentation.objectKind,
   });
 
   const visual: ExecutiveObjectVisualPresentation = useMemo(
@@ -569,8 +572,7 @@ export function NexoraStageObject({
       />
 
       {/* STAGE-PRESENCE:FIX1 — horizontal ground presence (not state, not focus). */}
-      {!isExecutiveOvsObjectVisualLanguageEnabled() &&
-      isExecutive3DObjectTerritoryVisible() &&
+      {isExecutive3DObjectTerritoryVisible() &&
       visualIdentity &&
       visualIdentity.territoryStyle === "ground" &&
       !isCollectionMember &&
@@ -596,7 +598,11 @@ export function NexoraStageObject({
             ]}
           />
           <meshBasicMaterial
-            color={EXECUTIVE_OBJECT_GROUND_PRESENCE.color}
+            color={
+              uiTheme === "day"
+                ? EXECUTIVE_OBJECT_GROUND_PRESENCE.colorDay
+                : EXECUTIVE_OBJECT_GROUND_PRESENCE.color
+            }
             transparent
             opacity={visualIdentity.territoryOpacity}
             depthWrite={false}
@@ -708,6 +714,7 @@ export function NexoraStageObject({
         auditAttributes={{
           "data-canonical-id": presentation.id,
           "data-object-type": presentation.kind,
+          "data-management-kind": presentation.objectKind ?? presentation.kind,
           "data-status": presentation.status,
           "data-attention": presentation.attention,
           "data-role": presentation.role,

@@ -1,0 +1,100 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE/live-executive-smoke",
+  "url": "http://localhost:3000/executive",
+  "httpStatus": 200,
+  "hydrated": true,
+  "webglCanvas": true,
+  "stagePresent": true,
+  "cameraMode": "fixed-executive-perspective",
+  "topologyZ": "0",
+  "focusedTargetZ": "none",
+  "queuePresent": true,
+  "advisorPresent": true,
+  "conversationPresent": true,
+  "whatIfLive": {
+    "intentKind": "explore-scenario",
+    "commandKind": "evaluate-scenario",
+    "primarySubject": "obj-inventory",
+    "lastNexoraText": "NexoraI understand that you want to explore increasing Inventory, but I don't currently have a supported impact model for that change.",
+    "genericFallback": false,
+    "inventoryUnsupportedHonest": true,
+    "inventoryInventedImpact": false
+  },
+  "stateChangeLive": {
+    "intentKind": "explore-scenario",
+    "commandKind": "evaluate-scenario",
+    "primarySubject": "obj-delivery",
+    "lastNexoraText": "NexoraA severe Delivery delay is projected to put pressure on Delivery On-time performance. The direction is supported by the current Scenario model, but Nexora does not have enough evidence to quantify the size of the impact. This is a projection, not an observed Outcome.",
+    "focusedOnDelivery": true,
+    "genericFallback": false,
+    "severeDelay": true,
+    "groundedProjection": true,
+    "inventedMagnitude": false
+  },
+  "deicticLateLive": {
+    "intentKind": "explore-scenario",
+    "primarySubject": "obj-delivery",
+    "lastNexoraText": "NexoraA severe Delivery delay is projected to put pressure on Delivery On-time performance. The direction is supported by the current Scenario model, but Nexora does not have enough evidence to quantify the size of the impact. This is a projection, not an observed Outcome.",
+    "genericFallback": false
+  },
+  "impactFollowupLive": {
+    "texts": [
+      "NexoraSupported affected dimensions: On-time. Downstream effects without a binding are omitted. This remains a Scenario projection, not Reality or Actual Outcome. No Risk impact is attached. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "NexoraWhich CSV source should I inspect?",
+      "NexoraNo Risk impact is supported for this Scenario intervention. That is not a causal finding. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "NexoraThat is not a confirmed cause. The recorded relationships and current conditions are known; treating any of them as the reason is still an assumption until stronger evidence arrives. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation.",
+      "NexoraDelivery has not been resolved yet, so it still deserves attention. Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause. Has backlog increased recently?"
+    ],
+    "genericFallback": false,
+    "affectedHasKpi": true,
+    "kpiMentionsOnTime": false,
+    "risksHonest": true,
+    "confidenceProjection": false,
+    "whyNotCausal": false
+  },
+  "scenarioFollowupLive": {
+    "intentKind": "explain",
+    "commandKind": "request-explanation",
+    "primarySubject": "obj-delivery",
+    "followupNexoraTexts": [
+      "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "NexoraA Delivery delay within Demand Surge is projected to put pressure on Delivery On-time performance. The direction is supported by the current Scenario model, but Nexora does not have enough evidence to quantify the size of the impact. This is a projection, not an observed Outcome.",
+      "NexoraNo Risk impact is supported for this Scenario intervention. That is not a causal finding. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "NexoraThat is not a confirmed cause. The recorded relationships and current conditions are known; treating any of them as the reason is still an assumption until stronger evidence arrives. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation."
+    ],
+    "genericFallback": false,
+    "firstTurnExplanation": true,
+    "firstTurnInvestigate": false,
+    "secondTurnGroundedProjection": true,
+    "secondTurnDemandSurge": true,
+    "fourthTurnScenarioConfidence": false
+  },
+  "explainFidelityLive": {
+    "intentKind": "explain-scenario",
+    "commandKind": "explain-scenario",
+    "primarySubject": "ctx-scenario-demand",
+    "lastNexoraText": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+    "scenarioFirst": true,
+    "investigateFirst": false,
+    "projectionBoundary": true
+  },
+  "explainFollowupLive": {
+    "texts": [
+      "NexoraThe current scenario model associates Demand Surge with Delivery. Additional intervention impact is not established yet. This remains a Scenario projection, not Reality or Actual Outcome. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "NexoraNo Risk impact is supported for this Scenario. That is not a causal finding. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "NexoraI'm sure Demand Surge is Stable. I'm not yet sure Revenue is the confirmed cause. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation.",
+      "NexoraThe current scenario model associates Demand Surge with Delivery. That association is not a causal finding. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "NexoraI lean toward temporary capacity. That is an advisory suggestion, not a catalog Scenario. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I don’t have enough evidence to recommend one option yet. I would continue the investigation before choosing."
+    ],
+    "genericFallback": false,
+    "recommendIsAdvice": true,
+    "affectedContinuity": true,
+    "risksHonest": true,
+    "confidenceProjection": true,
+    "whyNotCausal": false
+  },
+  "clickToCenterAttempted": true,
+  "backForwardEscapeAttempted": true,
+  "smokeError": "fix4 impact follow-up live failed: {\"texts\":[\"NexoraSupported affected dimensions: On-time. Downstream effects without a binding are omitted. This remains a Scenario projection, not Reality or Actual Outcome. No Risk impact is attached. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.\",\"NexoraWhich CSV source should I inspect?\",\"NexoraNo Risk impact is supported for this Scenario intervention. That is not a causal finding. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.\",\"NexoraThat is not a confirmed cause. The recorded relationships and current conditions are known; treating any of them as the reason is still an assumption until stronger evidence arrives. Only tentatively. Important uncertainty remains, so I would not treat this as a strong recommendation.\",\"NexoraDelivery has not been resolved yet, so it still deserves attention. Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause. Has backlog increased recently?\"],\"genericFallback\":false,\"affectedHasKpi\":true,\"kpiMentionsOnTime\":false,\"risksHonest\":true,\"confidenceProjection\":false,\"whyNotCausal\":false}",
+  "ok": false
+}

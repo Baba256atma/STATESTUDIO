@@ -48,6 +48,22 @@ export function persistThemeMode(mode: ThemeMode): void {
   }
 }
 
+/** Single document authority for Day/Night presentation tokens. */
+export function applyResolvedUiThemeToDocument(theme: ResolvedUiTheme): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.setAttribute("data-theme", theme);
+}
+
+export function resolveAndApplyUiThemeMode(
+  mode: ThemeMode,
+  prefersDark: boolean = getSystemPrefersDark(),
+): ResolvedUiTheme {
+  const resolved = resolveThemeMode(mode, prefersDark);
+  applyResolvedUiThemeToDocument(resolved);
+  persistThemeMode(mode);
+  return resolved;
+}
+
 type NexoraUiThemeContextValue = {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;

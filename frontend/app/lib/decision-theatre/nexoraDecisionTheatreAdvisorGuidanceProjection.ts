@@ -52,7 +52,7 @@ export type NexoraDecisionTheatreAdvisorGuidance = Readonly<{
   writesBusinessState: false;
 }>;
 
-const DIMENSION_LABEL: Readonly<Record<string, string>> = Object.freeze({
+const DIMENSION_LABEL = Object.freeze({
   owner: "Owner",
   timing: "Timing",
   resources: "Resources",

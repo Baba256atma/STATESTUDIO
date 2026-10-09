@@ -131,7 +131,8 @@ export function projectStageProdExecutiveVisualizationRoute(input: Readonly<{
     theatre: input.theatre,
     composition: input.composition,
     requestedVisual: input.view,
-    focalSubjectId: input.subjectId,
+    focalSubjectId:
+      input.composition.presentation.focusedSubjectId ?? input.subjectId,
   });
   return Object.freeze({
     identity: stageProdExecutiveVisualizationRouteIdentity,

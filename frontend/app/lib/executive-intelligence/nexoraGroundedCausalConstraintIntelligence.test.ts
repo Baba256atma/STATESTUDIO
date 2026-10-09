@@ -415,7 +415,8 @@ test("P — Data Reality observation does not prove causal interpretation", () =
   const pack = pipeline("obj-capacity");
   const observation = pack.experience.epistemicFoundation.observation;
   assert.ok(observation);
-  assert.equal(observation.claim.type, "FACT");
+  // Fixture-backed Capacity KPIs are not accepted Data Reality facts.
+  assert.equal(observation.claim.type, "UNKNOWN");
   const contributor = pack.experience.coreCausalAssessment.contributors[0];
   assert.ok(contributor);
   assert.equal(contributor.interpretationClaim.type, "ASSUMPTION");

@@ -2,13 +2,28 @@
  * NEX-MVP:3 — Stage development fixtures.
  *
  * Local, replaceable sample objects/relationships for Stage rendering.
- * Not canonical business logic.
+ * `kind` is the stage category (business object vs context subject).
+ * `objectKind`, when present, is the management identity projected by
+ * Manager Object. It is not a visual family.
  */
+
+import type { ManagerObjectKind } from "@/app/lib/manager-object/managerObjectInteractionFoundation.ts";
 
 export type NexoraMVPStageObjectFixture = {
   readonly id: string;
   readonly label: string;
+  /**
+   * Stage category. Stays `"object"` for every live business body so
+   * navigation can distinguish it from a problem, scenario, decision,
+   * or execution. Not the management subtype.
+   */
   readonly kind: "object";
+  /**
+   * Management identity when it is narrower than `kind`.
+   * Absent means the management identity is the stage category `object`.
+   * Uses Manager Object vocabulary. Not geometry.
+   */
+  readonly objectKind?: ManagerObjectKind;
   readonly position: readonly [number, number, number];
   /** Includes unresolved so missing runtime truth never falls back to healthy. */
   readonly status: "stable" | "watch" | "risk" | "unresolved";
@@ -29,7 +44,14 @@ export type NexoraMVPStageRelationshipFixture = {
 /** Canonical Risk executive Object identity. Not a visual family registry. */
 export const NEXORA_MVP_CANONICAL_RISK_OBJECT_ID = "obj-risk" as const;
 
-/** ~8 executive entities — enough for spatial presence without chaos. */
+/** Management identity stored on the canonical Risk record. */
+export const NEXORA_MVP_CANONICAL_RISK_OBJECT_KIND = "risk" as const satisfies ManagerObjectKind;
+
+/**
+ * Live Primary Stage Body instance set (business-object family).
+ * Admission policy: `nexoraMvpPrimaryStageBodyAdmission`.
+ * ~8 executive entities — enough for spatial presence without chaos.
+ */
 export const NEXORA_MVP_STAGE_OBJECT_FIXTURES = Object.freeze([
   Object.freeze({
     id: "obj-revenue",
@@ -75,6 +97,7 @@ export const NEXORA_MVP_STAGE_OBJECT_FIXTURES = Object.freeze([
     id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
     label: "Risk",
     kind: "object" as const,
+    objectKind: NEXORA_MVP_CANONICAL_RISK_OBJECT_KIND,
     position: [2.2, -0.05, 1.25] as const,
     status: "risk" as const,
     attention: "critical" as const,

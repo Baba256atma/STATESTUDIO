@@ -8,6 +8,7 @@
  */
 
 import { apiBase } from "@/app/lib/apiBase.ts";
+import type { NexoraMVPObjectInteractionState } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
 import type { NexoraConversationalExperienceResult } from "./conversationalExperience.ts";
 import {
   nexoraLlmConversationParticipantIdentity,
@@ -36,12 +37,26 @@ function statusFromHttp(body: {
   return "failed";
 }
 
+type NexoraLlmManagerPresentationOptions = {
+  readonly fetchImpl?: typeof fetch;
+  readonly apiBaseUrl?: string;
+};
+
+type NexoraConversationalRuntimeResult = NexoraConversationalExperienceResult & {
+  readonly nextRuntimeState: NexoraMVPObjectInteractionState;
+};
+
+export function completeNexoraLlmManagerPresentation(
+  result: NexoraConversationalRuntimeResult,
+  options?: NexoraLlmManagerPresentationOptions,
+): Promise<NexoraConversationalRuntimeResult>;
+export function completeNexoraLlmManagerPresentation(
+  result: NexoraConversationalExperienceResult,
+  options?: NexoraLlmManagerPresentationOptions,
+): Promise<NexoraConversationalExperienceResult>;
 export async function completeNexoraLlmManagerPresentation(
   result: NexoraConversationalExperienceResult,
-  options?: {
-    readonly fetchImpl?: typeof fetch;
-    readonly apiBaseUrl?: string;
-  },
+  options?: NexoraLlmManagerPresentationOptions,
 ): Promise<NexoraConversationalExperienceResult> {
   const deterministic =
     result.llmGovernedOutput?.deterministicResponse ?? result.response;

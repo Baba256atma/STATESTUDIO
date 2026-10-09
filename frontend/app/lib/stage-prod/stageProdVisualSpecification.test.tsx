@@ -251,19 +251,26 @@ test("C — comparable Scenario evidence produces a comparison without changing 
   assert.match(renderStage(context.state, context.theatre), /COMPARISON_BARS/);
 });
 
-test("D — existing Capacity Gap state renders as a compact Status Card", () => {
+test("D — object investigation does not auto-fill Stage with a textual STATUS_CARD", () => {
   const context = investigation();
+  assert.ok(context.theatre.objectInvestigation);
+  assert.equal(context.theatre.objectInvestigation.objectId, "ctx-problem-capacity");
+  assert.match(
+    context.theatre.objectInvestigation.advisorReadable.evidence,
+    /does not yet have enough evidence|evidence/i,
+  );
   const projection = projectStageProdContextualVisuals({
     theatre: context.theatre,
     composition: context.composition,
   });
-  const spec = projection.specs[0];
-  assert.equal(spec?.family, "STATUS_CARD");
-  assert.equal(spec?.canonicalObjectIds[0], "ctx-problem-capacity");
-  assert.ok(spec?.family === "STATUS_CARD" && spec.status?.length);
+  assert.equal(projection.status, "omitted");
+  assert.equal(
+    projection.specs.some((spec) => spec.family === "STATUS_CARD"),
+    false,
+  );
   const html = renderStage(context.state, context.theatre);
-  assert.match(html, /data-stage-visual-family="STATUS_CARD"/);
-  assert.match(html, /Capacity Gap/);
+  assert.doesNotMatch(html, /data-stage-visual-family="STATUS_CARD"/);
+  assert.doesNotMatch(html, /data-testid="nexora-stage-contextual-visual"/);
 });
 
 test("E — contextual visuals appear only with a supported need", () => {

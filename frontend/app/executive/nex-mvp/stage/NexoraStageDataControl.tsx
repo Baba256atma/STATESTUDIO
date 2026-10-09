@@ -23,7 +23,7 @@ export function NexoraStageDataControl({ open, attention, guidedAttentionCue = n
       display: "flex", alignItems: "center", justifyContent: "center", gap: "0.42rem",
       border: `1px solid ${guided ? cockpit.accent : open ? cockpit.borderStrong : cockpit.border}`,
       borderRadius: cockpit.radius.pill,
-      background: open ? "rgba(12,25,42,0.96)" : "rgba(8,14,24,0.78)",
+      background: open ? cockpit.panel : cockpit.panelSoft,
       color: open ? cockpit.accent : cockpit.textSoft,
       boxShadow: guidedAttentionCue === "SOFT_HALO"
         ? `0 0 0 1px ${cockpit.accent}, 0 0 18px rgba(56,189,248,0.28)`

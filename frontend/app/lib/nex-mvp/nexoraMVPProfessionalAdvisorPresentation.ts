@@ -27,6 +27,7 @@ import {
 import {
   NEXORA_MVP_CONTEXT_SUBJECT_FIXTURES,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteractionFixtures";
+import { isAcceptedNexoraMVPPresentationKpi } from "@/app/lib/nex-mvp/nexoraMVPPresentationFixtures";
 
 export const nexoraMVPProfessionalAdvisorPresentationIdentity =
   "UX:3/NexoraProfessionalAdvisorPresentation" as const;
@@ -428,7 +429,7 @@ export function composeNexoraProfessionalAdvisorPresentation(input: {
       input.validatedDataSource === false
         ? false
         : bindingSubject?.hasKPI === true ||
-          input.intelligence?.primaryKpi != null,
+          isAcceptedNexoraMVPPresentationKpi(input.intelligence?.primaryKpi),
     resolutionStatus: bindingSubject?.resolutionStatus,
     executiveState: bindingSubject?.executiveState,
   });
@@ -598,8 +599,9 @@ function resolveSituation(input: {
   }
 
   const kpi = input.intelligence?.primaryKpi ?? input.insight?.primaryKpi ?? null;
+  const acceptedKpi = kpi?.provenance === "accepted-observation";
   const kpiSituation =
-    kpi != null && input.currentSubjectLabel != null
+    acceptedKpi && kpi != null && input.currentSubjectLabel != null
       ? kpi.target != null
         ? `${input.currentSubjectLabel} ${kpi.label.toLowerCase()} is ${kpi.value}, against a ${kpi.target} operating target.`
         : `${input.currentSubjectLabel} ${kpi.label.toLowerCase()} is ${kpi.value}.`
@@ -608,9 +610,11 @@ function resolveSituation(input: {
   const candidates = [
     input.briefSituation,
     input.advisorMeaning,
-    input.intelligence?.summary,
-    input.insight?.summary,
-    looksTechnical(input.advisor.observation) ? null : input.advisor.observation,
+    acceptedKpi ? input.intelligence?.summary : null,
+    acceptedKpi ? input.insight?.summary : null,
+    acceptedKpi && !looksTechnical(input.advisor.observation)
+      ? input.advisor.observation
+      : null,
     kpiSituation,
     input.currentSubjectLabel != null && input.intelligence?.status
       ? `${input.currentSubjectLabel} is currently ${input.intelligence.status}.`

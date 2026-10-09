@@ -1,0 +1,367 @@
+{
+  "url": "http://localhost:3000/executive?reset=1",
+  "errors": [],
+  "day": {
+    "themeMode": "day",
+    "resolvedTheme": "day",
+    "htmlTheme": "day",
+    "stageBgToken": "radial-gradient(118% 108% at 50% 42%, #c5e4f8 0%, #8ec4ea 46%, #5a9ad0 100%)",
+    "labelHalo": "0 1px 2px #f8fcfff2, 0 1px 8px #0f28466b",
+    "ovsEnabled": "true",
+    "ovsFamily": "operational",
+    "ovsPrimitive": "rounded-block",
+    "canvas": true,
+    "rightPanel": true,
+    "captions": [
+      {
+        "id": "obj-capacity",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "CAPACITY",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "WATCH",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(2, 6, 23)"
+      },
+      {
+        "id": "obj-customer",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "CUSTOMER",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "WATCH",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(2, 6, 23)"
+      }
+    ],
+    "objects": [
+      {
+        "id": "obj-revenue",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "stable",
+        "label": "Revenue"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Capacity"
+      },
+      {
+        "id": "obj-budget",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "unresolved",
+        "label": "Budget"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Customer"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Delivery"
+      },
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "managementKind": "risk",
+        "status": "unresolved",
+        "label": "Risk"
+      },
+      {
+        "id": "obj-inventory",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Inventory"
+      },
+      {
+        "id": "obj-demand",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "unresolved",
+        "label": "Demand"
+      }
+    ]
+  },
+  "dayRisk": {
+    "themeMode": "day",
+    "resolvedTheme": "day",
+    "htmlTheme": "day",
+    "stageBgToken": "radial-gradient(118% 108% at 50% 42%, #c5e4f8 0%, #8ec4ea 46%, #5a9ad0 100%)",
+    "labelHalo": "0 1px 2px #f8fcfff2, 0 1px 8px #0f28466b",
+    "ovsEnabled": "true",
+    "ovsFamily": "risk",
+    "ovsPrimitive": "diamond",
+    "canvas": true,
+    "rightPanel": true,
+    "captions": [
+      {
+        "id": "obj-risk",
+        "managementKind": "risk",
+        "status": "unresolved",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "RISK",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "UNRESOLVED",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(2, 6, 23)"
+      },
+      {
+        "id": "obj-delivery",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "DELIVERY",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "WATCH",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(71, 85, 105)"
+      },
+      {
+        "id": "obj-capacity",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "CAPACITY",
+            "fontWeight": "700",
+            "opacity": "1"
+          }
+        ],
+        "color": "rgb(71, 85, 105)"
+      },
+      {
+        "id": "obj-customer",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "CUSTOMER",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "WATCH",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(71, 85, 105)"
+      }
+    ],
+    "objects": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "managementKind": "risk",
+        "status": "unresolved",
+        "label": "Risk"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Delivery"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Capacity"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Customer"
+      }
+    ]
+  },
+  "night": {
+    "themeMode": "night",
+    "resolvedTheme": "night",
+    "htmlTheme": "night",
+    "stageBgToken": "radial-gradient(130% 120% at 0% 0%, #0b1220 0%, #071019 55%, #050a14 100%)",
+    "labelHalo": "0 1px 6px #02060ebf",
+    "ovsEnabled": "true",
+    "ovsFamily": "risk",
+    "ovsPrimitive": "diamond",
+    "canvas": true,
+    "rightPanel": true,
+    "captions": [
+      {
+        "id": "obj-risk",
+        "managementKind": "risk",
+        "status": "unresolved",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "RISK",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "UNRESOLVED",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(248, 250, 252)"
+      },
+      {
+        "id": "obj-delivery",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "DELIVERY",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "WATCH",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(148, 163, 184)"
+      },
+      {
+        "id": "obj-capacity",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "CAPACITY",
+            "fontWeight": "700",
+            "opacity": "1"
+          }
+        ],
+        "color": "rgb(148, 163, 184)"
+      },
+      {
+        "id": "obj-customer",
+        "managementKind": "object",
+        "status": "watch",
+        "lines": [
+          {
+            "role": "primary",
+            "text": "CUSTOMER",
+            "fontWeight": "700",
+            "opacity": "1"
+          },
+          {
+            "role": "secondary",
+            "text": "WATCH",
+            "fontWeight": "500",
+            "opacity": "0.58"
+          }
+        ],
+        "color": "rgb(148, 163, 184)"
+      }
+    ],
+    "objects": [
+      {
+        "id": "obj-risk",
+        "kind": "object",
+        "managementKind": "risk",
+        "status": "unresolved",
+        "label": "Risk"
+      },
+      {
+        "id": "obj-delivery",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Delivery"
+      },
+      {
+        "id": "obj-capacity",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Capacity"
+      },
+      {
+        "id": "obj-customer",
+        "kind": "object",
+        "managementKind": "object",
+        "status": "watch",
+        "label": "Customer"
+      }
+    ]
+  },
+  "gates": {
+    "dayTheme": true,
+    "nightTheme": true,
+    "dayNotWhiteStage": true,
+    "dayUsesCoolBlue": true,
+    "nightIndependent": true,
+    "twoObjects": true,
+    "captions": true,
+    "captionHierarchy": true,
+    "riskPresent": true,
+    "watchAndUnresolved": true,
+    "canvas": true,
+    "rightPanel": true,
+    "pageErrors": true
+  }
+}

@@ -233,10 +233,10 @@ test("M — Material palette unchanged", () => {
 });
 
 test("N — Label hierarchy unchanged", () => {
-  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.full, 0.96);
-  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.normal, 0.88);
-  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.hoverLift, 0.06);
-  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.minimal, 0.64);
+  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.full, 0.98);
+  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.normal, 0.94);
+  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.hoverLift, 0.02);
+  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.minimal, 0.74);
 });
 
 test("O — Background atmosphere unchanged", () => {

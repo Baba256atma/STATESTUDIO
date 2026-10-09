@@ -63,23 +63,24 @@ test("LLM-MVP:3 runtime identity is an adapter seam, not Nexora architecture", (
 });
 
 test("A: request normalization reaches the adapter contract", () => {
-  let seen: NexoraLlmRuntimeAdapterInput | null = null;
+  const seen: NexoraLlmRuntimeAdapterInput[] = [];
   const request = fixtureRequest();
   executeNexoraLlmRuntime(
     request,
     adapter((input) => {
-      seen = input;
+      seen.push(input);
       return Object.freeze({ text: "Optional overlay." });
     }),
   );
-  assert.ok(seen);
-  assert.equal(seen.request, request);
-  assert.equal(seen.timeoutMs, 8_000);
-  assert.equal(seen.systemInstruction, NEXORA_LLM_PARTICIPANT_SYSTEM_INSTRUCTION);
-  assert.equal(seen.userPayload, buildNexoraLlmRuntimeUserPayload(request));
-  assert.match(seen.userPayload, /Focused on Capacity/);
-  assert.match(seen.userPayload, /LLM-MVP:2\/ManagementContextProjection/);
-  assert.doesNotMatch(seen.userPayload, /OPENAI_API_KEY|sk-/);
+  const captured = seen[0];
+  assert.ok(captured);
+  assert.equal(captured.request, request);
+  assert.equal(captured.timeoutMs, 8_000);
+  assert.equal(captured.systemInstruction, NEXORA_LLM_PARTICIPANT_SYSTEM_INSTRUCTION);
+  assert.equal(captured.userPayload, buildNexoraLlmRuntimeUserPayload(request));
+  assert.match(captured.userPayload, /Focused on Capacity/);
+  assert.match(captured.userPayload, /LLM-MVP:2\/ManagementContextProjection/);
+  assert.doesNotMatch(captured.userPayload, /OPENAI_API_KEY|sk-/);
 });
 
 test("B: provider-native success becomes the normalized Nexora runtime result", () => {

@@ -256,10 +256,14 @@ test("M — hover does not free-float owned captions", () => {
 });
 
 test("N — focus/selected still one primary caption; SP:2.5 opacity unchanged", () => {
-  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.full, 0.96);
-  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.normal, 0.88);
-  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.minimal, 0.64);
-  assert.ok(0.88 + EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.hoverLift <= 0.94 + 1e-9);
+  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.full, 0.98);
+  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.normal, 0.94);
+  assert.equal(EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.minimal, 0.74);
+  assert.ok(
+    EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.normal +
+      EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS.hoverLift <=
+      0.96 + 1e-9,
+  );
   const presentation = pipeline("obj-capacity", true);
   const capacity = labeled(presentation).find((o) => o.id === "obj-capacity")!;
   assert.equal(capacity.focused, true);

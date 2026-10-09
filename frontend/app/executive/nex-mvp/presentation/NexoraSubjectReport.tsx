@@ -84,6 +84,9 @@ export function NexoraSubjectReport({ viewModel, overlayPlacement }: Props) {
       {viewModel.showKPIs && viewModel.primaryKpi ? (
         <div
           data-testid="nexora-subject-report-kpi"
+          data-kpi-provenance={
+            viewModel.primaryKpi.provenance ?? "presentation-fixture"
+          }
           style={{ marginTop: "0.65rem" }}
         >
           <p
@@ -130,6 +133,18 @@ export function NexoraSubjectReport({ viewModel, overlayPlacement }: Props) {
               Target {viewModel.primaryKpi.target}
             </p>
           ) : null}
+          <p
+            data-testid="nexora-subject-report-kpi-provenance"
+            style={{
+              margin: "0.2rem 0 0",
+              fontSize: "0.58rem",
+              color: cockpit.lowMuted,
+            }}
+          >
+            {viewModel.primaryKpi.provenance === "accepted-observation"
+              ? "Accepted observation"
+              : "Presentation baseline, not accepted manager data"}
+          </p>
         </div>
       ) : null}
 

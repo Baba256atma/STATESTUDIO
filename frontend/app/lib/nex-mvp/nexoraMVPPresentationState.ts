@@ -20,6 +20,7 @@ import type {
 import { syncNexoraMVPObjectInteractionShellContext } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import {
   getNexoraMVPSubjectPresentationFixture,
+  withNexoraMVPPresentationKpiProvenance,
   type NexoraMVPPresentationActionFixture,
   type NexoraMVPPresentationKoiFixture,
   type NexoraMVPPresentationKpiFixture,
@@ -230,6 +231,34 @@ export function applyNexoraMVPPresentationStateChange(
   });
 }
 
+/**
+ * Complete the transient Operation interaction without disturbing the
+ * authoritative subject/workflow transition that just occurred.
+ * Rejected actions keep Operation available for another choice.
+ */
+export function completeNexoraMVPOperationPresentation(
+  state: NexoraMVPObjectInteractionState,
+  accepted: boolean,
+): NexoraMVPObjectInteractionState {
+  if (!accepted || state.presentationState !== "operation") return state;
+  return applyNexoraMVPPresentationStateChange(state, "minimum");
+}
+
+/**
+ * STAGE-COMPOSITION:6 — DIR:VI applied a governed view this turn.
+ * `applyNexoraVisualViewRuntime` returns a new runtime object when a request
+ * is set, and the previous runtime when the view is merely retained.
+ * Dismissed, null, and retained views are not successful presentation
+ * transitions — including the same viewId requested again after VIEW Actions.
+ */
+export function nexoraMVPAcceptedVisualPresentationChanged(
+  previous: Readonly<{ view?: { viewId: string } | null }> | null | undefined,
+  next: Readonly<{ view?: { viewId: string } | null }> | null | undefined,
+): boolean {
+  if (next == null || next.view == null || next === previous) return false;
+  return true;
+}
+
 function deriveActions(
   fixture: NexoraMVPSubjectPresentationFixture | null,
   state: NexoraMVPPresentationState,
@@ -275,7 +304,10 @@ export function deriveNexoraMVPPresentationViewModel(input: {
     input.subjectId != null &&
     capability.operation;
 
-  const primaryKpi = fixture?.primaryKpi ?? null;
+  const primaryKpi =
+    fixture?.primaryKpi != null
+      ? withNexoraMVPPresentationKpiProvenance(fixture.primaryKpi)
+      : null;
   const koi = fixture?.koi ?? null;
   const relationships = fixture?.relationships ?? Object.freeze([]);
   const summary = fixture?.summary ?? null;
@@ -297,7 +329,9 @@ export function deriveNexoraMVPPresentationViewModel(input: {
     showExecutiveSummary:
       (state === "report" || state === "operation") && summary != null,
     showActions: showOperationSurface,
-    showReportSurface: showReportSurface || showOperationSurface,
+    // STAGE-COMPOSITION:2 — Report is Details intent only; Actions must not
+    // activate the Report surface.
+    showReportSurface,
     showOperationSurface,
     primaryKpi: state === "minimum" ? primaryKpi : primaryKpi,
     secondaryKpis:

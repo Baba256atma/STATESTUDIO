@@ -87,32 +87,40 @@ export const directorLanguage = {
   impact: "#FDB022",
 } as const;
 
+/**
+ * NPA-T THEME-WIRING:1 — cockpit is a presentation compatibility layer.
+ * Color fields resolve through html[data-theme] → --nx-* tokens.
+ * Geometry, motion, and director state language stay local.
+ */
 export const cockpit = {
-  bg: "#070a10",
-  graphite: "#141925",
-  charcoal: "#0f131c",
-  navy: "#0b1220",
-  panel: "rgba(16, 20, 30, 0.94)",
-  panelSoft: "rgba(22, 28, 40, 0.78)",
-  glass: "rgba(12, 16, 24, 0.72)",
-  border: "rgba(148, 163, 184, 0.1)",
-  borderStrong: "rgba(56, 189, 248, 0.38)",
-  text: "#e8eef6",
-  textSoft: "#c5d0de",
-  muted: "#8b97a8",
-  lowMuted: "#5c6778",
-  accent: "#38bdf8",
-  accentSoft: "rgba(56, 189, 248, 0.12)",
-  accentGlow: "rgba(56, 189, 248, 0.26)",
-  risk: "#f87171",
-  success: "#4ade80",
-  warning: "#fbbf24",
-  stageBg:
-    "radial-gradient(125% 110% at 50% 28%, #152033 0%, #0a0f18 52%, #06080d 100%)",
-  dayBg: "#e8edf4",
-  dayPanel: "rgba(255, 255, 255, 0.94)",
-  dayText: "#0f172a",
-  dayMuted: "#475569",
+  bg: "var(--nx-bg-app)",
+  graphite: "var(--nx-bg-elevated)",
+  charcoal: "var(--nx-bg-deep)",
+  navy: "var(--nx-bg-hud)",
+  panel: "var(--nx-bg-panel)",
+  panelSoft: "var(--nx-bg-panel-soft)",
+  glass: "var(--nx-bg-hud)",
+  border: "var(--nx-border)",
+  borderStrong: "var(--nx-border-strong)",
+  text: "var(--nx-text)",
+  textSoft: "var(--nx-text-soft)",
+  muted: "var(--nx-muted)",
+  lowMuted: "var(--nx-low-muted)",
+  accent: "var(--nx-accent)",
+  accentSoft: "var(--nx-accent-soft)",
+  accentGlow: "var(--nx-accent-soft)",
+  risk: "var(--nx-risk)",
+  success: "var(--nx-success)",
+  warning: "var(--nx-warning)",
+  stageBg: "var(--nx-stage-bg)",
+  dayBg: "var(--nx-bg-app)",
+  dayPanel: "var(--nx-bg-panel)",
+  dayText: "var(--nx-text)",
+  dayMuted: "var(--nx-muted)",
+  roleManager: "var(--nx-role-manager)",
+  roleManagerLabel: "var(--nx-role-manager-label)",
+  roleNexora: "var(--nx-role-nexora)",
+  roleNexoraLabel: "var(--nx-role-nexora-label)",
   /** Fixed geometry */
   navWidth: "3.5rem",
   /** Sprint 6.5 — Advisor Co-Pilot panel */
@@ -158,3 +166,23 @@ export const cockpit = {
     xl: "1.35rem",
   },
 } as const;
+
+export function resolveExecutiveConversationRoleVisual(
+  role: "manager" | "nexora",
+): Readonly<{
+  readonly labelColor: string;
+  readonly textColor: string;
+  readonly labelWeight: 500 | 650;
+}> {
+  return role === "manager"
+    ? Object.freeze({
+        labelColor: cockpit.roleManagerLabel,
+        textColor: cockpit.roleManager,
+        labelWeight: 500,
+      })
+    : Object.freeze({
+        labelColor: cockpit.roleNexoraLabel,
+        textColor: cockpit.roleNexora,
+        labelWeight: 650,
+      });
+}

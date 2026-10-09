@@ -172,10 +172,10 @@ test("N: provider output cannot directly change Scenario/Decision/Execution/Outc
 });
 
 test("O: runtime receives Phase-2 bounded management context, not a second reconstruction", () => {
-  let seen: NexoraLlmRuntimeAdapterInput | null = null;
+  const seen: NexoraLlmRuntimeAdapterInput[] = [];
   const participant = createNexoraLlmRuntimeParticipant(
     adapter((input) => {
-      seen = input;
+      seen.push(input);
       return Object.freeze({ text: "overlay" });
     }),
   );
@@ -183,14 +183,15 @@ test("O: runtime receives Phase-2 bounded management context, not a second recon
     llmParticipant: participant,
     seed: "llm-mvp3-o",
   });
-  assert.ok(seen);
+  const captured = seen[0];
+  assert.ok(captured);
   assert.equal(
-    seen.request.managementContext.identity,
+    captured.request.managementContext.identity,
     nexoraLlmManagementContextIdentity,
   );
-  assert.equal(seen.request.managementContext.subject.canonicalId, "obj-capacity");
-  assert.equal(seen.request.deterministicResponse, "Focused on Capacity.");
-  assert.doesNotMatch(JSON.stringify(seen.request.managementContext), /rawCsv|OPENAI_API_KEY/);
+  assert.equal(captured.request.managementContext.subject.canonicalId, "obj-capacity");
+  assert.equal(captured.request.deterministicResponse, "Focused on Capacity.");
+  assert.doesNotMatch(JSON.stringify(captured.request.managementContext), /rawCsv|OPENAI_API_KEY/);
 });
 
 test("CC and Shell remain free of vendor SDKs and secret names", () => {

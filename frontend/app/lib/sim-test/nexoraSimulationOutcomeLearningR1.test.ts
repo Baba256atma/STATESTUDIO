@@ -156,7 +156,7 @@ test("SIM-TEST:10-R1 recertifies Outcome/Learning after OUT-LIVE:1", { timeout: 
   const observedNumeric = allRows.filter((row) => row.npsObservedOutcome != null);
   const eligibleCaptures = reports.flatMap((item) => item.captures.filter((capture) => capture.eligibleAsActualOutcome));
   const outcomeFlagged = reports.flatMap((item) => item.captures.filter((capture) => capture.isOutcome === true));
-  const npsWrites = allRows.filter((row) => row.npsOutcomeStatus && NPS_OUTCOME_LEARNING_BOUNDARY.writesOutcome === true);
+  const npsWrites = allRows.filter((row) => row.npsOutcomeStatus && NPS_OUTCOME_LEARNING_BOUNDARY.writesOutcome);
 
   const hReports = allReports.filter((report) => familyOf(report.identity.journeyId) === "H_MULTIPLE_OUTCOME_CHAINS");
   const hMaxExec = Math.max(0, ...hReports.flatMap((report) => report.journeyObservations.map((row) => row.executionLedger?.length ?? 0)));
@@ -227,7 +227,7 @@ test("SIM-TEST:10-R1 recertifies Outcome/Learning after OUT-LIVE:1", { timeout: 
   });
 
   const fix1 = (() => {
-    const journey: NexoraSimulationTestJourney = Object.freeze({
+    const journey: NexoraSimulationTestJourney = Object.freeze<NexoraSimulationTestJourney>({
       journeyId: "sim-test-10-r1-fix1-blocker",
       version: "1.0",
       title: "FIX1 blocker R1",

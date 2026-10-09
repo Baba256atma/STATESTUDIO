@@ -251,39 +251,6 @@ function comparisonSpec(
   });
 }
 
-function statusCardSpec(
-  theatre: NexoraDecisionTheatreFoundation,
-): StageProdStatusCardVisualSpec | null {
-  const investigation = theatre.objectInvestigation;
-  if (investigation == null || investigation.visualFamily !== "EXECUTIVE_OBJECT") {
-    return null;
-  }
-  const status =
-    investigation.statusSource !== "not-applicable" &&
-    investigation.currentState.length > 0
-      ? investigation.currentState
-      : null;
-  if (status == null && investigation.evidence.length === 0) return null;
-  return Object.freeze({
-    identity: `${stageProdVisualSpecificationIdentity}:status:${investigation.investigationId}`,
-    family: "STATUS_CARD",
-    title: investigation.managerReadableName,
-    status,
-    evidenceSummary: investigation.advisorReadable.evidence,
-    provenance: Object.freeze([...investigation.provenance]),
-    sceneScriptId: theatre.sceneScript.scriptId,
-    canonicalObjectIds: Object.freeze([investigation.objectId]),
-    sourceIds: Object.freeze([...investigation.provenance]),
-    evidenceStates: Object.freeze(
-      investigation.evidence.map((item) => item.epistemicStatus),
-    ),
-    sceneRole: "contextual-support",
-    writesCanonicalManagementState: false,
-    isBusinessObject: false,
-    isDataObject: false,
-  });
-}
-
 export function projectStageProdContextualVisuals(input: Readonly<{
   theatre?: NexoraDecisionTheatreFoundation | null;
   composition: StageProdDirectorComposition;
@@ -311,11 +278,12 @@ export function projectStageProdContextualVisuals(input: Readonly<{
         input.focalSubjectId,
       )
     : null;
+  // STAGE-COMPOSITION:4 — textual STATUS_CARD is not a Stage visual fallback.
+  // DTH:6 investigation semantics remain on Selected Object / Advisor.
+  // Charts and DTH:7 comparison remain Stage-owned visual evidence.
   const spec =
     requestedSpec ??
-    (input.requestedVisual
-      ? null
-      : comparisonSpec(theatre) ?? statusCardSpec(theatre));
+    (input.requestedVisual ? null : comparisonSpec(theatre));
   const omittedRequested =
     input.requestedVisual != null && requestedSpec == null;
   return Object.freeze({

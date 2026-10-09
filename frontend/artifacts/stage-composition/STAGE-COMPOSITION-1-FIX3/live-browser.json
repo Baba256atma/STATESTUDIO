@@ -1,0 +1,102 @@
+{
+  "identity": "NPA-T STAGE-COMPOSITION:1-FIX3/TypecheckFailureClassification",
+  "url": "http://localhost:3000/executive?reset=1",
+  "afterActions": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "cameraContract": "stage-2d-1",
+    "azimuth": "8",
+    "elevation": "10",
+    "distance": "11",
+    "target": "0,0,0",
+    "depth": "0",
+    "positionMode": "true-2d",
+    "presentation": "operation",
+    "object": false,
+    "report": true,
+    "sceneEvidence": false,
+    "actions": true,
+    "actionTitle": "Capacity",
+    "advisor": "Capacity",
+    "focused": "obj-capacity"
+  },
+  "afterInvestigate": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "cameraContract": "stage-2d-1",
+    "azimuth": "8",
+    "elevation": "10",
+    "distance": "11",
+    "target": "0,0,0",
+    "depth": "0",
+    "positionMode": "true-2d",
+    "presentation": "minimum",
+    "object": false,
+    "report": false,
+    "sceneEvidence": false,
+    "actions": false,
+    "actionTitle": null,
+    "advisor": "Capacity Gap",
+    "focused": "ctx-problem-capacity"
+  },
+  "afterReopen": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "cameraContract": "stage-2d-1",
+    "azimuth": "8",
+    "elevation": "10",
+    "distance": "11",
+    "target": "0,0,0",
+    "depth": "0",
+    "positionMode": "true-2d",
+    "presentation": "operation",
+    "object": false,
+    "report": true,
+    "sceneEvidence": false,
+    "actions": true,
+    "actionTitle": "Capacity Gap",
+    "advisor": "Capacity Gap",
+    "focused": "ctx-problem-capacity"
+  },
+  "afterOverview": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "cameraContract": "stage-2d-1",
+    "azimuth": "8",
+    "elevation": "10",
+    "distance": "11",
+    "target": "0,0,0",
+    "depth": "0",
+    "positionMode": "true-2d",
+    "presentation": "minimum",
+    "object": false,
+    "report": false,
+    "sceneEvidence": false,
+    "actions": false,
+    "actionTitle": null,
+    "advisor": "Executive Overview",
+    "focused": "none"
+  },
+  "cameraStable": true,
+  "composition": {
+    "beforeAction": {
+      "report": true,
+      "sceneEvidence": false,
+      "actions": true
+    },
+    "afterAction": {
+      "focused": "ctx-problem-capacity",
+      "advisor": "Capacity Gap",
+      "report": false,
+      "sceneEvidence": false,
+      "actions": false
+    }
+  },
+  "gates": {
+    "gActionsOpen": true,
+    "gInvestigate": true,
+    "gReopen": true,
+    "gOverview": true,
+    "gCamera": true
+  }
+}

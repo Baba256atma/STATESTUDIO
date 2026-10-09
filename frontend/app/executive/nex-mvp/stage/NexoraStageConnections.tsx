@@ -10,6 +10,7 @@ import type {
 import type { NexoraMVPContextNodePresentation } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import { resolveExecutiveStage2DVisualAttachmentPosition } from "./executiveStage2DLivePositions";
 import { getActiveExecutiveStageMotionTransition } from "@/app/lib/spatial-presentation/executiveStageMotion";
+import { useExecutiveThemeCssColor } from "@/app/lib/ui/executiveThemeCssBridge";
 
 type Props = {
   readonly connections: readonly NexoraMVPStageConnectionPresentation[];
@@ -234,6 +235,9 @@ function LiveStageConnection({
   readonly fallbackTarget: readonly [number, number, number];
 }) {
   const reducedMotion = usePrefersReducedStageMotion();
+  const accent = useExecutiveThemeCssColor("--nx-relationship", "#93c5fd");
+  const muted = useExecutiveThemeCssColor("--nx-relationship-muted", "#64748b");
+  const arrow = useExecutiveThemeCssColor("--nx-accent-ink", "#dbeafe");
   const [points, setPoints] = useState<Point[]>(() =>
     resolveLiveRoute(connection, fallbackSource, fallbackTarget),
   );
@@ -260,7 +264,7 @@ function LiveStageConnection({
   const directionCue = connection.directionCue ?? "none";
   const active = connection.emphasized || visualRole === "anchor-incident";
   const lineWidth = active ? 1.05 : 0.72;
-  const color = active ? "#b9d7ea" : visualRole === "background" ? "#6d8498" : "#8eabc2";
+  const color = active ? accent : visualRole === "background" ? muted : accent;
   const flowPoints =
     active && !reducedMotion && points.length > 2
       ? flowHighlight(points, flowTravel)
@@ -317,7 +321,7 @@ function LiveStageConnection({
       {flowPoints ? (
         <Line
           points={flowPoints}
-          color="#d7eef8"
+          color={arrow}
           transparent
           opacity={Math.min(0.55, connection.opacity)}
           lineWidth={1.15}

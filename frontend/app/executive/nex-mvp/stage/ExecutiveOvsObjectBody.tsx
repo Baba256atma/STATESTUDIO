@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, type ReactNode } from "react";
+import { forwardRef, useEffect, useMemo, type ReactNode } from "react";
 import { RoundedBox } from "@react-three/drei";
 import { AdditiveBlending, type Mesh } from "three";
 import {
@@ -11,12 +11,15 @@ import {
   type ExecutiveOvsObjectVisualLanguage,
   type ExecutiveOvsPrimitive,
 } from "@/app/lib/spatial-presentation/executiveOvsObjectVisualLanguage";
+import { createExecutiveOvsProblemPrismGeometry } from "@/app/lib/spatial-presentation/executiveOvsProblemPrismGeometry";
 
 type Props = {
   readonly language: ExecutiveOvsObjectVisualLanguage;
   readonly bodyMaterial: ReactNode;
   readonly interactiveHandlers: Record<string, unknown>;
   readonly innerLightColor: string;
+  readonly innerLightOpacity?: number;
+  readonly innerLightRadiusFactor?: number;
 };
 
 type PrimitivePlacement = {
@@ -86,7 +89,9 @@ function primitivePlacement(
       };
     case "prism":
       return {
-        geometry: <boxGeometry args={[width, height, depth]} />,
+        geometry: (
+          <ProblemPrismGeometry width={width} height={height} depth={depth} />
+        ),
         rotation: [0, 0, 0],
         position: [0, 0, centerZ],
       };
@@ -125,6 +130,27 @@ function primitivePlacement(
   }
 }
 
+function ProblemPrismGeometry({
+  width,
+  height,
+  depth,
+}: {
+  readonly width: number;
+  readonly height: number;
+  readonly depth: number;
+}) {
+  const geometry = useMemo(
+    () => createExecutiveOvsProblemPrismGeometry(width, height, depth),
+    [width, height, depth],
+  );
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+    };
+  }, [geometry]);
+  return <primitive object={geometry} attach="geometry" />;
+}
+
 function roundedCornerRadius(
   family: ExecutiveOvsObjectFamily,
   width: number,
@@ -146,6 +172,8 @@ function InnerLight({
   depth,
   centerZ,
   color,
+  opacity,
+  radiusFactor,
 }: {
   readonly primitive: ExecutiveOvsPrimitive;
   readonly width: number;
@@ -153,32 +181,36 @@ function InnerLight({
   readonly depth: number;
   readonly centerZ: number;
   readonly color: string;
+  readonly opacity: number;
+  readonly radiusFactor: number;
 }) {
-  const radius = Math.min(width, height) * 0.22;
+  const radius = Math.min(width, height) * radiusFactor;
   const geometry =
     primitive === "diamond" ? (
       <octahedronGeometry args={[radius, 0]} />
-    ) : primitive === "orb" ? (
+    ) : primitive === "orb" || primitive === "rounded-block" || primitive === "prism" ? (
       <sphereGeometry args={[radius, 16, 12]} />
     ) : primitive === "cylinder" || primitive === "hex-prism" ? (
-      <cylinderGeometry args={[radius * 0.7, radius * 0.7, height * 0.42, primitive === "hex-prism" ? 6 : 16]} />
+      <sphereGeometry args={[radius * 0.78, 16, 12]} />
     ) : primitive === "ring" ? (
-      <torusGeometry args={[radius * 0.8, radius * 0.22, 8, 16]} />
+      <sphereGeometry args={[radius * 0.55, 12, 10]} />
     ) : (
-      <boxGeometry args={[width * 0.28, height * 0.28, Math.max(depth * 0.28, 0.05)]} />
+      <sphereGeometry args={[radius, 16, 12]} />
     );
+  void depth;
   return (
     <mesh
       position={[0, 0, centerZ]}
       raycast={() => null}
       renderOrder={0}
       frustumCulled
+      userData={{ visualLayerRole: "inner-light", decorative: true }}
     >
       {geometry}
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={0.45}
+        opacity={opacity}
         depthWrite={false}
         toneMapped={false}
         blending={AdditiveBlending}
@@ -193,10 +225,14 @@ function InnerLight({
  */
 export const ExecutiveOvsObjectBody = forwardRef<Mesh, Props>(
   function ExecutiveOvsObjectBody(
-    { language, bodyMaterial, interactiveHandlers, innerLightColor },
+    { language, bodyMaterial, interactiveHandlers, innerLightColor, innerLightOpacity, innerLightRadiusFactor },
     ref,
   ) {
     const { primitive, family, width, height, depth, centerZ } = language;
+    const lightOpacity =
+      innerLightOpacity ?? language.material.innerLightOpacity;
+    const lightRadius =
+      innerLightRadiusFactor ?? language.material.innerLightRadiusFactor;
     const placement = primitivePlacement(
       primitive,
       width,
@@ -222,6 +258,8 @@ export const ExecutiveOvsObjectBody = forwardRef<Mesh, Props>(
               depth={depth}
               centerZ={centerZ}
               color={innerLightColor}
+              opacity={lightOpacity}
+              radiusFactor={lightRadius}
             />
             <RoundedBox
               ref={ref}
@@ -254,6 +292,8 @@ export const ExecutiveOvsObjectBody = forwardRef<Mesh, Props>(
             depth={depth}
             centerZ={centerZ}
             color={innerLightColor}
+            opacity={lightOpacity}
+            radiusFactor={lightRadius}
           />
           <mesh
             ref={ref}

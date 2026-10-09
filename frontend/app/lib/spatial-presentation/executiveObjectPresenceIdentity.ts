@@ -276,6 +276,7 @@ export const EXECUTIVE_OBJECT_PRESENCE_DEEP_Z = Object.freeze({
 export const EXECUTIVE_OBJECT_GROUND_PRESENCE = Object.freeze({
   style: "ground" as const,
   color: "#64748b",
+  colorDay: "#3d5a7a",
   opacityPrimary: 0.09,
   opacityRelated: 0.06,
   opacitySecondary: 0.05,

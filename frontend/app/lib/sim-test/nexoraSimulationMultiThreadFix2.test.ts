@@ -67,7 +67,7 @@ const REQUIRED = Object.freeze([
   "DECISION_STATE", "EXECUTION_STATE",
 ] as const);
 
-const BLOCKER: NexoraSimulationTestJourney = Object.freeze({
+const BLOCKER: NexoraSimulationTestJourney = Object.freeze<NexoraSimulationTestJourney>({
   journeyId: "sim-test-9-fix2-fix1-blocker",
   version: "1.0",
   title: "FIX1 blocker replay under FIX2",
@@ -182,7 +182,7 @@ test("T7 two Scenario sets isolate Revenue Options", () => {
   turn = speak(turn, "Options.", "t7-4");
   const names = candidateNames(turn);
   assert.ok(names.every((name) => !/investigate capacity|no action on capacity/i.test(name)));
-  assert.ok(names.some((name) => /revenue/i.test(name)) || names.length === 0 || turn.clarificationRequired);
+  assert.ok(names.some((name) => /revenue/i.test(name)) || names.length === 0 || turn.clarificationTurn.action === "clarify");
 });
 
 test("T8 ordinal in Revenue does not bind Capacity", () => {

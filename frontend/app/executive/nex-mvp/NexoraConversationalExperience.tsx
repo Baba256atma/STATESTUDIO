@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { cockpit } from "../exs1/shell/executiveCockpitTheme";
+import {
+  cockpit,
+  resolveExecutiveConversationRoleVisual,
+} from "../exs1/shell/executiveCockpitTheme";
 import { NexoraConversationalInput } from "./NexoraConversationalInput";
 import type { NexoraConversationalMessage } from "@/app/lib/conversational-control/conversationalExperience";
 import type { NexoraConversationalExperienceTrace } from "@/app/lib/conversational-control/conversationalExperience";
@@ -188,15 +191,22 @@ export function NexoraConversationalExperience({
             overview.
           </p>
         ) : (
-          messages.map((message) => (
+          messages.map((message) => {
+            const roleVisual = resolveExecutiveConversationRoleVisual(
+              message.role === "manager" ? "manager" : "nexora",
+            );
+            return (
             <div
               key={message.id}
               data-testid={`nexora-conversational-message-${message.role}`}
               data-message-status={message.status ?? ""}
+              data-conversation-role={
+                message.role === "manager" ? "manager" : "nexora"
+              }
               style={{
                 fontSize: "0.66rem",
                 lineHeight: 1.35,
-                color: cockpit.muted,
+                color: roleVisual.textColor,
               }}
             >
               <span
@@ -205,7 +215,8 @@ export function NexoraConversationalExperience({
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
                   marginRight: "0.35rem",
-                  color: cockpit.muted,
+                  color: roleVisual.labelColor,
+                  fontWeight: roleVisual.labelWeight,
                 }}
               >
                 {message.role === "manager" ? "Manager" : "Nexora"}
@@ -258,7 +269,8 @@ export function NexoraConversationalExperience({
                 </div>
               ) : null}
             </div>
-          ))
+            );
+          })
         )}
         {processing ? (
           <div

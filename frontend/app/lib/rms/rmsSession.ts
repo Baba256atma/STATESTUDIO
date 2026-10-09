@@ -999,6 +999,7 @@ function cloneManagerBind(bind: RmsManagerConversationBind | null): RmsManagerCo
     autoConfirm: false,
     autoApproveDecision: false,
     autoStartExecution: false,
+    behaviorSeed: bind.behaviorSeed,
   };
 }
 

@@ -28,6 +28,7 @@ export type NexoraMVPContextLinkFixture = {
   readonly relation: string;
 };
 
+/** Executive-work Context Nodes. Not Primary OVS Bodies. See body-admission. */
 export const NEXORA_MVP_CONTEXT_SUBJECT_FIXTURES = Object.freeze([
   Object.freeze({
     id: "ctx-problem-margin",

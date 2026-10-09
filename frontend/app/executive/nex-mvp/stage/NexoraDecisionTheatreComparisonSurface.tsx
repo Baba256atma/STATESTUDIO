@@ -2,11 +2,12 @@
 
 import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
-import { OBJECT_PANEL_WIDTH } from "@/app/lib/hud/hudPanelDesignContract.ts";
+import type { StageProdOverlayStyle } from "@/app/lib/stage-prod/stageProdOverlayPlacement.ts";
 import { cockpit, typeScale } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
   readonly comparison: NexoraDecisionTheatreDecisionComparison;
+  readonly overlayPlacement?: StageProdOverlayStyle | null;
   readonly onLevelChange: (level: NexoraDecisionTheatreComparisonLevel) => void;
   readonly onAsk: (question: string) => void;
   readonly onReviewDecision?: () => void;
@@ -14,12 +15,16 @@ type Props = {
 
 export function NexoraDecisionTheatreComparisonSurface({
   comparison,
+  overlayPlacement,
   onLevelChange,
   onAsk,
   onReviewDecision,
 }: Props) {
   const showCompare = comparison.level === "compare" || comparison.level === "decide";
   const showDecide = comparison.level === "decide";
+  if (overlayPlacement === null) {
+    return null;
+  }
   return (
     <aside
       data-testid="nexora-theatre-comparison"
@@ -27,16 +32,9 @@ export function NexoraDecisionTheatreComparisonSurface({
       data-theatre-comparison-candidate-count={String(comparison.candidateIds.length)}
       data-theatre-comparison-level={comparison.level}
       data-theatre-comparison-active-candidate={comparison.activeCandidateId ?? "none"}
+      data-stage-overlay-slot="comparison"
       aria-label="Decision comparison"
       style={{
-        position: "absolute",
-        top: "4.5rem",
-        right: "0.75rem",
-        left: "auto",
-        width: OBJECT_PANEL_WIDTH,
-        maxWidth: "42%",
-        maxHeight: "36%",
-        zIndex: 3,
         display: "flex",
         flexDirection: "column",
         gap: "0.4rem",
@@ -48,6 +46,14 @@ export function NexoraDecisionTheatreComparisonSurface({
         boxShadow: "0 10px 28px rgba(0, 0, 0, 0.32)",
         pointerEvents: "auto",
         overflow: "hidden",
+        ...(overlayPlacement ?? {
+          position: "absolute",
+          top: "4.5rem",
+          right: "0.75rem",
+          width: "min(272px, 42%)",
+          maxHeight: "36%",
+          zIndex: 4,
+        }),
       }}
     >
       <div style={{ fontSize: typeScale.status.size, color: cockpit.muted, textTransform: "uppercase", letterSpacing: typeScale.status.tracking }}>

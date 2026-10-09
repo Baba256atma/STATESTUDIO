@@ -262,6 +262,7 @@ export type ExecutiveOvsIsometricObjectSnapshot = Readonly<{
   id: string;
   label?: string | null;
   kind?: string | null;
+  objectKind?: string | null;
   status?: string | null;
   attention?: string | null;
   executiveVisualState?: string | null;
@@ -623,6 +624,7 @@ export function projectExecutiveOvsIsometricTheatreVisual(
       const objectKind = projectExecutiveOvsObjectKindHandoff({
         id: actor.canonicalObjectId,
         kind: snapshot?.kind ?? null,
+        objectKind: snapshot?.objectKind ?? null,
       });
       const geometry = resolveExecutiveOvsObjectVisualLanguage({
         objectKind,

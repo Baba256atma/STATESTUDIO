@@ -4,16 +4,16 @@
   "policyReason": "ALLOWED",
   "providerCalls": 1,
   "llmStatus": "succeeded",
-  "governanceStatus": "accepted",
-  "reason": "ACCEPTED",
-  "llmContributionUsed": true,
+  "governanceStatus": "rejected",
+  "reason": "AUTHORITY_VIOLATION",
+  "llmContributionUsed": false,
   "dRecoverable": true,
-  "mEqualsD": false,
-  "managerText": "Capacity is currently constrained, acting as the active limitation. You can compare two scenarios: - **Scenario A** (Overtime): This scenario may allow for a quicker response, and subcontracting options could help maintain internal capacity. - **Scenario B**: Details not provided. Let me know if you need further information on these scenarios.",
+  "mEqualsD": true,
+  "managerText": "Capacity remains the active constraint. Scenario A and Scenario B are available for comparison.",
   "usage": {
     "inputTokens": 459,
-    "outputTokens": 70,
-    "totalTokens": 529
+    "outputTokens": 69,
+    "totalTokens": 528
   },
   "cost": null
 }

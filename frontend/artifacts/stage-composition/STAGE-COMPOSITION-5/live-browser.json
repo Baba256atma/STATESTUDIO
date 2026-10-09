@@ -1,0 +1,366 @@
+{
+  "identity": "NPA-T STAGE-COMPOSITION:5/Dth7ComparisonPlacementIntegration",
+  "url": "http://localhost:3000/executive?reset=1",
+  "errors": [],
+  "capacityFocus": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "minimum",
+    "focused": "obj-capacity",
+    "comparison": false,
+    "comparisonId": null,
+    "comparisonSlot": null,
+    "comparisonCandidates": null,
+    "comparisonText": null,
+    "report": false,
+    "reportProvenance": null,
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationCapacity is currently in a state that needs attention.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object"
+    ],
+    "rects": {
+      "comparison": null,
+      "report": null,
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 108,
+        "width": 66,
+        "height": 26
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "comparison": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "minimum",
+    "focused": "none",
+    "comparison": true,
+    "comparisonId": "dth7-comparison:dth5-script:1.0.0:dth5-intent:1.0.0:CLARIFY_SCENE:nca-active-comparison:ctx-scenario-capacity:ctx-scenario-demand:ctx-scenario-pricing:UNSPECIFIED:none:none:none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:none:ambiguous-criterion:none:none:obj-capacity:ATTENTION_ACTOR,obj-capacity:CONTEXT_ACTOR,obj-customer:ATTENTION_ACTOR,obj-customer:CONTEXT_ACTOR::none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:choice:nca-active-comparison",
+    "comparisonSlot": "comparison",
+    "comparisonCandidates": "3",
+    "comparisonText": "ComparisonNexora is comparing 3 options. These options are the current comparison candidates.Capacity Expansion PlanDemand SurgePricing ResponseCompareCompare them.Which one is better?What do we still not know?",
+    "report": false,
+    "reportProvenance": null,
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object",
+      "DTH:7"
+    ],
+    "rects": {
+      "comparison": {
+        "x": 898,
+        "y": 111,
+        "width": 272,
+        "height": 248
+      },
+      "report": null,
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 75,
+        "width": 77,
+        "height": 56
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "comparisonDetails": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "minimum",
+    "focused": "none",
+    "comparison": true,
+    "comparisonId": "dth7-comparison:dth5-script:1.0.0:dth5-intent:1.0.0:CLARIFY_SCENE:nca-active-comparison:ctx-scenario-capacity:ctx-scenario-demand:ctx-scenario-pricing:UNSPECIFIED:none:none:none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:none:ambiguous-criterion:none:none:obj-capacity:ATTENTION_ACTOR,obj-capacity:CONTEXT_ACTOR,obj-customer:ATTENTION_ACTOR,obj-customer:CONTEXT_ACTOR::none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:compare:nca-active-comparison",
+    "comparisonSlot": "comparison",
+    "comparisonCandidates": "3",
+    "comparisonText": "ComparisonNexora is comparing 3 options. These options are the current comparison candidates.Capacity Expansion PlanDemand SurgePricing ResponseUncertaintyThere is not enough comparable information to state a trade-off without inventing one.DecideCompare them.Which one is better?What do we still not know?",
+    "report": false,
+    "reportProvenance": null,
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object",
+      "DTH:7"
+    ],
+    "rects": {
+      "comparison": {
+        "x": 898,
+        "y": 111,
+        "width": 272,
+        "height": 305
+      },
+      "report": null,
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 75,
+        "width": 77,
+        "height": 56
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "comparisonChart": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "minimum",
+    "focused": "none",
+    "comparison": true,
+    "comparisonId": "dth7-comparison:dth5-script:1.0.0:dth5-intent:1.0.0:CLARIFY_SCENE:nca-active-comparison:ctx-scenario-capacity:ctx-scenario-demand:ctx-scenario-pricing:UNSPECIFIED:none:none:none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:none:ambiguous-criterion:none:none:obj-capacity:ATTENTION_ACTOR,obj-capacity:CONTEXT_ACTOR,obj-customer:ATTENTION_ACTOR,obj-customer:CONTEXT_ACTOR::none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:compare:nca-active-comparison",
+    "comparisonSlot": "comparison",
+    "comparisonCandidates": "3",
+    "comparisonText": "ComparisonNexora is comparing 3 options. These options are the current comparison candidates.Capacity Expansion PlanDemand SurgePricing ResponseUncertaintyThere is not enough comparable information to state a trade-off without inventing one.DecideCompare them.Which one is better?What do we still not know?",
+    "report": false,
+    "reportProvenance": null,
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object",
+      "DTH:7"
+    ],
+    "rects": {
+      "comparison": {
+        "x": 898,
+        "y": 111,
+        "width": 272,
+        "height": 305
+      },
+      "report": null,
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 75,
+        "width": 77,
+        "height": 56
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "chartTurn": "NexoraI can't create a Capacity visualization yet because Capacity has no accepted numeric observations. data-ux3-ambiguous.csv is available for inspection, but is still under review and has no confirmed evidence relationship to Capacity.",
+  "comparisonActions": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "minimum",
+    "focused": "none",
+    "comparison": true,
+    "comparisonId": "dth7-comparison:dth5-script:1.0.0:dth5-intent:1.0.0:CLARIFY_SCENE:nca-active-comparison:ctx-scenario-capacity:ctx-scenario-demand:ctx-scenario-pricing:UNSPECIFIED:none:none:none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:none:ambiguous-criterion:none:none:obj-capacity:ATTENTION_ACTOR,obj-capacity:CONTEXT_ACTOR,obj-customer:ATTENTION_ACTOR,obj-customer:CONTEXT_ACTOR::none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:compare:nca-active-comparison",
+    "comparisonSlot": "comparison",
+    "comparisonCandidates": "3",
+    "comparisonText": "ComparisonNexora is comparing 3 options. These options are the current comparison candidates.Capacity Expansion PlanDemand SurgePricing ResponseUncertaintyThere is not enough comparable information to state a trade-off without inventing one.DecideCompare them.Which one is better?What do we still not know?",
+    "report": false,
+    "reportProvenance": null,
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object",
+      "DTH:7"
+    ],
+    "rects": {
+      "comparison": {
+        "x": 898,
+        "y": 111,
+        "width": 272,
+        "height": 305
+      },
+      "report": null,
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 75,
+        "width": 77,
+        "height": 56
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "objectClick": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "minimum",
+    "focused": "none",
+    "comparison": true,
+    "comparisonId": "dth7-comparison:dth5-script:1.0.0:dth5-intent:1.0.0:CLARIFY_SCENE:nca-active-comparison:ctx-scenario-capacity:ctx-scenario-demand:ctx-scenario-pricing:UNSPECIFIED:none:none:none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:none:ambiguous-criterion:none:none:obj-capacity:ATTENTION_ACTOR,obj-capacity:CONTEXT_ACTOR,obj-customer:ATTENTION_ACTOR,obj-customer:CONTEXT_ACTOR::none:ctx-scenario-capacity,ctx-scenario-demand,ctx-scenario-pricing:compare:nca-active-comparison",
+    "comparisonSlot": "comparison",
+    "comparisonCandidates": "3",
+    "comparisonText": "ComparisonNexora is comparing 3 options. These options are the current comparison candidates.Capacity Expansion PlanDemand SurgePricing ResponseUncertaintyThere is not enough comparable information to state a trade-off without inventing one.DecideCompare them.Which one is better?What do we still not know?",
+    "report": false,
+    "reportProvenance": null,
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object",
+      "DTH:7"
+    ],
+    "rects": {
+      "comparison": {
+        "x": 898,
+        "y": 111,
+        "width": 272,
+        "height": 305
+      },
+      "report": null,
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 75,
+        "width": 77,
+        "height": 56
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "recovered": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "minimum",
+    "focused": "obj-capacity",
+    "comparison": false,
+    "comparisonId": null,
+    "comparisonSlot": null,
+    "comparisonCandidates": null,
+    "comparisonText": null,
+    "report": false,
+    "reportProvenance": null,
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationCapacity is currently in a state that needs attention.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object"
+    ],
+    "rects": {
+      "comparison": null,
+      "report": null,
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 108,
+        "width": 66,
+        "height": 26
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "recoveredDetails": {
+    "cameraMode": "fixed-executive-perspective",
+    "cameraFixed": "true",
+    "presentation": "report",
+    "focused": "obj-capacity",
+    "comparison": false,
+    "comparisonId": null,
+    "comparisonSlot": null,
+    "comparisonCandidates": null,
+    "comparisonText": null,
+    "report": true,
+    "reportProvenance": "presentation-fixture",
+    "actions": false,
+    "chart": null,
+    "statusCard": false,
+    "advisorSituation": "SituationCapacity is currently in a state that needs attention.",
+    "viewVisible": true,
+    "chromeBack": false,
+    "majorSurfaces": [
+      "Object",
+      "Report"
+    ],
+    "rects": {
+      "comparison": null,
+      "report": {
+        "x": 68,
+        "y": 624,
+        "width": 296,
+        "height": 268
+      },
+      "actions": null,
+      "chart": null,
+      "object": {
+        "x": 75,
+        "y": 108,
+        "width": 66,
+        "height": 26
+      }
+    },
+    "collisions": {
+      "comparisonReport": false,
+      "comparisonChart": false,
+      "comparisonActions": false
+    }
+  },
+  "gates": {
+    "gComparison": true,
+    "gObjectOrientation": true,
+    "gNoStatusCard": true,
+    "gDetailsCoexist": true,
+    "gChartRule": true,
+    "gActions": true,
+    "gRecovery": true,
+    "gChrome": true,
+    "gCamera": true,
+    "gZeroPageErrors": true
+  }
+}

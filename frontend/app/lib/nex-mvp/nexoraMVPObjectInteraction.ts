@@ -35,6 +35,12 @@ import {
   NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES,
 } from "@/app/lib/nex-mvp/nexoraMVPStageFixtures";
 import {
+  isNexoraMvpExecutiveWorkCenterEligibleKind,
+  stampNexoraMvpStageRepresentationRoles,
+} from "@/app/lib/nex-mvp/nexoraMvpExecutiveWorkCenter";
+import { suppressSameCanonicalContextPresentation } from "@/app/lib/nex-mvp/nexoraMvpContextAndCenter";
+import { mapCatalogKindToManagerObjectKind } from "@/app/lib/manager-object/managerObjectCatalog";
+import {
   resolveExecutiveFocusSceneDisclosure,
   type ExecutiveFocusSceneDisclosureResult,
 } from "@/app/lib/spatial-presentation/executiveFocusSceneDisclosure";
@@ -227,6 +233,12 @@ export type NexoraMVPInteractionSubject = {
   readonly navigationLabelMode?: "full" | "compact" | "truncated";
 };
 
+/**
+ * Instance owner for Primary Stage Body vs Context Node membership.
+ * Kind/family policy: `resolveNexoraMvpPrimaryStageBodyAdmission`.
+ * `objects` = business-object Primary OVS Bodies.
+ * `contextSubjects` = executive-work Context Nodes (problem/scenario/decision/execution).
+ */
 export type NexoraMVPObjectInteractionCatalog = {
   readonly objects: readonly NexoraMVPStageObjectFixture[];
   readonly relationships: readonly NexoraMVPStageRelationshipFixture[];
@@ -2243,7 +2255,7 @@ export function deriveNexoraMVPStageInteractionPresentation(
   const focusedWorkSubject =
     !presentationContextActive &&
     state.focusedSubject != null &&
-    state.focusedSubject.kind !== "object"
+    isNexoraMvpExecutiveWorkCenterEligibleKind(state.focusedSubject.kind)
       ? state.focusedSubject
       : null;
 
@@ -2679,6 +2691,8 @@ export function deriveNexoraMVPStageInteractionPresentation(
       id: focusedWorkSubject.id,
       label: focusedWorkSubject.label,
       kind: focusedWorkSubject.kind,
+      objectKind: mapCatalogKindToManagerObjectKind(focusedWorkSubject.kind),
+      stageRepresentationRole: "executive-work-center" as const,
       role: "focused" as const,
       overviewPosition: Object.freeze([0, 0, 0] as const),
       targetPosition: Object.freeze([0, 0, 0] as const),
@@ -2735,9 +2749,10 @@ export function deriveNexoraMVPStageInteractionPresentation(
   const disclosure = resolveInteractionDisclosure(state, catalog);
   const rawContextNodes = presentationContextActive
     ? Object.freeze([] as NexoraMVPContextNodePresentation[])
-    : focusedWorkSubject != null
-      ? Object.freeze([] as NexoraMVPContextNodePresentation[])
-      : buildContextNodes(state, catalog, disclosure);
+    : suppressSameCanonicalContextPresentation(
+        buildContextNodes(state, catalog, disclosure),
+        focusedWorkSubject?.id ?? null,
+      );
 
   // STAGE-THREAD:1 — project canonical executive-work as real Stage objects.
   const threadAnchorId =
@@ -3023,6 +3038,12 @@ export function deriveNexoraMVPStageInteractionPresentation(
       );
     }
   }
+
+  objects = stampNexoraMvpStageRepresentationRoles({
+    objects,
+    catalog,
+    focusedExecutiveWorkId: focusedWorkSubject?.id ?? null,
+  });
 
   const emphasizedObjectIds = Object.freeze(
     objects

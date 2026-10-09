@@ -173,7 +173,10 @@ describe("NEX-MVP:3 3D Executive Stage host", () => {
       React.createElement(Nexora3DExecutiveStage, stageProps),
     );
     assert.match(html, /data-camera-navigation="stage-2d-1-disabled"/);
-    assert.match(html, /data-stage-camera-mode="fixed-2d"/);
+    // STAGE-SPATIAL:2 names the fixed STAGE-2D:1 camera diagnostic
+    // `fixed-executive-perspective`. Placement remains true-2d / z=0.
+    assert.match(html, /data-stage-camera-mode="fixed-executive-perspective"/);
+    assert.match(html, /data-stage-camera-fixed="true"/);
     assert.match(html, /data-stage-camera-target="0,0,0"/);
     assert.match(html, /data-stage-depth="0"/);
     assert.match(html, /data-stage-camera-contract="stage-2d-1"/);

@@ -352,8 +352,12 @@ test("TEST 12 — Unresolved Preservation", () => {
   const catalogBudget = experience.catalog.objects.find(
     (entry) => entry.id === "obj-budget",
   )!;
-  assert.equal(catalogBudget.status, "unresolved");
-  assert.notEqual(catalogBudget.status, "stable");
+  const effective = experience.effectiveManagementStates.find(
+    (entry) => entry.canonicalId === "obj-budget",
+  );
+  assert.equal(effective?.provenance.sourceClass, "live-withheld");
+  assert.equal(effective?.baseline.status, "stable");
+  assert.equal(catalogBudget.status, "stable");
 });
 
 test("TEST 13 — Presentation State Compatibility", () => {

@@ -85,7 +85,9 @@ function startedExecution() {
   });
 }
 
-function fixture(extra?: Parameters<typeof projectNexoraDecisionTheatreFoundation>[0]) {
+function fixture(
+  extra?: Omit<Parameters<typeof projectNexoraDecisionTheatreFoundation>[0], "stageState">,
+) {
   const state = selectNexoraMVPInteractionSubject(initial(), "ctx-scenario-demand", catalog);
   const theatre = projectNexoraDecisionTheatreFoundation({
     stageState: state,
@@ -389,5 +391,10 @@ test("VIEW/ACTIONS and Object Card ownership are not redesigned", () => {
   assert.doesNotMatch(mount, /NexoraDecisionTheatreLiveExecutionSurface/);
   assert.doesNotMatch(mount, /NexoraDecisionTheatreOutcomeObservationSurface/);
   assert.doesNotMatch(mount, /NexoraDecisionTheatreLearningReassessmentSurface/);
-  assert.match(mount, /NexoraDecisionTheatreComparisonSurface/);
+  assert.doesNotMatch(mount, /NexoraDecisionTheatreComparisonSurface/);
+  const stageHost = readFileSync(
+    join(FRONTEND, "app/executive/nex-mvp/stage/Nexora3DExecutiveStage.tsx"),
+    "utf8",
+  );
+  assert.match(stageHost, /NexoraDecisionTheatreComparisonSurface/);
 });

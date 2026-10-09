@@ -460,11 +460,11 @@ export function resolveNexoraExecutiveScenarioConversation(
     input.operation === "compare" || input.operation === "open-candidate";
   const requestContextId =
     isManagementContextSubjectId(input.primarySubjectId)
-      ? input.primarySubjectId
-      : isManagementContextSubjectId(input.executiveContext.currentSubject?.subjectId)
-        ? input.executiveContext.currentSubject!.subjectId
-        : isManagementContextSubjectId(input.executiveContext.currentProblem?.subjectId)
-          ? input.executiveContext.currentProblem!.subjectId
+      ? input.primarySubjectId ?? null
+      : isManagementContextSubjectId(input.executiveContext.currentSubject?.subjectId ?? null)
+        ? input.executiveContext.currentSubject!.subjectId ?? null
+        : isManagementContextSubjectId(input.executiveContext.currentProblem?.subjectId ?? null)
+          ? input.executiveContext.currentProblem!.subjectId ?? null
           : null;
   const baseSession = deicticRead
     ? scopeScenarioSessionToManagementContext(preservedSession, requestContextId)

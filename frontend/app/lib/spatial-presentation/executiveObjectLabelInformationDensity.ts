@@ -274,10 +274,10 @@ export const EXECUTIVE_OBJECT_LABEL_SCALE_BOUNDS = Object.freeze({
 });
 
 export const EXECUTIVE_OBJECT_LABEL_OPACITY_BOUNDS = Object.freeze({
-  minimal: 0.64,
-  normal: 0.88,
-  full: 0.96,
-  hoverLift: 0.06,
+  minimal: 0.74,
+  normal: 0.94,
+  full: 0.98,
+  hoverLift: 0.02,
 });
 
 export const EXECUTIVE_OBJECT_LABEL_NAME_BOUNDS = Object.freeze({

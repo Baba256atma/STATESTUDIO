@@ -13,9 +13,14 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { getNexora3DExecutiveStageIdentity } from "@/app/lib/nex-mvp/nexora3DExecutiveStage";
-import type {
-  NexoraMVPAdvisorContextBridge,
-  NexoraMVPStageInteractionPresentation,
+import {
+  isNexoraMvpStageBodyPhysicallyPresent,
+  resolveNexoraMvpStagePopulationSnapshot,
+} from "@/app/lib/nex-mvp/nexoraMvpComposedPopulation";
+import {
+  getDefaultNexoraMVPObjectInteractionCatalog,
+  type NexoraMVPAdvisorContextBridge,
+  type NexoraMVPStageInteractionPresentation,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type {
   NexoraMVPPresentationAvailableAction,
@@ -30,6 +35,9 @@ import type { NexoraDecisionTheatreAtmosphereMode } from "@/app/lib/decision-the
 import { NEXORA_DECISION_THEATRE_ATMOSPHERE_MODES } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import type { NexoraDecisionTheatreAtmosphereProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
+import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
+import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
+import type { NexoraDecisionTheatreDecisionCommitment } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionCommitment.ts";
 import type { DthExpSpatialLayoutProjection } from "@/app/lib/dth-exp/dthExpSpatialLayoutContract.ts";
 import type { ManagementLevelSpatialComposition } from "@/app/lib/nmi/nmiManagementLevelSpatialContract.ts";
 import { applyManagementLevelSpatialToStagePresentation } from "@/app/lib/nmi/nmiLiveManagementLevelStageAdapter.ts";
@@ -170,6 +178,7 @@ import { cockpit } from "../../exs1/shell/executiveCockpitTheme";
 import { NexoraPresentationStateSelector } from "../presentation/NexoraPresentationStateSelector";
 import { NexoraSubjectOperation } from "../presentation/NexoraSubjectOperation";
 import { NexoraSubjectReport } from "../presentation/NexoraSubjectReport";
+import { NexoraDecisionTheatreComparisonSurface } from "./NexoraDecisionTheatreComparisonSurface";
 import { NexoraStageInteractionBreadcrumb } from "./NexoraStageInteractionBreadcrumb";
 import { NexoraStageRenderedBoundsTruthOverlay } from "./NexoraStageRenderedBoundsTruthOverlay";
 
@@ -210,6 +219,11 @@ export type Nexora3DExecutiveStageProps = {
   readonly dthExpSpatial?: DthExpSpatialLayoutProjection | null;
   readonly requestedVisual?: NexoraVisualView | null;
   readonly overlayPlacement?: StageProdOverlayPlacement | null;
+  readonly decisionComparison?: NexoraDecisionTheatreDecisionComparison | null;
+  readonly decisionCommitment?: NexoraDecisionTheatreDecisionCommitment | null;
+  readonly onComparisonLevelChange?: (level: NexoraDecisionTheatreComparisonLevel) => void;
+  readonly onAskComparisonQuestion?: (question: string) => void;
+  readonly onReviewDecision?: () => void;
   readonly onDismissVisual?: () => void;
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
@@ -381,6 +395,11 @@ export function Nexora3DExecutiveStage({
   dthExpSpatial = null,
   requestedVisual = null,
   overlayPlacement = null,
+  decisionComparison = null,
+  decisionCommitment = null,
+  onComparisonLevelChange,
+  onAskComparisonQuestion,
+  onReviewDecision,
   onDismissVisual,
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
@@ -493,6 +512,15 @@ export function Nexora3DExecutiveStage({
       theatreActive: theatreComposition != null,
     });
   }, [directorComposition, ovs3Visual, managementLevelSpatial, theatreComposition]);
+  const stageBodyPopulation = useMemo(
+    () =>
+      resolveNexoraMvpStagePopulationSnapshot({
+        catalog: getDefaultNexoraMVPObjectInteractionCatalog(),
+        composedObjects: fixedCameraInteraction.scene.objects,
+        contextNodeCount: fixedCameraInteraction.contextNodes.length,
+      }),
+    [fixedCameraInteraction.scene.objects, fixedCameraInteraction.contextNodes],
+  );
   const safeViewportFit = useMemo(() => {
     const sceneBounds = deriveExecutiveStageSafeSceneBounds(
       fixedCameraInteraction.scene.objects,
@@ -526,6 +554,8 @@ export function Nexora3DExecutiveStage({
       overlayPlacement ??
       resolveStageProdOverlayPlacement({
         investigation: false,
+        comparison:
+          decisionComparison != null && decisionCommitment == null,
         report:
           presentationViewModel.showReportSurface &&
           presentationViewModel.subjectId != null,
@@ -540,6 +570,8 @@ export function Nexora3DExecutiveStage({
     [
       contextualVisuals.specs,
       overlayPlacement,
+      decisionCommitment,
+      decisionComparison,
       presentationViewModel.showOperationSurface,
       presentationViewModel.showReportSurface,
       presentationViewModel.subjectId,
@@ -626,6 +658,7 @@ export function Nexora3DExecutiveStage({
   const focusedKindCue = projectExecutiveOvsObjectKindHandoff({
     id: focusedObject?.id ?? null,
     kind: focusedObject?.kind ?? null,
+    objectKind: focusedObject?.objectKind ?? null,
   });
   const presentationLevelForVisual = (presentationViewModel.state ===
   "report" ||
@@ -1129,6 +1162,19 @@ export function Nexora3DExecutiveStage({
         ).length,
       )}
       data-context-node-count={String(interaction.contextNodes.length)}
+      data-catalog-primary-count={String(
+        stageBodyPopulation.catalogPrimaryCount,
+      )}
+      data-primary-body-count={String(stageBodyPopulation.composedPrimaryCount)}
+      data-rendered-stage-body-count={String(
+        stageBodyPopulation.renderedStageBodyCount,
+      )}
+      data-executive-work-center-id={
+        stageBodyPopulation.executiveWorkCenterId ?? "none"
+      }
+      data-stage-population-badge-source={
+        stageBodyPopulation.operatorFacingSource
+      }
       data-camera-navigation="stage-2d-1-disabled"
       data-stage-camera-mode={stage2dObservability.cameraMode}
       data-stage-camera-target={stage2dObservability.cameraTarget}
@@ -1560,6 +1606,7 @@ export function Nexora3DExecutiveStage({
       <details
         data-testid="nexora-stage-object-list"
         data-ux1-disclosure="objects"
+        aria-label={`${stageBodyPopulation.operatorFacingBadge} currently staged system objects`}
         style={{
           position: "absolute",
           left: "0.75rem",
@@ -1575,7 +1622,7 @@ export function Nexora3DExecutiveStage({
           padding: "0.28rem 0.4rem 0.4rem",
           borderRadius: cockpit.radius.md,
           border: `1px solid ${cockpit.border}`,
-          background: "rgba(8, 14, 24, 0.42)",
+          background: cockpit.panelSoft,
           backdropFilter: "blur(8px)",
         }}
       >
@@ -1591,7 +1638,7 @@ export function Nexora3DExecutiveStage({
             fontFamily: "inherit",
           }}
         >
-          Objects · {fixedCameraInteraction.scene.objects.length}
+          {stageBodyPopulation.operatorFacingBadge}
         </summary>
         {fixedCameraInteraction.scene.objects.map((object) => {
           const showKpi =
@@ -1606,7 +1653,10 @@ export function Nexora3DExecutiveStage({
             selected: object.selected,
           });
           return (
-            <div key={object.id}>
+            <div
+              key={object.id}
+              hidden={!isNexoraMvpStageBodyPhysicallyPresent(object)}
+            >
             <button
               type="button"
               data-testid={`nexora-stage-object-control-${object.id}`}
@@ -1614,6 +1664,10 @@ export function Nexora3DExecutiveStage({
               data-role={object.role}
               data-canonical-id={object.id}
               data-object-type={object.kind}
+              data-management-kind={object.objectKind ?? object.kind}
+              data-stage-representation-role={
+                object.stageRepresentationRole ?? "unspecified"
+              }
               data-stage-position={object.targetPosition.join(",")}
               data-status={object.status}
               data-attention={object.attention}
@@ -1652,8 +1706,8 @@ export function Nexora3DExecutiveStage({
                   ? `1px solid ${cockpit.accent}`
                   : `1px solid ${cockpit.border}`,
                 background: object.focused
-                  ? "rgba(56, 120, 180, 0.28)"
-                  : "rgba(8, 14, 24, 0.55)",
+                  ? cockpit.accentSoft
+                  : cockpit.panel,
                 color:
                   object.role === "unrelated"
                     ? cockpit.lowMuted
@@ -1756,8 +1810,8 @@ export function Nexora3DExecutiveStage({
                       ? `1px solid ${cockpit.accent}`
                       : `1px solid ${cockpit.border}`,
                   background: isGateway
-                    ? "rgba(12, 24, 40, 0.88)"
-                    : "rgba(8, 14, 24, 0.45)",
+                    ? cockpit.panel
+                    : cockpit.panelSoft,
                   color: cockpit.textSoft,
                   fontSize: isGateway ? "0.68rem" : "0.58rem",
                   letterSpacing: "0.08em",
@@ -1819,6 +1873,15 @@ export function Nexora3DExecutiveStage({
         overlayPlacement={resolvedOverlayPlacement.operation}
         onAction={onPresentationAction}
       />
+      {decisionComparison != null && decisionCommitment == null ? (
+        <NexoraDecisionTheatreComparisonSurface
+          comparison={decisionComparison}
+          overlayPlacement={resolvedOverlayPlacement.comparison}
+          onLevelChange={onComparisonLevelChange ?? (() => undefined)}
+          onAsk={onAskComparisonQuestion ?? (() => undefined)}
+          onReviewDecision={onReviewDecision}
+        />
+      ) : null}
 
       {contextualVisuals.specs[0] ? (
         <NexoraStageContextualVisual

@@ -72,23 +72,23 @@ export function NexoraEvidenceVisualView({
       aria-label={view.description}
       style={{
         pointerEvents: "auto",
-        position: "absolute",
         padding: "0.9rem 1rem 0.85rem",
         borderRadius: "0.85rem",
         background: cockpit.panel,
         border: `1px solid ${cockpit.border}`,
-        boxShadow: "0 18px 40px rgba(0, 0, 0, 0.35)",
+        boxShadow: "var(--nx-overlay-card-shadow)",
         color: cockpit.text,
         display: "flex",
         flexDirection: "column",
         gap: "0.55rem",
         overflow: "auto",
-        zIndex: 4,
         ...(overlayPlacement ?? {
+          position: "absolute",
           left: "1.25rem",
           bottom: "1.35rem",
           width: "min(420px, calc(100% - 2.5rem))",
           maxHeight: "46%",
+          zIndex: 4,
         }),
       }}
     >

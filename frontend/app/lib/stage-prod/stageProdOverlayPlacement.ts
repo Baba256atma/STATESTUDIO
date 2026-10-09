@@ -37,6 +37,7 @@ export const STAGE_PROD_OVERLAY_CONTEXT_HEIGHT_PX = 360;
 
 export type StageProdOverlaySurface =
   | "investigation"
+  | "comparison"
   | "report"
   | "operation"
   | "chart";
@@ -63,6 +64,7 @@ export type StageProdOverlayStyle = Readonly<{
 export type StageProdOverlayPlacement = Readonly<{
   identity: typeof stageProdOverlayPlacementIdentity;
   investigation: StageProdOverlayStyle | null;
+  comparison: StageProdOverlayStyle | null;
   report: StageProdOverlayStyle | null;
   operation: StageProdOverlayStyle | null;
   chart: StageProdOverlayStyle | null;
@@ -72,6 +74,7 @@ export type StageProdOverlayPlacement = Readonly<{
 
 export type StageProdOverlayPlacementInput = Readonly<{
   readonly investigation: boolean;
+  readonly comparison?: boolean;
   readonly report: boolean;
   readonly operation: boolean;
   readonly chart: boolean;
@@ -119,8 +122,15 @@ export function projectStageProdOverlayRects(input: StageProdOverlayPlacementInp
   const inset = STAGE_PROD_OVERLAY_INSET_PX;
   const omitted: StageProdOverlaySurface[] = [];
   const rects: Partial<Record<StageProdOverlaySurface, StageProdOverlayRect>> = {};
+  const comparison = input.comparison === true;
+  const contextKind: "comparison" | "investigation" | null = comparison
+    ? "comparison"
+    : input.investigation
+      ? "investigation"
+      : null;
+  if (input.investigation && comparison) omitted.push("investigation");
 
-  if (input.investigation) {
+  if (contextKind != null) {
     const width = contextWidth(viewport.width);
     const bottomBand =
       input.chart || input.report
@@ -138,7 +148,7 @@ export function projectStageProdOverlayRects(input: StageProdOverlayPlacementInp
           STAGE_PROD_OVERLAY_GAP_PX,
       ),
     );
-    rects.investigation = Object.freeze({
+    rects[contextKind] = Object.freeze({
       x: viewport.width - inset - width,
       y: STAGE_PROD_OVERLAY_TOP_PX,
       width,
@@ -177,8 +187,9 @@ export function projectStageProdOverlayRects(input: StageProdOverlayPlacementInp
   if (input.operation) {
     const width = Math.min(STAGE_PROD_OVERLAY_OPERATION_WIDTH_PX, Math.floor(viewport.width * 0.34));
     const height = Math.min(STAGE_PROD_OVERLAY_OPERATION_HEIGHT_PX, Math.floor(viewport.height * 0.4));
-    const rightOffset = rects.investigation
-      ? inset + rects.investigation.width + STAGE_PROD_OVERLAY_GAP_PX
+    const contextRect = rects.comparison ?? rects.investigation;
+    const rightOffset = contextRect
+      ? inset + contextRect.width + STAGE_PROD_OVERLAY_GAP_PX
       : inset;
     rects.operation = Object.freeze({
       x: clamp(viewport.width - rightOffset - width, inset, viewport.width - inset - width),
@@ -190,6 +201,7 @@ export function projectStageProdOverlayRects(input: StageProdOverlayPlacementInp
 
   const persistent: StageProdOverlaySurface[] = [];
   if (rects.investigation) persistent.push("investigation");
+  if (rects.comparison) persistent.push("comparison");
   if (rects.report) persistent.push("report");
   if (rects.chart) persistent.push("chart");
   const persistentIntersections = persistent.flatMap((left, index) =>
@@ -258,12 +270,16 @@ export function resolveStageProdOverlayPlacement(
   input: StageProdOverlayPlacementInput,
 ): StageProdOverlayPlacement {
   const projected = projectStageProdOverlayRects(input);
+  const comparison = input.comparison === true;
+  const contextOccupied = comparison || input.investigation;
   return Object.freeze({
     identity: stageProdOverlayPlacementIdentity,
-    investigation: input.investigation ? INVESTIGATION_STYLE : null,
+    investigation:
+      input.investigation && !comparison ? INVESTIGATION_STYLE : null,
+    comparison: comparison ? INVESTIGATION_STYLE : null,
     report: projected.rects.report ? REPORT_STYLE : null,
     operation: input.operation
-      ? input.investigation
+      ? contextOccupied
         ? OPERATION_BESIDE_CONTEXT_STYLE
         : OPERATION_DEFAULT_STYLE
       : null,

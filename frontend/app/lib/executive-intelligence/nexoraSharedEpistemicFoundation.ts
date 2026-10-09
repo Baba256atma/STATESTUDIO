@@ -392,7 +392,10 @@ export function projectSharedEpistemicFoundation(
   if (input.observation) {
     const source = input.observation;
     const canBeFact =
-      source.evidenceRefs.length > 0 && source.provenanceRefs.length > 0;
+      source.sourceKind === "data-reality" &&
+      source.validated === true &&
+      source.evidenceRefs.length > 0 &&
+      source.provenanceRefs.length > 0;
     const requestedType: ExecutiveClaimType = canBeFact ? "FACT" : "UNKNOWN";
     const writer: SharedEpistemicWriter =
       source.sourceKind === "data-reality" && source.validated

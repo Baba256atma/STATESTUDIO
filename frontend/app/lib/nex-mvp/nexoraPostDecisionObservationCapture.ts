@@ -194,7 +194,7 @@ function resolvePreExecutionBaseline(input: {
     const observedAt = committed.prepared.handoff?.dataset.capturedAt ?? committed.committedAt;
     const datasetId = committed.prepared.handoff?.dataset.id ?? committed.importId;
     const provenance = Object.freeze([committed.sourceContextId, committed.importId, committed.committedAt]);
-    const validationState = committed.prepared.dataReality?.status === "complete" ? "valid" : "partial";
+    const validationState = committed.prepared.dataReality?.status === "resolved" ? "valid" : "partial";
     for (const kpi of kpisFromCsvImport(committed)) {
       consider(kpi, {
         sourceId: committed.sourceContextId,
@@ -276,7 +276,7 @@ function ingestCsvCommitted(committed: CsvCommittedImport): void {
       observedAt,
       capturedAt: committed.committedAt,
       provenanceRefs: provenance,
-      validationState: committed.prepared.dataReality?.status === "complete" ? "valid" : "partial",
+      validationState: committed.prepared.dataReality?.status === "resolved" ? "valid" : "partial",
     });
     return;
   }

@@ -22,10 +22,10 @@ export function NexoraExecutiveObjectLabel({
 
   const color =
     label.tone === "object.label.primary"
-      ? "#f8fafc"
+      ? "var(--nx-text-strong)"
       : label.tone === "object.label.assist"
-        ? "rgba(226, 232, 240, 0.78)"
-        : "rgba(226, 232, 240, 0.72)";
+        ? "var(--nx-text-soft)"
+        : "var(--nx-muted)";
 
   return (
     <Html
@@ -56,7 +56,7 @@ export function NexoraExecutiveObjectLabel({
             : "center bottom",
         textAlign: "center",
         lineHeight: 1.15,
-        textShadow: "0 1px 6px rgba(2, 6, 14, 0.75)",
+        textShadow: "var(--nx-label-halo)",
       }}
     >
       <span
@@ -75,12 +75,14 @@ export function NexoraExecutiveObjectLabel({
         {label.lines.map((line, index) => (
           <span
             key={`${label.objectId}-line-${index}`}
+            data-caption-role={index === 0 ? "primary" : "secondary"}
             style={{
               display: "block",
-              fontWeight: index === 0 ? 600 : 500,
+              fontWeight: index === 0 ? 700 : 500,
               // Secondary lines (state/value) stay subordinate to identity.
-              opacity: index === 0 ? 1 : 0.78,
-              letterSpacing: index === 0 ? "0.04em" : "0.02em",
+              opacity: index === 0 ? 1 : 0.58,
+              letterSpacing: index === 0 ? "0.045em" : "0.03em",
+              fontSize: index === 0 ? "1em" : "0.92em",
             }}
           >
             {line}

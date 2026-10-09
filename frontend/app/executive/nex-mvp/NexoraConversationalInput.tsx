@@ -70,7 +70,10 @@ export function NexoraConversationalInput({
       >
         Ask Nexora
       </label>
-      <div style={{ display: "flex", gap: "0.35rem", alignItems: "flex-end" }}>
+      <div
+        className="nexora-command-console"
+        style={{ display: "flex", gap: "0.35rem", alignItems: "flex-end" }}
+      >
         <textarea
           id={`${labelId}-field`}
           data-testid="nexora-conversational-input-field"
@@ -86,7 +89,7 @@ export function NexoraConversationalInput({
             flex: 1,
             resize: "none",
             border: `1px solid ${cockpit.border}`,
-            background: "rgba(0,0,0,0.25)",
+            background: "var(--nx-bg-control)",
             color: cockpit.text,
             fontFamily: "inherit",
             fontSize: "0.78rem",

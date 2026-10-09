@@ -1370,10 +1370,11 @@ export function classifyAdaptiveJourney(input: {
         stageActiveSubjectId: observation.stageActiveSubjectId,
       });
     }
-    if (previous && csvSignature(observation) !== csvSignature(previous) && !observation.clarificationRequired && !UNCERTAIN.test(observation.response)) {
-      const priorClaims = claimNumbers(previous.response);
+    const prior = previous;
+    if (prior && csvSignature(observation) !== csvSignature(prior) && !observation.clarificationRequired && !UNCERTAIN.test(observation.response)) {
+      const priorClaims = claimNumbers(prior.response);
       const currentClaims = claimNumbers(observation.response);
-      const visibleChanged = Object.entries(observation.visibleNumbers).some(([key, value]) => previous.visibleNumbers[key] !== value);
+      const visibleChanged = Object.entries(observation.visibleNumbers).some(([key, value]) => prior.visibleNumbers[key] !== value);
       const staleClaim = Object.entries(currentClaims).some(([metric, value]) => priorClaims[metric] === value);
       if (visibleChanged && staleClaim) {
         const temporalAsk = observation.intent === "CHECK_CHANGE" || observation.intent === "REASSESS";

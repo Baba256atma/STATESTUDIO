@@ -30,7 +30,7 @@ test("SIM-TEST:8-RECERT adaptive population after FIX1", { timeout: 1_800_000 },
     assert.equal(report.harnessStatus, "PASS", `${journey.journeyId} ${report.error ?? ""}`);
     assert.equal(report.managerFirewall?.groundTruthAccess, false);
     assert.equal(report.autoRepairAttempted, false);
-    const uniqueFindings = new Map();
+    const uniqueFindings = new Map<string, (typeof report.findings)[number]>();
     for (const finding of [...report.findings, ...report.journeyFindings]) uniqueFindings.set(finding.findingId, finding);
     let previous = null;
     for (const item of report.journeyObservations) {
@@ -163,7 +163,7 @@ test("SIM-TEST:8-RECERT adaptive population after FIX1", { timeout: 1_800_000 },
     for (const finding of item.findings) counts[finding.severity] += 1;
     return counts;
   }, { S0: 0, S1: 0, S2: 0, S3: 0 });
-  const classificationCounts = {};
+  const classificationCounts: Record<string, number> = {};
   for (const record of records) {
     for (const finding of record.findings) {
       classificationCounts[finding.classification] = (classificationCounts[finding.classification] ?? 0) + 1;

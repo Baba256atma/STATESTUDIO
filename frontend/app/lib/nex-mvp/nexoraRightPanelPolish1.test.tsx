@@ -86,7 +86,7 @@ function startedExecution() {
 
 function fixture(
   subjectId: string | null,
-  extra?: Parameters<typeof projectNexoraDecisionTheatreFoundation>[0],
+  extra?: Omit<Parameters<typeof projectNexoraDecisionTheatreFoundation>[0], "stageState">,
 ) {
   const selected =
     subjectId == null

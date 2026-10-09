@@ -39,7 +39,7 @@ export function NexoraWorkspaceDialMount({
           padding: "0.28rem 0.4rem 0.32rem",
           borderRadius: cockpit.radius.md,
           border: `1px solid ${cockpit.border}`,
-          background: "rgba(10, 16, 26, 0.62)",
+          background: cockpit.panelSoft,
           boxShadow: cockpit.elevation.raised,
           backdropFilter: "blur(8px)",
         }}

@@ -212,6 +212,85 @@ describe("NEX-MVP:6 Presentation States components", () => {
     }
   });
 
+  it("STAGE-COMPOSITION:2 Focus renders neither Report nor ACTIONS", () => {
+    const vm = deriveNexoraMVPPresentationViewModel({
+      presentationState: "minimum",
+      workspace: "overview",
+      environmentIntent: "neutral",
+      subjectId: "obj-capacity",
+      subjectKind: "object",
+      subjectLabel: "Capacity",
+    });
+    const report = renderToStaticMarkup(
+      React.createElement(NexoraSubjectReport, { viewModel: vm }),
+    );
+    const operation = renderToStaticMarkup(
+      React.createElement(NexoraSubjectOperation, {
+        viewModel: vm,
+        onAction: () => undefined,
+      }),
+    );
+    assert.equal(report, "");
+    assert.equal(operation, "");
+  });
+
+  it("STAGE-COMPOSITION:2 Actions render without Report", () => {
+    const vm = deriveNexoraMVPPresentationViewModel({
+      presentationState: "operation",
+      workspace: "overview",
+      environmentIntent: "neutral",
+      subjectId: "obj-capacity",
+      subjectKind: "object",
+      subjectLabel: "Capacity",
+    });
+    const report = renderToStaticMarkup(
+      React.createElement(NexoraSubjectReport, { viewModel: vm }),
+    );
+    const operation = renderToStaticMarkup(
+      React.createElement(NexoraSubjectOperation, {
+        viewModel: vm,
+        onAction: () => undefined,
+      }),
+    );
+    assert.equal(report, "");
+    assert.match(operation, /data-testid="nexora-subject-operation"/);
+    assert.match(operation, /Investigate Problem/);
+  });
+
+  it("STAGE-COMPOSITION:2 Details Report keeps existing Capacity fields", () => {
+    const vm = deriveNexoraMVPPresentationViewModel({
+      presentationState: "report",
+      workspace: "overview",
+      environmentIntent: "neutral",
+      subjectId: "obj-capacity",
+      subjectKind: "object",
+      subjectLabel: "Capacity",
+    });
+    const html = renderToStaticMarkup(
+      React.createElement(NexoraSubjectReport, { viewModel: vm }),
+    );
+    const operation = renderToStaticMarkup(
+      React.createElement(NexoraSubjectOperation, {
+        viewModel: vm,
+        onAction: () => undefined,
+      }),
+    );
+    assert.equal(operation, "");
+    assert.match(html, /data-testid="nexora-subject-report"/);
+    assert.match(html, /data-testid="nexora-subject-report-title"/);
+    assert.match(html, />Capacity</);
+    assert.match(html, /data-testid="nexora-subject-report-status"/);
+    assert.match(html, /Watch/);
+    assert.match(html, /data-testid="nexora-subject-report-kpi"/);
+    assert.match(html, /Utilization/);
+    assert.match(html, /88%/);
+    assert.match(html, /80%/);
+    assert.match(html, /data-kpi-provenance="presentation-fixture"/);
+    assert.match(html, /Presentation baseline, not accepted manager data/);
+    assert.match(html, /data-testid="nexora-subject-report-relationships"/);
+    assert.match(html, /data-testid="nexora-subject-report-summary"/);
+  });
+
   it("16. no private upstream runtime imports were added", () => {
     const files = [
       "NexoraPresentationStateSelector.tsx",

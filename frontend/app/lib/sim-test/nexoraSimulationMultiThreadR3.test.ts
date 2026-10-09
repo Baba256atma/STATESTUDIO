@@ -47,7 +47,7 @@ function step(
   return Object.freeze({ kind: "MANAGER_TURN" as const, utterance, managementIntent, ...(intendedSubject ? { intendedSubject } : {}) });
 }
 
-const BLOCKER: NexoraSimulationTestJourney = Object.freeze({
+const BLOCKER: NexoraSimulationTestJourney = Object.freeze<NexoraSimulationTestJourney>({
   journeyId: "sim-test-9-fix1-original-blocker",
   version: "1.0",
   title: "SIM-TEST:9 FIX1 blocker under FIX2 baseline",
@@ -204,7 +204,7 @@ function executionCommands(report: NexoraSimulationTestRunReport) {
 function compactRecord(report: NexoraSimulationTestRunReport, population: "A-N" | "SIM7" | "SIM8") {
   const findings = uniqueFindings(report);
   const rows = report.journeyObservations;
-  const problemIds = new Set(rows.map((row) => row.canonicalSubjectId).filter((id): id is string => Boolean(id) && id.startsWith("obj-") && !/risk/.test(id ?? "")));
+  const problemIds = new Set(rows.map((row) => row.canonicalSubjectId).filter((id): id is string => typeof id === "string" && id.startsWith("obj-") && !/risk/.test(id)));
   return {
     population,
     journeyId: report.identity.journeyId,

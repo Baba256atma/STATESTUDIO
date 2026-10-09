@@ -121,7 +121,9 @@ export type ExecutiveStageDisclosureReason =
   | "collection-member"
   | "hidden-unrelated"
   | "hidden-watch-overflow"
-  | "hidden-density";
+  | "hidden-density"
+  | "orientation-fallback"
+  | "stable-no-current-attention";
 
 export type ExecutiveQueueCategory =
   | "problem"
@@ -164,6 +166,28 @@ export const EXECUTIVE_STAGE_WATCH_BUDGET = Object.freeze({
   minVisible: 2,
   /** STAGE-PROD:6V — calibrated from 4 → 3 for executive visual clarity. */
   maxVisible: 3,
+});
+
+/**
+ * NPA-T OVERVIEW-WATCH-DISCLOSURE:1 — default Overview is a hybrid:
+ * orientation backbone (executive context + goals when present) plus
+ * Watch-ranked attention bodies, bounded by presentation-depth budget.
+ * Owner remains resolveExecutiveStageDisclosure. Not a second store.
+ */
+export const EXECUTIVE_OVERVIEW_DISCLOSURE_POLICY = Object.freeze({
+  productMeaning: "HYBRID_EXECUTIVE_OVERVIEW" as const,
+  owner: "resolveExecutiveStageDisclosure" as const,
+  rankingOwner: "rankExecutiveWatchCandidates" as const,
+  secondStore: false as const,
+  hardCodedOverviewIds: false as const,
+  labelHeuristics: false as const,
+  ovsOwnsDisclosure: false as const,
+  dthOwnsDisclosure: false as const,
+  mlevelOwnsDisclosure: false as const,
+  themeOwnsDisclosure: false as const,
+  geometryOwnsDisclosure: false as const,
+  relationshipExpansionInOverview: false as const,
+  emptyAttentionFallback: "orientation-fallback" as const,
 });
 
 export const EXECUTIVE_STAGE_DENSITY_RESOLUTION_ORDER = Object.freeze([
@@ -1023,9 +1047,27 @@ export function resolveExecutiveStageDisclosure(
       mark(id, "hidden", "hidden-watch-overflow");
     }
     for (const subject of input.subjects) {
-      if (!entries.has(subject.subjectId)) {
-        // Executive-work stays in Queue summary — not Stage topology in overview.
+      if (entries.has(subject.subjectId)) continue;
+      if (subject.family === "executive-work" || subject.workKind != null) {
         mark(subject.subjectId, "hidden", "hidden-unrelated");
+        continue;
+      }
+      mark(subject.subjectId, "hidden", "stable-no-current-attention");
+    }
+    const overviewComposed = [...entries.values()].some(
+      (entry) => entry.participatesInTopology,
+    );
+    if (!overviewComposed) {
+      const fallback = [...input.subjects]
+        .filter(
+          (subject) =>
+            subject.family !== "executive-work" &&
+            subject.workKind == null,
+        )
+        .sort((left, right) => compareIds(left.subjectId, right.subjectId))
+        .slice(0, watchBudget);
+      for (const subject of fallback) {
+        mark(subject.subjectId, "watch", "orientation-fallback");
       }
     }
     }

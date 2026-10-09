@@ -236,6 +236,7 @@ test("N — No new color/state/theme registry", () => {
     projectExecutiveOvsObjectKindHandoff({
       id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
       kind: "object",
+      objectKind: "risk",
     }),
     "risk",
   );

@@ -25,7 +25,7 @@ const two = ["ctx-scenario-pricing", "ctx-scenario-demand"] as const;
 
 function fixture(
   subjectId: string | null,
-  extra?: Parameters<typeof projectNexoraDecisionTheatreFoundation>[0],
+  extra?: Omit<Parameters<typeof projectNexoraDecisionTheatreFoundation>[0], "stageState">,
 ) {
   const selected =
     subjectId == null

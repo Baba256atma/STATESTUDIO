@@ -164,27 +164,39 @@ function collectObservation(input: {
           ? input.advisorBinding.primarySubject
           : undefined;
 
+  const runtimeObject = input.advisorBinding?.sourceRuntimeState.objects.find(
+    (entry) =>
+      entry.objectId === input.subjectId ||
+      entry.nexoraObjectId === input.subjectId,
+  );
+  const liveKpi = runtimeObject?.primaryKPI;
   const hasLiveKpi =
-    input.validatedDataSource === true && bindingSubject?.hasKPI === true;
+    input.validatedDataSource === true &&
+    runtimeObject?.hasKPI === true &&
+    liveKpi != null;
   const stale =
     input.evidenceState === "stale" ||
     /\bstale\b/i.test(bindingSubject?.advisorMeaning ?? "");
 
-  const statement = `${kpi.label} is ${kpi.value}${kpi.target ? ` against a ${kpi.target} target` : ""}.`;
+  const statement = hasLiveKpi
+    ? `${kpi.label} is ${liveKpi.value.toFixed(1)}${liveKpi.unit === "%" ? "%" : liveKpi.unit ? ` ${liveKpi.unit}` : ""}.`
+    : `${kpi.label} is ${kpi.value}${kpi.target ? ` against a ${kpi.target} target` : ""}.`;
   const provenance = hasLiveKpi
     ? uniqueProvenance([
-        `data-reality:${input.advisorBinding?.provenance.datasetId ?? "dataset"}:${kpi.id}`,
+        `data-reality:${input.advisorBinding?.provenance.datasetId ?? "dataset"}:${liveKpi.kpiId}`,
         ...(bindingSubject?.evidenceIds ?? []),
       ])
     : [`mvp-presentation-fixture:${input.subjectId}:${kpi.id}`];
 
   return Object.freeze({
     statement,
-    kpiId: kpi.id,
-    value: kpi.value,
+    kpiId: hasLiveKpi ? liveKpi.kpiId : kpi.id,
+    value: hasLiveKpi
+      ? `${liveKpi.value.toFixed(1)}${liveKpi.unit === "%" ? "%" : liveKpi.unit ? ` ${liveKpi.unit}` : ""}`
+      : kpi.value,
     sourceKind: hasLiveKpi ? "data-reality" : "mvp-presentation-fixture",
     sourceId: hasLiveKpi
-      ? (input.advisorBinding?.provenance.datasetId ?? kpi.id)
+      ? (input.advisorBinding?.provenance.datasetId ?? liveKpi.kpiId)
       : `fixture:${input.subjectId}`,
     validated: hasLiveKpi,
     freshness: stale ? "stale" : "current",
@@ -195,10 +207,10 @@ function collectObservation(input: {
       {
         sourceKind: hasLiveKpi ? ("data-reality" as const) : ("kpi" as const),
         sourceId: hasLiveKpi
-          ? (input.advisorBinding?.provenance.datasetId ?? kpi.id)
+          ? (input.advisorBinding?.provenance.datasetId ?? liveKpi.kpiId)
           : kpi.id,
         subjectId: input.subjectId,
-        factKey: kpi.id,
+        factKey: hasLiveKpi ? liveKpi.kpiId : kpi.id,
       },
     ]),
   });

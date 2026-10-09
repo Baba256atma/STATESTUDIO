@@ -99,7 +99,16 @@ export const NEXORA_MVP_WORKSPACE_PRESENTATION_BOUNDARY = Object.freeze({
   themeCoupledToEnvironment: false as const,
   encodesObjectFamily: false as const,
   encodesObjectState: false as const,
+  /** Day/Night tints the room; workspace intent remains the atmosphere owner. */
+  dayNightReplacesWorkspaceIntent: false as const,
 });
+
+type SceneAtmosphereHazeStops = {
+  readonly center: string;
+  readonly mid: string;
+  readonly edge: string;
+  readonly rim: string;
+};
 
 type SceneAtmosphereTokens = {
   readonly background: string;
@@ -119,7 +128,23 @@ type SceneAtmosphereTokens = {
     | "simulative"
     | "committal"
     | "executive";
+  /** Radial Stage field only — not a second theme registry. */
+  readonly atmosphereHaze: SceneAtmosphereHazeStops;
 };
+
+const NIGHT_STAGE_HAZE = Object.freeze({
+  center: "rgba(118, 158, 196, 0.42)",
+  mid: "rgba(46, 78, 112, 0.2)",
+  edge: "rgba(8, 14, 24, 0.46)",
+  rim: "rgba(2, 5, 10, 0.84)",
+});
+
+const DAY_STAGE_HAZE = Object.freeze({
+  center: "rgba(228, 244, 255, 0.22)",
+  mid: "rgba(150, 200, 236, 0.1)",
+  edge: "rgba(72, 132, 188, 0.16)",
+  rim: "rgba(46, 96, 150, 0.22)",
+});
 
 /**
  * Restrained Stage-field palettes. Context changes the room, not Object truth.
@@ -139,6 +164,7 @@ export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
     groundOpacity: 0.88,
     connectionEmphasis: 1,
     objectSurfaceTreatment: "balanced",
+    atmosphereHaze: NIGHT_STAGE_HAZE,
   }),
   investigate: Object.freeze({
     background: "#070d16",
@@ -153,6 +179,7 @@ export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
     groundOpacity: 0.72,
     connectionEmphasis: 1.15,
     objectSurfaceTreatment: "investigative",
+    atmosphereHaze: NIGHT_STAGE_HAZE,
   }),
   simulate: Object.freeze({
     background: "#090c16",
@@ -167,6 +194,7 @@ export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
     groundOpacity: 0.72,
     connectionEmphasis: 1.08,
     objectSurfaceTreatment: "simulative",
+    atmosphereHaze: NIGHT_STAGE_HAZE,
   }),
   commit: Object.freeze({
     background: "#080c16",
@@ -181,6 +209,7 @@ export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
     groundOpacity: 0.72,
     connectionEmphasis: 1.2,
     objectSurfaceTreatment: "committal",
+    atmosphereHaze: NIGHT_STAGE_HAZE,
   }),
   execute: Object.freeze({
     background: "#080e10",
@@ -195,6 +224,89 @@ export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE = Object.freeze({
     groundOpacity: 0.72,
     connectionEmphasis: 1.05,
     objectSurfaceTreatment: "executive",
+    atmosphereHaze: NIGHT_STAGE_HAZE,
+  }),
+} as const satisfies Record<NexoraMVPSceneEnvironmentIntent, SceneAtmosphereTokens>);
+
+/**
+ * THEME-WIRING:1 — Day presentation overlay of the same workspace intents.
+ * Preserves relative hue/occupation of each intent; does not encode object state.
+ */
+export const NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE_DAY = Object.freeze({
+  neutral: Object.freeze({
+    background: "#8ec4ea",
+    fogNear: 36,
+    fogFar: 68,
+    ambientIntensity: 0.9,
+    keyLightIntensity: 1.14,
+    keyLightColor: "#fbfeff",
+    fillLightIntensity: 0.44,
+    fillLightColor: "#8ec8ee",
+    groundColor: "#8ec4ea",
+    groundOpacity: 0.94,
+    connectionEmphasis: 1,
+    objectSurfaceTreatment: "balanced",
+    atmosphereHaze: DAY_STAGE_HAZE,
+  }),
+  investigate: Object.freeze({
+    background: "#82b6e2",
+    fogNear: 34,
+    fogFar: 66,
+    ambientIntensity: 0.88,
+    keyLightIntensity: 1.12,
+    keyLightColor: "#fbfeff",
+    fillLightIntensity: 0.44,
+    fillLightColor: "#82bce8",
+    groundColor: "#82b6e2",
+    groundOpacity: 0.94,
+    connectionEmphasis: 1.15,
+    objectSurfaceTreatment: "investigative",
+    atmosphereHaze: DAY_STAGE_HAZE,
+  }),
+  simulate: Object.freeze({
+    background: "#8ab6e6",
+    fogNear: 36,
+    fogFar: 68,
+    ambientIntensity: 0.88,
+    keyLightIntensity: 1.12,
+    keyLightColor: "#fbfeff",
+    fillLightIntensity: 0.42,
+    fillLightColor: "#96b8ea",
+    groundColor: "#8ab6e6",
+    groundOpacity: 0.94,
+    connectionEmphasis: 1.08,
+    objectSurfaceTreatment: "simulative",
+    atmosphereHaze: DAY_STAGE_HAZE,
+  }),
+  commit: Object.freeze({
+    background: "#82b2e2",
+    fogNear: 36,
+    fogFar: 67,
+    ambientIntensity: 0.88,
+    keyLightIntensity: 1.13,
+    keyLightColor: "#fbfeff",
+    fillLightIntensity: 0.42,
+    fillLightColor: "#86b4e4",
+    groundColor: "#82b2e2",
+    groundOpacity: 0.94,
+    connectionEmphasis: 1.2,
+    objectSurfaceTreatment: "committal",
+    atmosphereHaze: DAY_STAGE_HAZE,
+  }),
+  execute: Object.freeze({
+    background: "#7ec4d4",
+    fogNear: 36,
+    fogFar: 68,
+    ambientIntensity: 0.89,
+    keyLightIntensity: 1.13,
+    keyLightColor: "#fbfeff",
+    fillLightIntensity: 0.42,
+    fillLightColor: "#7ec8d4",
+    groundColor: "#7ec4d4",
+    groundOpacity: 0.94,
+    connectionEmphasis: 1.05,
+    objectSurfaceTreatment: "executive",
+    atmosphereHaze: DAY_STAGE_HAZE,
   }),
 } as const satisfies Record<NexoraMVPSceneEnvironmentIntent, SceneAtmosphereTokens>);
 
@@ -256,6 +368,7 @@ export type NexoraMVPSceneEnvironmentVisualState = {
   readonly groundColor: string;
   readonly groundOpacity: number;
   readonly connectionEmphasis: number;
+  readonly atmosphereHaze: SceneAtmosphereHazeStops;
   readonly objectSurfaceTreatment:
     | "balanced"
     | "investigative"
@@ -534,14 +647,21 @@ export function deriveNexoraMVPWorkspacePresentation(
  */
 export function deriveNexoraMVPSceneEnvironmentVisualState(
   intent: NexoraMVPSceneEnvironmentIntent,
-  options?: { readonly reducedMotion?: boolean },
+  options?: {
+    readonly reducedMotion?: boolean;
+    readonly uiTheme?: "day" | "night";
+  },
 ): NexoraMVPSceneEnvironmentVisualState {
   const transitionMs = options?.reducedMotion
     ? NEXORA_MVP_WORKSPACE_TRANSITION_MS_REDUCED
     : NEXORA_MVP_WORKSPACE_TRANSITION_MS;
   const resolvedIntent: NexoraMVPSceneEnvironmentIntent =
     intent in NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE ? intent : "neutral";
-  const tokens = NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE[resolvedIntent];
+  const palette =
+    options?.uiTheme === "day"
+      ? NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE_DAY
+      : NEXORA_MVP_SCENE_ENVIRONMENT_ATMOSPHERE;
+  const tokens = palette[resolvedIntent];
   return Object.freeze({
     intent: resolvedIntent,
     ...tokens,

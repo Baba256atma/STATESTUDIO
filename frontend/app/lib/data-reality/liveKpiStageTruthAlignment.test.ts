@@ -144,6 +144,8 @@ test("GitHub canonical Capacity and Customer KPIs reach Stage unchanged", async 
   assert.equal(capacityView.primaryKpi?.value, "20.0%");
   assert.equal(customerView.primaryKpi?.value, "80.0%");
   assert.equal(capacityView.primaryKpi?.delta, undefined);
+  assert.equal(capacityView.primaryKpi?.provenance, "accepted-observation");
+  assert.equal(customerView.primaryKpi?.provenance, "accepted-observation");
 
   const selected = selectNexoraMVPInteractionSubject(
     createInitialNexoraMVPObjectInteractionState({
@@ -228,5 +230,10 @@ test("no active real source preserves the existing catalog presentation fallback
     alignPresentationViewModelToStageKpiTruth(fallbackBase, undefined).primaryKpi
       ?.value,
     "88%",
+  );
+  assert.equal(
+    alignPresentationViewModelToStageKpiTruth(fallbackBase, undefined).primaryKpi
+      ?.provenance,
+    "presentation-fixture",
   );
 });

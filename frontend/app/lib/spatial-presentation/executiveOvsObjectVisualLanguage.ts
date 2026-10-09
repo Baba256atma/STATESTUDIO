@@ -7,8 +7,6 @@
  * Geometry + silhouette + label identify category. Color stays supporting.
  */
 
-import { resolveExecutiveObjectSemanticShapeFamily } from "./executiveObjectPresenceIdentity.ts";
-
 export const executiveOvsObjectVisualLanguageIdentity =
   "NPA-T OVS:1/Executive3DObjectVisualLanguage" as const;
 
@@ -92,13 +90,39 @@ export const EXECUTIVE_OVS_OBJECT_FAMILIES = Object.freeze([
 export type ExecutiveOvsObjectFamily =
   (typeof EXECUTIVE_OVS_OBJECT_FAMILIES)[number];
 
+/** Exact kind tokens only. Not display names, IDs, or concatenated labels. */
+export const EXECUTIVE_OVS_KIND_TOKEN_TO_FAMILY = Object.freeze({
+  object: "operational",
+  unknown: "operational",
+  pack: "operational",
+  opportunity: "operational",
+  risk: "risk",
+  goal: "goal",
+  objective: "goal",
+  problem: "problem",
+  issue: "problem",
+  scenario: "scenario",
+  decision: "decision",
+  execution: "execution",
+  action: "execution",
+  task: "execution",
+  outcome: "outcome",
+  learning: "outcome",
+  kpi: "kpi",
+  koi: "kpi",
+  measure: "kpi",
+  context: "context",
+  insight: "context",
+  guidance: "context",
+} as const satisfies Record<string, ExecutiveOvsObjectFamily>);
+
 /**
  * Category → primitive. Shared forms where literacy does not need a new sculpture.
  *
  * | Family | Primitive | Recognition (labels-off) |
  * | goal | orb | stable aspirational mass |
  * | kpi | cylinder | tall instrument column |
- * | problem | prism | constrained angular block |
+ * | problem | prism | constrained trapezoidal prism |
  * | risk | diamond | tension polyhedron |
  * | scenario | rounded-block | wider possibility plate |
  * | decision | hex-prism | committed hex facing Stage XY |
@@ -149,6 +173,7 @@ export const EXECUTIVE_OVS_PRIMITIVE_CONSTRUCTION = Object.freeze({
   torusRadialSegments: 10 as const,
   torusTubularSegments: 28 as const,
   contactDiscIsNotObjectGeometry: true as const,
+  problemPrismIsBoxPlaceholder: false as const,
 });
 
 /**
@@ -168,7 +193,34 @@ export const EXECUTIVE_OVS_MATERIAL_LANGUAGE = Object.freeze({
   maxEmissive: 0.58,
   highlightLift: 0.1,
   sideDarken: 0.1,
+  bodyShadeToward: 0.62,
+  bodyShadeColor: "#0b121c",
+  emissivePresentationScale: 0.22,
+  innerLightOpacity: 0.28,
+  innerLightRadiusFactor: 0.16,
+  innerLightVolumeSphere: true as const,
+  /** Presentation-only; ON/OFF is not a management-state contract. */
+  innerLightSemanticAuthoritative: false as const,
 });
+
+/** Day overlay of the same OVS material language — not a second registry. */
+export const EXECUTIVE_OVS_MATERIAL_LANGUAGE_DAY = Object.freeze({
+  ...EXECUTIVE_OVS_MATERIAL_LANGUAGE,
+  bodyShadeToward: 0.18,
+  bodyShadeColor: "#1e3a5f",
+  emissivePresentationScale: 0.14,
+  innerLightOpacity: 0.16,
+  highlightLift: 0.22,
+  sideDarken: 0.24,
+});
+
+export function resolveExecutiveOvsMaterialLanguage(
+  uiTheme: "day" | "night" = "night",
+): typeof EXECUTIVE_OVS_MATERIAL_LANGUAGE | typeof EXECUTIVE_OVS_MATERIAL_LANGUAGE_DAY {
+  return uiTheme === "day"
+    ? EXECUTIVE_OVS_MATERIAL_LANGUAGE_DAY
+    : EXECUTIVE_OVS_MATERIAL_LANGUAGE;
+}
 
 /** Local +Z depth as a fraction of the existing XY footprint — not a second layout. */
 export const EXECUTIVE_OVS_DEPTH_FACTOR_BY_FAMILY = Object.freeze({
@@ -264,60 +316,20 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Kind-cue → OVS family. Reads the same concatenated id/label/kind cue the
- * Stage already passes. Does not invent catalog kinds.
+ * Kind-cue → OVS family. Exact token only.
+ * Does not match canonical IDs, display names, or concatenated labels.
  */
 export function resolveExecutiveOvsObjectFamily(
   objectKind?: string | null,
 ): ExecutiveOvsObjectFamily {
-  const kind = (objectKind ?? "").toLowerCase();
-  if (kind.includes("outcome") || kind.includes("learning")) return "outcome";
-  if (
-    kind.includes("kpi") ||
-    kind.includes("koi") ||
-    kind.includes("measure")
-  ) {
-    return "kpi";
+  const token = `${objectKind ?? ""}`.trim().toLowerCase();
+  if (token.length === 0) return "operational";
+  if (Object.hasOwn(EXECUTIVE_OVS_KIND_TOKEN_TO_FAMILY, token)) {
+    return EXECUTIVE_OVS_KIND_TOKEN_TO_FAMILY[
+      token as keyof typeof EXECUTIVE_OVS_KIND_TOKEN_TO_FAMILY
+    ];
   }
-  if (
-    kind.includes("context") ||
-    kind.includes("insight") ||
-    kind.includes("guidance")
-  ) {
-    return "context";
-  }
-  if (kind.includes("risk")) return "risk";
-  if (kind.includes("problem") || kind.includes("issue")) return "problem";
-  if (kind.includes("decision")) return "decision";
-  if (kind.includes("scenario")) return "scenario";
-  if (
-    kind.includes("execution") ||
-    kind.includes("action") ||
-    kind.includes("task")
-  ) {
-    return "execution";
-  }
-  if (kind.includes("goal") || kind.includes("objective")) return "goal";
-
-  const presence = resolveExecutiveObjectSemanticShapeFamily(objectKind);
-  switch (presence) {
-    case "goal":
-      return "goal";
-    case "problem":
-      return "problem";
-    case "risk":
-      return "risk";
-    case "scenario":
-      return "scenario";
-    case "decision":
-      return "decision";
-    case "execution":
-      return "execution";
-    case "context":
-      return "context";
-    default:
-      return "operational";
-  }
+  return "operational";
 }
 
 export function resolveExecutiveOvsPrimitive(

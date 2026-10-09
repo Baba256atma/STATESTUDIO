@@ -298,7 +298,7 @@ test("H — Data Reality fact", () => {
 
 test("I — Interpretation distinction", () => {
   const pack = pipeline("obj-capacity");
-  assert.equal(pack.experience.epistemicFoundation.observation?.claim.type, "FACT");
+  assert.equal(pack.experience.epistemicFoundation.observation?.claim.type, "UNKNOWN");
   assert.equal(pack.experience.epistemicFoundation.interpretation?.claim.type, "ASSUMPTION");
   assert.notEqual(
     pack.experience.epistemicFoundation.observation?.claim.claimId,
@@ -365,7 +365,7 @@ test("L — Missing evidence", () => {
 test("M — EXI reads Core", () => {
   const pack = pipeline("obj-capacity");
   assert.ok(pack.experience.epistemicFoundation);
-  assert.equal(pack.experience.situation.epistemic, "fact");
+  assert.equal(pack.experience.situation.epistemic, "unknown");
   assert.equal(pack.experience.causes.epistemic, "assumption");
 });
 
@@ -379,7 +379,8 @@ test("N — EXI does not override", () => {
 test("O — Conversation parity", () => {
   const pack = pipeline("obj-capacity");
   const result = ask(pack, "Is that a fact?");
-  assert.match(result.response, /possible explanation|current data confirms/i);
+  assert.match(result.response, /possible explanation|enough evidence|validated evidence/i);
+  assert.doesNotMatch(result.response, /current data confirms/i);
   assert.doesNotMatch(result.response, /FACT|ASSUMPTION|CORE-INT/i);
 });
 

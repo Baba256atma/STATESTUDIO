@@ -48,7 +48,6 @@ export function NexoraStageContextualVisual({
       {...audit}
       aria-label={`${spec.title} status and evidence`}
       style={{
-        position: "absolute",
         padding: "0.8rem 0.9rem",
         borderRadius: cockpit.radius.lg,
         border: `1px solid ${cockpit.border}`,
@@ -57,11 +56,12 @@ export function NexoraStageContextualVisual({
         color: cockpit.text,
         pointerEvents: "auto",
         overflow: "auto",
-        zIndex: 4,
         ...(overlayPlacement ?? {
+          position: "absolute",
           right: "1.25rem",
           bottom: "1.35rem",
           width: "min(300px, calc(100% - 2.5rem))",
+          zIndex: 4,
         }),
       }}
     >

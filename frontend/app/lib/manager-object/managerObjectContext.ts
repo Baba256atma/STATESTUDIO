@@ -101,19 +101,21 @@ function resolveIdentity(
     return {
       label: object.label,
       kind:
-        objectId.startsWith("goal-")
-          ? "goal"
-          : objectId.startsWith("issue-problem-") ||
-              objectId.startsWith("ctx-problem-")
-            ? "problem"
-            : objectId.startsWith("issue-risk-")
-              ? "risk"
-              : objectId.startsWith("issue-opportunity-")
-                ? "opportunity"
-                : objectId.startsWith("issue-scenario-") ||
-                    objectId.startsWith("ctx-scenario-")
-                  ? "scenario"
-                  : "object",
+        object.objectKind != null
+          ? mapCatalogKindToManagerObjectKind(object.objectKind)
+          : objectId.startsWith("goal-")
+            ? "goal"
+            : objectId.startsWith("issue-problem-") ||
+                objectId.startsWith("ctx-problem-")
+              ? "problem"
+              : objectId.startsWith("issue-risk-")
+                ? "risk"
+                : objectId.startsWith("issue-opportunity-")
+                  ? "opportunity"
+                  : objectId.startsWith("issue-scenario-") ||
+                      objectId.startsWith("ctx-scenario-")
+                    ? "scenario"
+                    : "object",
       state: object.status,
     };
   }

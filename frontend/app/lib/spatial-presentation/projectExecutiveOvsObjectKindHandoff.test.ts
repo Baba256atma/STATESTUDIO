@@ -18,7 +18,11 @@ import { projectExecutiveOvsObjectKindHandoff } from "./projectExecutiveOvsObjec
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-function ovsFromHandoff(input: { readonly id: string; readonly kind: string }) {
+function ovsFromHandoff(input: {
+  readonly id: string;
+  readonly kind: string;
+  readonly objectKind?: string;
+}) {
   const objectKind = projectExecutiveOvsObjectKindHandoff(input);
   const language = resolveExecutiveOvsObjectVisualLanguage({
     objectKind,
@@ -49,16 +53,18 @@ test("C — Risk identity is risk → diamond", () => {
   const result = ovsFromHandoff({
     id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
     kind: "object",
+    objectKind: "risk",
   });
   assert.equal(result.objectKind, "risk");
   assert.equal(result.family, "risk");
   assert.equal(result.primitive, "diamond");
 });
 
-test("D — Risk does not depend on the display label", () => {
+test("D — Risk does not depend on the display label or canonical id", () => {
   const objectKind = projectExecutiveOvsObjectKindHandoff({
-    id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
+    id: "obj-exposure-watch",
     kind: "object",
+    objectKind: "risk",
   });
   const language = resolveExecutiveOvsObjectVisualLanguage({
     objectKind,
@@ -67,6 +73,13 @@ test("D — Risk does not depend on the display label", () => {
   assert.equal(objectKind, "risk");
   assert.equal(language.primitive, "diamond");
   assert.equal(resolveExecutiveOvsObjectFamily("Exposure Watch object"), "operational");
+  assert.equal(
+    projectExecutiveOvsObjectKindHandoff({
+      id: NEXORA_MVP_CANONICAL_RISK_OBJECT_ID,
+      kind: "object",
+    }),
+    "object",
+  );
 });
 
 test("E — A non-Risk Object whose display text contains risk stays operational", () => {
@@ -126,5 +139,13 @@ test("H — Stage Object and OVS:3 share the identity-safe projection helper", (
   );
   assert.match(stage, /projectExecutiveOvsObjectKindHandoff/);
   assert.match(isometric, /projectExecutiveOvsObjectKindHandoff/);
+  assert.match(stage, /objectKind: presentation\.objectKind/);
+  assert.match(isometric, /objectKind: snapshot\?\.objectKind/);
   assert.doesNotMatch(stage, /presentation\.id,\s*\n\s*presentation\.label/);
+  const handoff = readFileSync(
+    join(here, "./projectExecutiveOvsObjectKindHandoff.ts"),
+    "utf8",
+  );
+  assert.doesNotMatch(handoff, /NEXORA_MVP_CANONICAL_RISK_OBJECT_ID/);
+  assert.doesNotMatch(handoff, /obj-risk/);
 });

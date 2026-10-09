@@ -21,7 +21,6 @@ import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision
 import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
 import { Nexora3DExecutiveStage } from "./stage/Nexora3DExecutiveStage";
-import { NexoraDecisionTheatreComparisonSurface } from "./stage/NexoraDecisionTheatreComparisonSurface";
 import type { NexoraDecisionTheatreDecisionCommitment } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionCommitment.ts";
 import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
 import type { NexoraVisualView } from "@/app/lib/director/nexoraVisualIntelligence.ts";
@@ -188,6 +187,8 @@ export function NexoraStageMount({
     });
     return resolveStageProdOverlayPlacement({
       investigation: false,
+      comparison:
+        decisionComparison != null && decisionCommitment == null,
       report:
         presentationViewModel.showReportSurface &&
         presentationViewModel.subjectId != null,
@@ -200,6 +201,8 @@ export function NexoraStageMount({
       ),
     });
   }, [
+    decisionCommitment,
+    decisionComparison,
     disclosureComposition,
     interaction.focusedSubjectId,
     interaction.selectedSubjectId,
@@ -345,6 +348,11 @@ export function NexoraStageMount({
         dthExpSpatial={dthExpSpatial}
         requestedVisual={requestedVisual}
         overlayPlacement={overlayPlacement}
+        decisionComparison={decisionComparison}
+        decisionCommitment={decisionCommitment}
+        onComparisonLevelChange={onComparisonLevelChange}
+        onAskComparisonQuestion={onAskInvestigationQuestion}
+        onReviewDecision={onReviewDecision}
         onDismissVisual={onDismissVisual}
         dataObjectStage={dataObjectStage}
         onSelectDataObject={onSelectDataObject}
@@ -356,14 +364,6 @@ export function NexoraStageMount({
           onRemoveFromStage={onRemoveDataObjectFromStage}
           onOpenDataRail={onOpenDataRail}
           onAskNexora={onAskDataObject}
-        />
-      ) : null}
-      {decisionComparison != null && decisionCommitment == null ? (
-        <NexoraDecisionTheatreComparisonSurface
-          comparison={decisionComparison}
-          onLevelChange={onComparisonLevelChange ?? (() => undefined)}
-          onAsk={onAskInvestigationQuestion ?? (() => undefined)}
-          onReviewDecision={onReviewDecision}
         />
       ) : null}
     </div>

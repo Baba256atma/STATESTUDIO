@@ -255,7 +255,7 @@ describe("NPA-T OUT-LIVE:1 live Data Reality capture", { concurrency: false }, (
 
 describe("NPA-T OUT-LIVE:1 harness regression", { concurrency: false }, () => {
   test("T14 FIX1 regression: wrong-thread Execution remains zero", () => {
-    const blocker: NexoraSimulationTestJourney = Object.freeze({
+    const blocker: NexoraSimulationTestJourney = Object.freeze<NexoraSimulationTestJourney>({
       journeyId: "out-live-1-t14-fix1-blocker",
       version: "1.0",
       title: "FIX1 blocker",

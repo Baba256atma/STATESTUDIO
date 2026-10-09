@@ -77,7 +77,7 @@ test("SIM-TEST:8 adaptive population runs, stays firewalled, and replays materia
     assert.ok(report.adaptiveTrace);
     assert.equal(report.adaptiveTrace.hiddenFromNexora, true);
     assert.equal(report.adaptiveTrace.writeAttempted, false);
-    const uniqueFindings = new Map();
+    const uniqueFindings = new Map<string, (typeof report.findings)[number]>();
     for (const finding of [...report.findings, ...report.journeyFindings]) uniqueFindings.set(finding.findingId, finding);
     records.push({
       journeyId: journey.journeyId,

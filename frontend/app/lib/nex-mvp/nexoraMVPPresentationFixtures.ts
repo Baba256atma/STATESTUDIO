@@ -5,6 +5,10 @@
  * Sparse: omit fields when unavailable rather than inventing values.
  */
 
+export type NexoraMVPPresentationKpiProvenance =
+  | "presentation-fixture"
+  | "accepted-observation";
+
 export type NexoraMVPPresentationKpiFixture = {
   readonly id: string;
   readonly label: string;
@@ -13,7 +17,24 @@ export type NexoraMVPPresentationKpiFixture = {
   readonly delta?: string;
   readonly trend?: "up" | "down" | "flat";
   readonly status?: "stable" | "watch" | "risk";
+  readonly provenance?: NexoraMVPPresentationKpiProvenance;
 };
+
+export function isAcceptedNexoraMVPPresentationKpi(
+  kpi: NexoraMVPPresentationKpiFixture | null | undefined,
+): boolean {
+  return kpi?.provenance === "accepted-observation";
+}
+
+export function withNexoraMVPPresentationKpiProvenance(
+  kpi: NexoraMVPPresentationKpiFixture,
+  provenance: NexoraMVPPresentationKpiProvenance = "presentation-fixture",
+): NexoraMVPPresentationKpiFixture {
+  return Object.freeze({
+    ...kpi,
+    provenance: kpi.provenance ?? provenance,
+  });
+}
 
 export type NexoraMVPPresentationKoiFixture = {
   readonly id: string;
@@ -217,9 +238,17 @@ export const NEXORA_MVP_SUBJECT_PRESENTATION_FIXTURES = Object.freeze([
       status: "stable",
     }),
     relationships: Object.freeze([]),
-    actions: Object.freeze([]),
+    actions: Object.freeze([
+      Object.freeze({
+        id: "act-inventory-capacity",
+        label: "Inspect Capacity",
+        kind: "select-subject",
+        available: true,
+        targetSubjectId: "obj-capacity",
+      }),
+    ]),
     supportsReport: true,
-    supportsOperation: false,
+    supportsOperation: true,
   }),
   Object.freeze({
     subjectId: "ctx-problem-margin",

@@ -323,7 +323,7 @@ test("SIM-TEST:10-R5 recertifies Outcome/Learning from turn 1", { timeout: 1_800
   const observedNumeric = allRows.filter((row) => row.npsObservedOutcome != null);
   const eligibleCaptures = reports.flatMap((item) => item.captures.filter((capture) => capture.eligibleAsActualOutcome));
   const outcomeFlagged = reports.flatMap((item) => item.captures.filter((capture) => capture.isOutcome === true));
-  const npsWrites = allRows.filter((row) => row.npsOutcomeStatus && NPS_OUTCOME_LEARNING_BOUNDARY.writesOutcome === true);
+  const npsWrites = allRows.filter((row) => row.npsOutcomeStatus && NPS_OUTCOME_LEARNING_BOUNDARY.writesOutcome);
   const npsLearningRows = allRows.filter((row) => NPS_LEARNING_SET.has(row.npsLearningStatus ?? ""));
   const postPublicationOutcomeAsks = allRows.filter((row) =>
     row.intent === "ASK_OUTCOME" &&
@@ -528,7 +528,15 @@ test("SIM-TEST:10-R5 recertifies Outcome/Learning from turn 1", { timeout: 1_800
   })();
   const lLearningLinked = (() => {
     const l = reports.find((item) => item.report.identity.journeyId === "sim-test-10-l_loop_reentry");
-    if (!l) return Object.freeze({ attemptedNextCycle: false, supportedBeforeD2: false, learningLinkedReentry: false, maxDecisions: lMaxDecisions });
+    if (!l) return Object.freeze({
+      attemptedNextCycle: false,
+      supportedBeforeD2: false,
+      learningLinkedReentry: false,
+      temporalSequenceOnly: false,
+      canonicalLearningToDecisionLinkage: false,
+      maxDecisions: lMaxDecisions,
+      liveLearningAnswer: null as string | null,
+    });
     const supported = l.coreOut.inspections.some((entry) => entry.learningStatuses.includes("supported"));
     const learnAskIndex = l.report.journeyObservations.findIndex((row) => row.intent === "ASK_LEARNING");
     const d2Index = l.report.journeyObservations.findIndex((row) => row.utterance === "Go with A.");
@@ -584,7 +592,7 @@ test("SIM-TEST:10-R5 recertifies Outcome/Learning from turn 1", { timeout: 1_800
   });
 
   const fix1 = (() => {
-    const journey: NexoraSimulationTestJourney = Object.freeze({
+    const journey: NexoraSimulationTestJourney = Object.freeze<NexoraSimulationTestJourney>({
       journeyId: "sim-test-10-r5-fix1-blocker",
       version: "1.0",
       title: "FIX1 blocker R2",

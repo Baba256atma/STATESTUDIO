@@ -32,6 +32,10 @@ import {
   type NexoraMVPObjectInteractionCatalog,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
+import {
+  resolveNexoraMvpEffectiveManagementStates,
+  type NexoraMvpEffectiveManagementState,
+} from "@/app/lib/nex-mvp/nexoraMvpLiveAttentionTruth.ts";
 
 export const nexoraMVPDataRealityAwareStageExperienceIdentity =
   "NEX-MVP/P2:3/DataRealityAwareStageExperienceConsumer" as const;
@@ -67,6 +71,7 @@ export type NexoraMVPDataRealityAwareStageExperienceResult = {
   readonly catalog: NexoraMVPObjectInteractionCatalog;
   /** True only for a validated dataset explicitly supplied by RDI. */
   readonly usesActiveDataSource: boolean;
+  readonly effectiveManagementStates: readonly NexoraMvpEffectiveManagementState[];
 };
 
 function toFixtureStatus(
@@ -82,8 +87,9 @@ function toFixtureAttention(
 }
 
 /**
- * Apply P2:3 object bindings onto existing Stage catalog fixtures.
- * Never invents geometry. Unmatched Stage objects receive unresolved bindings.
+ * Apply P2:3 object bindings onto a derived Stage catalog copy.
+ * Canonical fixtures are not mutated. Unbound/unavailable evidence withholds
+ * and retains catalog baseline attention/status.
  */
 export function applyDataRealityAwareStageBindingsToCatalog(
   catalog: NexoraMVPObjectInteractionCatalog,
@@ -93,23 +99,27 @@ export function applyDataRealityAwareStageBindingsToCatalog(
   const byId = new Map(
     stageBinding.objects.map((entry) => [entry.objectId, entry]),
   );
+  const resolved = resolveNexoraMvpEffectiveManagementStates({
+    baselineObjects: catalog.objects,
+    bindings: stageBinding.objects,
+    datasetId: stageBinding.provenance?.datasetId,
+    runtimeStateId: stageBinding.provenance?.runtimeStateId,
+  });
+  const effectiveById = new Map(
+    resolved.map((entry) => [entry.canonicalId, entry]),
+  );
 
   const objects = Object.freeze(
     catalog.objects.map((object): NexoraMVPStageObjectFixture => {
       const binding = byId.get(object.id);
-      if (!binding) {
-        // Safety: never leave an unbound Stage object looking healthy.
-        return Object.freeze({
-          ...object,
-          status: "unresolved",
-          attention: "normal",
-        });
-      }
+      const effective = effectiveById.get(object.id)?.effective;
       return Object.freeze({
         ...object,
-        status: toFixtureStatus(binding.mvpStatus),
-        attention: toFixtureAttention(binding.mvpAttention),
-        ...(options.useCanonicalKpis && binding.primaryKPI !== undefined
+        status: toFixtureStatus(effective?.status ?? object.status),
+        attention: toFixtureAttention(effective?.attention ?? object.attention),
+        ...(options.useCanonicalKpis &&
+        binding?.primaryKPI !== undefined &&
+        binding.bindingStatus === "bound"
           ? {
               primaryValue: formatCanonicalStageKpiValue(
                 binding.primaryKPI.value,
@@ -161,6 +171,7 @@ export function alignPresentationViewModelToStageKpiTruth(
       binding.primaryKPI.value,
       binding.primaryKPI.unit,
     ),
+    provenance: "accepted-observation",
     ...(status !== undefined ? { status } : {}),
   });
 
@@ -237,6 +248,12 @@ export function resolveNexoraMVPDataRealityAwareStageExperience(
       : {}),
   });
 
+  const effectiveManagementStates = resolveNexoraMvpEffectiveManagementStates({
+    baselineObjects: baseCatalog.objects,
+    bindings: stageBinding.objects,
+    datasetId: stageBinding.provenance.datasetId,
+    runtimeStateId: stageBinding.provenance.runtimeStateId,
+  });
   const catalog = applyDataRealityAwareStageBindingsToCatalog(
     baseCatalog,
     stageBinding,
@@ -249,5 +266,6 @@ export function resolveNexoraMVPDataRealityAwareStageExperience(
     stageBinding,
     catalog,
     usesActiveDataSource: input.dataset !== undefined,
+    effectiveManagementStates,
   });
 }

@@ -38,11 +38,14 @@ const emptyDataObjectStage = projectNexoraDecisionTheatreDataObjectsToStage({
   stageObjects: Object.freeze([]),
 });
 
-function focus(subjectId: string) {
+function focus(
+  subjectId: string,
+  presentationState: "minimum" | "report" | "operation" = "operation",
+) {
   const state = selectNexoraMVPInteractionSubject(
     createInitialNexoraMVPObjectInteractionState({
       workspace: "overview",
-      presentationState: "operation",
+      presentationState,
       environmentIntent: "neutral",
     }),
     subjectId,
@@ -89,8 +92,11 @@ function focus(subjectId: string) {
   };
 }
 
-function renderStage(subjectId: string) {
-  const fixture = focus(subjectId);
+function renderStage(
+  subjectId: string,
+  presentationState: "minimum" | "report" | "operation" = "operation",
+) {
+  const fixture = focus(subjectId, presentationState);
   return {
     ...fixture,
     html: renderToStaticMarkup(
@@ -196,13 +202,22 @@ test("E — ACTIONS remains a Stage control", () => {
 });
 
 test("F — Stage Report remains on Stage", () => {
-  const { html } = renderStage("ctx-problem-capacity");
+  const { html } = renderStage("ctx-problem-capacity", "report");
   assert.match(html, /data-testid="nexora-subject-report"/);
+  assert.doesNotMatch(html, /data-testid="nexora-subject-operation"/);
 });
 
-test("G — Scene Evidence remains a Stage visual", () => {
-  const { html } = renderStage("ctx-problem-capacity");
-  assert.match(html, /data-testid="nexora-stage-contextual-visual"/);
+test("G — textual Scene Evidence STATUS_CARD is absent from normal object focus", () => {
+  const stage = renderStage("ctx-problem-capacity");
+  const right = renderRight("ctx-problem-capacity");
+  assert.doesNotMatch(stage.html, /data-testid="nexora-stage-contextual-visual"/);
+  assert.doesNotMatch(stage.html, /data-stage-visual-family="STATUS_CARD"/);
+  assert.match(right.html, /data-testid="nexora-theatre-investigation"/);
+  assert.match(right.html, /data-testid="nexora-theatre-investigation-source"/);
+  assert.match(
+    stage.theatre.objectInvestigation?.advisorReadable.evidence ?? "",
+    /evidence/i,
+  );
 });
 
 test("H — Advisor tab remains available beside the Object tab", () => {

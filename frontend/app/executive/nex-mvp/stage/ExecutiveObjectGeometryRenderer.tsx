@@ -11,8 +11,10 @@ import {
 import {
   EXECUTIVE_OVS_BODY_READ_POSE,
   isExecutiveOvsObjectVisualLanguageEnabled,
+  resolveExecutiveOvsMaterialLanguage,
   resolveExecutiveOvsObjectVisualLanguage,
 } from "@/app/lib/spatial-presentation/executiveOvsObjectVisualLanguage";
+import { useResolvedDocumentUiTheme } from "@/app/lib/ui/executiveThemeCssBridge";
 import {
   resolveExecutiveOvsObjectStateVisual,
   type ExecutiveOvsObjectStateVisualInput,
@@ -142,6 +144,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
     const formEnabled = isExecutive3DObjectPremiumFormEnabled();
     const symbolsVisible = isExecutive3DObjectSymbolVisible();
     const ovsEnabled = isExecutiveOvsObjectVisualLanguageEnabled();
+    const uiTheme = useResolvedDocumentUiTheme();
+    const ovsMaterial = resolveExecutiveOvsMaterialLanguage(uiTheme);
     void formRuntimeEpoch;
     const profile = useMemo(
       () =>
@@ -304,7 +308,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         family === "orbital");
 
     const sideDarken = ovs.enabled
-      ? 1 - ovs.material.sideDarken
+      ? 1 - ovsMaterial.sideDarken
       : form.enabled
         ? 0.68
         : visual.enabled
@@ -313,10 +317,10 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
     const sideColor = mixHexToward(
       material.color,
       "#060b14",
-      ovs.enabled ? ovs.material.sideDarken : 1 - sideDarken,
+      ovs.enabled ? ovsMaterial.sideDarken : 1 - sideDarken,
     );
     const frontLift = ovs.enabled
-      ? ovs.material.highlightLift
+      ? ovsMaterial.highlightLift
       : form.enabled
         ? 0.1
         : visual.enabled
@@ -333,7 +337,11 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
       <meshStandardMaterial
         color={
           ovs.enabled
-            ? mixHexToward(material.color, "#0b121c", 0.62)
+            ? mixHexToward(
+                material.color,
+                ovsMaterial.bodyShadeColor,
+                ovsMaterial.bodyShadeToward,
+              )
             : visual.enabled
               ? sideColor
               : material.color
@@ -342,7 +350,9 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         emissiveIntensity={Math.min(
           (material.emissiveIntensity ?? 0.2) *
             (ovs.enabled
-              ? ovs.material.emissiveScale * ovsState.emissiveScale * 0.22
+              ? ovsMaterial.emissiveScale *
+                ovsState.emissiveScale *
+                ovsMaterial.emissivePresentationScale
               : visual.enabled
                 ? (form.enabled ? 0.55 : 0.85)
                 : 1) +
@@ -355,7 +365,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         )}
         metalness={
           ovs.enabled
-            ? ovs.material.metalness
+            ? ovsMaterial.metalness
             : Math.min(
                 (material.metalness ?? 0.1) +
                   (form.enabled ? 0.06 : visual.enabled ? 0.02 : 0),
@@ -366,7 +376,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
           ovs.enabled
             ? Math.min(
                 0.84,
-                Math.max(0.34, ovs.material.roughness + ovsState.roughnessBias),
+                Math.max(0.34, ovsMaterial.roughness + ovsState.roughnessBias),
               )
             : Math.max(
                 (material.roughness ?? 0.7) +
@@ -388,7 +398,7 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         }
         envMapIntensity={
           ovs.enabled
-            ? ovs.material.envMapIntensity
+            ? ovsMaterial.envMapIntensity
             : form.enabled
               ? 0.34
               : visual.enabled
@@ -398,7 +408,10 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
         depthWrite={ovs.enabled ? false : (material.depthWrite ?? true)}
         depthTest={material.depthTest ?? true}
         toneMapped={material.toneMapped ?? true}
-        flatShading={ovs.enabled && ovs.primitive === "diamond"}
+        flatShading={
+          ovs.enabled &&
+          (ovs.primitive === "diamond" || ovs.primitive === "prism")
+        }
       />
     ) : (
       <meshBasicMaterial
@@ -582,6 +595,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
             bodyMaterial={bodyMaterialNode}
             interactiveHandlers={handlers}
             innerLightColor={material.emissiveColor ?? material.color}
+            innerLightOpacity={ovsMaterial.innerLightOpacity}
+            innerLightRadiusFactor={ovsMaterial.innerLightRadiusFactor}
           />
         </group>
       );

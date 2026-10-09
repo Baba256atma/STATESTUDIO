@@ -108,7 +108,7 @@ test("T6 — no current subject does not invent a name", () => {
   assert.equal(inventedReassessmentName(turn.response), false);
   assert.equal(turn.intentResult.intent.targetHints.length, 0);
   assert.ok(
-    turn.managerObjectTurn.clarificationRequired === true ||
+    turn.clarificationTurn.action === "clarify" ||
       /not sure|which|no current|don't have|do not have|unclear/i.test(turn.response),
   );
 });
@@ -142,7 +142,7 @@ test("T12 — certified short deictics stay deictic or clarifying", () => {
   const why = run("Why?", focused);
   assert.equal(canonical(why), "obj-capacity");
   const showMe = run("Show me.", focused);
-  assert.ok(showMe.managerObjectTurn.clarificationRequired || canonical(showMe) === "obj-capacity");
+  assert.ok(showMe.clarificationTurn.action === "clarify" || canonical(showMe) === "obj-capacity");
   const about = run("What about this?", focused);
   assert.equal(canonical(about), "obj-capacity");
 });

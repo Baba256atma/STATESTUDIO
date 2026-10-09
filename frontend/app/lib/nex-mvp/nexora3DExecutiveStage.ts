@@ -9,6 +9,7 @@ import type {
   NexoraMVPPresentationState,
   NexoraMVPSceneEnvironmentIntent,
 } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation";
+import type { ManagerObjectKind } from "@/app/lib/manager-object/managerObjectInteractionFoundation.ts";
 import type {
   NexoraMVPStageObjectFixture,
   NexoraMVPStageRelationshipFixture,
@@ -106,6 +107,8 @@ export type NexoraMVPStageObject = {
   readonly id: string;
   readonly label: string;
   readonly kind: string;
+  /** Management identity passthrough. Absent means `kind` is the identity. */
+  readonly objectKind?: ManagerObjectKind;
   readonly position: readonly [number, number, number];
   readonly status?: string;
   readonly attention?: NexoraMVPStageAttention;
@@ -133,6 +136,8 @@ export type NexoraMVPStageObjectPresentation = {
   readonly id: string;
   readonly label: string;
   readonly kind: string;
+  /** Forwarded management identity. Does not replace stage category `kind`. */
+  readonly objectKind?: ManagerObjectKind;
   readonly role: NexoraMVPStageObjectRole;
   readonly overviewPosition: readonly [number, number, number];
   readonly targetPosition: readonly [number, number, number];
@@ -174,6 +179,11 @@ export type NexoraMVPStageObjectPresentation = {
     | "hidden";
   /** STAGE-PROD:0 spatial role (OBJECT KIND ≠ SPATIAL ROLE). */
   readonly spatialRole?: ExecutiveStageSpatialRole | "hidden";
+  /**
+   * Why this body is physically present. Independent of semantic kind,
+   * spatial role, and OVS family. Primary Body ≠ focused executive-work CENTER.
+   */
+  readonly stageRepresentationRole?: "primary-body" | "executive-work-center";
   /** Hidden subjects must not accept pointer interaction. */
   readonly interactive?: boolean;
   /** Coherent with disclosure — hidden subjects suppress Stage labels. */
@@ -613,6 +623,7 @@ export function resolveNexoraMVPStageScenePresentation(
       id: object.id,
       label: object.label,
       kind: object.kind,
+      ...(object.objectKind != null ? { objectKind: object.objectKind } : {}),
       role,
       overviewPosition,
       targetPosition,
@@ -634,6 +645,7 @@ export function resolveNexoraMVPStageScenePresentation(
       spatialRole,
       interactive,
       labelVisible,
+      stageRepresentationRole: "primary-body" as const,
     });
   });
 

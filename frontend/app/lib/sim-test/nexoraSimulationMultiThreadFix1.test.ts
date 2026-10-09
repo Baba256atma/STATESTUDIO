@@ -53,7 +53,7 @@ function step(
   });
 }
 
-const BLOCKER_JOURNEY: NexoraSimulationTestJourney = Object.freeze({
+const BLOCKER_JOURNEY: NexoraSimulationTestJourney = Object.freeze<NexoraSimulationTestJourney>({
   journeyId: "sim-test-9-fix1-original-blocker",
   version: "1.0",
   title: "SIM-TEST:9 exact blocker after FIX1",
