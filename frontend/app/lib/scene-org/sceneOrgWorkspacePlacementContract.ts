@@ -164,6 +164,11 @@ export function createSceneOrgSavedScene(input: {
 
 export type SceneOrgResolvedSavedScene<T> = Readonly<{
   scene: SceneOrgSavedScene;
+  status:
+    | "resolved-current-canonical-subject"
+    | "no-canonical-reference"
+    | "canonical-subject-missing";
+  restoredCanonicalId: string | null;
   live: readonly Readonly<{
     reference: SceneOrgCanonicalReference;
     content: T | null;
@@ -175,13 +180,22 @@ export function resolveSceneOrgSavedScene<T>(
   scene: SceneOrgSavedScene,
   resolveCanonical: (reference: SceneOrgCanonicalReference) => T | null,
 ): SceneOrgResolvedSavedScene<T> {
+  const live = Object.freeze(
+    scene.canonicalReferences.map((reference) =>
+      Object.freeze({ reference, content: resolveCanonical(reference) }),
+    ),
+  );
+  const restored = live.find((entry) => entry.content != null) ?? null;
   return Object.freeze({
     scene,
-    live: Object.freeze(
-      scene.canonicalReferences.map((reference) =>
-        Object.freeze({ reference, content: resolveCanonical(reference) }),
-      ),
-    ),
+    status:
+      restored != null
+        ? "resolved-current-canonical-subject"
+        : scene.canonicalReferences.length === 0
+          ? "no-canonical-reference"
+          : "canonical-subject-missing",
+    restoredCanonicalId: restored?.reference.canonicalId ?? null,
+    live,
   });
 }
 

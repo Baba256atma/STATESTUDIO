@@ -8,6 +8,7 @@ import {
   nexoraExecutiveShellVersion,
 } from "@/app/lib/nex-mvp/nexoraExecutiveShell";
 import {
+  NEXORA_MVP_DEFAULT_PRESENTATION_STATE,
   getNexoraMVPWorkspaceRegistry,
   type NexoraMVPPresentationState,
   type NexoraMVPWorkspaceKind,
@@ -366,6 +367,12 @@ import {
   type SceneOrgSavedScene,
 } from "@/app/lib/scene-org/sceneOrgWorkspacePlacementContract";
 import {
+  loadSceneOrgSavedScenes,
+  persistSceneOrgSavedScenes,
+  SCENE_ORG_SAVED_SCENE_DURABILITY_VERSION,
+  SCENE_ORG_SAVED_SCENE_DURABILITY_BOUNDARY,
+} from "@/app/lib/scene-org/sceneOrgSavedSceneDurability";
+import {
   createSceneOrgRightPanelChromeState,
   updateSceneOrgRightPanelChrome,
 } from "@/app/lib/scene-org/sceneOrgRightContextContract";
@@ -692,7 +699,37 @@ export function NexoraExecutiveShell({
   );
   const savedScenesRef = useRef(savedScenes);
   savedScenesRef.current = savedScenes;
+  const [savedSceneHydration, setSavedSceneHydration] = useState<Readonly<{
+    status: "pending" | "loaded" | "empty" | "unavailable" | "invalid" | "incompatible";
+    rejectedRecords: number;
+  }>>({ status: "pending", rejectedRecords: 0 });
+  useEffect(() => {
+    const loaded = loadSceneOrgSavedScenes();
+    savedScenesRef.current = loaded.scenes;
+    setSavedScenes(loaded.scenes);
+    setSavedSceneHydration({
+      status: loaded.status,
+      rejectedRecords: loaded.rejectedRecords,
+    });
+    if (loaded.status === "invalid" || loaded.status === "incompatible" || loaded.rejectedRecords > 0) {
+      console.info(
+        `Saved Scene durability rejected ${loaded.rejectedRecords} record(s): ${loaded.status}.`,
+      );
+    }
+  }, []);
   const [activeSavedSceneId, setActiveSavedSceneId] = useState<string | null>(null);
+  const [savedSceneRestoration, setSavedSceneRestoration] = useState<Readonly<{
+    sceneId: string;
+    status:
+      | "resolved-current-canonical-subject"
+      | "no-canonical-reference"
+      | "canonical-subject-missing";
+    requestedCanonicalId: string | null;
+    restoredCanonicalId: string | null;
+    requestedPresentationDepth: NexoraMVPPresentationState;
+    resolvedPresentationDepth: NexoraMVPPresentationState;
+    truthSource: "current-canonical-authorities";
+  }> | null>(null);
   const [explorerWidth, setExplorerWidth] = useState(300);
   const [advisorTab, setAdvisorTab] = useState<ExecutiveAdvisorTab>("Assist");
   const [packageTabSession, setPackageTabSession] = useState(
@@ -1770,12 +1807,18 @@ export function NexoraExecutiveShell({
               detailWorkspace: activeNav === "Data" ? "open" : "closed",
             },
           });
-          setSavedScenes((scenes) =>
-            Object.freeze([
-              ...scenes.filter((candidate) => candidate.sceneId !== sceneId),
-              scene,
-            ]),
-          );
+          const nextScenes = Object.freeze([
+            ...savedScenesRef.current.filter(
+              (candidate) => candidate.sceneId !== sceneId,
+            ),
+            scene,
+          ]);
+          const persistence = persistSceneOrgSavedScenes(nextScenes);
+          if (!persistence.persisted) {
+            return `I couldn't durably save ${sceneLabel}; the previous Saved Scenes are unchanged.`;
+          }
+          savedScenesRef.current = nextScenes;
+          setSavedScenes(nextScenes);
           setActiveSavedSceneId(sceneId);
           return `Saved ${sceneLabel} as view and canonical reference metadata.`;
         }
@@ -1791,7 +1834,9 @@ export function NexoraExecutiveShell({
               dataRealityExperience.catalog,
             ),
           );
-          const liveSubject = resolved.live.find((entry) => entry.content)?.content;
+          const liveSubject = resolved.live.find(
+            (entry) => entry.content != null,
+          )?.content;
           setInteraction((previous) => {
             const selected = liveSubject
               ? selectNexoraMVPInteractionSubject(
@@ -1799,12 +1844,33 @@ export function NexoraExecutiveShell({
                   liveSubject.id,
                   dataRealityExperience.catalog,
                 )
-              : previous;
+              : resetNexoraMVPObjectInteractionOverview(previous);
             const next = applyNexoraMVPPresentationStateChange(
               selected,
-              scene.layout.presentationDepth,
+              liveSubject
+                ? scene.layout.presentationDepth
+                : NEXORA_MVP_DEFAULT_PRESENTATION_STATE,
             );
             setApplication((app) => applyInteractionToApplication(app, next));
+            syncExecutiveContextFromRuntime(next, "runtime");
+            setManagerObjectSession((session) =>
+              activateManagerObjectFromClick(
+                session,
+                next.focusedSubject?.id ?? null,
+              ),
+            );
+            setSavedSceneRestoration(
+              Object.freeze({
+                sceneId: scene.sceneId,
+                status: resolved.status,
+                requestedCanonicalId:
+                  scene.canonicalReferences[0]?.canonicalId ?? null,
+                restoredCanonicalId: resolved.restoredCanonicalId,
+                requestedPresentationDepth: scene.layout.presentationDepth,
+                resolvedPresentationDepth: next.presentationState,
+                truthSource: "current-canonical-authorities" as const,
+              }),
+            );
             return next;
           });
           setRightPanelChrome((chrome) =>
@@ -1817,25 +1883,31 @@ export function NexoraExecutiveShell({
             scene.layout.detailWorkspace === "open" ? "Data" : "Home",
           );
           setActiveSavedSceneId(scene.sceneId);
-          return `Opened ${scene.name} using current live canonical content.`;
+          return resolved.status === "canonical-subject-missing"
+            ? `Opened ${scene.name} in Overview because its saved subject is no longer available.`
+            : `Opened ${scene.name} using current live canonical content.`;
         }
         case "MAKE_DEFAULT_SCENE": {
           if (!activeSavedSceneId) {
             return "Save or open a scene before making it the default.";
           }
-          setSavedScenes((scenes) =>
-            Object.freeze(
-              scenes.map((scene) =>
-                createSceneOrgSavedScene({
-                  ...scene,
-                  kind:
-                    scene.sceneId === activeSavedSceneId
-                      ? "DEFAULT_MANAGER"
-                      : "SAVED",
-                }),
-              ),
+          const nextScenes = Object.freeze(
+            savedScenesRef.current.map((scene) =>
+              createSceneOrgSavedScene({
+                ...scene,
+                kind:
+                  scene.sceneId === activeSavedSceneId
+                    ? "DEFAULT_MANAGER"
+                    : "SAVED",
+              }),
             ),
           );
+          const persistence = persistSceneOrgSavedScenes(nextScenes);
+          if (!persistence.persisted) {
+            return "I couldn't durably change the default Scene; the previous Saved Scenes are unchanged.";
+          }
+          savedScenesRef.current = nextScenes;
+          setSavedScenes(nextScenes);
           return "Made the current saved scene the default view.";
         }
       }
@@ -1846,6 +1918,7 @@ export function NexoraExecutiveShell({
       dataRealityExperience.catalog,
       rightPanelChrome.collapsed,
       selectAdvisorTab,
+      syncExecutiveContextFromRuntime,
     ],
   );
 
@@ -2743,7 +2816,64 @@ export function NexoraExecutiveShell({
       data-right-panel-collapsed={rightPanelChrome.collapsed ? "true" : "false"}
       data-nmi-panel-open={nmiPanelOpen ? "true" : "false"}
       data-saved-scene-count={String(savedScenes.length)}
+      data-saved-scene-ids={
+        savedScenes.map((scene) => scene.sceneId).join(",") || "none"
+      }
+      data-saved-scene-names={
+        savedScenes.map((scene) => scene.name).join("|") || "none"
+      }
+      data-saved-scene-references={
+        savedScenes
+          .map((scene) => scene.canonicalReferences[0]?.canonicalId ?? "none")
+          .join(",") || "none"
+      }
+      data-saved-scene-views={
+        savedScenes.map((scene) => scene.layout.presentationDepth).join(",") ||
+        "none"
+      }
+      data-saved-scene-layouts={
+        savedScenes
+          .map(
+            (scene) =>
+              `${scene.layout.rightRegion}/${scene.layout.detailWorkspace}`,
+          )
+          .join(",") || "none"
+      }
       data-active-saved-scene={activeSavedSceneId ?? "none"}
+      data-saved-scene-durability-classification={
+        SCENE_ORG_SAVED_SCENE_DURABILITY_BOUNDARY.classification
+      }
+      data-saved-scene-durability-target={
+        SCENE_ORG_SAVED_SCENE_DURABILITY_BOUNDARY.target
+      }
+      data-saved-scene-durability-scope={
+        SCENE_ORG_SAVED_SCENE_DURABILITY_BOUNDARY.scope
+      }
+      data-saved-scene-schema-version={String(
+        SCENE_ORG_SAVED_SCENE_DURABILITY_VERSION,
+      )}
+      data-saved-scene-hydration-status={savedSceneHydration.status}
+      data-saved-scene-rejected-records={String(
+        savedSceneHydration.rejectedRecords,
+      )}
+      data-saved-scene-restoration-status={
+        savedSceneRestoration?.status ?? "none"
+      }
+      data-saved-scene-requested-subject={
+        savedSceneRestoration?.requestedCanonicalId ?? "none"
+      }
+      data-saved-scene-restored-subject={
+        savedSceneRestoration?.restoredCanonicalId ?? "none"
+      }
+      data-saved-scene-requested-depth={
+        savedSceneRestoration?.requestedPresentationDepth ?? "none"
+      }
+      data-saved-scene-resolved-depth={
+        savedSceneRestoration?.resolvedPresentationDepth ?? "none"
+      }
+      data-saved-scene-truth-source={
+        savedSceneRestoration?.truthSource ?? "none"
+      }
       data-default-saved-scene={
         savedScenes.find((scene) => scene.kind === "DEFAULT_MANAGER")?.sceneId ??
         "none"

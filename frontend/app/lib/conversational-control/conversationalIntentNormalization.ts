@@ -185,6 +185,9 @@ export function isAmbiguousConversationalReference(token: string): boolean {
   const t = token.trim().toLowerCase();
   const core = stripConversationalInterfaceFiller(t);
   return (
+    /^(?:this|that) (?:problem|issue|risk|scenario|option|goal|decision|execution|outcome)$/.test(
+      core,
+    ) ||
     core === "this" ||
     core === "that" ||
     core === "it" ||

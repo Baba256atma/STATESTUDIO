@@ -333,6 +333,7 @@ export function evaluateClarificationGate(input: {
     if (
       reason === "TYPE_AMBIGUITY" &&
       !currentTurnNamesSeveral &&
+      contextual.continuityMove !== "typed-reference" &&
       Boolean(input.continuity?.activeSubjectId || (input.continuity?.thread.length ?? 0) > 0)
     ) {
       return {
