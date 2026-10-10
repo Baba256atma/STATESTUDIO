@@ -166,7 +166,37 @@ export const EXECUTIVE_STAGE_WATCH_BUDGET = Object.freeze({
   minVisible: 2,
   /** STAGE-PROD:6V — calibrated from 4 → 3 for executive visual clarity. */
   maxVisible: 3,
+  byPresentationDepth: Object.freeze({
+    minimum: 2,
+    report: 3,
+    operation: 3,
+  } as const satisfies Readonly<
+    Record<ExecutiveFocusPresentationDepth, number>
+  >),
 });
+
+/**
+ * Single presentation-context authority for Watch disclosure capacity.
+ * An explicit cap is a bounded caller constraint, not a second depth mapping.
+ */
+export function resolveExecutiveStageWatchBudget(input: {
+  readonly presentationDepth?: ExecutiveFocusPresentationDepth;
+  readonly watchBudgetMax?: number;
+}): number {
+  const presentationDepth = input.presentationDepth ?? "minimum";
+  const canonicalBudget =
+    EXECUTIVE_STAGE_WATCH_BUDGET.byPresentationDepth[presentationDepth];
+  const requestedBudget = input.watchBudgetMax;
+  if (requestedBudget === undefined) return canonicalBudget;
+  if (
+    !Number.isFinite(requestedBudget) ||
+    !Number.isInteger(requestedBudget) ||
+    requestedBudget < 1
+  ) {
+    throw new RangeError("Watch disclosure budget must be a positive integer");
+  }
+  return Math.min(requestedBudget, EXECUTIVE_STAGE_WATCH_BUDGET.maxVisible);
+}
 
 /**
  * NPA-T OVERVIEW-WATCH-DISCLOSURE:1 — default Overview is a hybrid:
@@ -431,11 +461,15 @@ export type ExecutiveStageDisclosureResult = {
   readonly identity: typeof executiveStageProductivityContractIdentity;
   readonly version: typeof executiveStageProductivityContractVersion;
   readonly presentationMode: ExecutiveStagePresentationMode;
+  readonly resolvedWatchBudget: number;
   readonly primaryStageSubjectId: string | null;
   readonly advisorSubjectId: string | null;
   readonly centerObjectId: string | null;
   readonly relatedObjectIds: readonly string[];
   readonly collectionObjectIds: readonly string[];
+  /** All eligible Watch candidates in deterministic rank order, before budget. */
+  readonly rankedWatchObjectIds: readonly string[];
+  /** Budget-selected Watch IDs; these are the disclosed Watch bodies. */
   readonly watchObjectIds: readonly string[];
   readonly hiddenObjectIds: readonly string[];
   readonly entries: readonly ExecutiveStageDisclosureObjectEntry[];
@@ -451,10 +485,12 @@ export type ExecutiveStageDisclosureResult = {
 
 export type ExecutiveStageProductivityObservability = {
   readonly presentationMode: ExecutiveStagePresentationMode;
+  readonly resolvedWatchBudget: number;
   readonly primaryStageSubjectId: string | null;
   readonly advisorSubjectId: string | null;
   readonly centerObjectId: string | null;
   readonly relatedObjectIds: readonly string[];
+  readonly rankedWatchObjectIds: readonly string[];
   readonly watchObjectIds: readonly string[];
   readonly hiddenObjectIds: readonly string[];
   readonly queueRegionReserved: true;
@@ -872,10 +908,13 @@ export function resolveExecutiveStageDisclosure(
     input.subjects.map((subject) => [subject.subjectId, subject]),
   );
   const queue = resolveExecutiveQueueSummary({ subjects: input.subjects });
-  const watchBudget =
-    input.watchBudgetMax ?? EXECUTIVE_STAGE_WATCH_BUDGET.maxVisible;
+  const watchBudget = resolveExecutiveStageWatchBudget({
+    presentationDepth: depth,
+    watchBudgetMax: input.watchBudgetMax,
+  });
 
   const entries = new Map<string, ExecutiveStageDisclosureObjectEntry>();
+  let rankedWatchObjectIds: readonly string[] = Object.freeze([]);
   let primaryStageSubjectId: string | null = null;
   let legacy: ExecutiveFocusSceneDisclosureResult | null = null;
 
@@ -916,6 +955,7 @@ export function resolveExecutiveStageDisclosure(
       excludeIds: collectionIds,
       maxVisible: watchBudget,
     });
+    rankedWatchObjectIds = watch.rankedIds;
     for (const id of watch.visibleIds) {
       if (!entries.has(id) || entries.get(id)?.spatialRole === "hidden") {
         const subject = subjectsById.get(id);
@@ -952,6 +992,7 @@ export function resolveExecutiveStageDisclosure(
       excludeIds: preparationIds,
       maxVisible: watchBudget,
     });
+    rankedWatchObjectIds = watch.rankedIds;
     for (const id of watch.visibleIds) {
       if (!entries.has(id) || entries.get(id)?.spatialRole === "hidden") {
         const subject = subjectsById.get(id);
@@ -1031,6 +1072,7 @@ export function resolveExecutiveStageDisclosure(
       excludeIds: exclude,
       maxVisible: watchBudget,
     });
+    rankedWatchObjectIds = watch.rankedIds;
     for (const id of watch.visibleIds) {
       const subject = subjectsById.get(id);
       const reason: ExecutiveStageDisclosureReason =
@@ -1145,6 +1187,7 @@ export function resolveExecutiveStageDisclosure(
       excludeIds: exclude,
       maxVisible: watchBudget,
     });
+    rankedWatchObjectIds = watch.rankedIds;
 
     for (const id of watch.visibleIds) {
       const subject = subjectsById.get(id);
@@ -1207,11 +1250,13 @@ export function resolveExecutiveStageDisclosure(
     identity: executiveStageProductivityContractIdentity,
     version: executiveStageProductivityContractVersion,
     presentationMode: input.presentationMode,
+    resolvedWatchBudget: watchBudget,
     primaryStageSubjectId,
     advisorSubjectId: primaryStageSubjectId,
     centerObjectId,
     relatedObjectIds,
     collectionObjectIds,
+    rankedWatchObjectIds,
     watchObjectIds,
     hiddenObjectIds,
     entries: Object.freeze([...entries.values()]),
@@ -1245,10 +1290,12 @@ export function buildExecutiveStageProductivityObservability(
 ): ExecutiveStageProductivityObservability {
   return Object.freeze({
     presentationMode: disclosure.presentationMode,
+    resolvedWatchBudget: disclosure.resolvedWatchBudget,
     primaryStageSubjectId: disclosure.primaryStageSubjectId,
     advisorSubjectId: disclosure.advisorSubjectId,
     centerObjectId: disclosure.centerObjectId,
     relatedObjectIds: disclosure.relatedObjectIds,
+    rankedWatchObjectIds: disclosure.rankedWatchObjectIds,
     watchObjectIds: disclosure.watchObjectIds,
     hiddenObjectIds: disclosure.hiddenObjectIds,
     queueRegionReserved: true as const,

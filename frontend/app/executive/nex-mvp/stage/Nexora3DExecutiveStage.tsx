@@ -22,10 +22,15 @@ import {
   type NexoraMVPAdvisorContextBridge,
   type NexoraMVPStageInteractionPresentation,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
-import type {
-  NexoraMVPPresentationAvailableAction,
-  NexoraMVPPresentationViewModel,
+import {
+  explainNexoraMVPStagePresentationDepth,
+  type NexoraMVPPresentationAvailableAction,
+  type NexoraMVPPresentationViewModel,
 } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
+/*
+ * Presentation state is resolved upstream. This component only renders it and
+ * exposes bounded certification metadata.
+ */
 import type { NexoraMVPPresentationState } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
 import type { NexoraDecisionTheatreIconicObject } from "@/app/lib/decision-theatre/nexoraDecisionTheatreIconicProjection.ts";
@@ -1002,6 +1007,11 @@ export function Nexora3DExecutiveStage({
 
   const focusedLabel =
     interaction.breadcrumb[interaction.breadcrumb.length - 1]?.label ?? null;
+  const presentationDepthReason = explainNexoraMVPStagePresentationDepth({
+    presentationState: interaction.scene.presentationState,
+    subjectId:
+      interaction.focusedSubjectId ?? interaction.selectedSubjectId ?? null,
+  });
 
   const focusedTargetZ = (() => {
     if (interaction.focusedSubjectId == null) return "none";
@@ -1077,6 +1087,8 @@ export function Nexora3DExecutiveStage({
       data-stage-prod-visual-family={contextualVisuals.specs[0]?.family ?? "none"}
       data-stage-prod-visual-writes="false"
       data-presentation-state={interaction.scene.presentationState}
+      data-presentation-depth-authority="NEX-MVP:6/NexoraPresentationStates"
+      data-presentation-depth-reason={presentationDepthReason}
       data-environment-intent={interaction.scene.environmentIntent}
       data-environment-treatment={environment.objectSurfaceTreatment}
       data-selected-object={interaction.selectedSubjectId ?? "none"}
@@ -1138,6 +1150,12 @@ export function Nexora3DExecutiveStage({
       data-stage-watch-ids={
         productivityObservability.watchObjectIds.join("|") || "none"
       }
+      data-stage-watch-ranked-ids={
+        productivityObservability.rankedWatchObjectIds.join("|") || "none"
+      }
+      data-stage-watch-budget={String(
+        productivityObservability.resolvedWatchBudget,
+      )}
       data-stage-prod-hidden-count={String(
         productivityObservability.hiddenObjectIds.length,
       )}

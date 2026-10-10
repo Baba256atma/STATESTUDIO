@@ -101,6 +101,20 @@ describe("NEX-MVP:3 3D Executive Stage host", () => {
     assert.match(html, /data-interaction-mode="overview"/);
   });
 
+  it("4b. disclosed Watch metadata uses the canonical Overview budget", () => {
+    const { stageProps } = presentationFor(null);
+    const html = renderToStaticMarkup(
+      React.createElement(Nexora3DExecutiveStage, stageProps),
+    );
+    assert.match(html, /data-stage-watch-budget="2"/);
+    assert.match(
+      html,
+      /data-stage-watch-ranked-ids="obj-risk\|obj-capacity\|obj-delivery\|obj-demand\|obj-customer\|obj-revenue"/,
+    );
+    assert.match(html, /data-stage-watch-ids="obj-capacity\|obj-risk"/);
+    assert.match(html, /data-primary-body-count="2"/);
+  });
+
   it("5. focused object state is represented in host markup", () => {
     const state = createInitialNexoraMVPObjectInteractionState({
       workspace: "problem",

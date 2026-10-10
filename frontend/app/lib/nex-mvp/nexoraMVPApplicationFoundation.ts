@@ -164,7 +164,8 @@ export function isNexoraMVPSurface(value: unknown): value is NexoraMVPSurface {
 
 /**
  * Application recognition of the frozen Minimum / Report / Operation model.
- * Semantics remain owned by REX / NEX-CI; MVP recognizes the same literals.
+ * This foundation owns the literals and fresh-session default; NEX-MVP:6 owns
+ * runtime selection and capability-constrained transitions.
  */
 export const NEXORA_MVP_PRESENTATION_STATES = Object.freeze([
   "minimum",
@@ -174,6 +175,12 @@ export const NEXORA_MVP_PRESENTATION_STATES = Object.freeze([
 
 export type NexoraMVPPresentationState =
   (typeof NEXORA_MVP_PRESENTATION_STATES)[number];
+
+/**
+ * Canonical fresh-session presentation context for the Executive MVP Stage.
+ * Runtime transitions are resolved by the NEX-MVP:6 presentation coordinator.
+ */
+export const NEXORA_MVP_DEFAULT_PRESENTATION_STATE = "minimum" as const;
 
 export function getNexoraMVPPresentationStates(): readonly NexoraMVPPresentationState[] {
   return NEXORA_MVP_PRESENTATION_STATES;
@@ -517,7 +524,7 @@ export function createNexoraMVPApplication(): NexoraMVPApplication {
   const snapshot = freezeSnapshot({
     identity: getNexoraMVPApplicationIdentity(),
     workspace: INITIAL_WORKSPACE.workspace,
-    presentationState: "minimum",
+    presentationState: NEXORA_MVP_DEFAULT_PRESENTATION_STATE,
     activeSurface: NEXORA_MVP_PRIMARY_SURFACE,
     selectedSubject: null,
     focusedSubject: null,

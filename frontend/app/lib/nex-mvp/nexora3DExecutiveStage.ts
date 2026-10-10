@@ -410,13 +410,6 @@ export function resolveNexoraMVPStageScenePresentation(
     ...(input.overviewOccupancy !== undefined
       ? { overviewOccupancy: input.overviewOccupancy }
       : {}),
-    // Density: preserve CENTER + RELATED before expanding Watch.
-    watchBudgetMax:
-      input.presentationState === "operation"
-        ? 4
-        : input.presentationState === "report"
-          ? 3
-          : 2,
   });
 
   const disclosedBusinessIds = new Set(

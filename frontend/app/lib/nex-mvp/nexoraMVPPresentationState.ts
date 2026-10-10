@@ -73,7 +73,7 @@ export const NEXORA_MVP_PRESENTATION_TRANSITION_MS_REDUCED = 60 as const;
 
 export const NEXORA_MVP_PRESENTATION_STATE_BOUNDARY = Object.freeze({
   architecturalRole: nexoraMVPPresentationStatesArchitecturalRole,
-  ownsPresentationAuthority: false as const,
+  ownsPresentationAuthority: true as const,
   duplicatesPresentationResolver: false as const,
   inventsKpiEngine: false as const,
   inventsKoiEngine: false as const,
@@ -135,11 +135,35 @@ export type NexoraMVPPresentationStateChangeResult =
       readonly changed: boolean;
       readonly workspace: NexoraMVPWorkspaceKind;
       readonly environmentIntent: NexoraMVPSceneEnvironmentIntent;
+      readonly reason: NexoraMVPStagePresentationDepthReason;
     }
   | {
       readonly ok: false;
       readonly reason: "invalid-presentation-state" | "unsupported-for-subject";
     };
+
+export type NexoraMVPStagePresentationDepthReason =
+  | "default-executive-stage-context"
+  | "minimum-view"
+  | "details-view"
+  | "actions-view"
+  | "operation-downgraded-to-report"
+  | "report-downgraded-to-minimum";
+
+/**
+ * Explains an already-resolved depth without introducing another store or
+ * deriving presentation semantics from geometry, population, or visual form.
+ */
+export function explainNexoraMVPStagePresentationDepth(input: {
+  readonly presentationState: NexoraMVPPresentationState;
+  readonly subjectId: string | null;
+}): NexoraMVPStagePresentationDepthReason {
+  if (input.presentationState === "report") return "details-view";
+  if (input.presentationState === "operation") return "actions-view";
+  return input.subjectId == null
+    ? "default-executive-stage-context"
+    : "minimum-view";
+}
 
 export function getNexoraMVPPresentationStateOrder(): readonly NexoraMVPPresentationState[] {
   return getNexoraMVPPresentationStates();
@@ -185,11 +209,16 @@ export function resolveNexoraMVPPresentationStateChange(input: {
   }
 
   let nextState = input.targetPresentationState;
+  let reason = explainNexoraMVPStagePresentationDepth({
+    presentationState: nextState,
+    subjectId: input.subjectId,
+  });
   const capability = resolveNexoraMVPPresentationCapability(input.subjectId);
 
   if (nextState === "operation" && !capability.operation) {
     if (capability.report) {
       nextState = "report";
+      reason = "operation-downgraded-to-report";
     } else {
       return Object.freeze({
         ok: false,
@@ -200,6 +229,7 @@ export function resolveNexoraMVPPresentationStateChange(input: {
 
   if (nextState === "report" && !capability.report && input.subjectId != null) {
     nextState = "minimum";
+    reason = "report-downgraded-to-minimum";
   }
 
   return Object.freeze({
@@ -208,6 +238,7 @@ export function resolveNexoraMVPPresentationStateChange(input: {
     changed: nextState !== input.currentPresentationState,
     workspace: input.workspace,
     environmentIntent: input.environmentIntent,
+    reason,
   });
 }
 

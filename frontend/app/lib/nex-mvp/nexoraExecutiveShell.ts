@@ -10,6 +10,7 @@
  */
 
 import {
+  NEXORA_MVP_DEFAULT_PRESENTATION_STATE,
   createNexoraMVPApplication,
   getNexoraMVPApplicationIdentity,
   getNexoraMVPPrimarySurface,
@@ -131,7 +132,8 @@ export function createInitialNexoraExecutiveShellApplicationState(): NexoraExecu
 
 export function deriveNexoraExecutiveShellApplicationState(
   workspace: NexoraMVPWorkspaceKind,
-  presentationState: NexoraMVPPresentationState = "minimum",
+  presentationState: NexoraMVPPresentationState =
+    NEXORA_MVP_DEFAULT_PRESENTATION_STATE,
 ): NexoraExecutiveShellApplicationState {
   return Object.freeze({
     workspace,
