@@ -77,9 +77,19 @@ export function applyResumedMeaningToIntent(
   if (clarification.action !== "resume" || !clarification.resumeReference) {
     return resolution;
   }
+  const typeResolvedStatusIntent =
+    clarification.resumeOperation === "STATUS" &&
+    clarification.resumeReference.subjectKind === "decision"
+      ? "decision-status"
+      : clarification.resumeOperation === "STATUS" &&
+          clarification.resumeReference.subjectKind === "execution"
+        ? "execution-status"
+        : null;
+  const resumedIntentKind =
+    typeResolvedStatusIntent ?? clarification.resumeIntentKind;
   if (
-    clarification.resumeIntentKind &&
-    /commit|execution/.test(clarification.resumeIntentKind)
+    resumedIntentKind &&
+    /commit|decision-status|execution/.test(resumedIntentKind)
   ) {
     const hint = Object.freeze({
       raw: clarification.resumeReference.canonicalName ?? "",
@@ -88,7 +98,7 @@ export function applyResumedMeaningToIntent(
     return Object.freeze({
       intent: Object.freeze({
         ...resolution.intent,
-        kind: clarification.resumeIntentKind as typeof resolution.intent.kind,
+        kind: resumedIntentKind as typeof resolution.intent.kind,
         targetHints: Object.freeze([hint]),
       }),
       trace: resolution.trace,

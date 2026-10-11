@@ -67,12 +67,15 @@ test("SIM-TEST:6-FIX1 T50 focused regression remains green", () => {
   });
   assert.equal(report.harnessStatus, "PASS");
   const t50 = report.journeyObservations.find((item) => item.turn === 50)!;
+  const t52 = report.journeyObservations.find((item) => item.turn === 52)!;
   assert.equal(
     report.journeyFindings.some((item) => item.classification.includes("REPEATED_CLARIFICATION") && item.managerTurn === 50),
     false,
   );
   assert.equal(t50.decisionCount, 1);
-  assert.equal(t50.executionCount, 1);
+  assert.equal(t50.executionCount, 0);
+  assert.equal(t52.utterance, "Start it.");
+  assert.equal(t52.executionCount, 1);
 });
 
 test("FIX2 — current subject, deictic, lifecycle, and related mention stay on canonical context", () => {
@@ -146,7 +149,7 @@ test("FIX2 — A→B→A and long-distance current subject beat a rich older Pro
   assert.match(turn.nxaAdvisorContract?.referentId ?? "", /capacity/i);
 });
 
-test("FIX2 — SIM-TEST:5-FIX3 execution identity remains unique on manufacturing lifecycle", () => {
+test("FIX2 — SIM-TEST:5 lifecycle never invents an Execution for ambiguous or unapproved requests", () => {
   const manufacturing = runNexoraSimulationTestJourney({
     journey: SIM_TEST_5_MANUFACTURING_LIFECYCLE,
     runId: "sim-test-6-fix2-fix3-reg",
@@ -154,5 +157,9 @@ test("FIX2 — SIM-TEST:5-FIX3 execution identity remains unique on manufacturin
   assert.equal(manufacturing.findingCounts.S0, 0);
   const last = manufacturing.journeyObservations.at(-1)!;
   assert.equal(last.decisionCount, 1);
-  assert.equal(last.executionCount, 1);
+  assert.equal(last.executionCount, 0);
+  assert.equal(
+    Math.max(...manufacturing.journeyObservations.map((item) => item.executionCount ?? 0)),
+    0,
+  );
 });

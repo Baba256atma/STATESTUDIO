@@ -388,6 +388,12 @@ function advisoryQuery(
   };
 }
 
+function isExplicitDecisionStatusInquiry(normalized: string): boolean {
+  return /^(?:(?:this|that|the)\s+decision\s+is\s+it\s+(?:still\s+)?(?:the\s+)?(?:active|current|approved|committed)(?:\s+one)?|is\s+(?:this|that|the)\s+decision\s+(?:still\s+)?(?:the\s+)?(?:active|current|approved|committed)(?:\s+one)?|does\s+(?:this|that|the)\s+decision\s+remain\s+(?:active|current|approved|committed)|which\s+decision\s+is\s+(?:still\s+)?(?:the\s+)?(?:active|current|approved|committed)(?:\s+one)?)$/.test(
+    normalized,
+  );
+}
+
 /**
  * Advisory purpose for explicit executive questions that reuse the existing
  * intent vocabulary. This is part of CC:1 classification, not a second
@@ -398,6 +404,8 @@ export type NexoraExecutiveAdvisoryPurpose =
   | "execution-monitoring"
   | "outcome-assessment"
   | "causal-assessment"
+  | "historical-query"
+  | "historical-follow-up"
   | "historical-review"
   | "executive-summary";
 
@@ -425,10 +433,18 @@ export function executiveAdvisoryPurposeOf(
     )
   ) return "causal-assessment";
   if (
+    /\bwhat\s+(?:has\s+)?happened\b|\beverything\s+that\s+happened\b|\bshow\s+me\b.*\bhistor(?:y|ical)\b|\bhistor(?:y|ical)(?:\s+please)?[?.!]*$|\bhistor(?:y|ical)\b.*\b(?:show|review|return|replay)\b|\bwhat\s+(?:was|is)\b.*\b(?:first|latest)\b.*\bobservation\b|\bwhat\s+was\b.*\b(?:in|during)\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\b|\bwhen\s+was\b.*\bobserved\b|\bwhat\s+happened\s+(?:before|after)\b|\bwhat\s+decisions?\s+were\s+committed\b|\bwhat\s+decision\s+was\s+made\b|\bwhen\s+(?:was|did)\b.*\b(?:decision\s+committed|execution\s+(?:start|complete))\b|\bwhen\s+(?:was|did)\b.*\b(?:problem|scenario|outcome|learn)\b|\bwhy\s+did\b.*\b(?:fall|drop|decline|rise|increase)\b|\bdid\b.*\b(?:decision|execution|action)\b.*\b(?:cause|fix)\b|\bcaused\s+by\b|^(?:what\s+about\s+(?:last|this)\s+(?:week|month|year)|and\s+(?:before|after)\s+that)[?.!]*$/.test(
+      normalized,
+    )
+  ) return "historical-query";
+  if (
     /\b(?:go|return)\s+back\s+to\b.*\b(?:issue|problem)\b.*\b(?:discussed|reviewed|looked\s+at)\b.*\b(?:earlier|beginning|start)\b/.test(
       normalized,
     )
   ) return "historical-review";
+  if (/^(?:what\s+about\s+.+|(?:back|return)\s+to\s+.+)[?.!]*$/.test(normalized)) {
+    return "historical-follow-up";
+  }
   if (
     /\b(?:three|3|top|key|most\s+important)\s+(?:things|points|items)\b.*\b(?:know|remember|take\s+away)\b|\b(?:executive|management)\s+(?:summary|brief)\b|\bwhat\s+should\s+i\s+know\s+before\s+i\s+(?:leave|go)\b/.test(
       normalized,
@@ -505,6 +521,16 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
       false,
     );
   }
+  if (
+    advisoryPurpose === "historical-query" &&
+    !/^what\s+(?:has\s+)?happened\s+(?:with|to)\b/.test(normalized)
+  ) {
+    return advisoryQuery(
+      "change",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_CHANGE,
+      true,
+    );
+  }
   if (advisoryPurpose === "historical-review") {
     return advisoryQuery(
       "change",
@@ -516,6 +542,13 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     return advisoryQuery(
       "situation",
       CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      false,
+    );
+  }
+  if (isExplicitDecisionStatusInquiry(normalized)) {
+    return advisoryQuery(
+      "decision-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_DECISION_STATUS,
       false,
     );
   }

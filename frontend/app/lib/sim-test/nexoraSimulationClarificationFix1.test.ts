@@ -25,18 +25,25 @@ test("SIM-TEST:6-FIX1 — focused T42–T52 reproduction no longer repeats stale
   const t48 = report.journeyObservations.find((item) => item.turn === 48)!;
   const t49 = report.journeyObservations.find((item) => item.turn === 49)!;
   const t50 = report.journeyObservations.find((item) => item.turn === 50)!;
+  const t52 = report.journeyObservations.find((item) => item.turn === 52)!;
   assert.equal(t48.utterance, "Return to the capacity pressure we started with.");
   assert.notEqual(t48.clarificationRequired, true);
   assert.doesNotMatch(t48.response, /Which one do you want me to show/i);
   assert.ok(t48.canonicalSubjectId === "obj-capacity" || t48.canonicalSubjectId === "ctx-problem-capacity", String(t48.canonicalSubjectId));
   assert.notEqual(t49.clarificationRequired, true);
+  assert.match(t49.response, /Decision/i);
+  assert.equal(t49.canonicalSubjectId, t48.canonicalSubjectId);
+  assert.equal(t49.decisionCount, t48.decisionCount);
+  assert.equal(t49.executionCount, t48.executionCount);
   assert.doesNotMatch(t50.response, /Which one do you want me to show/i);
   assert.equal(
     report.journeyFindings.some((item) => item.classification.includes("REPEATED_CLARIFICATION") && item.managerTurn === 50),
     false,
   );
   assert.equal(t50.decisionCount, 1);
-  assert.equal(t50.executionCount, 1);
+  assert.equal(t50.executionCount, 0);
+  assert.equal(t52.utterance, "Start it.");
+  assert.equal(t52.executionCount, 1);
 });
 
 test("SIM-TEST:6-FIX1 — manufacturing long no longer carries the T50 clarification root", () => {
@@ -47,12 +54,15 @@ test("SIM-TEST:6-FIX1 — manufacturing long no longer carries the T50 clarifica
   assert.equal(report.harnessStatus, "PASS");
   assert.equal(report.findingCounts.S0, 0);
   const t50 = report.journeyObservations.find((item) => item.turn === 50)!;
+  const t52 = report.journeyObservations.find((item) => item.turn === 52)!;
   assert.equal(
     report.journeyFindings.some((item) => item.classification.includes("REPEATED_CLARIFICATION") && item.managerTurn === 50),
     false,
   );
   assert.equal(t50.decisionCount, 1);
-  assert.equal(t50.executionCount, 1);
+  assert.equal(t50.executionCount, 0);
+  assert.equal(t52.utterance, "Start it.");
+  assert.equal(t52.executionCount, 1);
   assert.equal(t50.npsLearningDurable === true, false);
 });
 
@@ -75,12 +85,21 @@ test("SIM-TEST:6-FIX1 — project, parity, FAST, and fresh isolation keep the T5
   assert.equal(fresh.journeyObservations.some((item) => item.clarificationRequired), false);
 });
 
-test("SIM-TEST:6-FIX1 — SIM-TEST:5-FIX3 named-issue and execution regressions remain green", () => {
+test("SIM-TEST:6-FIX1 — ambiguous and unapproved execution requests remain read-only", () => {
   const manufacturing = runNexoraSimulationTestJourney({
     journey: SIM_TEST_5_MANUFACTURING_LIFECYCLE,
     runId: "sim-test-6-fix1-reg-5",
   });
   assert.equal(manufacturing.harnessStatus, "PASS");
   assert.equal(manufacturing.findingCounts.S0, 0);
-  assert.equal(manufacturing.findingCounts.S1, 0, manufacturing.journeyFindings.map((item) => item.classification).join(","));
+  const repeatedClarifications = manufacturing.journeyFindings.filter((item) =>
+    item.classification.includes("REPEATED_CLARIFICATION")
+  );
+  assert.deepEqual(repeatedClarifications.map((item) => item.managerTurn), [19, 31]);
+  for (const turn of [19, 31]) {
+    const observation = manufacturing.journeyObservations.find((item) => item.turn === turn)!;
+    assert.equal(observation.clarificationRequired, true);
+    assert.match(observation.response, /Which approved Decision do you want to start\?/i);
+    assert.equal(observation.executionCount, 0);
+  }
 });

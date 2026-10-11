@@ -3,17 +3,17 @@
     "identity": "NXA:6-PREP/CertificationTaskLedger",
     "tasks": [
       {
-        "id": "l1-cert-infra",
-        "purpose": "NXA:6-PREP infrastructure self-tests",
-        "command": "./node_modules/.bin/tsx --test app/lib/nexora-certification/*.test.ts app/lib/runtime/diagnosticSwitch.test.ts",
+        "id": "l3-cross-layer",
+        "purpose": "Advisor→DIR→Stage, Queue parity, FIX2, harness certified cases",
+        "command": "./node_modules/.bin/tsx --test app/lib/nexora-certification/*.test.ts app/lib/manager-object/nexoraNxa5Fix2CollectionPresentationParity.test.ts app/lib/director/nexoraSemanticPresentationDirector.test.ts app/lib/conversational-control/conversationalRuntimeBridge.test.ts",
         "jobIdentity": null,
         "required": true,
-        "startedAt": "2026-10-10T19:54:00.718Z",
-        "completedAt": "2026-10-10T19:54:02.257Z",
-        "durationMs": 1539,
+        "startedAt": "2026-10-11T19:20:20.872Z",
+        "completedAt": "2026-10-11T19:20:22.214Z",
+        "durationMs": 1342,
         "status": "PASSED",
         "exitCode": 0,
-        "artifact": ".certification/nxa-6-prep-conversation-diagnostics/l1-cert-infra.log",
+        "artifact": ".certification/nxa-6-prep-conversation-diagnostics/l3-cross-layer.log",
         "inspected": true
       }
     ]

@@ -471,11 +471,11 @@ function worldFor(turnSpec: HistoricalJourneyTurn): ProjectHistoricalTruthInput 
   return liveWorld();
 }
 
-test("TIMELINE-TEST:1 harness is test-only and conversation has no historical Truth route", () => {
+test("TIMELINE-TEST:1 harness stays test-only after the product historical Truth route is added", () => {
   assert.equal(historicalTruthManagerJourneyIdentity, "NPA-T TIMELINE-TEST:1/ManagerHistoricalJourneyHarness");
   assert.ok(RMS_MANAGER_PROFILES.STRUCTURED_MANAGER);
-  assert.equal(executiveAdvisoryPurposeOf("what happened with capacity?"), null);
-  assert.equal(executiveAdvisoryPurposeOf("show me capacity history"), null);
+  assert.equal(executiveAdvisoryPurposeOf("what happened with capacity?"), "historical-query");
+  assert.equal(executiveAdvisoryPurposeOf("show me capacity history"), "historical-query");
   const resolved = resolveNexoraConversationalIntent({ utterance: "What happened with Capacity?" });
   assert.notEqual(resolved.intent.kind, "focus");
   const shell = readFileSync(new URL("../../executive/nex-mvp/NexoraExecutiveShell.tsx", import.meta.url), "utf8");

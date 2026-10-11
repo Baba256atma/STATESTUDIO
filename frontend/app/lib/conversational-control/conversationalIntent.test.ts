@@ -501,6 +501,18 @@ test("MO:1 connected / next-action / do-nothing remain generic CC intents", () =
   assert.equal(resolve("What decision is required?").intent.kind, "decision-status");
 });
 
+test("TYPE-AMBIGUITY-FIX:1 explicit Decision lifecycle status grammar stays with CC:1", () => {
+  for (const utterance of [
+    "This decision — is it still the active one?",
+    "Is this decision still active?",
+    "Does that decision remain current?",
+    "Which decision is the committed one?",
+  ]) {
+    assert.equal(resolve(utterance).intent.kind, "decision-status", utterance);
+  }
+  assert.notEqual(resolve("What happened with the Decision?").intent.kind, "decision-status");
+});
+
 test("SIM-TEST:8-FIX1 — deictic reassessment is not a named issue title", () => {
   const family = [
     "Is this still a problem?",

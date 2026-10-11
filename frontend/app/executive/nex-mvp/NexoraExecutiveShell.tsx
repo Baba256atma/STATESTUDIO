@@ -2193,6 +2193,13 @@ export function NexoraExecutiveShell({
         const subjects = projectManagerObjectConversationalSubjects(
           dataRealityExperience.catalog,
         );
+        const turnNow = new Date().toISOString();
+        const historicalSnapshot =
+          dataRealityExperience.runtimeState.sourceReality.certifiedAdvisorResult.dataRealitySnapshot;
+        const historicalObservations = collectLiveHistoricalObservations({
+          snapshotKpis: historicalSnapshot.kpis,
+          datasetId: historicalSnapshot.datasetId,
+        });
 
         const result = executeNexoraConversationalExperience({
           utterance: trimmed,
@@ -2214,7 +2221,22 @@ export function NexoraExecutiveShell({
           decisionSession,
           decisionRuntime: decisionRuntime.adapter,
           executionRuntime,
-          decisionCommittedAt: new Date().toISOString(),
+          decisionCommittedAt: turnNow,
+          historicalAnchorIso: turnNow,
+          historicalRead: ({ subjectId, subjectLabel, range }) =>
+            readCanonicalHistoricalPresentation({
+              subjectId,
+              subjectLabel,
+              decisions: decisionRuntime.adapter.listDecisions(),
+              executions: executionRuntime.listExecutions(),
+              observations: historicalObservations,
+              outcomeCaptures: listCapturedObservations(),
+              learnings: listSupportedGroundedLearningForSubject({
+                workspaceId: "nexora-mvp",
+                subjectId,
+              }),
+              range,
+            }),
           advisorGrounding: conversationalAdvisorGroundingRef.current,
           savedScenes: savedScenesRef.current,
           savedSceneHydrationStatus: savedSceneHydration.status,

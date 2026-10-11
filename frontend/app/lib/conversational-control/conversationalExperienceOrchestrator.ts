@@ -14,6 +14,10 @@ import {
   resolveNexoraConversationalIntent,
 } from "./conversationalIntentResolver.ts";
 import {
+  answerHistoricalConversation,
+  type HistoricalConversationRead,
+} from "./historicalConversationQuery.ts";
+import {
   CONVERSATIONAL_INTENT_REASON,
   EXECUTION_CLASS_BY_INTENT_KIND,
   type NexoraConversationalIntentInput,
@@ -484,6 +488,10 @@ export type NexoraConversationalExperienceInput = {
   readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
   /** Deterministic clock for Decision committedAt (tests/Runtime). */
   readonly decisionCommittedAt?: string;
+  /** Existing host clock sampled once for deterministic Executive Time resolution. */
+  readonly historicalAnchorIso?: string;
+  /** Read-only adapter to the certified Historical Presentation boundary. */
+  readonly historicalRead?: HistoricalConversationRead | null;
   /** Read-only projection of the existing UX:3 Advisor narrative. */
   readonly advisorGrounding?: NexoraConversationalAdvisorGrounding | null;
   /** UX:4-FIX2 short-lived dialogue expectation. */
@@ -1711,6 +1719,8 @@ export function executeNexoraConversationalExperience(
       decisionRuntime: args.decisionRuntime ?? boundDecisionRuntime,
       executionRuntime: args.executionRuntime ?? boundExecutionRuntime,
       canonicalExecutionRuntimeProvided: input.executionRuntime != null,
+      historicalAnchorIso: input.historicalAnchorIso,
+      historicalRead: input.historicalRead ?? null,
       guidedAttention,
       visualView,
     });
@@ -2313,6 +2323,24 @@ export function executeNexoraConversationalExperience(
       Boolean(input.previousManagerObjectSession?.ncaConversationState?.lastAdvisoryPosition);
     const clarificationOwnedByStageMeta =
       classifyNexoraSemanticScope(utterance) === "CURRENT_WORKSPACE";
+    const currentHistoricalPurpose = executiveAdvisoryPurposeOf(
+      normalizeNexoraConversationalUtterance(utterance),
+    );
+    const previousHistoricalPurpose = input.previousUtterance
+      ? executiveAdvisoryPurposeOf(
+          normalizeNexoraConversationalUtterance(input.previousUtterance),
+        )
+      : null;
+    const clarificationOwnedByHistoricalQuery =
+      (currentHistoricalPurpose === "historical-query" ||
+        (currentHistoricalPurpose === "historical-follow-up" &&
+          (previousHistoricalPurpose === "historical-query" ||
+            previousHistoricalPurpose === "historical-follow-up"))) &&
+      Boolean(
+        naturalLanguageUnderstanding.objectReference?.subjectId ??
+        input.previousManagerObjectSession?.conversationContinuity?.activeSubjectId ??
+        previousContext.currentSubjectId,
+      );
     const clarificationOwnedByCurrentSubject =
       !pendingCriterion &&
       Boolean(
@@ -2333,6 +2361,7 @@ export function executeNexoraConversationalExperience(
       clarificationOwnedByMultiEntitySemantics ||
       clarificationOwnedByAdvisoryDialogue ||
       clarificationOwnedByStageMeta ||
+      clarificationOwnedByHistoricalQuery ||
       clarificationOwnedByCurrentSubject ||
       Boolean(dataLibraryAnswer)
       ? Object.freeze({
@@ -3572,6 +3601,8 @@ function finalize(args: {
   readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
   /** True only when the host supplied the canonical CC:11 Runtime. */
   readonly canonicalExecutionRuntimeProvided?: boolean;
+  readonly historicalAnchorIso?: string;
+  readonly historicalRead?: HistoricalConversationRead | null;
   readonly preservePresentedResponse?: boolean;
   readonly lockPresentedResponse?: boolean;
   readonly dataLibraryResponse?: string | null;
@@ -6638,9 +6669,35 @@ function finalize(args: {
   }
   const normalizedFinalUtterance =
     normalizeNexoraConversationalUtterance(args.utterance);
-  const explicitAdvisoryPurpose = executiveAdvisoryPurposeOf(
+  let explicitAdvisoryPurpose = executiveAdvisoryPurposeOf(
     normalizedFinalUtterance,
   );
+  const previousAdvisoryPurpose = args.previousUtterance
+    ? executiveAdvisoryPurposeOf(
+        normalizeNexoraConversationalUtterance(args.previousUtterance),
+      )
+    : null;
+  if (
+    explicitAdvisoryPurpose === "historical-follow-up" &&
+    (previousAdvisoryPurpose === "historical-query" ||
+      previousAdvisoryPurpose === "historical-follow-up")
+  ) {
+    explicitAdvisoryPurpose = "historical-query";
+  } else if (explicitAdvisoryPurpose === "historical-follow-up") {
+    explicitAdvisoryPurpose = null;
+  }
+  if (
+    explicitAdvisoryPurpose == null &&
+    previousAdvisoryPurpose === "historical-query" &&
+    /^(?:how do you know|where did that come from|is that observed or inferred|are you sure(?: it happened in .+)?|when was it completed)[?.!]*$/.test(
+      normalizedFinalUtterance,
+    )
+  ) {
+    explicitAdvisoryPurpose = "historical-query";
+  }
+  if (explicitAdvisoryPurpose === "historical-query" && !args.historicalRead) {
+    explicitAdvisoryPurpose = null;
+  }
   const decisionRelativeChangeRequest =
     args.intentResult.intent.kind === "change" &&
     /^what\s+changed\s+(?:since|after)\s+we\s+(?:made|approved|committed)\s+(?:a|the)\s+decision$/.test(
@@ -6686,6 +6743,26 @@ function finalize(args: {
     presentedResponse =
       ecaOutcomeJudgment.managerFacingNote ??
       "No. An observed KPI improvement is an observation and may show association or plausible contribution, but it does not by itself prove the Decision caused it. Confirmed causality requires the existing evidence standard to rule out credible alternative explanations.";
+  } else if (explicitAdvisoryPurpose === "historical-query") {
+    const historicalSubjectId =
+      contextualManagerMeaning.objectReference?.subjectId ??
+      conversationContinuity.activeSubjectId ??
+      null;
+    const historicalSubjectLabel = historicalSubjectId
+      ? args.executiveSubjects.find(
+          (subject) => subject.subjectId === historicalSubjectId,
+        )?.canonicalName ?? null
+      : null;
+    presentedResponse = args.historicalRead && args.historicalAnchorIso
+      ? answerHistoricalConversation({
+          utterance: args.utterance,
+          previousUtterance: args.previousUtterance ?? null,
+          subjectId: historicalSubjectId,
+          subjectLabel: historicalSubjectLabel,
+          anchorIso: args.historicalAnchorIso,
+          read: args.historicalRead,
+        }).text
+      : "Canonical historical truth is not available in this conversation context.";
   } else if (explicitAdvisoryPurpose === "historical-review") {
     const priorContinuity = args.previousManagerObjectSession?.conversationContinuity;
     const issueIds = [...new Set(
@@ -7221,7 +7298,10 @@ function finalize(args: {
     llmManagementContext = emptyNexoraLlmManagementContext(args.utterance);
   }
   const llmParticipantTurn = invokeNexoraLlmConversationParticipant({
-    participant: args.llmParticipant ?? null,
+    participant:
+      explicitAdvisoryPurpose === "historical-query"
+        ? null
+        : args.llmParticipant ?? null,
     turnId: args.ids.nexoraId,
     deterministicResponse: presentedResponse,
     experienceStatus: effectiveStatus,
