@@ -239,7 +239,9 @@ describe("NEX-MVP:9 product integration certification", () => {
 
   it("shell mounts Timeline packs and flow indicator for demo readiness", () => {
     const html = renderToStaticMarkup(React.createElement(NexoraExecutiveShell));
-    assert.match(html, /Margin Pressure identified|Capacity Gap identified/);
+    assert.match(html, /data-history-source="canonical-projection"/);
+    assert.doesNotMatch(html, /Margin Pressure identified|Capacity Gap identified/);
+    assert.match(html, /No supported history yet|data-fact-type="decision-approved"|data-fact-type="execution-started"|data-fact-type="observation-recorded"/);
     assert.match(html, /data-flow-identity="NEX-MVP:8\/NexoraExecutiveFlowIntegration"/);
     assert.match(html, /Advisor|Insight|Assist/i);
   });

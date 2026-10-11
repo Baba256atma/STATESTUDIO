@@ -7,6 +7,9 @@ type Props = {
   readonly entries: readonly SceneOrgActivityEntry[];
   readonly selectedId: string | null;
   readonly onSelect: (entryId: string, subjectId: string) => void;
+  readonly emptyLabel?: string;
+  readonly historySubjectId?: string | null;
+  readonly historySource?: "canonical-projection";
 };
 
 /**
@@ -16,11 +19,16 @@ export function NexoraFlowJournalExplorer({
   entries,
   selectedId,
   onSelect,
+  emptyLabel = "No recorded activity is available for the current executive context.",
+  historySubjectId = null,
+  historySource,
 }: Props) {
   return (
     <div
       data-testid="nexora-manager-activity"
       data-nex-mvp="8"
+      data-history-source={historySource}
+      data-historical-subject={historySubjectId ?? ""}
       aria-label="Manager Activity"
       style={{ padding: "0.75rem" }}
     >
@@ -40,7 +48,7 @@ export function NexoraFlowJournalExplorer({
           data-testid="nexora-manager-activity-empty"
           style={{ margin: 0, fontSize: "0.72rem", color: cockpit.muted }}
         >
-          No recorded activity is available for the current executive context.
+          {emptyLabel}
         </p>
       ) : (
         <ul
@@ -60,6 +68,10 @@ export function NexoraFlowJournalExplorer({
                 <button
                   type="button"
                   data-testid={`nexora-activity-entry-${entry.id}`}
+                  data-source-id={entry.sourceId ?? ""}
+                  data-fact-type={entry.factType ?? entry.eventType}
+                  data-placeable={entry.placeable === true ? "true" : entry.placeable === false ? "false" : undefined}
+                  data-projection-key={entry.projectionKey ?? ""}
                   aria-pressed={selected}
                   onClick={() => onSelect(entry.id, entry.canonicalSubjectId)}
                   style={{
@@ -87,7 +99,12 @@ export function NexoraFlowJournalExplorer({
                       color: cockpit.lowMuted,
                     }}
                   >
-                    {entry.eventType.replaceAll("-", " ")} · {new Date(entry.occurredAt).toLocaleDateString()}
+                    {entry.eventType.replaceAll("-", " ")}
+                    {" · "}
+                    {entry.timeLabel ??
+                      (entry.occurredAt
+                        ? new Date(entry.occurredAt).toLocaleDateString()
+                        : "Time unknown")}
                   </span>
                   <span
                     style={{

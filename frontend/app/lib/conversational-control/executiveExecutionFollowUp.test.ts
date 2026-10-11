@@ -62,7 +62,8 @@ test("trusted execution evidence is read without conflating risks and blockers",
   const { decisions } = fixture();
   const canonical: NexoraCanonicalExecution = { executionId: "e", decisionId: "approved", title: "Implement", status: "blocked", progress: 50,
     ownerIds: ["person:coo"], blockers: [{ blockerId: "b", label: "Procurement approval" }], risks: [{ riskId: "r", label: "Schedule erosion" }],
-    milestones: [{ milestoneId: "mi", label: "Installation", deadline: "2026-08-01" }], source: "runtime", createdFromDecision: true, workspaceId: "w", modelId: "m" };
+    milestones: [{ milestoneId: "mi", label: "Installation", deadline: "2026-08-01" }], source: "runtime", createdFromDecision: true, workspaceId: "w", modelId: "m",
+    createdAt: null, startedAt: null, completedAt: null };
   const executions = createNexoraCanonicalExecutionRuntime({ decisionRuntime: decisions.adapter, initialExecutions: [canonical] });
   const result = resolveNexoraExecutiveExecutionFollowUp({ action: "review", executionId: "e", asOf: "2026-08-15", decisionRuntime: decisions.adapter, executionRuntime: executions });
   assert.equal(result.assessment?.progress, 50); assert.equal(result.assessment?.attentionLevel, "critical");

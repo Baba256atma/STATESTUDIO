@@ -99,6 +99,7 @@ export function buildNexoraConversationalExperienceResponse(input: {
       case "SAVE_SCENE": return sceneName ? `Saved ${sceneName} as view metadata.` : "Saved the current scene as view metadata.";
       case "OPEN_SCENE": return sceneName ? `Opened ${sceneName} using current live content.` : "Opened the saved scene using current live content.";
       case "MAKE_DEFAULT_SCENE": return "Made the current saved scene the default view.";
+      case "SHOW_SAVED_SCENES": return "Showing saved scenes.";
     }
   }
 

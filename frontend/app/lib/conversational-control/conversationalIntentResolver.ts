@@ -36,6 +36,11 @@ import {
 } from "./conversationalIntentNormalization.ts";
 import { parseNexoraWhatIfUtterance } from "./conversationalWhatIfStateGrammar.ts";
 import { getNexoraRegisteredExecutiveExperiences } from "./conversationalExperienceRegistry.ts";
+import {
+  extractSavedSceneOpenRequest,
+  resolveSceneOrgSavedSceneAccess,
+  shouldClaimSavedSceneOpenIntent,
+} from "@/app/lib/scene-org/sceneOrgSavedSceneCollectionAccess.ts";
 
 type MatchResult = {
   readonly kind: NexoraConversationalIntentKind;
@@ -65,14 +70,42 @@ function isExactRegisteredExperienceHint(raw: string): boolean {
   return false;
 }
 
-function matchWorkspaceAction(normalized: string): MatchResult | null {
+function matchWorkspaceAction(
+  normalized: string,
+  input: NexoraConversationalIntentInput,
+): MatchResult | null {
   let payload: NexoraConversationalWorkspaceActionPayload | null = null;
   const save = normalized.match(/^save this scene as (.+)$/);
-  const open = normalized.match(/^open (?:scene )?(.+ review)$/);
+  const extraction = extractSavedSceneOpenRequest(normalized);
+  const directory = input.savedScenes ?? Object.freeze([]);
+  const resolution = resolveSceneOrgSavedSceneAccess(directory, {
+    phrase: extraction.phrase,
+    defaultRequested: extraction.defaultRequested,
+    hydrationStatus:
+      input.savedSceneHydrationStatus === "unspecified"
+        ? undefined
+        : input.savedSceneHydrationStatus,
+  });
+  const legacyReview = normalized.match(/^open (?:scene )?(.+ review)$/);
   if (save?.[1]) {
     payload = { action: "SAVE_SCENE", sceneName: save[1], useCurrentReferent: true };
-  } else if (open?.[1]) {
-    payload = { action: "OPEN_SCENE", sceneName: open[1], useCurrentReferent: false };
+  } else if (extraction.kind === "list") {
+    payload = { action: "SHOW_SAVED_SCENES", sceneName: null, useCurrentReferent: false };
+  } else if (
+    extraction.kind === "open" &&
+    shouldClaimSavedSceneOpenIntent({
+      extraction,
+      resolution,
+      catalogSubjectNames: input.catalogSubjectNames,
+    })
+  ) {
+    payload = {
+      action: "OPEN_SCENE",
+      sceneName: resolution.scene?.name ?? extraction.phrase,
+      useCurrentReferent: false,
+    };
+  } else if (!input.savedScenes && legacyReview?.[1]) {
+    payload = { action: "OPEN_SCENE", sceneName: legacyReview[1], useCurrentReferent: false };
   } else if (/^make this (?:my )?default scene$/.test(normalized)) {
     payload = { action: "MAKE_DEFAULT_SCENE", sceneName: null, useCurrentReferent: false };
   } else if (/^(?:show recent activity|show activity|show history)$/.test(normalized)) {
@@ -2872,11 +2905,14 @@ function matchBareNamedIssueFocus(normalized: string): MatchResult | null {
   };
 }
 
-function resolveMatch(normalized: string): MatchResult {
+function resolveMatch(
+  normalized: string,
+  input: NexoraConversationalIntentInput,
+): MatchResult {
   // Order matters: decision commitment before scenario; scenario before recommend.
   return (
     matchConversationalEntry(normalized) ??
-    matchWorkspaceAction(normalized) ??
+    matchWorkspaceAction(normalized, input) ??
     matchAmbiguous(normalized) ??
     matchOverview(normalized) ??
     matchNavigation(normalized) ??
@@ -2947,7 +2983,7 @@ export function resolveNexoraConversationalIntent(
   const utterance = typeof input?.utterance === "string" ? input.utterance : "";
   const normalization = normalizeNexoraConversationalUtteranceWithDiagnostics(utterance);
   const normalizedUtterance = normalization.normalized;
-  const match = resolveMatch(normalizedUtterance);
+  const match = resolveMatch(normalizedUtterance, input);
 
   const intent = freezeIntent({
     kind: match.kind,

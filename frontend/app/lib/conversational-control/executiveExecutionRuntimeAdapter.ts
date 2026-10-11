@@ -36,6 +36,21 @@ export type NexoraCanonicalExecution = {
   readonly createdFromDecision: true;
   readonly workspaceId: string | null;
   readonly modelId: string | null;
+  /**
+   * RECORDED_TIME. When CC:11 first stored this Execution.
+   * Null on records created before this field existed. Not a business occurrence time.
+   */
+  readonly createdAt: string | null;
+  /**
+   * RECORDED_TIME. When CC:11 first accepted the transition into in-progress.
+   * Resume does not replace it. Null when start was never accepted.
+   */
+  readonly startedAt: string | null;
+  /**
+   * RECORDED_TIME. When CC:11 accepted completion.
+   * Null until that transition is accepted. Not a business occurrence time.
+   */
+  readonly completedAt: string | null;
 };
 
 export type NexoraExecutionRuntimeResult = {
@@ -119,7 +134,9 @@ export function hydrateNexoraCanonicalExecutionRuntimeRecords(
     if (parsed.version !== 1 || !Array.isArray(parsed.executions)) {
       return Object.freeze([...fallback]);
     }
-    const persisted = parsed.executions.filter(isCanonicalExecution);
+    const persisted = parsed.executions
+      .filter(isCanonicalExecution)
+      .map((execution) => freezeExecution(execution));
     if (persisted.length !== parsed.executions.length) {
       return Object.freeze([...fallback]);
     }
@@ -135,9 +152,22 @@ export function hydrateNexoraCanonicalExecutionRuntimeRecords(
   }
 }
 
-function freezeExecution(record: NexoraCanonicalExecution): NexoraCanonicalExecution {
+function recordedTime(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+function freezeExecution(
+  record: Omit<NexoraCanonicalExecution, "createdAt" | "startedAt" | "completedAt"> & {
+    readonly createdAt?: unknown;
+    readonly startedAt?: unknown;
+    readonly completedAt?: unknown;
+  },
+): NexoraCanonicalExecution {
   return Object.freeze({
     ...record,
+    createdAt: recordedTime(record.createdAt),
+    startedAt: recordedTime(record.startedAt),
+    completedAt: recordedTime(record.completedAt),
     ownerIds: Object.freeze([...record.ownerIds]),
     blockers: Object.freeze(record.blockers.map((item) => Object.freeze({ ...item }))),
     risks: Object.freeze(record.risks.map((item) => Object.freeze({ ...item }))),
@@ -149,7 +179,15 @@ export function createNexoraCanonicalExecutionRuntime(options: {
   readonly decisionRuntime: NexoraDecisionRuntimeAdapter;
   readonly initialExecutions?: readonly NexoraCanonicalExecution[];
   readonly authorityId?: string;
+  /**
+   * Clock for CC:11 lifecycle recording time.
+   * The ISO string is when this runtime accepted creation, the first start,
+   * or completion. Callers do not assign that meaning, and flow occurredAt
+   * is not this clock. Omitted clock uses the runtime wall clock.
+   */
+  readonly now?: () => string;
 }): NexoraCanonicalExecutionRuntimeAdapter {
+  const now = options.now ?? (() => new Date().toISOString());
   let records: Readonly<Record<string, NexoraCanonicalExecution>> = Object.freeze(
     Object.fromEntries((options.initialExecutions ?? []).map((e) => [e.executionId, freezeExecution(e)])),
   );
@@ -182,6 +220,9 @@ export function createNexoraCanonicalExecutionRuntime(options: {
         ownerIds: Object.freeze([]), blockers: Object.freeze([]), risks: Object.freeze([]), milestones: Object.freeze([]),
         source: "conversation", createdFromDecision: true,
         workspaceId: decision.workspaceId ?? null, modelId: decision.modelId ?? null,
+        createdAt: now(),
+        startedAt: null,
+        completedAt: null,
       });
       records = Object.freeze({ ...records, [execution.executionId]: execution });
       notify();
@@ -193,7 +234,18 @@ export function createNexoraCanonicalExecutionRuntime(options: {
       if (!isExecutionTransitionAllowed(existing.status, input.action)) return Object.freeze({ status: "transition-not-allowed" as const, execution: existing, reasons: Object.freeze(["execution-transition-rejected"]) });
       const target = executionTransitionTarget(input.action);
       if (target === existing.status) return Object.freeze({ status: "reused" as const, execution: existing, reasons: Object.freeze(["execution-existing-reused"]) });
-      const next = freezeExecution({ ...existing, status: target });
+      const next = freezeExecution({
+        ...existing,
+        status: target,
+        startedAt:
+          input.action === "start" && target === "in-progress" && existing.startedAt == null
+            ? now()
+            : existing.startedAt,
+        completedAt:
+          input.action === "complete" && target === "completed" && existing.completedAt == null
+            ? now()
+            : existing.completedAt,
+      });
       records = Object.freeze({ ...records, [next.executionId]: next });
       notify();
       return Object.freeze({ status: "applied" as const, execution: next, reasons: Object.freeze(["execution-transition-applied", `execution-${target}`]) });
@@ -246,9 +298,11 @@ export function createExecutiveRuntimeStoreExecutionAdapter(
     const blockers = plan.tasks.filter((t) => t.status === "Blocked" || t.health === "Blocked").map((t) => ({ blockerId: t.id, label: t.name }));
     const risks = plan.tasks.filter((t) => t.health === "Warning").map((t) => ({ riskId: t.id, label: t.name }));
     const progress = plan.tasks.length ? Math.round(plan.tasks.reduce((sum, t) => sum + t.progress, 0) / plan.tasks.length) : undefined;
+    // EXS1 plan projection. It does not own CC:11 lifecycle recording time.
     return freezeExecution({ executionId: plan.id, decisionId: plan.decisionId, title: plan.name, status, progress,
       ownerIds: plan.owner ? [plan.owner] : [], blockers, risks, milestones: [], source: "exs1-executive-runtime-store",
-      createdFromDecision: true, workspaceId: null, modelId: null });
+      createdFromDecision: true, workspaceId: null, modelId: null,
+      createdAt: null, startedAt: null, completedAt: null });
   };
   const result = (status: NexoraExecutionRuntimeResult["status"], execution: NexoraCanonicalExecution | null, reasons: readonly string[]): NexoraExecutionRuntimeResult => Object.freeze({ status, execution, reasons: Object.freeze([...reasons]) });
   return Object.freeze({

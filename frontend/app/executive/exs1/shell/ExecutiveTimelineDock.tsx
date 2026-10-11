@@ -9,6 +9,12 @@ export type ExecutiveTimelinePack = {
   readonly id: string;
   readonly title: string;
   readonly risk: "warning" | "risk" | "success";
+  readonly timeLabel?: string;
+  readonly placeable?: boolean;
+  readonly sourceId?: string | null;
+  readonly factType?: string;
+  readonly projectionKey?: string;
+  readonly group?: "chronological" | "unplaced";
 };
 
 type Props = {
@@ -23,6 +29,12 @@ type Props = {
   readonly packStripExtra?: ReactNode;
   /** UX:1 — collapse Timeline / Pack Strip until the manager needs them. */
   readonly defaultCollapsed?: boolean;
+  readonly emptyLabel?: string;
+  readonly periodNote?: string | null;
+  readonly historySubjectId?: string | null;
+  readonly historySource?: "canonical-projection";
+  readonly chronologicalCount?: number;
+  readonly unplacedCount?: number;
 };
 
 const RISK_COLOR = {
@@ -41,6 +53,8 @@ type BodyProps = {
   readonly onSelectPack: (packId: string) => void;
   readonly futureMarkerLabel: string;
   readonly compactLabels?: boolean;
+  readonly emptyLabel?: string;
+  readonly periodNote?: string | null;
 };
 
 /**
@@ -57,6 +71,12 @@ export function ExecutiveTimelineDock({
   onSelectPack,
   futureMarkerLabel = "Now →",
   defaultCollapsed = false,
+  emptyLabel = "No supported history yet",
+  periodNote = null,
+  historySubjectId = null,
+  historySource,
+  chronologicalCount,
+  unplacedCount,
 }: Props) {
   const selectedPack = packs.find((pack) => pack.id === selectedPackId);
   const collapsedLabel = selectedPack
@@ -68,6 +88,12 @@ export function ExecutiveTimelineDock({
       data-testid="executive-timeline-dock"
       data-exs1-compat="exs1-bottom-strip"
       data-timeline-collapsed={defaultCollapsed ? "true" : "false"}
+      data-history-source={historySource}
+      data-historical-subject={historySubjectId ?? ""}
+      data-historical-chronological-count={
+        chronologicalCount == null ? undefined : String(chronologicalCount)
+      }
+      data-historical-unplaced-count={unplacedCount == null ? undefined : String(unplacedCount)}
       aria-label="Executive Timeline Dock"
       style={{
         height: defaultCollapsed ? "auto" : cockpit.timelineHeight,
@@ -134,6 +160,8 @@ export function ExecutiveTimelineDock({
               onSelectPack={onSelectPack}
               futureMarkerLabel={futureMarkerLabel}
               compactLabels
+              emptyLabel={emptyLabel}
+              periodNote={periodNote}
             />
           </div>
         </details>
@@ -147,6 +175,8 @@ export function ExecutiveTimelineDock({
           onSelectLens={onSelectLens}
           onSelectPack={onSelectPack}
           futureMarkerLabel={futureMarkerLabel}
+          emptyLabel={emptyLabel}
+          periodNote={periodNote}
         />
       )}
     </footer>
@@ -163,6 +193,8 @@ function TimelineDockBody({
   onSelectPack,
   futureMarkerLabel,
   compactLabels = false,
+  emptyLabel = "No supported history yet",
+  periodNote = null,
 }: BodyProps) {
   return (
     <>
@@ -265,17 +297,54 @@ function TimelineDockBody({
         }}
       >
         <p style={labelStyle}>{compactLabels ? "Recent" : "Pack Strip"}</p>
+        {periodNote ? (
+          <p
+            data-testid="executive-timeline-period-note"
+            style={{ margin: 0, fontSize: "0.68rem", color: cockpit.muted }}
+          >
+            {periodNote}
+          </p>
+        ) : null}
+        {packs.length === 0 && !periodNote ? (
+          <p
+            data-testid="executive-timeline-empty"
+            style={{ margin: 0, fontSize: "0.72rem", color: cockpit.muted }}
+          >
+            {emptyLabel}
+          </p>
+        ) : null}
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-          {packs.map((pack) => {
+          {packs.map((pack, index) => {
             const selected = selectedPackId === pack.id;
             const highlighted = packHighlighted || selected;
+            const showUnplaced =
+              pack.group === "unplaced" && packs[index - 1]?.group !== "unplaced";
             return (
+              <span key={pack.id} style={{ display: "contents" }}>
+                {showUnplaced ? (
+                  <span
+                    data-testid="executive-timeline-unplaced"
+                    style={{
+                      alignSelf: "center",
+                      fontSize: "0.58rem",
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      color: cockpit.lowMuted,
+                    }}
+                  >
+                    Time unknown
+                  </span>
+                ) : null}
               <button
-                key={pack.id}
                 type="button"
                 data-testid={`executive-pack-${pack.id}`}
                 data-exs1-compat={`exs1-pack-${pack.id}`}
                 data-highlighted={highlighted ? "true" : "false"}
+                data-source-id={pack.sourceId ?? ""}
+                data-fact-type={pack.factType ?? ""}
+                data-placeable={pack.placeable === true ? "true" : pack.placeable === false ? "false" : undefined}
+                data-projection-key={pack.projectionKey ?? ""}
+                data-historical-group={pack.group ?? ""}
                 aria-pressed={selected}
                 onClick={() => onSelectPack(pack.id)}
                 style={{
@@ -318,6 +387,17 @@ function TimelineDockBody({
                 >
                   {pack.title}
                 </span>
+                {pack.timeLabel ? (
+                  <span
+                    style={{
+                      fontSize: "0.62rem",
+                      color: cockpit.muted,
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    {pack.timeLabel}
+                  </span>
+                ) : null}
                 {compactLabels ? null : (
                   <span
                     style={{
@@ -333,6 +413,7 @@ function TimelineDockBody({
                   </span>
                 )}
               </button>
+              </span>
             );
           })}
         </div>

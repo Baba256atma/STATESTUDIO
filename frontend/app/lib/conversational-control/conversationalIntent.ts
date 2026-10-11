@@ -210,12 +210,14 @@ export type NexoraConversationalWorkspaceActionKind =
   | "SHOW_ACTIVITY"
   | "SAVE_SCENE"
   | "OPEN_SCENE"
-  | "MAKE_DEFAULT_SCENE";
+  | "MAKE_DEFAULT_SCENE"
+  | "SHOW_SAVED_SCENES";
 
 export type NexoraConversationalWorkspaceActionPayload = Readonly<{
   action: NexoraConversationalWorkspaceActionKind;
   sceneName: string | null;
   useCurrentReferent: boolean;
+  sceneId?: string | null;
 }>;
 
 export type NexoraConversationalIntent = {
@@ -237,6 +239,17 @@ export type NexoraConversationalIntent = {
 
 export type NexoraConversationalIntentInput = {
   readonly utterance: string;
+  /** Derived lookup over the hydrated Saved Scene collection — not a second store. */
+  readonly savedScenes?: readonly import("@/app/lib/scene-org/sceneOrgWorkspacePlacementContract.ts").SceneOrgSavedScene[];
+  readonly catalogSubjectNames?: readonly string[];
+  readonly savedSceneHydrationStatus?:
+    | "pending"
+    | "loaded"
+    | "empty"
+    | "unavailable"
+    | "invalid"
+    | "incompatible"
+    | "unspecified";
 };
 
 /**

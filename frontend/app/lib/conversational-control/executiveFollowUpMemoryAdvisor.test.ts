@@ -7,7 +7,7 @@ import { compareExecutionFollowUpSnapshots } from "./executiveFollowUpChange.ts"
 import { reviewExecutionWithFollowUpMemory, resolveExecutiveFollowUpMemoryHandoff, EXECUTIVE_FOLLOW_UP_MEMORY_ADVISOR_BOUNDARY } from "./executiveFollowUpMemoryAdvisor.ts";
 import { renderExecutiveFollowUpAdvisorText, toExecutiveFollowUpConversationalMessage } from "./executiveFollowUpAdvisorResponse.ts";
 
-const record = (patch: Partial<NexoraCanonicalExecution> = {}): NexoraCanonicalExecution => ({ executionId: "e", decisionId: "d", title: "Capacity Expansion", status: "in-progress", progress: undefined, ownerIds: [], blockers: [], risks: [], milestones: [], source: "runtime", createdFromDecision: true, workspaceId: "w", modelId: "m", ...patch });
+const record = (patch: Partial<NexoraCanonicalExecution> = {}): NexoraCanonicalExecution => ({ executionId: "e", decisionId: "d", title: "Capacity Expansion", status: "in-progress", progress: undefined, ownerIds: [], blockers: [], risks: [], milestones: [], source: "runtime", createdFromDecision: true, workspaceId: "w", modelId: "m", createdAt: null, startedAt: null, completedAt: null, ...patch });
 const runtime = (value: NexoraCanonicalExecution) => { const decisions = createNexoraCanonicalDecisionRuntime(); decisions.adapter.transitionDecision({ decisionId: value.decisionId, action: "approve", title: "Decision", workspaceId: value.workspaceId, modelId: value.modelId }); return createNexoraCanonicalExecutionRuntime({ decisionRuntime: decisions.adapter, initialExecutions: [value] }); };
 const snapshot = (value: NexoraCanonicalExecution, at = "2026-08-15T00:00:00Z") => projectExecutionFollowUpSnapshot({ runtime: runtime(value), executionId: value.executionId, observedAt: at })!;
 

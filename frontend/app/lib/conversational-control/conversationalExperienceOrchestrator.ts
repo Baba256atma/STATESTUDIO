@@ -16,6 +16,7 @@ import {
 import {
   CONVERSATIONAL_INTENT_REASON,
   EXECUTION_CLASS_BY_INTENT_KIND,
+  type NexoraConversationalIntentInput,
 } from "./conversationalIntent.ts";
 import { resolveNexoraExecutiveConversationalContext } from "./conversationalContextResolver.ts";
 import {
@@ -451,6 +452,15 @@ import { projectStageProdExecutiveVisualizationRoute } from "@/app/lib/stage-pro
 
 export type NexoraConversationalExperienceInput = {
   readonly utterance: string;
+  /** Hydrated Saved Scene collection lookup for natural Scene access. */
+  readonly savedScenes?: readonly import("@/app/lib/scene-org/sceneOrgWorkspacePlacementContract.ts").SceneOrgSavedScene[];
+  readonly savedSceneHydrationStatus?:
+    | "pending"
+    | "loaded"
+    | "empty"
+    | "unavailable"
+    | "invalid"
+    | "incompatible";
   /** Legacy/compat projection. Prefer executiveContext (CC:7). */
   readonly conversationContext?: NexoraConversationContextSnapshot;
   /** CC:7 structured executive context. */
@@ -1351,9 +1361,11 @@ function namedSubjectTargetUnresolved(contextual: {
 function resolveIntentForTurn(
   managerUtterance: string,
   semanticUtterance: string,
+  intentContext?: Omit<NexoraConversationalIntentInput, "utterance">,
 ): NexoraConversationalExperienceResult["intentResult"] {
   const resolved = resolveNexoraConversationalIntent({
     utterance: semanticUtterance,
+    ...intentContext,
   });
   if (managerUtterance === semanticUtterance) return resolved;
   return Object.freeze({
@@ -1618,6 +1630,21 @@ export function executeNexoraConversationalExperience(
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
 } {
   const utterance = typeof input.utterance === "string" ? input.utterance : "";
+  const savedSceneIntentContext: Omit<NexoraConversationalIntentInput, "utterance"> =
+    Object.freeze({
+      savedScenes: input.savedScenes,
+      catalogSubjectNames: Object.freeze(
+        (input.executiveSubjects ?? []).flatMap((subject) =>
+          [subject.canonicalName, ...(subject.aliases ?? [])],
+        ),
+      ),
+      savedSceneHydrationStatus: input.savedSceneHydrationStatus,
+    });
+  const resolveUtteranceIntent = (nextUtterance: string) =>
+    resolveNexoraConversationalIntent({
+      utterance: nextUtterance,
+      ...savedSceneIntentContext,
+    });
   const boundDecisionRuntime =
     input.decisionRuntime !== undefined
       ? input.decisionRuntime
@@ -1731,7 +1758,7 @@ export function executeNexoraConversationalExperience(
         previous: previousGuidedAttention.presentation,
         requestId: `ga-${attentionNowMs}-${guidanceIntent.target}`,
       });
-      const intentResult = resolveNexoraConversationalIntent({ utterance });
+      const intentResult = resolveUtteranceIntent(utterance);
       const contextResult = resolveNexoraExecutiveConversationalContext({
         intent: intentResult.intent,
         executiveSubjects: input.executiveSubjects,
@@ -1778,7 +1805,7 @@ export function executeNexoraConversationalExperience(
         input.executiveSubjects,
       )
     ) {
-      const intentResult = resolveNexoraConversationalIntent({ utterance });
+      const intentResult = resolveUtteranceIntent(utterance);
       const contextResult = resolveNexoraExecutiveConversationalContext({
         intent: intentResult.intent,
         executiveSubjects: input.executiveSubjects,
@@ -1954,7 +1981,7 @@ export function executeNexoraConversationalExperience(
         catalog: input.catalog,
       });
       if (guidedTurn.ownsResponse) {
-        const intentResult = resolveNexoraConversationalIntent({ utterance });
+        const intentResult = resolveUtteranceIntent(utterance);
         const contextResult = resolveNexoraExecutiveConversationalContext({
           intent: intentResult.intent,
           executiveSubjects: input.executiveSubjects,
@@ -2005,7 +2032,7 @@ export function executeNexoraConversationalExperience(
         executionRuntime: boundExecutionRuntime,
       });
       if (entranceTurn.ownsResponse) {
-        const intentResult = resolveNexoraConversationalIntent({ utterance });
+        const intentResult = resolveUtteranceIntent(utterance);
         const contextResult = resolveNexoraExecutiveConversationalContext({
           intent: intentResult.intent,
           executiveSubjects: input.executiveSubjects,
@@ -2069,7 +2096,7 @@ export function executeNexoraConversationalExperience(
         input.scenarioSession ?? null,
       )
     ) {
-      const intentResult = resolveNexoraConversationalIntent({ utterance });
+      const intentResult = resolveUtteranceIntent(utterance);
       const contextResult = resolveNexoraExecutiveConversationalContext({
         intent: intentResult.intent,
         executiveSubjects: input.executiveSubjects,
@@ -2133,9 +2160,7 @@ export function executeNexoraConversationalExperience(
     const explicitUtterance =
       actionInvocation.semanticUtterance ??
       managerOverrideSemanticUtterance(withoutInterruptionSuffix(utterance));
-    const initialIntentResult = resolveNexoraConversationalIntent({
-      utterance: explicitUtterance,
-    });
+    const initialIntentResult = resolveUtteranceIntent(explicitUtterance);
     const decisionExpectation =
       input.decisionSession?.pendingConfirmation &&
       input.decisionSession.pendingConfirmation.status === "pending"
@@ -2203,14 +2228,14 @@ export function executeNexoraConversationalExperience(
         : explicitUtterance);
     // CC:1, then FINAL:6.1 overlay, then FINAL:6.2 contextual overlay.
     let intentResult = overlayCollectionOrDeicticIntent(
-      resolveIntentForTurn(utterance, semanticUtterance),
+      resolveIntentForTurn(utterance, semanticUtterance, savedSceneIntentContext),
       utterance,
       input.previousManagerObjectSession?.ncaConversationState?.lastCollection?.kind ??
         input.runtimeState.collectionContext?.category ??
         null,
     );
     if (pendingCriterion && isExecutiveComparisonCriterionAnswer(utterance)) {
-      intentResult = resolveIntentForTurn(utterance, utterance);
+      intentResult = resolveIntentForTurn(utterance, utterance, savedSceneIntentContext);
     }
     const naturalLanguageUnderstanding = interpretManagerTurnMeaning({
       utterance: managerOverrideSemanticUtterance(utterance),
@@ -2246,6 +2271,7 @@ export function executeNexoraConversationalExperience(
       intentResult = resolveIntentForTurn(
         utterance,
         `Focus on ${namedFocusName}`,
+        savedSceneIntentContext,
       );
     }
     const clarificationRaw = interpretClarificationTurn({
@@ -3487,7 +3513,7 @@ export function executeNexoraConversationalExperience(
       executiveSubjects: input.executiveSubjects,
     });
   } catch {
-    const intentResult = resolveNexoraConversationalIntent({ utterance });
+    const intentResult = resolveUtteranceIntent(utterance);
     const emptyContext = resolveNexoraExecutiveConversationalContext({
       intent: intentResult.intent,
       executiveSubjects: input.executiveSubjects,

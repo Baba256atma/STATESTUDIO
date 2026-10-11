@@ -20,6 +20,7 @@ import {
   resolveNexoraMVPTimelinePackSubjectId,
   verifyNexoraMVPExecutiveFlowIntegration,
 } from "./nexoraMVPExecutiveFlow.ts";
+import { createNexoraCanonicalExecutionRuntime } from "../conversational-control/executiveExecutionRuntimeAdapter.ts";
 import { createNexoraMVPFlowSeededDecisionRuntime } from "./nexoraMVPExecutiveDecisionCommitment.ts";
 import type { NexoraMVPPresentationAvailableAction } from "./nexoraMVPPresentationState.ts";
 
@@ -283,6 +284,9 @@ describe("NEX-MVP:8 Executive Flow Integration", () => {
   it("records workspace Execution state without claiming live delivery intelligence", () => {
     const initial = createInitialNexoraMVPFlowDomainState();
     const decisionRuntime = createNexoraMVPFlowSeededDecisionRuntime();
+    const executionRuntime = createNexoraCanonicalExecutionRuntime({
+      decisionRuntime: decisionRuntime.adapter,
+    });
     const approved = applyNexoraMVPFlowDomainAction(
       initial,
       {
@@ -301,21 +305,45 @@ describe("NEX-MVP:8 Executive Flow Integration", () => {
         subjectId: "ctx-execution-capacity",
         kind: "start-execution",
       },
+      {
+        decisionRuntime: decisionRuntime.adapter,
+        executionRuntime,
+      },
     );
     assert.equal(started.ok, true);
     if (!started.ok) return;
+    assert.equal(
+      executionRuntime.findExecutionByDecisionId("ctx-decision-capacity")?.status,
+      "in-progress",
+    );
+    assert.equal(
+      started.state.executions.find((entry) => entry.id === "ctx-execution-capacity")
+        ?.status,
+      "in-progress",
+    );
     assert.match(
       started.message,
       /Nexora recorded Capacity Expansion as in progress/,
     );
     assert.doesNotMatch(started.message, /CC:11|NEX-MVP:8|flowDomain|adapter/i);
-    const completed = applyNexoraMVPFlowDomainAction(started.state, {
-      actionId: "act-exec-complete",
-      subjectId: "ctx-execution-capacity",
-      kind: "complete-execution",
-    });
+    const completed = applyNexoraMVPFlowDomainAction(
+      started.state,
+      {
+        actionId: "act-exec-complete",
+        subjectId: "ctx-execution-capacity",
+        kind: "complete-execution",
+      },
+      {
+        decisionRuntime: decisionRuntime.adapter,
+        executionRuntime,
+      },
+    );
     assert.equal(completed.ok, true);
     if (!completed.ok) return;
+    assert.equal(
+      executionRuntime.findExecutionByDecisionId("ctx-decision-capacity")?.status,
+      "completed",
+    );
     assert.match(completed.message, /as complete/);
     assert.match(completed.message, /Outcome evidence is not available yet/);
   });

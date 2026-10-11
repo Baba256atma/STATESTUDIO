@@ -26,6 +26,7 @@ import {
   type NexoraMVPFlowDecisionRecord,
   type NexoraMVPFlowDecisionStatus,
   type NexoraMVPFlowExecutionRecord,
+  type NexoraMVPFlowExecutionStatus,
   type NexoraMVPFlowJournalPackFixture,
   type NexoraMVPFlowTimelineEventFixture,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlowFixtures";
@@ -34,6 +35,11 @@ import {
   projectCanonicalDecisionToFlowRecord,
   serializeCanonicalDecisionStatus,
 } from "@/app/lib/conversational-control/executiveDecisionStatusProjection";
+import { resolveNexoraExecutiveExecutionFollowUp } from "@/app/lib/conversational-control/executiveExecutionFollowUp";
+import type {
+  NexoraCanonicalExecution,
+  NexoraExecutionRuntimeAdapter,
+} from "@/app/lib/conversational-control/executiveExecutionRuntimeAdapter";
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
@@ -91,6 +97,8 @@ export const NEXORA_MVP_FLOW_BOUNDARY = Object.freeze({
   inventsScenarioEngine: false as const,
   inventsDecisionEngine: false as const,
   inventsExecutionEngine: false as const,
+  ownsExecutionStatus: false as const,
+  executionStatusAuthority: "CC:11/NexoraCanonicalExecution" as const,
   inventsTimelineEngine: false as const,
   inventsJournalEngine: false as const,
   ownsWorkflowProgression: false as const,
@@ -105,7 +113,7 @@ export const NEXORA_MVP_FLOW_BOUNDARY = Object.freeze({
   fixturesReplaceable: true as const,
 });
 
-// ─── Domain fixture state (authoritative for MVP demo path) ─────────────────
+// ─── Domain fixture state (projection surface; Execution status is CC:11) ──
 
 export type NexoraMVPFlowDomainState = {
   readonly decisions: readonly NexoraMVPFlowDecisionRecord[];
@@ -259,7 +267,8 @@ export type NexoraMVPFlowDomainActionResult =
         | "invalid-subject"
         | "invalid-transition"
         | "duplicate"
-        | "canonical-runtime-required";
+        | "canonical-runtime-required"
+        | "canonical-status-unsupported";
       readonly message: string;
     };
 
@@ -820,25 +829,21 @@ export function resolveNexoraMVPFlowPresentationActions(
         });
       }
       if (action.id.includes("pause") && subjectId != null) {
-        const execution = executionOf(state, subjectId);
-        const available = execution?.status === "in-progress";
         return Object.freeze({
           ...action,
-          available: Boolean(available),
-          disabledReason: available
-            ? undefined
-            : "Pause available only while in progress.",
+          available: false,
+          disabledReason: "Pause is not a CC:11 Execution status.",
         });
       }
       if (action.id.includes("resume") && subjectId != null) {
         const execution = executionOf(state, subjectId);
-        const available = execution?.status === "paused";
+        const available = execution?.status === "blocked";
         return Object.freeze({
           ...action,
           available: Boolean(available),
           disabledReason: available
             ? undefined
-            : "Resume available only while paused.",
+            : "Resume requires a blocked canonical Execution.",
         });
       }
       if (action.id.includes("start-exec") && subjectId != null) {
@@ -1025,13 +1030,191 @@ export function projectNexoraMVPCatalogDecisionStatusesFromFlowDomain<
 
 export type NexoraMVPFlowDomainActionOptions = {
   /**
-   * Required for Decision approve/reject — canonical transition authority.
-   * Execution actions do not require this.
+   * Required for Decision approve/reject and Execution start/complete/resume.
+   * Routes into CC:10 / CC:11. Does not own those statuses.
    */
   readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
-  /** Deterministic timeline stamp for tests / SSR-safe hosts. */
+  /** Required for Execution status changes. CC:11 is the only writer. */
+  readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
+  /**
+   * Presentation journal stamp, and the existing Decision recording time.
+   * Never copied onto NexoraCanonicalExecution as startedAt/completedAt/createdAt.
+   */
   readonly occurredAt?: string;
 };
+
+/**
+ * Fixture Execution ids stay presentation keys. Canonical identity is the
+ * CC:11 record found by sourceDecisionId. The two ids are not interchangeable.
+ */
+export function flowExecutionCanonicalId(
+  executionRuntime: NexoraExecutionRuntimeAdapter,
+  sourceDecisionId: string | null,
+): string | null {
+  if (sourceDecisionId == null || sourceDecisionId.length === 0) return null;
+  return executionRuntime.findExecutionByDecisionId(sourceDecisionId)?.executionId ?? null;
+}
+
+function flowStatusFromCanonical(
+  status: NexoraCanonicalExecution["status"],
+): NexoraMVPFlowExecutionStatus {
+  switch (status) {
+    case "completed":
+      return "complete";
+    case "in-progress":
+    case "at-risk":
+      return "in-progress";
+    case "blocked":
+      return "blocked";
+    case "cancelled":
+      return "cancelled";
+    case "planned":
+    case "ready":
+      return "planned";
+  }
+}
+
+function flowHealthFromCanonical(
+  status: NexoraCanonicalExecution["status"],
+): NexoraMVPFlowExecutionRecord["health"] {
+  if (status === "completed") return "complete";
+  if (status === "blocked") return "blocked";
+  if (status === "at-risk") return "at-risk";
+  return "on-track";
+}
+
+/**
+ * Mirror CC:11 onto flow Execution rows. Rows with no canonical Execution
+ * cannot keep a live in-progress, paused, blocked, or complete status.
+ */
+export function projectNexoraMVPFlowExecutionsFromCanonicalRuntime(
+  state: NexoraMVPFlowDomainState,
+  executionRuntime: NexoraExecutionRuntimeAdapter,
+): NexoraMVPFlowDomainState {
+  const claimedDecisionIds = new Set<string>();
+  const projected = state.executions.map((entry) => {
+    if (entry.sourceDecisionId) claimedDecisionIds.add(entry.sourceDecisionId);
+    const canonical = entry.sourceDecisionId
+      ? executionRuntime.findExecutionByDecisionId(entry.sourceDecisionId)
+      : null;
+    if (canonical == null) {
+      if (
+        entry.status === "in-progress" ||
+        entry.status === "paused" ||
+        entry.status === "blocked" ||
+        entry.status === "complete"
+      ) {
+        return Object.freeze({
+          ...entry,
+          canonicalExecutionId: null,
+          status: "planned" as const,
+          health: "on-track" as const,
+          progress: "0%",
+        });
+      }
+      return Object.freeze({
+        ...entry,
+        canonicalExecutionId: null,
+      });
+    }
+    return Object.freeze({
+      ...entry,
+      canonicalExecutionId: canonical.executionId,
+      status: flowStatusFromCanonical(canonical.status),
+      health: flowHealthFromCanonical(canonical.status),
+      progress: canonical.status === "completed" ? "100%" : entry.progress,
+    });
+  });
+  const added = executionRuntime
+    .listExecutions()
+    .filter((execution) => !claimedDecisionIds.has(execution.decisionId))
+    .map((execution) =>
+      Object.freeze({
+        id: execution.executionId,
+        canonicalExecutionId: execution.executionId,
+        status: flowStatusFromCanonical(execution.status),
+        health: flowHealthFromCanonical(execution.status),
+        progress: execution.status === "completed" ? "100%" : "0%",
+        sourceDecisionId: execution.decisionId,
+        objectId: null,
+        label: execution.title,
+      }),
+    );
+  return Object.freeze({
+    ...state,
+    executions: Object.freeze([...projected, ...added]),
+  });
+}
+
+function executionActionFailure(
+  state: NexoraMVPFlowDomainState,
+  reason: Extract<NexoraMVPFlowDomainActionResult, { ok: false }>["reason"],
+  message: string,
+): NexoraMVPFlowDomainActionResult {
+  return Object.freeze({
+    ok: false,
+    state: withClearedPending(state, {}),
+    reason,
+    message,
+  });
+}
+
+/**
+ * Legacy dock/journal row. Written only after CC:11 accepts the transition.
+ * occurredAt here is presentation chronology, not Execution occurrence time.
+ */
+function withExecutionPresentationJournal(
+  state: NexoraMVPFlowDomainState,
+  input: {
+    readonly fixtureId: string;
+    readonly label: string;
+    readonly objectId: string | null;
+    readonly decisionLabel: string | null;
+    readonly occurredAt: string;
+    readonly phase: "started" | "completed";
+  },
+): NexoraMVPFlowDomainState {
+  const eventId =
+    input.phase === "started"
+      ? `tl-${input.fixtureId}-started`
+      : `tl-${input.fixtureId}-complete`;
+  if (state.timelineEvents.some((event) => event.id === eventId)) return state;
+  const kind = input.phase === "started" ? "execution-started" : "execution-completed";
+  const summary =
+    input.phase === "started"
+      ? `Nexora recorded ${input.label} as in progress from ${
+          input.decisionLabel ?? "the approved Decision"
+        }.`
+      : `Nexora recorded ${input.label} as complete. Outcome evidence is not available yet.`;
+  return Object.freeze({
+    ...state,
+    timelineEvents: Object.freeze([
+      ...state.timelineEvents,
+      Object.freeze({
+        id: eventId,
+        kind: kind as "execution-started" | "execution-completed",
+        subjectId: input.fixtureId,
+        label: `${input.label} ${input.phase === "started" ? "started" : "completed"}`,
+        occurredAt: input.occurredAt,
+        objectId: input.objectId ?? undefined,
+        risk: "success" as const,
+      }),
+    ]),
+    journalPacks: Object.freeze([
+      ...state.journalPacks,
+      Object.freeze({
+        id: `pack-${input.fixtureId}-${input.phase === "started" ? "started" : "complete"}`,
+        packKind: "execution" as const,
+        title: input.label,
+        subjectId: input.fixtureId,
+        summary,
+        occurredAt: input.occurredAt,
+        relatedObjectIds: Object.freeze(input.objectId ? [input.objectId] : []),
+        timelineEventId: eventId,
+      }),
+    ]),
+  });
+}
 
 /**
  * Apply consequential Decision/Execution action.
@@ -1186,23 +1369,7 @@ export function applyNexoraMVPFlowDomainAction(
       timelineEventId: eventId,
     });
 
-    let nextExecutions = projectedBase.executions;
-    if (nextStatus === "approved") {
-      nextExecutions = Object.freeze(
-        projectedBase.executions.map((entry) =>
-          entry.sourceDecisionId === decision.id && entry.status === "planned"
-            ? Object.freeze({
-                ...entry,
-                status: "planned" as const,
-                health: "on-track" as const,
-              })
-            : entry,
-        ),
-      );
-    }
-
     const next = withClearedPending(projectedBase, {
-      executions: nextExecutions,
       timelineEvents: Object.freeze([
         ...projectedBase.timelineEvents,
         timelineEvent,
@@ -1221,200 +1388,189 @@ export function applyNexoraMVPFlowDomainAction(
     });
   }
 
+  if (request.kind === "pause-execution") {
+    return executionActionFailure(
+      state,
+      "canonical-status-unsupported",
+      "Pause cannot change Execution status. CC:11 has no paused status.",
+    );
+  }
+
+  const executionRuntime = options?.executionRuntime ?? null;
+  const decisionRuntimeForExecution = options?.decisionRuntime ?? null;
+  if (executionRuntime == null || decisionRuntimeForExecution == null) {
+    return executionActionFailure(
+      state,
+      "canonical-runtime-required",
+      "Execution transitions require canonical CC:11 Execution Runtime authority.",
+    );
+  }
+
   const execution = executionOf(state, request.subjectId);
   if (execution == null) {
-    return Object.freeze({
-      ok: false,
+    return executionActionFailure(
       state,
-      reason: "invalid-subject",
-      message: "No current Execution linked for this action.",
-    });
+      "invalid-subject",
+      "No current Execution linked for this action.",
+    );
   }
+  const decisionId = execution.sourceDecisionId;
+  if (decisionId == null) {
+    return executionActionFailure(
+      state,
+      "invalid-subject",
+      "Execution has no canonical Decision link.",
+    );
+  }
+  const decision = decisionOf(state, decisionId);
 
   if (request.kind === "start-execution") {
-    const decision = execution.sourceDecisionId
-      ? decisionOf(state, execution.sourceDecisionId)
-      : null;
-    if (execution.status !== "planned" || decision?.status !== "approved") {
-      return Object.freeze({
-        ok: false,
-        state,
-        reason: "unavailable",
-        message: "Start requires approved Decision and planned Execution.",
-      });
+    const before = executionRuntime.findExecutionByDecisionId(decisionId);
+    if (before?.status === "in-progress") {
+      return executionActionFailure(
+        projectNexoraMVPFlowExecutionsFromCanonicalRuntime(state, executionRuntime),
+        "duplicate",
+        "Execution start already recorded.",
+      );
     }
-    const eventId = `tl-${execution.id}-started`;
-    if (state.timelineEvents.some((event) => event.id === eventId)) {
-      return Object.freeze({
-        ok: false,
-        state,
-        reason: "duplicate",
-        message: "Execution start already recorded.",
+    resolveNexoraExecutiveExecutionFollowUp({
+      action: "start",
+      decisionId,
+      executionRuntime,
+      decisionRuntime: decisionRuntimeForExecution,
+    });
+    let canonical = executionRuntime.findExecutionByDecisionId(decisionId);
+    if (canonical?.status === "planned") {
+      const ready = executionRuntime.transitionExecution({
+        executionId: canonical.executionId,
+        action: "prepare",
       });
+      canonical = ready.execution;
     }
-    const timelineEvent = Object.freeze({
-      id: eventId,
-      kind: "execution-started" as const,
-      subjectId: execution.id,
-      label: `${execution.label} started`,
-      occurredAt: now,
-      objectId: execution.objectId ?? undefined,
-      risk: "success" as const,
-    });
-    const journalPack = Object.freeze({
-      id: `pack-${execution.id}-started`,
-      packKind: "execution" as const,
-      title: execution.label,
-      subjectId: execution.id,
-      summary: `Nexora recorded ${execution.label} as in progress from ${
-        decision ? decision.label : "the approved Decision"
-      }.`,
-      occurredAt: now,
-      relatedObjectIds: Object.freeze(
-        execution.objectId ? [execution.objectId] : [],
-      ),
-      timelineEventId: eventId,
-    });
-    const next = withClearedPending(state, {
-      executions: Object.freeze(
-        state.executions.map((entry) =>
-          entry.id === execution.id
-            ? Object.freeze({
-                ...entry,
-                status: "in-progress" as const,
-                health: "on-track" as const,
-                progress: entry.progress === "0%" ? "8%" : entry.progress,
-              })
-            : entry,
-        ),
-      ),
-      timelineEvents: Object.freeze([...state.timelineEvents, timelineEvent]),
-      journalPacks: Object.freeze([...state.journalPacks, journalPack]),
-      lastActionMessage: `Nexora recorded ${execution.label} as in progress.`,
-    });
-    return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
-  }
-
-  if (request.kind === "pause-execution") {
-    if (execution.status !== "in-progress") {
-      return Object.freeze({
-        ok: false,
-        state,
-        reason: "invalid-transition",
-        message: "Pause available only while in progress.",
+    if (canonical?.status === "ready") {
+      const started = executionRuntime.transitionExecution({
+        executionId: canonical.executionId,
+        action: "start",
       });
+      canonical = started.execution;
     }
-    const eventId = `tl-${execution.id}-paused-${state.timelineEvents.length}`;
-    const timelineEvent = Object.freeze({
-      id: eventId,
-      kind: "execution-changed" as const,
-      subjectId: execution.id,
-      label: `${execution.label} paused`,
-      occurredAt: now,
-      objectId: execution.objectId ?? undefined,
-      risk: "warning" as const,
+    if (canonical == null || canonical.status !== "in-progress") {
+      return executionActionFailure(
+        projectNexoraMVPFlowExecutionsFromCanonicalRuntime(state, executionRuntime),
+        "invalid-transition",
+        "Start requires an approved Decision. CC:11 did not start this Execution.",
+      );
+    }
+    const projected = projectNexoraMVPFlowExecutionsFromCanonicalRuntime(
+      state,
+      executionRuntime,
+    );
+    const next = withClearedPending(
+      withExecutionPresentationJournal(projected, {
+        fixtureId: execution.id,
+        label: execution.label,
+        objectId: execution.objectId,
+        decisionLabel: decision?.label ?? null,
+        occurredAt: now,
+        phase: "started",
+      }),
+      {
+        lastActionMessage: `Nexora recorded ${execution.label} as in progress.`,
+      },
+    );
+    return Object.freeze({
+      ok: true,
+      state: next,
+      message: next.lastActionMessage ?? "Execution updated.",
     });
-    const next = withClearedPending(state, {
-      executions: Object.freeze(
-        state.executions.map((entry) =>
-          entry.id === execution.id
-            ? Object.freeze({
-                ...entry,
-                status: "paused" as const,
-                health: "at-risk" as const,
-              })
-            : entry,
-        ),
-      ),
-      timelineEvents: Object.freeze([...state.timelineEvents, timelineEvent]),
-      lastActionMessage: `Nexora recorded ${execution.label} as paused.`,
-    });
-    return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
   }
 
   if (request.kind === "resume-execution") {
-    if (execution.status !== "paused") {
-      return Object.freeze({
-        ok: false,
-        state,
-        reason: "invalid-transition",
-        message: "Resume available only while paused.",
-      });
+    const canonical = executionRuntime.findExecutionByDecisionId(decisionId);
+    if (canonical == null || (canonical.status !== "blocked" && canonical.status !== "at-risk")) {
+      return executionActionFailure(
+        projectNexoraMVPFlowExecutionsFromCanonicalRuntime(state, executionRuntime),
+        "invalid-transition",
+        "Resume requires a blocked or at-risk canonical Execution. CC:11 has no paused status.",
+      );
     }
-    const next = withClearedPending(state, {
-      executions: Object.freeze(
-        state.executions.map((entry) =>
-          entry.id === execution.id
-            ? Object.freeze({
-                ...entry,
-                status: "in-progress" as const,
-                health: "on-track" as const,
-              })
-            : entry,
-        ),
-      ),
-      lastActionMessage: `Nexora recorded ${execution.label} as in progress.`,
+    const resumed = executionRuntime.transitionExecution({
+      executionId: canonical.executionId,
+      action: "resume",
     });
-    return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
+    if (resumed.execution?.status !== "in-progress") {
+      return executionActionFailure(
+        projectNexoraMVPFlowExecutionsFromCanonicalRuntime(state, executionRuntime),
+        "invalid-transition",
+        resumed.reasons.join("; ") || "CC:11 rejected Execution resume.",
+      );
+    }
+    const next = withClearedPending(
+      projectNexoraMVPFlowExecutionsFromCanonicalRuntime(state, executionRuntime),
+      { lastActionMessage: `Nexora recorded ${execution.label} as in progress.` },
+    );
+    return Object.freeze({
+      ok: true,
+      state: next,
+      message: next.lastActionMessage ?? "Execution updated.",
+    });
   }
 
   if (request.kind === "complete-execution") {
-    if (execution.status !== "in-progress" && execution.status !== "paused") {
-      return Object.freeze({
-        ok: false,
+    const canonical = executionRuntime.findExecutionByDecisionId(decisionId);
+    if (canonical == null) {
+      return executionActionFailure(
         state,
-        reason: "invalid-transition",
-        message: "Complete available only for active Execution.",
-      });
+        "invalid-transition",
+        "Complete requires a canonical CC:11 Execution.",
+      );
     }
-    const eventId = `tl-${execution.id}-complete`;
-    if (state.timelineEvents.some((event) => event.id === eventId)) {
-      return Object.freeze({
-        ok: false,
-        state,
-        reason: "duplicate",
-        message: "Execution completion already recorded.",
-      });
+    if (canonical.status === "completed") {
+      return executionActionFailure(
+        projectNexoraMVPFlowExecutionsFromCanonicalRuntime(state, executionRuntime),
+        "duplicate",
+        "Execution completion already recorded.",
+      );
     }
-    const timelineEvent = Object.freeze({
-      id: eventId,
-      kind: "execution-completed" as const,
-      subjectId: execution.id,
-      label: `${execution.label} completed`,
-      occurredAt: now,
-      objectId: execution.objectId ?? undefined,
-      risk: "success" as const,
+    const followUp = resolveNexoraExecutiveExecutionFollowUp({
+      action: "transition",
+      transitionAction: "complete",
+      decisionId,
+      executionId: canonical.executionId,
+      confirmed: true,
+      executionRuntime,
+      decisionRuntime: decisionRuntimeForExecution,
     });
-    const journalPack = Object.freeze({
-      id: `pack-${execution.id}-complete`,
-      packKind: "execution" as const,
-      title: execution.label,
-      subjectId: execution.id,
-      summary: `Nexora recorded ${execution.label} as complete. Outcome evidence is not available yet.`,
-      occurredAt: now,
-      relatedObjectIds: Object.freeze(
-        execution.objectId ? [execution.objectId] : [],
-      ),
-      timelineEventId: eventId,
+    const after = executionRuntime.getExecution(canonical.executionId);
+    if (followUp.status !== "available" || after?.status !== "completed") {
+      return executionActionFailure(
+        projectNexoraMVPFlowExecutionsFromCanonicalRuntime(state, executionRuntime),
+        "invalid-transition",
+        "CC:11 rejected Execution completion.",
+      );
+    }
+    const projected = projectNexoraMVPFlowExecutionsFromCanonicalRuntime(
+      state,
+      executionRuntime,
+    );
+    const next = withClearedPending(
+      withExecutionPresentationJournal(projected, {
+        fixtureId: execution.id,
+        label: execution.label,
+        objectId: execution.objectId,
+        decisionLabel: decision?.label ?? null,
+        occurredAt: now,
+        phase: "completed",
+      }),
+      {
+        lastActionMessage: `Nexora recorded ${execution.label} as complete. Outcome evidence is not available yet.`,
+      },
+    );
+    return Object.freeze({
+      ok: true,
+      state: next,
+      message: next.lastActionMessage ?? "Execution updated.",
     });
-    const next = withClearedPending(state, {
-      executions: Object.freeze(
-        state.executions.map((entry) =>
-          entry.id === execution.id
-            ? Object.freeze({
-                ...entry,
-                status: "complete" as const,
-                health: "complete" as const,
-                progress: "100%",
-              })
-            : entry,
-        ),
-      ),
-      timelineEvents: Object.freeze([...state.timelineEvents, timelineEvent]),
-      journalPacks: Object.freeze([...state.journalPacks, journalPack]),
-      lastActionMessage: `Nexora recorded ${execution.label} as complete. Outcome evidence is not available yet.`,
-    });
-    return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
   }
 
   return Object.freeze({

@@ -95,6 +95,11 @@ export type NexoraMVPFlowExecutionRecord = {
   readonly objectId: string | null;
   readonly label: string;
   readonly blocker?: string;
+  /**
+   * CC:11 executionId when this row projects a canonical Execution.
+   * The row id may stay a fixture key. This field is not a third identity.
+   */
+  readonly canonicalExecutionId?: string | null;
 };
 
 /**
@@ -276,9 +281,9 @@ export function createInitialNexoraMVPFlowExecutionRecords(): readonly NexoraMVP
   return Object.freeze([
     Object.freeze({
       id: "ctx-execution-rollout",
-      status: "in-progress" as const,
-      health: "at-risk" as const,
-      progress: "62%",
+      status: "planned" as const,
+      health: "on-track" as const,
+      progress: "0%",
       sourceDecisionId: "ctx-decision-reprice",
       objectId: "obj-revenue",
       label: "Pricing Rollout",

@@ -13,6 +13,11 @@ export type SceneOrgActivityEntry = Readonly<{
   title: string;
   description: string;
   sourceRecordIds: readonly string[];
+  timeLabel?: string;
+  placeable?: boolean;
+  factType?: string;
+  sourceId?: string | null;
+  projectionKey?: string;
 }>;
 
 export function projectSceneOrgManagerActivity(
