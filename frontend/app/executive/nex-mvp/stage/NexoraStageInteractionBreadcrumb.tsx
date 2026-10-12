@@ -73,7 +73,7 @@ export function NexoraStageInteractionBreadcrumb({
         padding: "0.3rem 0.55rem",
         borderRadius: cockpit.radius.md,
         border: `1px solid ${cockpit.border}`,
-        background: "rgba(8, 14, 24, 0.48)",
+        background: "var(--nx-bg-hud)",
         backdropFilter: "blur(8px)",
         pointerEvents: "auto",
       }}

@@ -65,7 +65,7 @@ export function NexoraSavedSceneCollectionAccess({
           minWidth: 260,
           padding: "0.35rem",
           borderRadius: 8,
-          background: "color-mix(in srgb, #0a0e14 92%, transparent)",
+          background: "var(--nx-popover-bg)",
           border: "1px solid color-mix(in srgb, currentColor 22%, transparent)",
         }}
       >

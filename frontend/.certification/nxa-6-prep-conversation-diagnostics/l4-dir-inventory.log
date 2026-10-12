@@ -1,115 +1,115 @@
-(node:32346) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorCertification.test.ts is not specified and it doesn't parse as CommonJS.
+(node:11810) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorCertification.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:7 Director Certification
-  ✔ has canonical certification identity, status, and readiness (0.705333ms)
-  ✔ adds exactly eight Certification files and stable public exports (1.045875ms)
-  ✔ publishes complete deterministic immutable criteria (0.104291ms)
-  ✔ publishes passed deterministic immutable gates (0.108ms)
-  ✔ derives compatibility and inventories only from Platform (0.223042ms)
-  ✔ certifies the canonical architecture chain (0.541333ms)
-  ✔ consumes only Platform and imports no prohibited modules (1.598917ms)
-  ✔ is immutable and has no runtime certification facilities (0.229833ms)
-✔ DIRECTOR-1:7 Director Certification (6.409542ms)
-(node:32347) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorFoundation.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ has canonical certification identity, status, and readiness (0.383458ms)
+  ✔ adds exactly eight Certification files and stable public exports (0.526833ms)
+  ✔ publishes complete deterministic immutable criteria (0.061792ms)
+  ✔ publishes passed deterministic immutable gates (0.061583ms)
+  ✔ derives compatibility and inventories only from Platform (0.066042ms)
+  ✔ certifies the canonical architecture chain (0.242416ms)
+  ✔ consumes only Platform and imports no prohibited modules (1.789ms)
+  ✔ is immutable and has no runtime certification facilities (0.22ms)
+✔ DIRECTOR-1:7 Director Certification (5.359333ms)
+(node:11811) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorFoundation.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:1 Director Foundation
-  ✔ has the deterministic foundation identity (0.577292ms)
-  ✔ contains all eight requested Foundation files (0.443625ms)
-  ✔ declares all twelve contracts in stable order (5.797917ms)
-  ✔ preserves lifecycle, ownership, boundaries, and capabilities (0.173709ms)
-  ✔ is immutable, registry-ready, and runtime-free (0.113667ms)
-✔ DIRECTOR-1:1 Director Foundation (8.011625ms)
-(node:32348) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorFreeze.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ has the deterministic foundation identity (0.314333ms)
+  ✔ contains all eight requested Foundation files (0.272333ms)
+  ✔ declares all twelve contracts in stable order (0.3225ms)
+  ✔ preserves lifecycle, ownership, boundaries, and capabilities (0.057292ms)
+  ✔ is immutable, registry-ready, and runtime-free (0.052334ms)
+✔ DIRECTOR-1:1 Director Foundation (1.526459ms)
+(node:11812) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorFreeze.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:8 Director Freeze
-  ✔ has canonical freeze identity, status, and readiness (0.587042ms)
-  ✔ adds exactly eight Freeze files and stable public exports (0.9445ms)
-  ✔ publishes the immutable architectural lock (0.109292ms)
-  ✔ preserves the canonical architecture chain (0.134667ms)
-  ✔ publishes Certification-derived compatibility (0.116709ms)
-  ✔ consumes only Certification and imports no prohibited modules (0.7025ms)
-  ✔ is immutable, deterministic, and runtime-free (0.116584ms)
-✔ DIRECTOR-1:8 Director Freeze (3.565ms)
-(node:32349) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorManifest.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ has canonical freeze identity, status, and readiness (0.300792ms)
+  ✔ adds exactly eight Freeze files and stable public exports (16.997542ms)
+  ✔ publishes the immutable architectural lock (0.083667ms)
+  ✔ preserves the canonical architecture chain (0.092625ms)
+  ✔ publishes Certification-derived compatibility (0.069208ms)
+  ✔ consumes only Certification and imports no prohibited modules (1.824ms)
+  ✔ is immutable, deterministic, and runtime-free (0.165416ms)
+✔ DIRECTOR-1:8 Director Freeze (20.042875ms)
+(node:11813) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorManifest.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:5 Director Manifest
-  ✔ has canonical manifest identity and readiness (0.732542ms)
-  ✔ adds exactly eight Manifest files and eight public exports (1.404791ms)
-  ✔ derives consistent canonical inventories (0.205917ms)
-  ✔ publishes deterministic compatibility and readiness metadata (0.136ms)
-  ✔ obeys the canonical inventory and dependency rules (0.105959ms)
-  ✔ imports no prohibited upstream or external modules (1.17175ms)
-  ✔ is deeply immutable and runtime-free (0.168709ms)
-✔ DIRECTOR-1:5 Director Manifest (5.193459ms)
-(node:32350) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorModel.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ has canonical manifest identity and readiness (0.294958ms)
+  ✔ adds exactly eight Manifest files and eight public exports (0.49925ms)
+  ✔ derives consistent canonical inventories (0.075041ms)
+  ✔ publishes deterministic compatibility and readiness metadata (0.055375ms)
+  ✔ obeys the canonical inventory and dependency rules (0.046958ms)
+  ✔ imports no prohibited upstream or external modules (0.396667ms)
+  ✔ is deeply immutable and runtime-free (0.053875ms)
+✔ DIRECTOR-1:5 Director Manifest (1.852625ms)
+(node:11814) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorModel.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:3 Director Model
-  ✔ has canonical model identity and readiness (2.026333ms)
-  ✔ adds exactly eight Model files and eight public exports (0.999083ms)
-  ✔ publishes twelve complete immutable model definitions (0.348208ms)
-  ✔ maintains canonical registry references and deterministic ordering (0.181ms)
-  ✔ defines unique deterministic model relationships (0.167083ms)
-  ✔ is immutable and exposes no runtime facilities (0.148334ms)
-✔ DIRECTOR-1:3 Director Model (6.136166ms)
-(node:32351) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorPlatform.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ has canonical model identity and readiness (0.797166ms)
+  ✔ adds exactly eight Model files and eight public exports (0.769291ms)
+  ✔ publishes twelve complete immutable model definitions (0.219ms)
+  ✔ maintains canonical registry references and deterministic ordering (0.1495ms)
+  ✔ defines unique deterministic model relationships (0.164333ms)
+  ✔ is immutable and exposes no runtime facilities (0.131208ms)
+✔ DIRECTOR-1:3 Director Model (3.382458ms)
+(node:11815) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorPlatform.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:6 Director Platform
-  ✔ has canonical platform identity and readiness (0.725791ms)
-  ✔ adds exactly eight Platform files and stable public exports (2.967125ms)
-  ✔ publishes the canonical architecture chain (0.196916ms)
-  ✔ derives all inventory values through Manifest (0.12875ms)
-  ✔ maintains registry, compatibility, and readiness integrity (0.190583ms)
-  ✔ consumes only Manifest and imports no prohibited modules (1.380083ms)
-  ✔ is immutable, deterministic, and runtime-free (0.2065ms)
-✔ DIRECTOR-1:6 Director Platform (8.452458ms)
-(node:32352) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorPublicIndex.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ has canonical platform identity and readiness (0.319ms)
+  ✔ adds exactly eight Platform files and stable public exports (0.483291ms)
+  ✔ publishes the canonical architecture chain (1.759416ms)
+  ✔ derives all inventory values through Manifest (0.177ms)
+  ✔ maintains registry, compatibility, and readiness integrity (0.234334ms)
+  ✔ consumes only Manifest and imports no prohibited modules (1.152042ms)
+  ✔ is immutable, deterministic, and runtime-free (0.228208ms)
+✔ DIRECTOR-1:6 Director Platform (5.055292ms)
+(node:11816) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorPublicIndex.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:9 Director Public Index
-  ✔ adds exactly the two requested Public Index files (1.55875ms)
-  ✔ has canonical released, certified, frozen identity (0.138916ms)
-  ✔ exports exactly twelve stable public symbols (0.105584ms)
-  ✔ publishes exactly nine ordered namespace sections (0.151166ms)
-  ✔ derives the canonical public API registry and count (0.111125ms)
-  ✔ consumes only Freeze with no prohibited imports (0.465333ms)
-  ✔ is immutable and exposes no runtime facilities (0.104208ms)
-✔ DIRECTOR-1:9 Director Public Index (3.574875ms)
-(node:32353) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorRegistry.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ adds exactly the two requested Public Index files (0.804583ms)
+  ✔ has canonical released, certified, frozen identity (0.073375ms)
+  ✔ exports exactly twelve stable public symbols (0.057208ms)
+  ✔ publishes exactly nine ordered namespace sections (0.082416ms)
+  ✔ derives the canonical public API registry and count (0.055208ms)
+  ✔ consumes only Freeze with no prohibited imports (0.246833ms)
+  ✔ is immutable and exposes no runtime facilities (0.0615ms)
+✔ DIRECTOR-1:9 Director Public Index (1.8555ms)
+(node:11817) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorRegistry.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:2 Director Registry
-  ✔ has canonical identity and readiness (0.565375ms)
-  ✔ adds exactly the eight requested Registry files and eight public exports (0.484375ms)
-  ✔ publishes all twelve immutable registries (0.146209ms)
-  ✔ uses complete, unique metadata and deterministic ordering (0.194ms)
-  ✔ consumes only Foundation and exposes no runtime facilities (0.092125ms)
-✔ DIRECTOR-1:2 Director Registry (2.347666ms)
-(node:32354) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorValidation.test.ts is not specified and it doesn't parse as CommonJS.
+  ✔ has canonical identity and readiness (0.286584ms)
+  ✔ adds exactly the eight requested Registry files and eight public exports (3.936792ms)
+  ✔ publishes all twelve immutable registries (0.094125ms)
+  ✔ uses complete, unique metadata and deterministic ordering (0.111792ms)
+  ✔ consumes only Foundation and exposes no runtime facilities (0.050875ms)
+✔ DIRECTOR-1:2 Director Registry (4.927542ms)
+(node:11818) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/bahadoors/Documents/StateStudio/frontend/app/lib/director/directorValidation.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/StateStudio/frontend/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ▶ DIRECTOR-1:4 Director Validation
-  ✔ has canonical validation identity and readiness (0.723083ms)
-  ✔ adds exactly eight Validation files and four public exports (23.236166ms)
-  ✔ publishes canonical immutable categories, rules, and policies (0.242209ms)
-  ✔ derives inventory counts and preserves deterministic uniqueness (3.59925ms)
-  ✔ depends only on Model and declares prohibited boundaries (0.4035ms)
-  ✔ has no prohibited external imports and keeps exports immutable (6.103125ms)
-✔ DIRECTOR-1:4 Director Validation (37.700417ms)
+  ✔ has canonical validation identity and readiness (0.382292ms)
+  ✔ adds exactly eight Validation files and four public exports (0.888708ms)
+  ✔ publishes canonical immutable categories, rules, and policies (0.0905ms)
+  ✔ derives inventory counts and preserves deterministic uniqueness (0.09ms)
+  ✔ depends only on Model and declares prohibited boundaries (0.049458ms)
+  ✔ has no prohibited external imports and keeps exports immutable (0.366125ms)
+✔ DIRECTOR-1:4 Director Validation (2.411834ms)
 ℹ tests 58
 ℹ suites 9
 ℹ pass 58
@@ -117,5 +117,5 @@ To eliminate this warning, add "type": "module" to /Users/bahadoors/Documents/St
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 297.342333
+ℹ duration_ms 196.061583
 

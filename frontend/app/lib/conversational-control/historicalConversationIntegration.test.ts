@@ -81,7 +81,7 @@ function run(
     catalog: getDefaultNexoraMVPObjectInteractionCatalog(),
     previousManagerObjectSession: previous?.managerObjectTurn.session ?? null,
     previousUtterance: previous?.managerMessage.text ?? null,
-    historicalAnchorIso: reader ? NOW : null,
+    historicalAnchorIso: reader ? NOW : undefined,
     historicalRead: reader,
     llmParticipant: participant
       ? Object.freeze({

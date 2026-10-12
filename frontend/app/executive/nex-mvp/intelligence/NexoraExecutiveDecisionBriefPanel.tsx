@@ -57,7 +57,7 @@ export function NexoraExecutiveDecisionBriefPanel({
         padding: "0.55rem 0.65rem 0.6rem",
         borderTop: `1px solid ${cockpit.border}`,
         borderBottom: `1px solid ${cockpit.border}`,
-        background: "rgba(10, 16, 26, 0.4)",
+        background: "var(--nx-bg-panel-soft)",
       }}
     >
       <div

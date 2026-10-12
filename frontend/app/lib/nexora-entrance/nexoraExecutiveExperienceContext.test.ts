@@ -24,6 +24,7 @@ import {
   NEXORA_ENTRANCE_OBJECT_ID,
   projectNexoraEntranceCatalog,
 } from "./nexoraEntranceExperience.ts";
+import { resolveExecutiveStageDisclosure } from "../spatial-presentation/executiveStageProductivityContract.ts";
 import {
   NEXORA_EXECUTIVE_EXPERIENCE_CONTEXT_BOUNDARY,
   resetNexoraExperienceAwareStageOverview,
@@ -137,13 +138,61 @@ describe("NEX-ENT-FIX3 Entrance Stage Overview isolation", () => {
     );
   });
 
-  it("naive Executive Overview reset hides NEXORA and is the defect chain", () => {
+  it("naive Executive Overview reset clears interaction and does not independently hide NEXORA", () => {
+    // Historical NEX-ENT-FIX3 negative proof expected default executive-workspace
+    // occupancy to hide educational NEXORA (stable/normal, not Watch-eligible)
+    // after naive Overview reset. That hide path was the defect chain when
+    // background click used resetNexoraMVPObjectInteractionOverview as the
+    // sole Overview meaning during Guided Entrance.
+    //
+    // OVERVIEW-WATCH-DISCLOSURE:1 later made resolveExecutiveStageDisclosure
+    // admit orientation-fallback when Overview composes no topology. A
+    // one-actor entrance catalog therefore stays visible under default
+    // occupancy. Reset still owns only interaction state. Occupancy authority
+    // owns actor presence. The product Overview path remains
+    // resetNexoraExperienceAwareStageOverview + current-catalog.
     const { catalog, state } = focusedEntrance();
     const leaked = resetNexoraMVPObjectInteractionOverview(state);
     assert.equal(leaked.mode, "overview");
     assert.equal(leaked.focusedSubject, null);
-    const visible = visibleObjectIds(leaked, catalog);
-    assert.equal(visible.includes(NEXORA_ENTRANCE_OBJECT_ID), false);
+    assert.equal(leaked.selectedSubject, null);
+    const occupancySubjects = catalog.objects.map((object) =>
+      Object.freeze({
+        subjectId: object.id,
+        label: object.label,
+        objectKind: object.kind,
+        family: "business-object" as const,
+        attention: object.attention,
+        status: object.status,
+      }),
+    );
+    const defaultOccupancy = resolveExecutiveStageDisclosure({
+      subjects: occupancySubjects,
+      relationships: [],
+      presentationMode: "overview",
+      presentationDepth: "minimum",
+    });
+    const currentCatalogOccupancy = resolveExecutiveStageDisclosure({
+      subjects: occupancySubjects,
+      relationships: [],
+      presentationMode: "overview",
+      presentationDepth: "minimum",
+      overviewOccupancy: "current-catalog",
+    });
+    const defaultNexora = defaultOccupancy.byId.get(NEXORA_ENTRANCE_OBJECT_ID);
+    const currentNexora = currentCatalogOccupancy.byId.get(
+      NEXORA_ENTRANCE_OBJECT_ID,
+    );
+    assert.equal(defaultNexora?.disclosureReason, "orientation-fallback");
+    assert.equal(defaultNexora?.participatesInTopology, true);
+    assert.equal(currentNexora?.disclosureReason, "overview-current-scene");
+    assert.equal(currentNexora?.spatialRole, "center");
+    assert.deepEqual(visibleObjectIds(leaked, catalog), [
+      NEXORA_ENTRANCE_OBJECT_ID,
+    ]);
+    assert.deepEqual(visibleObjectIds(leaked, catalog, "current-catalog"), [
+      NEXORA_ENTRANCE_OBJECT_ID,
+    ]);
   });
 
   it("background/Overview during Entrance restores the educational scene", () => {

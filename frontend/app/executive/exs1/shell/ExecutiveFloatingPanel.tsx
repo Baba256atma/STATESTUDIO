@@ -52,7 +52,7 @@ export function ExecutiveFloatingPanel({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(2, 6, 14, 0.58)",
+        background: "var(--nx-overlay-backdrop)",
         backdropFilter: "blur(3px)",
         animation: "exs-float-backdrop-in 220ms ease",
       }}

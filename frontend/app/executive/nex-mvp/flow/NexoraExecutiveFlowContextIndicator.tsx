@@ -169,6 +169,6 @@ const barStyle: CSSProperties = {
   gap: "0.1rem",
   padding: "0.35rem 0.75rem",
   borderBottom: `1px solid ${cockpit.border}`,
-  background: "rgba(8, 16, 28, 0.55)",
+  background: "var(--nx-bg-hud)",
   minHeight: "1.75rem",
 };

@@ -142,7 +142,7 @@ export function NexoraExecutiveQueueOverlay({
           gap: "0.22rem",
           padding: "0.35rem 0.45rem 0.4rem",
           borderLeft: `1px solid ${cockpit.border}`,
-          background: "rgba(6, 10, 18, 0.42)",
+          background: "var(--nx-bg-hud)",
           backdropFilter: "blur(6px)",
         }}
       >
@@ -200,7 +200,7 @@ export function NexoraExecutiveQueueOverlay({
           onClick={() => setMode("attention")}
           style={{
             border: "none",
-            background: mode === "attention" ? "rgba(56, 120, 180, 0.18)" : "transparent",
+            background: mode === "attention" ? cockpit.accentSoft : "transparent",
             color: cockpit.textSoft,
             cursor: "pointer",
             fontFamily: "inherit",
@@ -222,7 +222,7 @@ export function NexoraExecutiveQueueOverlay({
           onClick={() => setMode("map")}
           style={{
             border: "none",
-            background: mode === "map" ? "rgba(56, 120, 180, 0.18)" : "transparent",
+            background: mode === "map" ? cockpit.accentSoft : "transparent",
             color: cockpit.textSoft,
             cursor: "pointer",
             fontFamily: "inherit",
@@ -359,7 +359,7 @@ export function NexoraExecutiveQueueOverlay({
                   border: "none",
                   borderRadius: "0.2rem",
                   background: entry.isActive
-                    ? "rgba(56, 120, 180, 0.22)"
+                    ? cockpit.accentSoft
                     : "transparent",
                   boxShadow: entry.isActive
                     ? `inset 2px 0 0 ${cockpit.accent}`

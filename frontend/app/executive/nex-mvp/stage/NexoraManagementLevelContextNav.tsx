@@ -12,6 +12,7 @@ import {
   planManagementLevelMotion,
   sampleManagementLevelMotion,
 } from "@/app/lib/nmi/nmiManagementLevelMotionCompose.ts";
+import { cockpit } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
   readonly composition: ManagementLevelSpatialComposition;
@@ -138,9 +139,9 @@ export function NexoraManagementLevelContextNav({
               if (item.clickable) onSelectSubject(item.canonicalId);
             }}
             style={{
-              border: "1px solid rgba(148, 163, 184, 0.45)",
-              background: "rgba(15, 23, 42, 0.55)",
-              color: "#cbd5e1",
+              border: `1px solid ${cockpit.border}`,
+              background: "var(--nx-bg-control)",
+              color: cockpit.textSoft,
               borderRadius: 6,
               padding: "4px 10px",
               fontSize: item.targetRole === "PARENT" ? "0.72rem" : "0.64rem",

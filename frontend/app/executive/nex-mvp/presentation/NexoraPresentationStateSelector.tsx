@@ -143,8 +143,8 @@ export function NexoraPresentationStateSelector({
           padding: "0.35rem 0.45rem",
           borderRadius: cockpit.radius.md,
           border: `1px solid ${cockpit.border}`,
-          background: "rgba(10, 16, 26, 0.62)",
-          boxShadow: cockpit.elevation.raised,
+          background: "var(--nx-bg-hud)",
+          boxShadow: "var(--nx-overlay-card-shadow)",
           backdropFilter: "blur(8px)",
         }}
       >
@@ -202,7 +202,7 @@ export function NexoraPresentationStateSelector({
                   : `1px solid ${cockpit.border}`,
                 background: active
                   ? cockpit.accentSoft
-                  : "rgba(8, 14, 24, 0.45)",
+                  : "var(--nx-bg-control)",
                 color: !enabled
                   ? cockpit.lowMuted
                   : active
@@ -219,7 +219,7 @@ export function NexoraPresentationStateSelector({
                 opacity: enabled ? 1 : 0.45,
                 transition: reducedMotion
                   ? "none"
-                  : `color ${transitionMs}ms ease, background ${transitionMs}ms ease, border-color ${transitionMs}ms ease`,
+                  : `border-color ${transitionMs}ms ease, opacity ${transitionMs}ms ease`,
               }}
             >
               {LABELS[state]}

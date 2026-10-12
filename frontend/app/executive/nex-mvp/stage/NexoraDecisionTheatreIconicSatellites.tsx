@@ -61,7 +61,7 @@ export function NexoraDecisionTheatreIconicSatellite({ iconic }: Props) {
         maxWidth: "8.4rem",
         border: `1px solid ${cockpit.border}`,
         borderRadius: "999px",
-        background: "rgba(8, 14, 24, 0.35)",
+        background: "var(--nx-bg-hud)",
         color: cockpit.muted,
         fontSize: "0.48rem",
         letterSpacing: "0.06em",

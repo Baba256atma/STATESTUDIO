@@ -52,11 +52,11 @@ function NavigationButton({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        border: `1px solid ${enabled ? cockpit.border : "rgba(148,163,184,0.06)"}`,
+        border: `1px solid ${enabled ? cockpit.border : "var(--nx-border-soft)"}`,
         borderRadius: cockpit.radius.sm,
         background: enabled
-          ? "rgba(8, 14, 24, 0.72)"
-          : "rgba(8, 14, 24, 0.35)",
+          ? "var(--nx-bg-control)"
+          : "var(--nx-bg-panel-soft)",
         color: enabled ? cockpit.textSoft : cockpit.lowMuted,
         fontSize: "0.72rem",
         lineHeight: 1,
@@ -163,7 +163,7 @@ export function NexoraExecutiveCameraNavigationControls({
         padding: "0.4rem 0.45rem",
         borderRadius: cockpit.radius.md,
         border: `1px solid ${cockpit.border}`,
-        background: "rgba(8, 14, 24, 0.68)",
+        background: "var(--nx-bg-hud)",
         backdropFilter: "blur(8px)",
         pointerEvents: "auto",
         boxShadow: cockpit.elevation.raised,

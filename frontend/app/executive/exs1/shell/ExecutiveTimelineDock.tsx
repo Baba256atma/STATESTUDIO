@@ -273,7 +273,7 @@ function TimelineDockBody({
                   fontWeight: active ? 600 : 450,
                   cursor: "pointer",
                   fontFamily: "inherit",
-                  transition: cockpit.transition,
+                  transition: `border-color ${cockpit.motion.base} ${cockpit.motion.easing}, box-shadow ${cockpit.motion.base} ${cockpit.motion.easing}`,
                   boxShadow: active ? cockpit.elevation.focus : "none",
                 }}
               >
@@ -357,15 +357,15 @@ function TimelineDockBody({
                     ? `1px solid ${RISK_COLOR[pack.risk]}`
                     : `1px solid ${cockpit.border}`,
                   background: highlighted
-                    ? `${RISK_COLOR[pack.risk]}14`
-                    : "linear-gradient(165deg, rgba(26,31,42,0.9), rgba(15,19,28,0.95))",
+                    ? `color-mix(in srgb, ${RISK_COLOR[pack.risk]} 14%, var(--nx-overlay-card-bg))`
+                    : "var(--nx-overlay-card-bg)",
                   color: cockpit.text,
                   cursor: "pointer",
                   fontFamily: "inherit",
-                  transition: cockpit.transition,
+                  transition: `border-color ${cockpit.motion.base} ${cockpit.motion.easing}, box-shadow ${cockpit.motion.base} ${cockpit.motion.easing}`,
                   boxShadow: highlighted
-                    ? `0 0 18px ${RISK_COLOR[pack.risk]}28, ${cockpit.elevation.raised}`
-                    : cockpit.elevation.raised,
+                    ? `0 0 18px color-mix(in srgb, ${RISK_COLOR[pack.risk]} 28%, transparent), var(--nx-overlay-card-shadow)`
+                    : "var(--nx-overlay-card-shadow)",
                 }}
               >
                 <span

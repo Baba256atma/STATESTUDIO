@@ -46,8 +46,8 @@ export function NexoraSubjectOperation({
         padding: "0.6rem 0.65rem",
         borderRadius: cockpit.radius.md,
         border: `1px solid ${cockpit.borderStrong}`,
-        background: "rgba(8, 14, 24, 0.86)",
-        boxShadow: cockpit.elevation.raised,
+        background: "var(--nx-overlay-card-bg)",
+        boxShadow: "var(--nx-overlay-card-shadow)",
         backdropFilter: "blur(10px)",
         pointerEvents: "auto",
         ...(overlayPlacement ?? {}),
@@ -109,8 +109,8 @@ export function NexoraSubjectOperation({
                 action.available ? cockpit.border : cockpit.border
               }`,
               background: action.available
-                ? "rgba(56, 120, 180, 0.18)"
-                : "rgba(8, 14, 24, 0.35)",
+                ? cockpit.accentSoft
+                : "var(--nx-bg-control)",
               color: action.available ? cockpit.textSoft : cockpit.lowMuted,
               fontSize: "0.68rem",
               letterSpacing: "0.04em",
