@@ -137,6 +137,72 @@ export function createInitialNexoraMVPFlowDomainState(): NexoraMVPFlowDomainStat
   });
 }
 
+/** Real Manager Workspace flow. Product fixtures stay on the demo composition. */
+export function createEmptyNexoraMVPFlowDomainState(): NexoraMVPFlowDomainState {
+  return Object.freeze({
+    decisions: Object.freeze([]),
+    executions: Object.freeze([]),
+    timelineEvents: Object.freeze([]),
+    journalPacks: Object.freeze([]),
+    pendingActionId: null,
+    lastError: null,
+    lastActionMessage: null,
+  });
+}
+
+const PRODUCT_FIXTURE_DECISION_IDS = new Set(
+  createInitialNexoraMVPFlowDecisionRecords().map((record) => record.id),
+);
+const PRODUCT_FIXTURE_EXECUTION_IDS = new Set(
+  createInitialNexoraMVPFlowExecutionRecords().map((record) => record.id),
+);
+
+export function isNexoraMVPProductFixtureDecisionId(decisionId: string): boolean {
+  return PRODUCT_FIXTURE_DECISION_IDS.has(decisionId);
+}
+
+export function isNexoraMVPProductFixtureExecutionId(executionId: string): boolean {
+  return PRODUCT_FIXTURE_EXECUTION_IDS.has(executionId);
+}
+
+/**
+ * A real Manager Workspace shows only records it owns.
+ * Fixture ids are excluded even if a caller stamped the active workspace on them.
+ */
+export function containNexoraMVPFlowDomainForManagerWorkspace(
+  state: NexoraMVPFlowDomainState,
+  input: {
+    readonly workspaceId: string;
+    readonly decisions: readonly { readonly decisionId: string; readonly workspaceId?: string | null }[];
+    readonly executions: readonly { readonly executionId: string; readonly workspaceId?: string | null }[];
+  },
+): NexoraMVPFlowDomainState {
+  const ownedDecisions = new Set(
+    input.decisions
+      .filter((record) => record.workspaceId === input.workspaceId && !PRODUCT_FIXTURE_DECISION_IDS.has(record.decisionId))
+      .map((record) => record.decisionId),
+  );
+  const ownedExecutions = new Set(
+    input.executions
+      .filter((record) => record.workspaceId === input.workspaceId)
+      .map((record) => record.executionId),
+  );
+  return Object.freeze({
+    ...state,
+    decisions: Object.freeze(state.decisions.filter((record) => ownedDecisions.has(record.id))),
+    executions: Object.freeze(
+      state.executions.filter((record) => {
+        if (PRODUCT_FIXTURE_EXECUTION_IDS.has(record.id)) return false;
+        if (record.sourceDecisionId && PRODUCT_FIXTURE_DECISION_IDS.has(record.sourceDecisionId)) return false;
+        const canonicalId = record.canonicalExecutionId ?? record.id;
+        return ownedExecutions.has(canonicalId) || ownedExecutions.has(record.id);
+      }),
+    ),
+    timelineEvents: Object.freeze([]),
+    journalPacks: Object.freeze([]),
+  });
+}
+
 // ─── Flow context & chain ───────────────────────────────────────────────────
 
 export type NexoraMVPFlowChainLink = {
@@ -1041,6 +1107,11 @@ export type NexoraMVPFlowDomainActionOptions = {
    * Never copied onto NexoraCanonicalExecution as startedAt/completedAt/createdAt.
    */
   readonly occurredAt?: string;
+  /**
+   * Stamped onto a Decision only when that Decision has no record yet.
+   * An existing workspace id, including a legacy workflow key, is preserved.
+   */
+  readonly managerWorkspaceId?: string | null;
 };
 
 /**
@@ -1277,12 +1348,14 @@ export function applyNexoraMVPFlowDomainAction(
       request.kind === "approve-decision"
         ? ("approve" as const)
         : ("reject" as const);
+    const existingDecision = runtime.getDecision(decision.id);
     const transition = runtime.transitionDecision({
       decisionId: decision.id,
       action,
       title: decision.label,
       scenarioId: decision.sourceScenarioId ?? undefined,
       committedAt: options?.occurredAt,
+      ...(existingDecision ? {} : { workspaceId: options?.managerWorkspaceId ?? null }),
     });
 
     if (

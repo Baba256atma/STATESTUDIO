@@ -65,7 +65,10 @@ export type NexoraExecutiveContextSnapshot = {
   readonly currentScenario: NexoraExecutiveContextReference | null;
   readonly currentDecision: NexoraExecutiveContextReference | null;
   readonly currentExecution: NexoraExecutiveContextReference | null;
+  /** NEX-MVP dial position. Workflow mode, not Manager Workspace identity. */
   readonly currentWorkspaceId: string | null;
+  /** Canonical Manager Workspace. Independent of the dial. */
+  readonly managerWorkspaceId?: string | null;
   readonly currentModelId: string | null;
   readonly lastCommand: NexoraExecutiveContextCommandReference | null;
   readonly lastRuntimeResult: NexoraExecutiveContextRuntimeReference | null;
@@ -133,6 +136,7 @@ export function createEmptyNexoraExecutiveContextSnapshot(
     currentDecision: null,
     currentExecution: null,
     currentWorkspaceId: null,
+    managerWorkspaceId: null,
     currentModelId: null,
     lastCommand: null,
     lastRuntimeResult: null,
@@ -180,6 +184,7 @@ export function freezeExecutiveContextSnapshot(
       ? freezeExecutiveContextReference(snapshot.currentExecution)
       : null,
     currentWorkspaceId: snapshot.currentWorkspaceId,
+    managerWorkspaceId: snapshot.managerWorkspaceId ?? null,
     currentModelId: snapshot.currentModelId,
     lastCommand: snapshot.lastCommand
       ? Object.freeze({

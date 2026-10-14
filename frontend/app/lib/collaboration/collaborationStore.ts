@@ -6,6 +6,9 @@ import {
 } from "../governance/governanceTrustAuditContract";
 import type { AuditEvent, TrustProvenance } from "../governance/governanceTrustAuditContract";
 import type { CollaborationInput, CollaborationState } from "./collaborationTypes";
+import { resolveManagerRecordWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
+
+export type CollaborationStorage = Pick<Storage, "getItem" | "setItem">;
 
 export type CollaborationEnvelope = {
   inputs: CollaborationInput[];
@@ -15,18 +18,31 @@ export type CollaborationEnvelope = {
   updated_at: number;
 };
 
-function key(workspaceId?: string | null, projectId?: string | null, decisionId?: string | null) {
-  return `nexora.collaboration.${String(workspaceId || "default_workspace")}.${String(projectId || "default_project")}.${String(decisionId || "default_decision")}`;
+function browserStorage(): CollaborationStorage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function key(workspaceId?: string | null, projectId?: string | null, decisionId?: string | null): string | null {
+  const owner = resolveManagerRecordWorkspaceId(workspaceId);
+  if (!owner) return null;
+  return `nexora.collaboration.${owner}.${String(projectId || "default_project")}.${String(decisionId || "default_decision")}`;
 }
 
 export function loadCollaborationEnvelope(
   workspaceId?: string | null,
   projectId?: string | null,
-  decisionId?: string | null
+  decisionId?: string | null,
+  storage: CollaborationStorage | null = browserStorage(),
 ): CollaborationEnvelope | null {
-  if (typeof window === "undefined") return null;
+  const storageKey = key(workspaceId, projectId, decisionId);
+  if (!storage || !storageKey) return null;
   try {
-    const raw = window.localStorage.getItem(key(workspaceId, projectId, decisionId));
+    const raw = storage.getItem(storageKey);
     if (!raw) return null;
     return JSON.parse(raw) as CollaborationEnvelope;
   } catch {
@@ -39,13 +55,13 @@ export function saveCollaborationEnvelope(params: {
   projectId?: string | null;
   decisionId?: string | null;
   envelope: CollaborationEnvelope;
+  storage?: CollaborationStorage | null;
 }) {
-  if (typeof window === "undefined") return params.envelope;
+  const storage = params.storage === undefined ? browserStorage() : params.storage;
+  const storageKey = key(params.workspaceId, params.projectId, params.decisionId);
+  if (!storage || !storageKey) return params.envelope;
   try {
-    window.localStorage.setItem(
-      key(params.workspaceId, params.projectId, params.decisionId),
-      JSON.stringify(params.envelope)
-    );
+    storage.setItem(storageKey, JSON.stringify(params.envelope));
   } catch {
     return params.envelope;
   }
@@ -58,15 +74,20 @@ export function appendCollaborationInput(params: {
   decisionId?: string | null;
   input: CollaborationInput;
   state?: CollaborationState | null;
+  sourceWorkspaceId?: string | null;
+  storage?: CollaborationStorage | null;
 }): CollaborationEnvelope {
+  const owner = resolveManagerRecordWorkspaceId(params.workspaceId);
+  const source = params.sourceWorkspaceId?.trim() ?? "";
   const current =
-    loadCollaborationEnvelope(params.workspaceId, params.projectId, params.decisionId) ?? {
+    loadCollaborationEnvelope(params.workspaceId, params.projectId, params.decisionId, params.storage) ?? {
       inputs: [],
       state: null,
       audit_events: [],
       trust_provenance: [],
       updated_at: Date.now(),
     };
+  if (!owner || (source && source !== owner)) return current;
   const provenance = createTrustProvenance({
     kind: "explainability_output",
     source: {
@@ -85,7 +106,7 @@ export function appendCollaborationInput(params: {
   const event = createAuditEvent({
     event_type: "collaboration_input_added" as AuditEvent["event_type"],
     category: "collaboration_review",
-    workspace_id: params.workspaceId ?? "default_workspace",
+    workspace_id: owner,
     project_id: params.projectId ?? "default_project",
     origin_type: "user",
     actor_hint: params.input.user_label,
@@ -107,6 +128,7 @@ export function appendCollaborationInput(params: {
     projectId: params.projectId,
     decisionId: params.decisionId,
     envelope,
+    storage: params.storage,
   });
 }
 
@@ -115,15 +137,20 @@ export function persistCollaborationState(params: {
   projectId?: string | null;
   decisionId?: string | null;
   state: CollaborationState;
+  sourceWorkspaceId?: string | null;
+  storage?: CollaborationStorage | null;
 }): CollaborationEnvelope {
+  const owner = resolveManagerRecordWorkspaceId(params.workspaceId);
+  const source = params.sourceWorkspaceId?.trim() ?? "";
   const current =
-    loadCollaborationEnvelope(params.workspaceId, params.projectId, params.decisionId) ?? {
+    loadCollaborationEnvelope(params.workspaceId, params.projectId, params.decisionId, params.storage) ?? {
       inputs: [],
       state: null,
       audit_events: [],
       trust_provenance: [],
       updated_at: Date.now(),
     };
+  if (!owner || (source && source !== owner)) return current;
   const provenance = createTrustProvenance({
     kind: "explainability_output",
     source: {
@@ -142,7 +169,7 @@ export function persistCollaborationState(params: {
     createAuditEvent({
       event_type: "collaboration_alignment_updated" as AuditEvent["event_type"],
       category: "collaboration_review",
-      workspace_id: params.workspaceId ?? "default_workspace",
+      workspace_id: owner,
       project_id: params.projectId ?? "default_project",
       origin_type: "system",
       affected_entity: params.decisionId ?? params.state.decision_id ?? "decision",
@@ -156,7 +183,7 @@ export function persistCollaborationState(params: {
       createAuditEvent({
         event_type: "collaboration_decision_delta_detected" as AuditEvent["event_type"],
         category: "collaboration_review",
-        workspace_id: params.workspaceId ?? "default_workspace",
+        workspace_id: owner,
         project_id: params.projectId ?? "default_project",
         origin_type: "system",
         affected_entity: params.decisionId ?? params.state.decision_id ?? "decision",
@@ -179,5 +206,6 @@ export function persistCollaborationState(params: {
     projectId: params.projectId,
     decisionId: params.decisionId,
     envelope,
+    storage: params.storage,
   });
 }

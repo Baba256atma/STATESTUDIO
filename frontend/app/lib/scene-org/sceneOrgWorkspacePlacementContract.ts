@@ -3,6 +3,7 @@ import type {
   SceneOrgRegionId,
 } from "./sceneOrgRegionContract";
 import type { SceneOrgVisibilityLevel } from "./sceneOrgVisibilityContract";
+import { isLegacyWorkflowWorkspaceIdentifier } from "../workspace/workspaceRegistryContract";
 
 /** NPA-T ORG:4 — placement and saved-view metadata, never business truth. */
 export const sceneOrgWorkspacePlacementContractIdentity =
@@ -116,7 +117,17 @@ export type SceneOrgSavedScene = Readonly<{
   canonicalReferences: readonly SceneOrgCanonicalReference[];
   layout: SceneOrgSavedSceneLayoutPreferences;
   visibility: Readonly<Partial<Record<SceneOrgRegionId, SceneOrgVisibilityLevel>>>;
+  /** Canonical Manager Workspace that owns this Scene. Absent means unassigned. */
+  managerWorkspaceId?: string;
 }>;
+
+/** Workflow-mode strings are not Manager Workspace owners. */
+export function savedSceneManagerWorkspaceId(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const workspaceId = value.trim();
+  if (workspaceId.length === 0 || isLegacyWorkflowWorkspaceIdentifier(workspaceId)) return null;
+  return workspaceId;
+}
 
 /**
  * Captures the canonical subject currently presented in the workspace. Direct
@@ -145,12 +156,14 @@ export function createSceneOrgSavedScene(input: {
   readonly canonicalReferences: readonly SceneOrgCanonicalReference[];
   readonly layout: SceneOrgSavedSceneLayoutPreferences;
   readonly visibility?: Partial<Record<SceneOrgRegionId, SceneOrgVisibilityLevel>>;
+  readonly managerWorkspaceId?: string | null;
 }): SceneOrgSavedScene {
   const sceneId = input.sceneId.trim();
   const name = input.name.trim();
   if (sceneId.length === 0 || name.length === 0) {
     throw new Error("ORG:4 Saved Scenes require an identity and name.");
   }
+  const managerWorkspaceId = savedSceneManagerWorkspaceId(input.managerWorkspaceId);
   return Object.freeze({
     sceneId,
     name,
@@ -159,6 +172,7 @@ export function createSceneOrgSavedScene(input: {
     canonicalReferences: Object.freeze([...input.canonicalReferences]),
     layout: Object.freeze({ ...input.layout }),
     visibility: Object.freeze({ ...(input.visibility ?? {}) }),
+    ...(managerWorkspaceId ? { managerWorkspaceId } : {}),
   });
 }
 

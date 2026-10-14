@@ -11,6 +11,7 @@ export type NexoraExecutiveConversationContextProjection = {
   readonly currentSubjectId: string | null;
   readonly previousSubjectIds: readonly string[];
   readonly currentWorkspaceId: string | null;
+  readonly managerWorkspaceId: string | null;
   readonly currentModelId: string | null;
   readonly recentCandidateIds: readonly string[];
   readonly presentedSubjectIds: readonly string[];
@@ -29,6 +30,7 @@ export function projectExecutiveContextForConversation(
       currentSubjectId: null,
       previousSubjectIds: Object.freeze([]),
       currentWorkspaceId: null,
+      managerWorkspaceId: null,
       currentModelId: null,
       recentCandidateIds: Object.freeze([]),
       presentedSubjectIds: Object.freeze([]),
@@ -49,6 +51,7 @@ export function projectExecutiveContextForConversation(
       context.previousSubjects.map((s) => s.subjectId),
     ),
     currentWorkspaceId: context.currentWorkspaceId,
+    managerWorkspaceId: context.managerWorkspaceId ?? null,
     currentModelId: context.currentModelId,
     recentCandidateIds,
     presentedSubjectIds: Object.freeze(
@@ -70,6 +73,7 @@ export function toNexoraConversationContextSnapshot(
     currentSubjectId: projected.currentSubjectId,
     previousSubjectIds: projected.previousSubjectIds,
     currentWorkspaceId: projected.currentWorkspaceId,
+    managerWorkspaceId: projected.managerWorkspaceId,
     currentModelId: projected.currentModelId,
     presentedSubjectIds: projected.presentedSubjectIds,
     presentedSetKind: projected.presentedSetKind,

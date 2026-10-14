@@ -1,8 +1,22 @@
-import type { SceneOrgCanonicalReference } from "./sceneOrgRegionContract";
+import {
+  createSceneOrgCanonicalReference,
+  type SceneOrgCanonicalReference,
+} from "./sceneOrgRegionContract";
 
 /** NPA-T ORG:6 — presentation contract over existing deep-detail authorities. */
 export const sceneOrgDetailWorkspaceContractIdentity =
   "NPA-T ORG:6/DetailWorkspace" as const;
+
+/** Empty Detail is a placeholder reference. It is not a workflow mode or a Manager Workspace. */
+export const SCENE_ORG_EMPTY_DETAIL_CANONICAL_ID = "scene-org:empty-detail" as const;
+
+export function emptySceneOrgDetailReference(): SceneOrgCanonicalReference {
+  return createSceneOrgCanonicalReference({
+    canonicalId: SCENE_ORG_EMPTY_DETAIL_CANONICAL_ID,
+    kind: "collection",
+    owner: "ORG:6/empty-detail",
+  });
+}
 
 export const SCENE_ORG_DETAIL_CAPABILITIES = Object.freeze([
   "DATA",

@@ -28,7 +28,8 @@ import {
   evaluateProactiveMonitoring,
 } from "../../../lib/data-reality/proactiveMonitoringFoundation.ts";
 import type { NexoraLiveCommittedObservation, NexoraLiveConnection } from "../../../lib/data-reality/liveDataConnectorFoundation.ts";
-import { disconnectNexoraLiveConnection, getLiveDataConnectionVersion, listNexoraLiveConnections, listNexoraLiveObservations, subscribeLiveDataConnections } from "../../../lib/data-reality/liveDataConnectionStore.ts";
+import { disconnectNexoraLiveConnection, getLiveDataConnectionVersion, subscribeLiveDataConnections } from "../../../lib/data-reality/liveDataConnectionStore.ts";
+import { readManagerLiveConnections, readManagerLiveObservations } from "../../../lib/workspace/legacyWorkspaceIdentityMigration.ts";
 import {
   disableAutomaticMonitoring,
   enableAutomaticMonitoring,
@@ -396,12 +397,12 @@ export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeL
   const durabilityMessage = useSyncExternalStore(subscribeCsvDurabilityHealth, getCsvDurabilityHealthMessage, () => null);
   const imports = listCsvRealDataImports(workspaceId);
   const pendingCandidates = listCsvImportCandidates(workspaceId);
-  const liveConnections = listNexoraLiveConnections(workspaceId);
+  const liveConnections = readManagerLiveConnections(workspaceId);
   void version; void liveVersion;
 
   const intelligenceBySource = useMemo(() => new Map(imports.map((entry) => [entry.sourceContextId, projectExecutiveSourceIntelligence(entry)])), [imports]);
   const latestObservationByConnectionId = Object.fromEntries(liveConnections.map((connection) => {
-    const history = listNexoraLiveObservations(workspaceId, connection.connectionId);
+    const history = readManagerLiveObservations(workspaceId, connection.connectionId);
     return [connection.connectionId, history[history.length - 1] ?? null];
   }));
   const library = projectNexoraDataRailLibrary({
@@ -473,7 +474,7 @@ export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeL
     </section>
 
     {selected && selectedIntelligence && !csvFlowOpen ? <SourceIntelligenceView key={selected.sourceContextId} source={selected} intelligence={selectedIntelligence} active={activeImport?.sourceContextId === selected.sourceContextId} activeSourceContextId={activeImport?.sourceContextId ?? null} imports={imports} onActivate={() => onImportCommitted(selected)} onShowDataObjectOnStage={onShowDataObjectOnStage} onAdvisorContext={onAdvisorContext} onUpdate={() => { setUpdatingSource(selected); setCsvIntake("update"); setAdding(true); setAddKind("csv"); }} onRemoved={() => setSelectedSourceId(null)} onSourceRemoved={(sourceContextId) => onSourceRemoved?.(sourceContextId)} onDismissRemovalReview={() => onDismissRemovalReview?.()} onCloseDetails={() => setSelectedSourceId(null)} requestedReview={removalReviewSourceId === selected.sourceContextId} /> : null}
-    {selectedLive && !csvFlowOpen ? <LiveSourceView key={selectedLive.connectionId} connection={selectedLive} observations={listNexoraLiveObservations(workspaceId, selectedLive.connectionId)} activeSourceContextId={activeLiveObservation?.sourceContextId ?? activeImport?.sourceContextId ?? null} onActivate={onLiveObservationActivated} onViewOnStage={onViewOnStage} onAdvisorContext={onAdvisorContext} onCloseDetails={() => setSelectedSourceId(null)} /> : null}
+    {selectedLive && !csvFlowOpen ? <LiveSourceView key={selectedLive.connectionId} connection={selectedLive} observations={readManagerLiveObservations(workspaceId, selectedLive.connectionId)} activeSourceContextId={activeLiveObservation?.sourceContextId ?? activeImport?.sourceContextId ?? null} onActivate={onLiveObservationActivated} onViewOnStage={onViewOnStage} onAdvisorContext={onAdvisorContext} onCloseDetails={() => setSelectedSourceId(null)} /> : null}
   </div>;
 }
 

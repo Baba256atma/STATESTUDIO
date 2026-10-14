@@ -144,9 +144,11 @@ function fromCsv(entry: CsvPublishedKpiObservation): PublishedKpiObservation {
   });
 }
 
-function fromLive(): readonly PublishedKpiObservation[] {
+function fromLive(workspaceId?: string): readonly PublishedKpiObservation[] {
   return freezeList(
-    listAllNexoraLiveCommittedObservations().flatMap((observation) =>
+    listAllNexoraLiveCommittedObservations()
+    .filter((observation) => workspaceId == null || observation.workspaceId === workspaceId)
+    .flatMap((observation) =>
       (observation.dataReality?.kpis ?? []).flatMap((kpi) => {
         if (!Number.isFinite(kpi.value)) return [];
         const observedAt = kpi.calculatedAt || observation.observedAt;
@@ -177,10 +179,13 @@ function fromLive(): readonly PublishedKpiObservation[] {
 export function listPublishedKpiObservations(filter?: {
   readonly kpiId?: string;
   readonly subjectId?: string;
+  readonly workspaceId?: string;
 }): readonly PublishedKpiObservation[] {
   const merged = freezeList([
-    ...listCsvPublishedKpiObservations().map(fromCsv),
-    ...fromLive(),
+    ...listCsvPublishedKpiObservations()
+      .filter((entry) => filter?.workspaceId == null || entry.workspaceId === filter.workspaceId)
+      .map(fromCsv),
+    ...fromLive(filter?.workspaceId),
   ]);
   return freezeList(
     merged.filter((entry) => {

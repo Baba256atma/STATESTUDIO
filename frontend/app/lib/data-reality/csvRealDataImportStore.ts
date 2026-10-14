@@ -1,6 +1,7 @@
 /** Workspace-scoped atomic commit store for prepared RDI:2 imports. */
 
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { legacyWorkflowKeyBlockedForActiveManager } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import type {
   CsvImportFlowState,
   CsvMappingReview,
@@ -28,6 +29,7 @@ export type CsvImportCommitResult = Readonly<{
     | "cancelled"
     | "not_ready"
     | "workspace_mismatch"
+    | "refused_workflow_key"
     | "source_exists";
   previous: CsvCommittedImport | null;
   current: CsvCommittedImport | null;
@@ -56,7 +58,7 @@ export type CsvImportCandidate = Readonly<{
 
 export type SaveCsvImportCandidateResult = Readonly<{
   saved: boolean;
-  reason: "saved" | "pending_duplicate";
+  reason: "saved" | "pending_duplicate" | "refused_workflow_key";
   candidate: CsvImportCandidate;
   existing: CsvImportCandidate | null;
 }>;
@@ -226,6 +228,14 @@ export function saveCsvImportCandidate(
   candidate: CsvImportCandidate,
   options?: Readonly<{ replaceCandidateId?: string | null }>,
 ): SaveCsvImportCandidateResult {
+  if (legacyWorkflowKeyBlockedForActiveManager(candidate.workspaceId)) {
+    return Object.freeze({
+      saved: false,
+      reason: "refused_workflow_key",
+      candidate,
+      existing: null,
+    });
+  }
   const current = pendingByWorkspace[candidate.workspaceId] ?? {};
   const occupant = current[candidate.candidateId] ?? null;
   if (occupant && occupant.input.importId !== candidate.input.importId && options?.replaceCandidateId !== candidate.candidateId) {
@@ -267,6 +277,15 @@ export function commitPreparedCsvRealDataImport(input: Readonly<{
   mode: CsvReimportMode;
   committedAt: string;
 }>): CsvImportCommitResult {
+  if (legacyWorkflowKeyBlockedForActiveManager(input.expectedWorkspaceId)) {
+    const existing = getCsvRealDataImport(input.expectedWorkspaceId, input.prepared.sourceContextId);
+    return Object.freeze({
+      committed: false,
+      reason: "refused_workflow_key",
+      previous: existing,
+      current: existing,
+    });
+  }
   const existing = getCsvRealDataImport(input.expectedWorkspaceId, input.prepared.sourceContextId);
   if (input.mode === "cancel") {
     return Object.freeze({ committed: false, reason: "cancelled", previous: existing, current: existing });

@@ -5,19 +5,21 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import {
   findDueAutomaticMonitoringPolicies,
   getAutomaticMonitoringRuntimeVersion,
-  listAutomaticMonitoringPolicies,
-  listAutomaticMonitoringRuntimeStates,
   runNexoraMonitoringObservation,
   startNexoraForegroundMonitoringRuntime,
   subscribeAutomaticMonitoringRuntime,
 } from "../../../lib/data-reality/automaticMonitoringRuntime.ts";
 import {
   getLiveDataConnectionVersion,
-  listNexoraLiveConnections,
-  listNexoraLiveObservations,
   subscribeLiveDataConnections,
 } from "../../../lib/data-reality/liveDataConnectionStore.ts";
 import { requestNexoraLiveObservation } from "../../../lib/data-reality/liveDataObservationClient.ts";
+import {
+  readManagerLiveConnections,
+  readManagerLiveObservations,
+  readManagerMonitoringPolicies,
+  readManagerMonitoringRuntimeStates,
+} from "../../../lib/workspace/legacyWorkspaceIdentityMigration.ts";
 import type { NexoraLiveCommittedObservation } from "../../../lib/data-reality/liveDataConnectorFoundation.ts";
 import {
   enqueueProactiveAdvisorBrief,
@@ -120,11 +122,11 @@ export function NexoraAutomaticMonitoringCoordinator({
     void liveVersion;
     void monitoringVersion;
     const now = new Date().toISOString();
-    const connections = listNexoraLiveConnections(workspaceId);
+    const connections = readManagerLiveConnections(workspaceId);
     const due = findDueAutomaticMonitoringPolicies({
-      policies: listAutomaticMonitoringPolicies(workspaceId),
+      policies: readManagerMonitoringPolicies(workspaceId),
       connections,
-      runtimeStates: listAutomaticMonitoringRuntimeStates(workspaceId),
+      runtimeStates: readManagerMonitoringRuntimeStates(workspaceId),
       now,
     });
     if (due.length > 0) {
@@ -159,7 +161,7 @@ export function NexoraAutomaticMonitoringCoordinator({
           enqueueProactiveAdvisorBrief({ monitoring: result.evaluation });
         }
         if (result.completed && activeSourceContextId === `live:${connection.connectionId}`) {
-          const history = listNexoraLiveObservations(workspaceId, connection.connectionId);
+          const history = readManagerLiveObservations(workspaceId, connection.connectionId);
           const latest = history[history.length - 1];
           if (latest) onActiveObservation(latest);
         }

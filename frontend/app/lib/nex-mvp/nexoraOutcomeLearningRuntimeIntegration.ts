@@ -573,6 +573,8 @@ export type LiveExecutionOutcomeEvaluationSyncInput = Readonly<{
   readonly scenarioSourceById?: Readonly<Record<string, string | null | undefined>>;
   readonly scenarioImpactsById?: Parameters<typeof syncLiveExecutionCaptureContexts>[0]["scenarioImpactsById"];
   readonly focusedSubjectId?: string | null;
+  /** Canonical manager workspace when the caller has one. Omitted callers stay on the historical bucket. */
+  readonly workspaceId?: string | null;
 }>;
 
 export type LiveExecutionOutcomeEvaluationSync = Readonly<{
@@ -610,7 +612,7 @@ export function synchronizeLiveExecutionOutcomeEvaluation(
       relationships: [],
     });
     const integrated = integrateNexoraOutcomeLearningRuntime({
-      workspaceId: "nexora-mvp",
+      workspaceId: input.workspaceId && input.workspaceId.length > 0 ? input.workspaceId : "nexora-mvp",
       subjectId: context.subjectId,
       subjectKind: "object",
       expected: context.expected,

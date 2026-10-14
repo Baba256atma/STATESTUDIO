@@ -1,5 +1,6 @@
 /** Workspace-scoped, in-memory RDI:4 connection and observation journal. */
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { legacyWorkflowKeyBlockedForActiveManager } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import {
   transitionNexoraLiveConnection,
   type NexoraLiveCommittedObservation,
@@ -39,6 +40,7 @@ export function listAllNexoraLiveCommittedObservations(): readonly NexoraLiveCom
 }
 
 export function saveNexoraLiveConnection(connection: NexoraLiveConnection): NexoraLiveConnection {
+  if (legacyWorkflowKeyBlockedForActiveManager(connection.workspaceId)) return connection;
   connections = Object.freeze({ ...connections, [connection.workspaceId]: Object.freeze({ ...(connections[connection.workspaceId] ?? {}), [connection.connectionId]: connection }) }); publish(); return connection;
 }
 export function setNexoraLiveConnectionState(input: Readonly<{ workspaceId: WorkspaceId; connectionId: string; state: NexoraLiveConnectionState; updatedAt: string; lastSuccessfulObservationAt?: string | null }>): NexoraLiveConnection | null {
@@ -48,6 +50,9 @@ export function setNexoraLiveConnectionState(input: Readonly<{ workspaceId: Work
 
 /** Atomic publication: failed preparations never alter the observation journal. */
 export function commitNexoraLiveObservation(input: Readonly<{ connection: NexoraLiveConnection; prepared: NexoraLivePreparedObservation; committedAt: string }>): Readonly<{ committed: boolean; reason: "committed"|"not_ready"|"workspace_mismatch"|"connection_mismatch"|"stale_observation"; observation: NexoraLiveCommittedObservation | null }> {
+  if (legacyWorkflowKeyBlockedForActiveManager(input.connection.workspaceId)) {
+    return Object.freeze({ committed: false, reason: "workspace_mismatch", observation: null });
+  }
   if (!input.prepared.ready || !input.prepared.snapshot || !input.prepared.handoff || !input.prepared.dataReality || !input.prepared.runtime || !input.prepared.advisor) return Object.freeze({ committed: false, reason: "not_ready", observation: null });
   if (input.connection.workspaceId !== input.prepared.workspaceId) return Object.freeze({ committed: false, reason: "workspace_mismatch", observation: null });
   if (input.prepared.snapshot.source.identity.connectionId !== input.connection.connectionId) return Object.freeze({ committed: false, reason: "connection_mismatch", observation: null });

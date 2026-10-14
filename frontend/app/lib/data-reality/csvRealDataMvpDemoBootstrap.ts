@@ -4,6 +4,7 @@
  * Not a second Data Reality, chart engine, or conversation owner.
  */
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { isRealManagerWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import {
   commitPreparedCsvRealDataImport,
   csvImportCandidateId,
@@ -29,6 +30,7 @@ export const CSV_MVP_DEMO_BOOTSTRAP_BOUNDARY = Object.freeze({
   ownsConversation: false as const,
   seedsRenderer: false as const,
   demoDataOnly: true as const,
+  contaminatesManagerWorkspace: false as const,
 });
 
 export const CSV_MVP_DEMO_INVENTORY_FILE = "inventory-observations.csv";
@@ -138,11 +140,25 @@ export type CsvMvpDemoBootstrapReport = Readonly<{
   inventoryAlreadyPresent: boolean;
   pendingSeeded: boolean;
   pendingAlreadyPresent: boolean;
+  refused: boolean;
+  refusalReason: "manager_workspace" | null;
 }>;
 
 export function ensureCsvMvpDemoBootstrap(input: {
   readonly workspaceId: WorkspaceId;
 }): CsvMvpDemoBootstrapReport {
+  if (isRealManagerWorkspaceId(input.workspaceId)) {
+    return Object.freeze({
+      identity: csvRealDataMvpDemoBootstrapIdentity,
+      workspaceId: input.workspaceId,
+      inventoryAlreadyPresent: false,
+      inventorySeeded: false,
+      pendingAlreadyPresent: false,
+      pendingSeeded: false,
+      refused: true,
+      refusalReason: "manager_workspace" as const,
+    });
+  }
   const inventoryAlreadyPresent = hasAcceptedInventory(input.workspaceId);
   const pendingAlreadyPresent = hasPendingDemo(input.workspaceId);
   return Object.freeze({
@@ -156,5 +172,7 @@ export function ensureCsvMvpDemoBootstrap(input: {
     pendingSeeded: pendingAlreadyPresent
       ? false
       : seedPendingDemo(input.workspaceId),
+    refused: false,
+    refusalReason: null,
   });
 }

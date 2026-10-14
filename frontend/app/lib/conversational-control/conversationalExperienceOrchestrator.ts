@@ -43,6 +43,7 @@ import { applyVai8ToPresentedResponse, vai8UncertaintyNotes } from "@/app/lib/va
 import { answerNexoraExiUtterance, classifyNexoraExiUtterance } from "@/app/lib/nex-mvp/nexoraExecutiveIntelligenceExperience.ts";
 import { synchronizeLiveExecutionOutcomeEvaluation } from "@/app/lib/nex-mvp/nexoraOutcomeLearningRuntimeIntegration.ts";
 import { listSupportedGroundedLearningForSubject } from "@/app/lib/executive-intelligence/nexoraGroundedLearningIntelligence.ts";
+import { managerLearningWorkspaceId } from "@/app/lib/workspace/legacyWorkspaceIdentityMigration.ts";
 import {
   type NexoraConversationalExperienceResult,
   type NexoraConversationalExperienceStatus,
@@ -1268,6 +1269,7 @@ function bootstrapExecutiveContext(input: {
     previousSubjects,
     currentWorkspaceId:
       legacy.currentWorkspaceId ?? input.runtimeState.workspace ?? null,
+    managerWorkspaceId: legacy.managerWorkspaceId ?? null,
     currentModelId: legacy.currentModelId ?? null,
     presentedSet:
       presentedIds.length > 0
@@ -1603,8 +1605,10 @@ function synchronizeLiveCc5OutcomeEvaluation(input: {
   }[] } | null;
   readonly scenarioSession?: NexoraExecutiveScenarioSession | null;
   readonly focusedSubjectId?: string | null;
+  readonly managerWorkspaceId?: string | null;
 }) {
   return synchronizeLiveExecutionOutcomeEvaluation({
+    workspaceId: managerLearningWorkspaceId(input.managerWorkspaceId),
     executions: input.executionRuntime?.listExecutions() ?? [],
     decisions: (input.decisionRuntime?.listDecisions() ?? []).map((decision) => ({
       decisionId: decision.decisionId,
@@ -2087,6 +2091,7 @@ export function executeNexoraConversationalExperience(
           decisionRuntime: boundDecisionRuntime,
           scenarioSession: input.scenarioSession ?? null,
           focusedSubjectId: input.runtimeState.focusedSubject?.id ?? null,
+          managerWorkspaceId: previousExecutiveContext.managerWorkspaceId ?? null,
         }).answers
       : null;
     const exiAnswer = answerNexoraExiUtterance(
@@ -3684,6 +3689,7 @@ function finalize(args: {
       runtimeFocusedCanonicalName:
         args.nextRuntimeState.focusedSubject?.label ?? null,
       runtimeWorkspaceId: args.nextRuntimeState.workspace,
+      managerWorkspaceId: args.previousExecutiveContext.managerWorkspaceId ?? null,
       presentedSet: presentedFromCollection ?? presentedFromLinks,
       executiveSubjects: args.executiveSubjects,
       trustedSuccess: true,
@@ -3746,6 +3752,7 @@ function finalize(args: {
       executiveSubjects: args.executiveSubjects,
       trustedSuccess: true,
       lastRecommendationId,
+      managerWorkspaceId: args.previousExecutiveContext.managerWorkspaceId ?? null,
       presentedSet,
       ...(decisionRef
         ? {
@@ -3782,6 +3789,7 @@ function finalize(args: {
       commandResult: args.commandResult,
       runtimeResult: args.runtimeResult,
       trustedSuccess: false,
+      managerWorkspaceId: args.previousExecutiveContext.managerWorkspaceId ?? null,
       executiveSubjects: args.executiveSubjects,
     });
     nextExecutiveContext = executiveContextUpdate.nextContext;
@@ -4926,6 +4934,7 @@ function finalize(args: {
       runtimeFocusedSubjectKind: focusedKind(directorRuntimeState),
       runtimeFocusedCanonicalName: directorRuntimeState.focusedSubject.label ?? null,
       runtimeWorkspaceId: directorRuntimeState.workspace,
+      managerWorkspaceId: nextExecutiveContext.managerWorkspaceId ?? null,
       executiveSubjects: args.executiveSubjects,
       trustedSuccess: true,
       syncSource: "runtime",
@@ -6432,6 +6441,7 @@ function finalize(args: {
     decisionRuntime: args.decisionRuntime ?? null,
     scenarioSession: args.previousScenarioSession ?? null,
     focusedSubjectId: args.nextRuntimeState.focusedSubject?.id ?? null,
+    managerWorkspaceId: args.previousExecutiveContext.managerWorkspaceId ?? null,
   });
   const focusedId =
     args.nextRuntimeState.focusedSubject?.id ??
@@ -6455,7 +6465,7 @@ function finalize(args: {
   const coreOut2SupportedLearning = Object.freeze(
     reassessmentTurn && reassessmentObjectSubjectId
       ? listSupportedGroundedLearningForSubject({
-          workspaceId: "nexora-mvp",
+          workspaceId: managerLearningWorkspaceId(args.previousExecutiveContext.managerWorkspaceId),
           subjectId: reassessmentObjectSubjectId,
         }).map((item) =>
           Object.freeze({

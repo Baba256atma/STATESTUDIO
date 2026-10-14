@@ -15,6 +15,7 @@
  */
 
 import type { DataRealityAwareAdvisorBindingResult } from "../data-reality/dataRealityAwareAdvisorExperienceBinding.ts";
+import { managerLearningWorkspaceId } from "../workspace/legacyWorkspaceIdentityMigration.ts";
 import type { NexoraProfessionalAdvisorNarrative } from "./nexoraMVPProfessionalAdvisorPresentation.ts";
 import {
   NEXORA_MVP_CONTEXT_LINK_FIXTURES,
@@ -258,6 +259,8 @@ export type ComposeNexoraExecutiveIntelligenceExperienceInput = Readonly<{
     readonly dimension: string | null;
     readonly numericValue: number | null;
   } | null;
+  /** Canonical Manager Workspace for Learning. Omitted callers stay on the historical bucket. */
+  readonly learningWorkspaceId?: string | null;
 }>;
 
 function field(
@@ -538,7 +541,7 @@ export function composeNexoraExecutiveIntelligenceExperience(
   });
   const currentKpi = input.currentKpi ?? null;
   const runtimeIntegration = integrateNexoraOutcomeLearningRuntime({
-    workspaceId: "nexora-mvp",
+    workspaceId: managerLearningWorkspaceId(input.learningWorkspaceId),
     subjectId: isOverview ? null : narrative.currentSubjectId,
     subjectKind: isOverview ? null : narrative.currentSubjectKind,
     currentKpi,

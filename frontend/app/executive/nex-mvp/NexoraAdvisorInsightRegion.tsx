@@ -126,6 +126,8 @@ type Props = {
     level: NexoraDecisionTheatreInvestigationLevel,
   ) => void;
   readonly onAskObjectCard?: (question: string) => void;
+  /** Canonical Manager Workspace for Learning produced by this surface. */
+  readonly learningWorkspaceId?: string | null;
 };
 
 function projectConversationalAction(
@@ -209,6 +211,7 @@ export function NexoraAdvisorInsightRegion({
   investigationLevel = "glance",
   onInvestigationLevelChange,
   onAskObjectCard,
+  learningWorkspaceId = null,
 }: Props) {
   const [internalPanelChrome, setInternalPanelChrome] = useState(() =>
     createSceneOrgRightPanelChromeState(),
@@ -328,6 +331,7 @@ export function NexoraAdvisorInsightRegion({
       flowDecisions,
       flowExecutions,
       decisionRuntime: decisionRuntime ?? null,
+      learningWorkspaceId,
     });
     const narrative = applyNexoraDecisionTheatreAdvisorGuidance(
       applyNexoraExecutiveIntelligenceExperienceToAdvisor(composed, experience),
@@ -356,6 +360,7 @@ export function NexoraAdvisorInsightRegion({
     flowExecutions,
     decisionRuntime,
     theatreComposition,
+    learningWorkspaceId,
   ]);
 
   useEffect(() => {

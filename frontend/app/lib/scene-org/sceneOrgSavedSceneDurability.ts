@@ -5,6 +5,7 @@ import {
 } from "./sceneOrgRegionContract";
 import {
   createSceneOrgSavedScene,
+  savedSceneManagerWorkspaceId,
   SCENE_ORG_SAVED_SCENE_KINDS,
   type SceneOrgSavedScene,
 } from "./sceneOrgWorkspacePlacementContract";
@@ -128,6 +129,7 @@ function parseScene(value: unknown): SceneOrgSavedScene | null {
       name: value.name,
       kind: value.kind as "SAVED" | "DEFAULT_MANAGER",
       sceneIntentType: value.sceneIntentType,
+      managerWorkspaceId: savedSceneManagerWorkspaceId(value.managerWorkspaceId),
       canonicalReferences: references as NonNullable<(typeof references)[number]>[],
       layout: {
         presentationDepth: layout.presentationDepth as "minimum" | "report" | "operation",
@@ -175,20 +177,21 @@ export function parseSceneOrgSavedScenes(raw: string): SceneOrgSavedSceneLoadRes
 
   const scenes: SceneOrgSavedScene[] = [];
   const seenIds = new Set<string>();
-  let defaultFound = false;
+  const defaultOwners = new Set<string>();
   let rejectedRecords = 0;
   for (const candidate of parsed.scenes) {
     const scene = parseScene(candidate);
+    const ownerKey = scene?.managerWorkspaceId ?? "";
     if (
       !scene ||
       seenIds.has(scene.sceneId) ||
-      (scene.kind === "DEFAULT_MANAGER" && defaultFound)
+      (scene.kind === "DEFAULT_MANAGER" && defaultOwners.has(ownerKey))
     ) {
       rejectedRecords += 1;
       continue;
     }
     seenIds.add(scene.sceneId);
-    defaultFound ||= scene.kind === "DEFAULT_MANAGER";
+    if (scene.kind === "DEFAULT_MANAGER") defaultOwners.add(ownerKey);
     scenes.push(scene);
   }
   return Object.freeze({
@@ -221,6 +224,73 @@ export function loadSceneOrgSavedScenes(
   } catch {
     return Object.freeze({ status: "unavailable", scenes: Object.freeze([]), rejectedRecords: 0 });
   }
+}
+
+export const SAVED_SCENE_OWNERSHIP_EVIDENCE = Object.freeze({
+  accepted: Object.freeze([
+    "persisted-canonical-id",
+    "business-project-reference",
+    "explicit-source-link",
+    "durable-workspace-bound-reference",
+  ]),
+  rejected: Object.freeze([
+    "scene-name",
+    "scene-id",
+    "active-workspace",
+    "workflow-mode",
+    "selected-object",
+    "layout",
+    "visibility",
+    "created-timestamp",
+  ]),
+});
+
+const ACCEPTED_SCENE_OWNERSHIP_BASES = new Set<string>(SAVED_SCENE_OWNERSHIP_EVIDENCE.accepted);
+
+export type SavedSceneOwnershipProof = Readonly<{
+  sceneId: string;
+  targetWorkspaceId: string;
+  basis: string;
+}>;
+
+export type SavedSceneOwnershipMigrationReport = Readonly<{
+  activeWorkspaceUsedAsEvidence: false;
+  changed: boolean;
+  scenes: readonly SceneOrgSavedScene[];
+}>;
+
+/** Assigns an owner only from an explicit accepted proof. The active workspace is ignored. */
+export function applySavedSceneOwnershipMigration(
+  scenes: readonly SceneOrgSavedScene[],
+  options: {
+    readonly activeWorkspaceId?: string | null;
+    readonly proofs?: readonly SavedSceneOwnershipProof[];
+  } = {},
+): SavedSceneOwnershipMigrationReport {
+  void options.activeWorkspaceId;
+  const proofs = options.proofs ?? [];
+  let changed = false;
+  const next = scenes.map((scene) => {
+    if (scene.managerWorkspaceId) return scene;
+    const accepted = proofs.filter(
+      (proof) =>
+        proof.sceneId === scene.sceneId &&
+        ACCEPTED_SCENE_OWNERSHIP_BASES.has(proof.basis) &&
+        savedSceneManagerWorkspaceId(proof.targetWorkspaceId) === proof.targetWorkspaceId,
+    );
+    const targets = [...new Set(accepted.map((proof) => proof.targetWorkspaceId))];
+    if (targets.length !== 1) return scene;
+    changed = true;
+    return createSceneOrgSavedScene({
+      ...scene,
+      managerWorkspaceId: targets[0],
+    });
+  });
+  return Object.freeze({
+    activeWorkspaceUsedAsEvidence: false as const,
+    changed,
+    scenes: changed ? Object.freeze(next) : scenes,
+  });
 }
 
 export function persistSceneOrgSavedScenes(

@@ -5,6 +5,7 @@
  */
 
 import { listPublishedKpiObservations } from "../data-reality/publishedKpiObservedDirection.ts";
+import { isLegacyWorkflowWorkspaceIdentifier, DEMO_WORKSPACE_ID } from "../workspace/workspaceRegistryContract.ts";
 import {
   projectHistoricalTruth,
   type HistoricalObservationInput,
@@ -26,7 +27,13 @@ export function collectLiveHistoricalObservations(input?: {
     readonly calculatedAt: string;
   }[];
   readonly datasetId?: string | null;
+  /** When set, published history is limited to this Manager Workspace. */
+  readonly managerWorkspaceId?: string | null;
 }): readonly HistoricalObservationInput[] {
+  const managerWorkspaceId = input?.managerWorkspaceId ?? null;
+  if (managerWorkspaceId != null && !timelineWorkspaceIsAddressable(managerWorkspaceId)) {
+    return Object.freeze([]);
+  }
   const seen = new Set<string>();
   const collected: HistoricalObservationInput[] = [];
   const push = (entry: HistoricalObservationInput) => {
@@ -35,7 +42,9 @@ export function collectLiveHistoricalObservations(input?: {
     seen.add(key);
     collected.push(Object.freeze(entry));
   };
-  for (const entry of listPublishedKpiObservations()) {
+  for (const entry of listPublishedKpiObservations(
+    managerWorkspaceId == null ? undefined : { workspaceId: managerWorkspaceId },
+  )) {
     push({
       observationId: entry.observationId,
       kpiId: entry.kpiId,
@@ -61,6 +70,135 @@ export function collectLiveHistoricalObservations(input?: {
   }
   return Object.freeze(collected);
 }
+
+function timelineWorkspaceIsAddressable(workspaceId: string): boolean {
+  const id = workspaceId.trim();
+  return id.length > 0 && !isLegacyWorkflowWorkspaceIdentifier(id);
+}
+
+/** Workflow-mode keys and missing owners stay out of a Manager Workspace Timeline. */
+export function timelineRecordVisibleToManagerWorkspace(
+  recordWorkspaceId: string | null | undefined,
+  managerWorkspaceId: string,
+): boolean {
+  if (!timelineWorkspaceIsAddressable(managerWorkspaceId)) return false;
+  const owner = recordWorkspaceId?.trim() ?? "";
+  if (!timelineWorkspaceIsAddressable(owner)) return false;
+  return owner === managerWorkspaceId;
+}
+
+export function selectTimelineRecordsForManagerWorkspace<T extends { readonly workspaceId?: string | null }>(
+  records: readonly T[],
+  managerWorkspaceId: string,
+): readonly T[] {
+  return Object.freeze(
+    records.filter((record) => timelineRecordVisibleToManagerWorkspace(record.workspaceId, managerWorkspaceId)),
+  );
+}
+
+export function selectTimelineCapturesForManagerWorkspace<
+  TCapture extends { readonly decisionId?: string | null; readonly executionId?: string | null },
+  TDecision extends { readonly decisionId: string; readonly workspaceId?: string | null },
+  TExecution extends { readonly executionId: string; readonly workspaceId?: string | null },
+>(
+  captures: readonly TCapture[],
+  decisions: readonly TDecision[],
+  executions: readonly TExecution[],
+  managerWorkspaceId: string,
+): readonly TCapture[] {
+  return Object.freeze(captures.filter((capture) => {
+    const decision = capture.decisionId
+      ? decisions.find((entry) => entry.decisionId === capture.decisionId) ?? null
+      : null;
+    const execution = capture.executionId
+      ? executions.find((entry) => entry.executionId === capture.executionId) ?? null
+      : null;
+    const owner = decision?.workspaceId ?? execution?.workspaceId ?? null;
+    return timelineRecordVisibleToManagerWorkspace(owner, managerWorkspaceId);
+  }));
+}
+
+export type TimelineEventWorkspaceAssessment = Readonly<{
+  status: "allowed" | "mismatch" | "unassigned" | "workflow-excluded";
+}>;
+
+export function assessTimelineEventWorkspace(
+  eventWorkspaceId: string | null | undefined,
+  activeManagerWorkspaceId: string,
+): TimelineEventWorkspaceAssessment {
+  const owner = eventWorkspaceId?.trim() ?? "";
+  if (!owner) return Object.freeze({ status: "unassigned" });
+  if (isLegacyWorkflowWorkspaceIdentifier(owner)) return Object.freeze({ status: "workflow-excluded" });
+  if (!timelineWorkspaceIsAddressable(activeManagerWorkspaceId) || owner !== activeManagerWorkspaceId) {
+    return Object.freeze({ status: "mismatch" });
+  }
+  return Object.freeze({ status: "allowed" });
+}
+
+export const TIMELINE_OWNERSHIP_EVIDENCE = Object.freeze({
+  accepted: Object.freeze([
+    "persisted-canonical-id",
+    "business-project-reference",
+    "canonical-source-relationship",
+    "explicit-source-link",
+    "durable-event-source",
+  ]),
+  rejected: Object.freeze([
+    "event-title",
+    "event-timestamp",
+    "workflow-mode",
+    "active-workspace",
+    "selected-object",
+    "stage-position",
+    "timeline-order",
+  ]),
+});
+
+const ACCEPTED_TIMELINE_BASES = new Set<string>(TIMELINE_OWNERSHIP_EVIDENCE.accepted);
+
+export type TimelineOwnershipRecord = Readonly<{
+  eventId: string;
+  workspaceId?: string | null;
+}>;
+
+export type TimelineOwnershipProof = Readonly<{
+  eventId: string;
+  targetWorkspaceId: string;
+  basis: string;
+}>;
+
+export function applyTimelineOwnershipMigration<T extends TimelineOwnershipRecord>(
+  records: readonly T[],
+  options: {
+    readonly activeWorkspaceId?: string | null;
+    readonly proofs?: readonly TimelineOwnershipProof[];
+  } = {},
+): Readonly<{ activeWorkspaceUsedAsEvidence: false; changed: boolean; records: readonly T[] }> {
+  void options.activeWorkspaceId;
+  const proofs = options.proofs ?? [];
+  let changed = false;
+  const next = records.map((record) => {
+    const current = record.workspaceId?.trim() ?? "";
+    if (timelineWorkspaceIsAddressable(current)) return record;
+    const accepted = proofs.filter(
+      (proof) =>
+        proof.eventId === record.eventId &&
+        ACCEPTED_TIMELINE_BASES.has(proof.basis) &&
+        timelineWorkspaceIsAddressable(proof.targetWorkspaceId),
+    );
+    const targets = [...new Set(accepted.map((proof) => proof.targetWorkspaceId))];
+    if (targets.length !== 1) return record;
+    changed = true;
+    return { ...record, workspaceId: targets[0]! };
+  });
+  return Object.freeze({
+    activeWorkspaceUsedAsEvidence: false as const,
+    changed,
+    records: changed ? Object.freeze(next) : records,
+  });
+}
+
+export const TIMELINE_DEMO_WORKSPACE_ID = DEMO_WORKSPACE_ID;
 
 export const historicalTruthPresentationIdentity =
   "NPA-T TIMELINE-LIVE:1/HistoricalPresentation" as const;

@@ -17,6 +17,7 @@ import {
   hydrateProactiveAdvisorRecoverySnapshot,
   type NexoraProactiveAdvisorRecoverySnapshot,
 } from "./proactiveAdvisorDelivery.ts";
+import { applyMonitoringLegacyIdentityMigration } from "../workspace/legacyWorkspaceIdentityMigration.ts";
 
 export const durableMonitoringRuntimeIdentity =
   "PM:5/NexoraDurableMonitoringRuntime" as const;
@@ -334,25 +335,27 @@ export function hydrateDurableMonitoringSnapshot(
   snapshot: NexoraDurableMonitoringSnapshot,
   recoveredAt: string,
 ): NexoraDurableMonitoringRecoveryReport {
-  hydrateNexoraLiveDataRecoverySnapshot(snapshot.liveData);
-  hydrateAutomaticMonitoringRecoverySnapshot(runtimeRecoverySnapshot(snapshot), recoveredAt);
-  hydrateProactiveAdvisorRecoverySnapshot(snapshot.advisorDelivery);
-  const enabled = snapshot.policies.filter((policy) => policy.enabled && !policy.paused);
-  const statesByPolicy = new Map(snapshot.runtimeStates.map((state) => [state.policyId, state]));
+  const migrated = applyMonitoringLegacyIdentityMigration(snapshot);
+  const source = migrated.state;
+  hydrateNexoraLiveDataRecoverySnapshot(source.liveData);
+  hydrateAutomaticMonitoringRecoverySnapshot(runtimeRecoverySnapshot(source), recoveredAt);
+  hydrateProactiveAdvisorRecoverySnapshot(source.advisorDelivery);
+  const enabled = source.policies.filter((policy) => policy.enabled && !policy.paused);
+  const statesByPolicy = new Map(source.runtimeStates.map((state) => [state.policyId, state]));
   return Object.freeze({
     recovered: true,
     reason: "recovered",
     runtimeModel: durableMonitoringRuntimeModel,
-    policyCount: snapshot.policies.length,
-    connectionCount: snapshot.liveData.connections.length,
-    observationCount: snapshot.liveData.observations.length,
-    briefCount: snapshot.advisorDelivery.briefs.length,
-    interruptedFlightCount: snapshot.runtimeStates.filter((state) => state.status === "observing").length,
+    policyCount: source.policies.length,
+    connectionCount: source.liveData.connections.length,
+    observationCount: source.liveData.observations.length,
+    briefCount: source.advisorDelivery.briefs.length,
+    interruptedFlightCount: source.runtimeStates.filter((state) => state.status === "observing").length,
     overduePolicyCount: enabled.filter((policy) => {
       const dueAt = statesByPolicy.get(policy.policyId)?.nextEligibleAt ?? policy.nextEligibleAt;
       return !dueAt || dueAt <= recoveredAt;
     }).length,
-    staleStateCount: snapshot.runtimeStates.filter((state) =>
+    staleStateCount: source.runtimeStates.filter((state) =>
       resolveDurableMonitoringFreshness({ lastSuccessAt: state.lastSuccessAt, nextEligibleAt: state.nextEligibleAt, now: recoveredAt }) !== "fresh").length,
     recoveredAt,
   });

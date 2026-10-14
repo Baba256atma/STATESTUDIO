@@ -1,6 +1,9 @@
 import { appendAuditEvents, appendTrustProvenance, createAuditEvent, createTrustProvenance } from "../governance/governanceTrustAuditContract";
 import type { AuditEvent, TrustProvenance } from "../governance/governanceTrustAuditContract";
+import { resolveManagerRecordWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import type { ApprovalActorRole, ApprovalDecisionRecord, ApprovalWorkflowState } from "./approvalWorkflowTypes";
+
+export type ApprovalWorkflowStorage = Pick<Storage, "getItem" | "setItem">;
 
 type ApprovalWorkflowEnvelope = {
   workflow: ApprovalWorkflowState;
@@ -8,18 +11,31 @@ type ApprovalWorkflowEnvelope = {
   trust_provenance: TrustProvenance[];
 };
 
-function key(workspaceId?: string | null, projectId?: string | null, decisionId?: string | null) {
-  return `nexora.approvalWorkflow.${String(workspaceId || "default_workspace")}.${String(projectId || "default_project")}.${String(decisionId || "default_decision")}`;
+function browserStorage(): ApprovalWorkflowStorage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function key(workspaceId?: string | null, projectId?: string | null, decisionId?: string | null): string | null {
+  const owner = resolveManagerRecordWorkspaceId(workspaceId);
+  if (!owner) return null;
+  return `nexora.approvalWorkflow.${owner}.${String(projectId || "default_project")}.${String(decisionId || "default_decision")}`;
 }
 
 export function loadApprovalWorkflowEnvelope(
   workspaceId?: string | null,
   projectId?: string | null,
-  decisionId?: string | null
+  decisionId?: string | null,
+  storage: ApprovalWorkflowStorage | null = browserStorage(),
 ): ApprovalWorkflowEnvelope | null {
-  if (typeof window === "undefined") return null;
+  const storageKey = key(workspaceId, projectId, decisionId);
+  if (!storage || !storageKey) return null;
   try {
-    const raw = window.localStorage.getItem(key(workspaceId, projectId, decisionId));
+    const raw = storage.getItem(storageKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed?.workflow) return null;
@@ -34,10 +50,13 @@ export function saveApprovalWorkflowEnvelope(params: {
   projectId?: string | null;
   decisionId?: string | null;
   envelope: ApprovalWorkflowEnvelope;
+  storage?: ApprovalWorkflowStorage | null;
 }) {
-  if (typeof window === "undefined") return params.envelope;
+  const storage = params.storage === undefined ? browserStorage() : params.storage;
+  const storageKey = key(params.workspaceId, params.projectId, params.decisionId);
+  if (!storage || !storageKey) return params.envelope;
   try {
-    window.localStorage.setItem(key(params.workspaceId, params.projectId, params.decisionId), JSON.stringify(params.envelope));
+    storage.setItem(storageKey, JSON.stringify(params.envelope));
   } catch {
     return params.envelope;
   }
@@ -58,7 +77,14 @@ export function appendApprovalDecision(params: {
   decision: ApprovalDecisionRecord["decision"];
   note?: string | null;
   workflow: ApprovalWorkflowState;
+  sourceWorkspaceId?: string | null;
+  storage?: ApprovalWorkflowStorage | null;
 }): ApprovalWorkflowEnvelope {
+  const owner = resolveManagerRecordWorkspaceId(params.workspaceId);
+  const source = params.sourceWorkspaceId?.trim() ?? "";
+  if (!owner || (source && source !== owner)) {
+    return { workflow: params.workflow, audit_events: [], trust_provenance: [] };
+  }
   const record: ApprovalDecisionRecord = {
     id: `approval_${params.decision}_${Date.now().toString(36)}`,
     timestamp: Date.now(),
@@ -80,7 +106,7 @@ export function appendApprovalDecision(params: {
   const event = createAuditEvent({
     event_type: eventTypeForDecision(params.decision),
     category: "recommendation_explainability",
-    workspace_id: params.workspaceId ?? "default_workspace",
+    workspace_id: owner,
     project_id: params.projectId ?? "default_project",
     origin_type: "user",
     actor_hint: params.actorRole,
@@ -95,13 +121,14 @@ export function appendApprovalDecision(params: {
       ...params.workflow,
       decisions: [record, ...(params.workflow.decisions ?? [])],
     },
-    audit_events: appendAuditEvents(loadApprovalWorkflowEnvelope(params.workspaceId, params.projectId, params.decisionId)?.audit_events, [event]),
-    trust_provenance: appendTrustProvenance(loadApprovalWorkflowEnvelope(params.workspaceId, params.projectId, params.decisionId)?.trust_provenance, [provenance]),
+    audit_events: appendAuditEvents(loadApprovalWorkflowEnvelope(params.workspaceId, params.projectId, params.decisionId, params.storage)?.audit_events, [event]),
+    trust_provenance: appendTrustProvenance(loadApprovalWorkflowEnvelope(params.workspaceId, params.projectId, params.decisionId, params.storage)?.trust_provenance, [provenance]),
   };
   return saveApprovalWorkflowEnvelope({
     workspaceId: params.workspaceId,
     projectId: params.projectId,
     decisionId: params.decisionId,
     envelope,
+    storage: params.storage,
   });
 }

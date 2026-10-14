@@ -88,6 +88,7 @@ export function applySceneOrgSavedSceneCollectionMutation(input: {
   readonly mutation: SceneOrgSavedSceneCollectionMutation;
   readonly persist?: PersistFn;
   readonly storage?: SceneOrgSavedSceneStorage | null;
+  readonly managerWorkspaceId?: string | null;
 }): SceneOrgSavedSceneMutationResult {
   const persist = input.persist ?? persistSceneOrgSavedScenes;
   const scenes = input.scenes;
@@ -103,6 +104,18 @@ export function applySceneOrgSavedSceneCollectionMutation(input: {
     });
   }
   const current = scenes[index]!;
+  if (
+    input.managerWorkspaceId != null &&
+    current.managerWorkspaceId !== input.managerWorkspaceId
+  ) {
+    return freezeResult({
+      kind: input.mutation.kind,
+      status: "not-found",
+      sceneId,
+      scenes,
+      scene: null,
+    });
+  }
 
   if (input.mutation.kind === "delete") {
     const next = scenes.filter((scene) => scene.sceneId !== sceneId);
@@ -141,6 +154,7 @@ export function applySceneOrgSavedSceneCollectionMutation(input: {
   const conflict = scenes.some(
     (scene) =>
       scene.sceneId !== sceneId &&
+      scene.managerWorkspaceId === current.managerWorkspaceId &&
       normalizeSavedSceneAccessName(scene.name) === normalized,
   );
   if (conflict) {

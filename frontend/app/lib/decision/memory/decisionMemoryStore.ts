@@ -1,10 +1,24 @@
+import { resolveManagerRecordWorkspaceId } from "../../workspace/liveManagerDataWorkspaceGuard.ts";
 import type { DecisionMemoryEntry } from "./decisionMemoryTypes";
 
 const DEFAULT_LIMIT = 30;
 const STORAGE_PREFIX = "nexora.decisionMemory.";
 
-function key(workspaceId?: string | null, projectId?: string | null) {
-  return `${STORAGE_PREFIX}${String(workspaceId || "default_workspace")}.${String(projectId || "default_project")}`;
+export type DecisionMemoryStorage = Pick<Storage, "getItem" | "setItem" | "key"> & { readonly length: number };
+
+function browserStorage(): DecisionMemoryStorage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function key(workspaceId?: string | null, projectId?: string | null): string | null {
+  const owner = resolveManagerRecordWorkspaceId(workspaceId);
+  if (!owner) return null;
+  return `${STORAGE_PREFIX}${owner}.${String(projectId || "default_project")}`;
 }
 
 function signature(entry: DecisionMemoryEntry) {
@@ -24,11 +38,13 @@ function signature(entry: DecisionMemoryEntry) {
 
 export function loadDecisionMemoryEntries(
   workspaceId?: string | null,
-  projectId?: string | null
+  projectId?: string | null,
+  storage: DecisionMemoryStorage | null = browserStorage(),
 ): DecisionMemoryEntry[] {
-  if (typeof window === "undefined") return [];
+  const storageKey = key(workspaceId, projectId);
+  if (!storage || !storageKey) return [];
   try {
-    const raw = window.localStorage.getItem(key(workspaceId, projectId));
+    const raw = storage.getItem(storageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -38,16 +54,18 @@ export function loadDecisionMemoryEntries(
 }
 
 export function loadOrgScopedDecisionMemoryEntries(
-  workspaceId?: string | null
+  workspaceId?: string | null,
+  storage: DecisionMemoryStorage | null = browserStorage(),
 ): DecisionMemoryEntry[] {
-  if (typeof window === "undefined") return [];
+  const owner = resolveManagerRecordWorkspaceId(workspaceId);
+  if (!storage || !owner) return [];
   try {
-    const scope = `${STORAGE_PREFIX}${String(workspaceId || "default_workspace")}.`;
+    const scope = `${STORAGE_PREFIX}${owner}.`;
     const collected: DecisionMemoryEntry[] = [];
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-      const storageKey = window.localStorage.key(index);
+    for (let index = 0; index < storage.length; index += 1) {
+      const storageKey = storage.key(index);
       if (!storageKey || !storageKey.startsWith(scope)) continue;
-      const raw = window.localStorage.getItem(storageKey);
+      const raw = storage.getItem(storageKey);
       if (!raw) continue;
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) continue;
@@ -65,12 +83,14 @@ export function loadOrgScopedDecisionMemoryEntries(
 export function saveDecisionMemoryEntries(
   workspaceId: string | null | undefined,
   projectId: string | null | undefined,
-  entries: DecisionMemoryEntry[]
+  entries: DecisionMemoryEntry[],
+  storage: DecisionMemoryStorage | null = browserStorage(),
 ) {
-  if (typeof window === "undefined") return entries;
+  const storageKey = key(workspaceId, projectId);
   const next = pruneDecisionMemoryEntries(entries);
+  if (!storage || !storageKey) return next;
   try {
-    window.localStorage.setItem(key(workspaceId, projectId), JSON.stringify(next));
+    storage.setItem(storageKey, JSON.stringify(next));
   } catch {
     return next;
   }
@@ -92,18 +112,31 @@ export function appendDecisionMemoryEntry(params: {
   entry: DecisionMemoryEntry | null;
   existing?: DecisionMemoryEntry[];
   limit?: number;
+  storage?: DecisionMemoryStorage | null;
 }): DecisionMemoryEntry[] {
+  const owner = resolveManagerRecordWorkspaceId(params.workspaceId);
   const entry = params.entry;
   const current =
-    params.existing ?? loadDecisionMemoryEntries(params.workspaceId, params.projectId);
+    params.existing ?? loadDecisionMemoryEntries(params.workspaceId, params.projectId, params.storage);
 
-  if (!entry) {
+  if (!entry || !owner) {
     return pruneDecisionMemoryEntries(current, params.limit ?? DEFAULT_LIMIT);
   }
+  const entryOwner = entry.workspace_id?.trim() ?? "";
+  if (
+    entryOwner &&
+    entryOwner !== "default_workspace" &&
+    entryOwner !== owner
+  ) {
+    return current;
+  }
+  const stamped = entryOwner && entryOwner !== "default_workspace"
+    ? entry
+    : { ...entry, workspace_id: owner };
 
-  const nextSignature = signature(entry);
+  const nextSignature = signature(stamped);
   const deduped = current.filter((candidate) => signature(candidate) !== nextSignature);
-  const next = pruneDecisionMemoryEntries([entry, ...deduped], params.limit ?? DEFAULT_LIMIT);
-  saveDecisionMemoryEntries(params.workspaceId, params.projectId, next);
+  const next = pruneDecisionMemoryEntries([stamped, ...deduped], params.limit ?? DEFAULT_LIMIT);
+  saveDecisionMemoryEntries(params.workspaceId, params.projectId, next, params.storage);
   return next;
 }

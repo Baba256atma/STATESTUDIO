@@ -6,6 +6,7 @@
  * provider payload or computes business meaning.
  */
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { legacyWorkflowKeyBlockedForActiveManager } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import type {
   NexoraLiveConnection,
   NexoraLivePreparedObservation,
@@ -260,6 +261,28 @@ export function enableAutomaticMonitoring(input: Readonly<{
   enabledAt: string;
 }>): NexoraAutomaticMonitoringPolicy {
   const existing = getAutomaticMonitoringPolicy(input.workspaceId, input.connectionId);
+  if (legacyWorkflowKeyBlockedForActiveManager(input.workspaceId)) {
+    return existing ?? Object.freeze({
+      policyId: `pm2:policy:${input.workspaceId}:${input.connectionId}`,
+      workspaceId: input.workspaceId,
+      connectionId: input.connectionId,
+      targetId: input.targetId,
+      enabled: false,
+      paused: false,
+      executionOwner: "foreground" as const,
+      observationMode: "manual" as const,
+      frequency: input.frequency,
+      createdAt: input.enabledAt,
+      updatedAt: input.enabledAt,
+      lastScheduledAt: null,
+      nextEligibleAt: null,
+      provenance: Object.freeze({
+        createdBy: "manager" as const,
+        runtimeBoundary: automaticMonitoringRuntimeIdentity,
+        persistence: automaticMonitoringRuntimeModel,
+      }),
+    });
+  }
   const policy = Object.freeze({
     policyId: existing?.policyId ?? `pm2:policy:${input.workspaceId}:${input.connectionId}`,
     workspaceId: input.workspaceId,

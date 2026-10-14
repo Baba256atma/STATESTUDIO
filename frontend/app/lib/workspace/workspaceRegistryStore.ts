@@ -3,6 +3,7 @@ import {
   DEMO_WORKSPACE,
   DEMO_WORKSPACE_ID,
   WORKSPACE_REGISTRY_VERSION,
+  isLegacyWorkflowWorkspaceIdentifier,
   isWorkspace,
   normalizeWorkspaceId,
   type Workspace,
@@ -42,10 +43,85 @@ function freezeWorkspaceRegistrySnapshot(input: {
   });
 }
 
+export const MANAGER_WORKSPACE_REGISTRY_STORAGE_KEY = "nexora.workspace.registry.v1";
+
 function emitWorkspaceRegistryChange(): void {
   for (const listener of workspaceRegistryListeners) {
     listener();
   }
+}
+
+function registryStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function persistWorkspaceRegistrySnapshot(): void {
+  const storage = registryStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(MANAGER_WORKSPACE_REGISTRY_STORAGE_KEY, JSON.stringify(registrySnapshot));
+  } catch {
+    // The in-memory registry remains authoritative when storage is unavailable.
+  }
+}
+
+function snapshotFromStorage(raw: string): WorkspaceRegistrySnapshot | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+  const candidate = parsed as Partial<WorkspaceRegistrySnapshot>;
+  if (candidate.version !== WORKSPACE_REGISTRY_VERSION) return null;
+  if (!candidate.workspaces || typeof candidate.workspaces !== "object") return null;
+  if (!Array.isArray(candidate.workspaceOrder)) return null;
+  const workspaces: Record<WorkspaceId, Workspace> = {};
+  for (const workspaceId of candidate.workspaceOrder) {
+    if (typeof workspaceId !== "string" || isLegacyWorkflowWorkspaceIdentifier(workspaceId)) return null;
+    const workspace = (candidate.workspaces as Record<string, unknown>)[workspaceId];
+    if (!isWorkspace(workspace) || workspace.workspaceId !== workspaceId) return null;
+    workspaces[workspaceId] = Object.freeze({ ...workspace });
+  }
+  if (!workspaces[DEMO_WORKSPACE_ID] || workspaces[DEMO_WORKSPACE_ID].kind != null) return null;
+  const activeWorkspaceId =
+    typeof candidate.activeWorkspaceId === "string" ? candidate.activeWorkspaceId : null;
+  if (
+    activeWorkspaceId == null ||
+    isLegacyWorkflowWorkspaceIdentifier(activeWorkspaceId) ||
+    workspaces[activeWorkspaceId]?.status !== "active"
+  ) {
+    return null;
+  }
+  return freezeWorkspaceRegistrySnapshot({
+    workspaces,
+    workspaceOrder: candidate.workspaceOrder.filter((workspaceId): workspaceId is WorkspaceId =>
+      typeof workspaceId === "string" && Boolean(workspaces[workspaceId]),
+    ),
+    activeWorkspaceId,
+  });
+}
+
+/**
+ * Restores the existing registry snapshot after a supported reload.
+ * The in-memory registry remains the only authority after recovery.
+ */
+export function recoverWorkspaceRegistryFromStorage(): WorkspaceRegistrySnapshot {
+  initializeWorkspaceRegistry();
+  const storage = registryStorage();
+  const raw = storage?.getItem(MANAGER_WORKSPACE_REGISTRY_STORAGE_KEY) ?? null;
+  if (!raw) return registrySnapshot;
+  const recovered = snapshotFromStorage(raw);
+  if (!recovered) return registrySnapshot;
+  registrySnapshot = recovered;
+  emitWorkspaceRegistryChange();
+  return registrySnapshot;
 }
 
 function logWorkspaceRegistryDiagnostic(label: string, payload?: unknown): void {
@@ -185,7 +261,13 @@ export function reduceWorkspaceRegistryMutation(
   switch (mutation.type) {
     case "setActiveWorkspace": {
       const workspaceId = normalizeWorkspaceId(mutation.workspaceId);
-      if (!workspaceId || snapshot.workspaces[workspaceId]?.status !== "active") return snapshot;
+      if (
+        !workspaceId ||
+        isLegacyWorkflowWorkspaceIdentifier(workspaceId) ||
+        snapshot.workspaces[workspaceId]?.status !== "active"
+      ) {
+        return snapshot;
+      }
       if (snapshot.activeWorkspaceId === workspaceId) return snapshot;
       const activeWorkspace = snapshot.workspaces[workspaceId];
       const workspaces = {
@@ -203,6 +285,7 @@ export function reduceWorkspaceRegistryMutation(
     }
     case "upsertWorkspace": {
       if (!isWorkspace(mutation.workspace)) return snapshot;
+      if (isLegacyWorkflowWorkspaceIdentifier(mutation.workspace.workspaceId)) return snapshot;
       const exists = Boolean(snapshot.workspaces[mutation.workspace.workspaceId]);
       const workspaces = {
         ...snapshot.workspaces,
@@ -299,6 +382,7 @@ export function dispatchWorkspaceRegistryMutation(mutation: WorkspaceRegistryMut
   });
   logWorkspaceRegistryDiagnostic("[ActiveWorkspace][Resolved]", getActiveWorkspace());
   emitWorkspaceRegistryChange();
+  persistWorkspaceRegistrySnapshot();
   return registrySnapshot;
 }
 
@@ -413,4 +497,9 @@ export function resetWorkspaceRegistryForTests(): void {
   registryInitialized = false;
   registrySnapshot = createInitialWorkspaceRegistrySnapshot();
   workspaceRegistryListeners.clear();
+  try {
+    registryStorage()?.removeItem(MANAGER_WORKSPACE_REGISTRY_STORAGE_KEY);
+  } catch {
+    // Test isolation still resets the in-memory registry.
+  }
 }

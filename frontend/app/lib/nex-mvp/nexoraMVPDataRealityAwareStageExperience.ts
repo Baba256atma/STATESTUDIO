@@ -37,6 +37,17 @@ import {
   type NexoraMvpEffectiveManagementState,
 } from "@/app/lib/nex-mvp/nexoraMvpLiveAttentionTruth.ts";
 
+const EMPTY_UNOWNED_MANAGER_DATASET: NexoraDataset = Object.freeze({
+  id: "nexora.manager-workspace.unowned-empty",
+  name: "Empty unowned manager composition",
+  version: "0",
+  capturedAt: "1970-01-01T00:00:00.000Z",
+  source: "manual",
+  familyId: "nexora.manager-workspace",
+  scenario: "baseline",
+  records: Object.freeze([]),
+});
+
 export const nexoraMVPDataRealityAwareStageExperienceIdentity =
   "NEX-MVP/P2:3/DataRealityAwareStageExperienceConsumer" as const;
 
@@ -62,6 +73,11 @@ export type ResolveNexoraMVPDataRealityAwareStageExperienceInput = {
   readonly presentationState?: string;
   readonly requestedIntent?: "investigate" | "observe" | "explain" | "prioritize" | "recommend";
   readonly baseCatalog?: NexoraMVPObjectInteractionCatalog;
+  /**
+   * Real Manager Workspace. Omits the unowned executive-operations demo dataset
+   * unless the caller supplies a validated dataset.
+   */
+  readonly suppressUnownedDemoDataset?: boolean;
 };
 
 export type NexoraMVPDataRealityAwareStageExperienceResult = {
@@ -202,9 +218,11 @@ export function resolveNexoraMVPDataRealityAwareStageExperience(
   const baseCatalog =
     input.baseCatalog ?? getDefaultNexoraMVPObjectInteractionCatalog();
   const dataset = input.dataset ?? (
-    scenario === "operational-pressure"
-      ? getExecutiveOperationsPressureDataset()
-      : getExecutiveOperationsDemoDataset()
+    input.suppressUnownedDemoDataset
+      ? EMPTY_UNOWNED_MANAGER_DATASET
+      : scenario === "operational-pressure"
+        ? getExecutiveOperationsPressureDataset()
+        : getExecutiveOperationsDemoDataset()
   );
 
   const selectedObjectIds =

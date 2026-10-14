@@ -118,7 +118,10 @@ export type NexoraConversationalResolvedSubject = {
 export type NexoraConversationContextSnapshot = {
   readonly currentSubjectId?: string | null;
   readonly previousSubjectIds?: readonly string[];
+  /** NEX-MVP dial position. */
   readonly currentWorkspaceId?: string | null;
+  /** Canonical Manager Workspace. Independent of currentWorkspaceId. */
+  readonly managerWorkspaceId?: string | null;
   readonly currentModelId?: string | null;
   /** CC:7 presented candidate set (ordinal resolution). */
   readonly presentedSubjectIds?: readonly string[];

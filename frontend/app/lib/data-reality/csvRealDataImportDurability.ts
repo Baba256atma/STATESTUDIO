@@ -2,6 +2,7 @@
  * DATA-UX:6 — IndexedDB snapshot backing for csvRealDataImportStore.
  * Not a second source lifecycle. Restore hydrates; it does not commit.
  */
+import { applyCsvLegacyIdentityMigration } from "../workspace/legacyWorkspaceIdentityMigration.ts";
 import {
   clearCsvRealDataImportStore,
   exportCsvRealDataImportState,
@@ -248,9 +249,14 @@ export async function recoverCsvRealDataImportDurability(
     setHealth("durable", null);
     return report;
   }
-  hydrateCsvRealDataImportState(report.snapshot);
+  const migrated = applyCsvLegacyIdentityMigration(report.snapshot);
+  hydrateCsvRealDataImportState(migrated.state);
   setHealth("durable", null);
-  return report;
+  if (!migrated.changed) return report;
+  return Object.freeze({
+    ...report,
+    snapshot: migrated.state,
+  });
 }
 
 export async function clearCsvRealDataImportDurability(storage: CsvDurabilityStorage): Promise<void> {

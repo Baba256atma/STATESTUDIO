@@ -6,6 +6,8 @@
  */
 
 import type { DataRealityAwareAdvisorBindingResult } from "../data-reality/dataRealityAwareAdvisorExperienceBinding.ts";
+import { readLiveExecutiveDataWorkspaceId } from "../workspace/managerWorkspaceIdentity.ts";
+import { isRealManagerWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import type { NexoraProfessionalAdvisorNarrative } from "./nexoraMVPProfessionalAdvisorPresentation.ts";
 import {
   NEXORA_MVP_CONTEXT_LINK_FIXTURES,
@@ -356,6 +358,9 @@ function resolveLivePriorityScope(input: {
 }
 
 export function collectNexoraLivePrioritySources(): readonly ExecutivePriorityCandidateSource[] {
+  if (isRealManagerWorkspaceId(readLiveExecutiveDataWorkspaceId())) {
+    return Object.freeze([]);
+  }
   const catalog = [
     ...NEXORA_MVP_CONTEXT_SUBJECT_FIXTURES,
     ...NEXORA_MVP_STAGE_OBJECT_FIXTURES,

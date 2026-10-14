@@ -4,6 +4,40 @@ export type WorkspaceStatus = "active" | "archived";
 
 export type WorkspaceId = string;
 
+/**
+ * Manager-owned working boundary. Distinct from BCA/NMI business-project truth,
+ * which still models what the business or project is inside this boundary.
+ */
+export type ManagerWorkspaceKind = "BUSINESS" | "PROJECT";
+
+/**
+ * Cockpit workflow modes. They are navigation states inside a workspace.
+ * They must not be stored as canonical manager workspace ids.
+ */
+export const LEGACY_WORKFLOW_WORKSPACE_IDENTIFIERS = Object.freeze([
+  "overview",
+  "problem",
+  "scenario",
+  "decision",
+  "execution",
+] as const);
+
+export type LegacyWorkflowWorkspaceIdentifier =
+  (typeof LEGACY_WORKFLOW_WORKSPACE_IDENTIFIERS)[number];
+
+export function isLegacyWorkflowWorkspaceIdentifier(
+  value: unknown,
+): value is LegacyWorkflowWorkspaceIdentifier {
+  return (
+    typeof value === "string" &&
+    (LEGACY_WORKFLOW_WORKSPACE_IDENTIFIERS as readonly string[]).includes(value)
+  );
+}
+
+export function isManagerWorkspaceKind(value: unknown): value is ManagerWorkspaceKind {
+  return value === "BUSINESS" || value === "PROJECT";
+}
+
 export type Workspace = Readonly<{
   workspaceId: WorkspaceId;
   workspaceName: string;
@@ -14,6 +48,8 @@ export type Workspace = Readonly<{
   domain?: string | null;
   objectCount?: number | null;
   dataSourceCount?: number | null;
+  /** Present only for a real manager workspace. Demo and unclassified records omit it. */
+  kind?: ManagerWorkspaceKind;
   metadata?: Readonly<Record<string, unknown>>;
 }>;
 
@@ -68,6 +104,8 @@ export function isWorkspace(value: unknown): value is Workspace {
     (candidate.status === "active" || candidate.status === "archived") &&
     typeof candidate.createdAt === "string" &&
     typeof candidate.updatedAt === "string" &&
-    typeof candidate.lastOpenedAt === "string"
+    typeof candidate.lastOpenedAt === "string" &&
+    (candidate.kind === undefined || isManagerWorkspaceKind(candidate.kind)) &&
+    !isLegacyWorkflowWorkspaceIdentifier(candidate.workspaceId)
   );
 }

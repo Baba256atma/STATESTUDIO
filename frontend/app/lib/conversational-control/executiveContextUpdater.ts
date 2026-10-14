@@ -42,6 +42,8 @@ export type NexoraExecutiveContextUpdateInput = {
   readonly runtimeFocusedSubjectKind?: NexoraConversationalSubjectKind | null;
   readonly runtimeFocusedCanonicalName?: string | null;
   readonly runtimeWorkspaceId?: string | null;
+  /** Canonical Manager Workspace. Never copied from runtimeWorkspaceId. */
+  readonly managerWorkspaceId?: string | null;
   readonly runtimeModelId?: string | null;
   /** Trusted presented set from Runtime/catalog projection (optional). */
   readonly presentedSet?: NexoraPresentedExecutiveSet | null;
@@ -238,6 +240,10 @@ export function updateNexoraExecutiveContext(
   let draft: NexoraExecutiveContextSnapshot = {
     ...previous,
     turnIndex: nextTurn,
+    managerWorkspaceId:
+      input.managerWorkspaceId !== undefined
+        ? input.managerWorkspaceId
+        : previous.managerWorkspaceId ?? null,
   };
 
   // Scope sync from applied Runtime workspace/model.

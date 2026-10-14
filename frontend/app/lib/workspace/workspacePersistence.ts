@@ -66,6 +66,28 @@ export const DEFAULT_WORKSPACE_ID = "default_workspace";
 export const DEFAULT_PROJECT_ID = "default";
 const LEGACY_WORKSPACE_STORE_KEY = "nexora.workspace.v1";
 
+/**
+ * nexora.workspace.v1 is an unused scene/chat/intelligence blob.
+ * The Home screen persists a later project snapshot under nexora.workspace.state.v1
+ * and reads Manager Workspace identity from workspaceRegistryStore.
+ */
+export const LEGACY_WORKSPACE_V1_CONTAINER = Object.freeze({
+  storageKey: LEGACY_WORKSPACE_STORE_KEY,
+  defaultId: DEFAULT_WORKSPACE_ID,
+  classification: "OBSOLETE_CONTAINER" as const,
+  selectsManagerWorkspace: false as const,
+  overridesActiveWorkspaceId: false as const,
+  redirectsDataReality: false as const,
+  redirectsMonitoring: false as const,
+  redirectsLearning: false as const,
+  changesConversationManagerWorkspaceId: false as const,
+  managerAuthority: "workspaceRegistryStore.getActiveWorkspaceId" as const,
+});
+
+export function legacyWorkspaceContainerCanSelectManagerWorkspace(): false {
+  return false;
+}
+
 function readRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)

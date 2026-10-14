@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type {
   ExecutiveContextSnapshot,
   ExecutiveThemeMode,
@@ -10,6 +11,8 @@ type Props = {
   /** UX:1 — manager-first labels and secondary Display disclosure. */
   readonly compact?: boolean;
   readonly onHelp?: () => void;
+  /** Active Company or Project. Workflow mode stays on the executive dial. */
+  readonly managerWorkspace?: ReactNode;
 };
 
 function Chip({
@@ -85,6 +88,7 @@ export function ExecutiveContextBar({
   onThemeChange,
   compact = false,
   onHelp,
+  managerWorkspace,
 }: Props) {
   return (
     <header
@@ -139,6 +143,21 @@ export function ExecutiveContextBar({
         </span>
       </div>
 
+      {managerWorkspace ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            paddingRight: "1rem",
+            borderRight: `1px solid ${cockpit.border}`,
+            flexShrink: 0,
+            minWidth: 0,
+          }}
+        >
+          {managerWorkspace}
+        </div>
+      ) : null}
+
       <div
         style={{
           display: "flex",
@@ -149,9 +168,9 @@ export function ExecutiveContextBar({
           overflow: "hidden",
         }}
       >
-        <Chip label="Company" value={context.company} />
+        {managerWorkspace ? null : <Chip label="Company" value={context.company} />}
         <Chip
-          label={compact ? "Workspace" : "Model"}
+          label={compact ? "Mode" : "Model"}
           value={compact ? context.pack : context.model}
         />
         {compact ? null : <Chip label="Pack" value={context.pack} accent />}

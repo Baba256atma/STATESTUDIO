@@ -517,6 +517,16 @@ export function getDefaultNexoraMVPObjectInteractionCatalog(): NexoraMVPObjectIn
   });
 }
 
+/** Real Manager Workspace stage composition. Demo fixtures are not copied in. */
+export function createEmptyNexoraMVPObjectInteractionCatalog(): NexoraMVPObjectInteractionCatalog {
+  return Object.freeze({
+    objects: Object.freeze([]),
+    relationships: Object.freeze([]),
+    contextSubjects: Object.freeze([]),
+    contextLinks: Object.freeze([]),
+  });
+}
+
 export function createInitialNexoraMVPObjectInteractionState(input: {
   readonly workspace: NexoraMVPWorkspaceKind;
   readonly presentationState: NexoraMVPPresentationState;

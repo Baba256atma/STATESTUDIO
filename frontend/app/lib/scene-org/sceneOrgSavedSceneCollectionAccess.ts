@@ -5,7 +5,10 @@
  * Does not persist, restore business truth, or own OPEN_SCENE restoration.
  */
 
-import type { SceneOrgSavedScene } from "./sceneOrgWorkspacePlacementContract";
+import {
+  savedSceneManagerWorkspaceId,
+  type SceneOrgSavedScene,
+} from "./sceneOrgWorkspacePlacementContract";
 
 export const sceneOrgSavedSceneCollectionAccessIdentity =
   "NPA-T SAVED-SCENE-COLLECTION-ACCESS:1/HydratedCollectionResolution" as const;
@@ -144,6 +147,38 @@ export function extractSavedSceneOpenRequest(
     explicitScene: /\bscene\b/.test(normalized),
     defaultRequested: false,
   });
+}
+
+/** Scenes owned by one canonical Manager Workspace. Unassigned and other owners stay out. */
+export function listSceneOrgSavedScenesForManagerWorkspace(
+  scenes: readonly SceneOrgSavedScene[],
+  managerWorkspaceId: string,
+): readonly SceneOrgSavedScene[] {
+  const owner = savedSceneManagerWorkspaceId(managerWorkspaceId);
+  if (!owner) return Object.freeze([]);
+  return Object.freeze(scenes.filter((scene) => scene.managerWorkspaceId === owner));
+}
+
+export type SceneOrgSavedSceneOpenAssessment = Readonly<{
+  status: "allowed" | "mismatch" | "unassigned" | "not-found";
+  scene: SceneOrgSavedScene | null;
+}>;
+
+/** A Scene opens only for its owning Manager Workspace. */
+export function assessSceneOrgSavedSceneOpen(
+  scenes: readonly SceneOrgSavedScene[],
+  sceneId: string | null | undefined,
+  activeManagerWorkspaceId: string,
+): SceneOrgSavedSceneOpenAssessment {
+  const id = sceneId?.trim() ?? "";
+  const scene = id ? scenes.find((candidate) => candidate.sceneId === id) ?? null : null;
+  if (!scene) return Object.freeze({ status: "not-found", scene: null });
+  const active = savedSceneManagerWorkspaceId(activeManagerWorkspaceId);
+  if (!scene.managerWorkspaceId) return Object.freeze({ status: "unassigned", scene });
+  if (!active || scene.managerWorkspaceId !== active) {
+    return Object.freeze({ status: "mismatch", scene });
+  }
+  return Object.freeze({ status: "allowed", scene });
 }
 
 export function resolveSceneOrgSavedSceneAccess(
