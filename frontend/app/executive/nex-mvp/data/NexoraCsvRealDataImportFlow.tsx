@@ -41,7 +41,10 @@ import {
   csvUncertainMeaningCopy,
   csvUnconfirmedMappings,
 } from "./nexoraDataRailPresentation.ts";
-import type { WorkspaceId } from "../../../lib/workspace/workspaceRegistryContract.ts";
+import { acceptHostedPendingCsv, discardHostedPendingReview, uploadHostedPendingCsv } from "../../../lib/workspace-auth/hostedManagerDataClient.ts";
+import { refuseCrossWorkspaceCsvTarget } from "../../../lib/workspace/liveManagerDataWorkspaceGuard.ts";
+import { DEMO_WORKSPACE_ID, type WorkspaceId } from "../../../lib/workspace/workspaceRegistryContract.ts";
+import { getWorkspaceById } from "../../../lib/workspace/workspaceRegistryStore.ts";
 import { cockpit } from "../../exs1/shell/executiveCockpitTheme.ts";
 
 const operationalVisualColors = Object.freeze({
@@ -117,6 +120,7 @@ export type CsvRealDataImportFlowProps = Readonly<{
   ) => void;
   onSemanticClarificationCancel?: (sourceContextId: string) => void;
   awaitingClarificationFieldId?: string | null;
+  serverOwned?: boolean;
 }>;
 
 export function matchesCsvReplacementIdentity(source: CsvCommittedImport, fileName: string): boolean {
@@ -230,6 +234,7 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
   React.useEffect(() => { flowRef.current = flow; }, [flow]);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const pendingFileRef = React.useRef<File | null>(null);
+  const hostedPendingIdRef = React.useRef<string | null>(null);
   const persistedIdRef = React.useRef<string | null>(props.initialCandidate?.candidateId ?? null);
   const [cancelArmed, setCancelArmed] = React.useState(false);
   const [editingColumn, setEditingColumn] = React.useState<number | null>(null);
@@ -237,6 +242,7 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
   const replacement = props.replacementSource ?? localReplacement;
 
   const persist = React.useCallback((next: FlowModel) => {
+    if (props.serverOwned) return;
     if (!next.input || next.status === "idle" || next.status === "completed") return;
     const candidateId = replacement?.sourceContextId ?? csvImportCandidateId(props.workspaceId, next.input.fileName);
     const result = saveCsvImportCandidate(Object.freeze({
@@ -252,11 +258,16 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
       replacementSourceContextId: replacement?.sourceContextId ?? null,
     }), { replaceCandidateId: persistedIdRef.current ?? candidateId });
     if (!result.saved) {
-      dispatch({ type: "error", message: "A pending source with this filename already exists." });
+      dispatch({
+        type: "error",
+        message: result.reason === "pending_duplicate"
+          ? "A pending source with this filename already exists."
+          : "This file was not added. Open the workspace that should own it, then try again.",
+      });
       return;
     }
     persistedIdRef.current = candidateId;
-  }, [props.workspaceId, replacement?.sourceContextId]);
+  }, [props.serverOwned, props.workspaceId, replacement?.sourceContextId]);
 
   React.useEffect(() => {
     persist(flow);
@@ -264,8 +275,54 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
 
   const receiveFile = React.useCallback(async (file: File | null, adopted?: CsvCommittedImport | null) => {
     if (!file) return;
+    if (refuseCrossWorkspaceCsvTarget(props.workspaceId)) {
+      dispatch({ type: "error", message: "This file was not added. Open the workspace that should own it, then try again." });
+      return;
+    }
     if (!/\.csv$/i.test(file.name)) {
       dispatch({ type: "error", message: "Choose a .csv file. RDI:2 does not accept spreadsheets or JSON." });
+      return;
+    }
+    if (props.serverOwned) {
+      dispatch({ type: "parsing" });
+      try {
+        const previousPendingId = hostedPendingIdRef.current;
+        if (previousPendingId) {
+          hostedPendingIdRef.current = null;
+          await discardHostedPendingReview(props.workspaceId, previousPendingId).catch(() => undefined);
+        }
+        const csvText = await file.text();
+        const review = await uploadHostedPendingCsv(props.workspaceId, file.name, csvText);
+        hostedPendingIdRef.current = review.pendingId;
+        const importedAt = new Date().toISOString();
+        dispatch({
+          type: "selected",
+          input: Object.freeze({
+            workspaceId: props.workspaceId,
+            fileName: file.name,
+            fileSize: file.size,
+            csvText,
+            importId: review.prepared.importId,
+            importedAt,
+          }),
+        });
+        dispatch({ type: "parsed", parse: review.prepared.parse, mapping: review.prepared.mapping });
+        dispatch({ type: "prepared", prepared: review.prepared });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "invalid_csv";
+        dispatch({
+          type: "error",
+          message: code === "csv_too_large"
+            ? "That CSV is larger than the 2 MB limit."
+            : code === "row_limit_exceeded"
+              ? "That CSV has more rows than this workspace can accept."
+              : code === "column_limit_exceeded"
+                ? "That CSV has more columns than this workspace can accept."
+                : code === "field_limit_exceeded"
+                  ? "A field in that CSV is too long."
+                  : "This CSV could not be accepted.",
+        });
+      }
       return;
     }
     const activeReplacement = adopted ?? replacement;
@@ -307,7 +364,7 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
       previousMapping: props.replacementSource?.prepared.mapping ?? activeReplacement?.prepared.mapping ?? (currentId === candidateId ? flowRef.current.mapping : null),
     });
     dispatch({ type: "parsed", parse, mapping });
-  }, [props.workspaceId, props.replacementSource, replacement]);
+  }, [props.serverOwned, props.workspaceId, props.replacementSource, replacement]);
 
   const handleFile = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -358,7 +415,30 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
 
   const commit = React.useCallback((replace: boolean) => {
     if (!flow.prepared) return;
+    if (refuseCrossWorkspaceCsvTarget(props.workspaceId) || flow.prepared.workspaceId !== props.workspaceId) {
+      dispatch({ type: "error", message: "This file was not added. Open the workspace that should own it, then try again." });
+      return;
+    }
     dispatch({ type: "importing" });
+    if (props.serverOwned) {
+      const pendingId = hostedPendingIdRef.current;
+      if (!pendingId || !flow.mapping) {
+        dispatch({ type: "error", message: "Import was not committed; previous Runtime truth is unchanged." });
+        return;
+      }
+      void acceptHostedPendingCsv(props.workspaceId, pendingId, flow.mapping).then(() => {
+        const current = getCsvRealDataImport(props.workspaceId, flow.prepared?.sourceContextId ?? "");
+        if (!current) {
+          dispatch({ type: "error", message: "Import was not committed; previous Runtime truth is unchanged." });
+          return;
+        }
+        dispatch({ type: "completed", commit: { committed: true, reason: "committed", previous: null, current } });
+        props.onCompleted?.(current);
+      }).catch(() => {
+        dispatch({ type: "error", message: "Import was not committed; previous Runtime truth is unchanged." });
+      });
+      return;
+    }
     const result = commitPreparedCsvRealDataImport({
       prepared: flow.prepared,
       expectedWorkspaceId: props.workspaceId,
@@ -371,7 +451,7 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
     }
     dispatch({ type: "completed", commit: result });
     if (result.current) props.onCompleted?.(result.current);
-  }, [flow.prepared, props]);
+  }, [flow.mapping, flow.prepared, props]);
 
   const existing = flow.prepared ? getCsvRealDataImport(props.workspaceId, flow.prepared.sourceContextId) : null;
   const showReview = Boolean(flow.parse && flow.mapping && flow.status !== "idle" && flow.status !== "file-selected");
@@ -394,6 +474,11 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
     }
     const candidateId = replacement?.sourceContextId
       ?? (flowRef.current.input ? csvImportCandidateId(props.workspaceId, flowRef.current.input.fileName) : null);
+    const pendingId = hostedPendingIdRef.current;
+    if (props.serverOwned && pendingId) {
+      hostedPendingIdRef.current = null;
+      void discardHostedPendingReview(props.workspaceId, pendingId).catch(() => undefined);
+    }
     cancelOpenClarification();
     if (candidateId) discardCsvImportCandidate(props.workspaceId, candidateId);
     persistedIdRef.current = null;
@@ -402,6 +487,15 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
     props.onCancelled?.();
     props.onClose();
   }, [cancelArmed, cancelOpenClarification, managerWork, props, replacement?.sourceContextId]);
+
+  if (props.workspaceId === DEMO_WORKSPACE_ID) {
+    return (
+      <p data-testid="demo-csv-upload-unavailable" style={{ ...operationalCardDetailStyle(), margin: 0 }}>
+        This demo uses Nexora example data. Personal CSV files are not added here.
+      </p>
+    );
+  }
+  const destinationName = getWorkspaceById(props.workspaceId)?.workspaceName ?? "this workspace";
 
   return (
     <section data-nx="rdi2-csv-import-flow" data-rdi2-state={flow.status} data-rdi2-action={replacement ? "replace" : "new"} data-csv-intake={props.intakeMode ?? (replacement ? "update" : flow.input ? "resume" : "new")} aria-label="Upload CSV" style={{ ...operationalCardStyle(flow.status === "error" ? "warning" : "accent"), display: "grid", width: "100%", minWidth: 0, boxSizing: "border-box", overflow: "hidden", gap: operationalVisualSpacing.sectionGap }}>
@@ -422,8 +516,8 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
           onDrop={handleDrop}
           style={{ border: `1px dashed ${operationalVisualColors.accent}`, borderRadius: 4, padding: 22, textAlign: "center", background: "rgba(56, 189, 248, 0.04)" }}
         >
-          <p style={{ ...operationalCardDetailStyle(), marginTop: 0 }}>Choose or drop a CSV. The file stays local.</p>
-          <button type="button" data-testid="nexora-csv-choose-file" style={actionStyle(true)} onClick={() => inputRef.current?.click()}>Choose CSV</button>
+          <p data-testid="manager-csv-destination" style={{ ...operationalCardDetailStyle(), marginTop: 0 }}>Add data to {destinationName}</p>
+          <button type="button" data-testid="nexora-csv-choose-file" style={actionStyle(true)} onClick={() => inputRef.current?.click()}>Choose CSV file</button>
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: 10, border: `1px solid ${operationalVisualColors.border}`, borderRadius: 4 }}>

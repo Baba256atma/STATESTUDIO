@@ -173,6 +173,8 @@ test("I6 I7 — one registry authority and NMI/BCA stay in place", () => {
 });
 
 function commitInventory(workspaceId: string, fileName: string, csvText: string) {
+  const previous = getActiveWorkspaceId();
+  setActiveWorkspace(workspaceId);
   const prepared = prepareCsvRealDataImport({
     workspaceId,
     fileName,
@@ -190,5 +192,6 @@ function commitInventory(workspaceId: string, fileName: string, csvText: string)
   });
   assert.equal(result.committed, true, result.reason);
   assert.ok(result.current);
+  if (previous && previous !== workspaceId) setActiveWorkspace(previous);
   return result.current;
 }

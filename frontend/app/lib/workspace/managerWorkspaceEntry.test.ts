@@ -172,7 +172,7 @@ test("distinguishes Nexora Demo from a Company or Project", () => {
   assert.notEqual(view.active.typeLabel, "Business");
   assert.notEqual(view.active.typeLabel, "Project");
   const html = renderToStaticMarkup(React.createElement(NexoraManagerWorkspaceControl));
-  assert.match(html, /Create a Company or Project/);
+  assert.match(html, /Try Nexora/);
 });
 
 test("switching from demo to a real workspace contains product fixtures", () => {

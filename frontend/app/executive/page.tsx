@@ -11,6 +11,12 @@
  */
 
 import type { Metadata } from "next";
+import { selectNexoraAuthProvider } from "@/app/lib/auth/nexoraAuthProviders";
+import { readNexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode";
+import { ANONYMOUS_NEXORA_SESSION } from "@/app/lib/auth/nexoraPrincipal";
+import { readNexoraClientSession } from "@/app/lib/auth/nexoraPrincipalServer";
+import { listOwnedHostedWorkspaces } from "@/app/lib/workspace-auth/hostedWorkspaceCommands";
+import { projectHostedWorkspace, type HostedWorkspaceProjection } from "@/app/lib/workspace-auth/hostedWorkspaceRecord";
 import { ExecutiveShell } from "./components/ExecutiveShell";
 import { parseNexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
 
@@ -30,6 +36,7 @@ export default async function ExecutivePage({
     dataset?: string | string[];
     entrance?: string | string[];
     reset?: string | string[];
+    error?: string | string[];
   }>;
 }) {
   const params = await searchParams;
@@ -42,6 +49,24 @@ export default async function ExecutivePage({
   const entranceRequested =
     entranceRaw === "1" || entranceRaw === "true" || entranceRaw === "first-time";
   const resetEntrance = resetRaw === "1" || resetRaw === "true";
+  const deploymentMode = readNexoraDeploymentMode();
+  const session = deploymentMode === "hosted"
+    ? await readNexoraClientSession()
+    : ANONYMOUS_NEXORA_SESSION;
+  const authProvider = deploymentMode === "hosted"
+    ? selectNexoraAuthProvider(process.env, process.env.NODE_ENV)
+    : "none";
+  const errorRaw = Array.isArray(params.error) ? params.error[0] : params.error;
+  const authError = deploymentMode === "hosted" && errorRaw
+    ? "Sign-in failed. No session was created."
+    : null;
+  let hostedWorkspaces: readonly HostedWorkspaceProjection[] = [];
+  let hostedWorkspaceStatus: "ready" | "unavailable" = "ready";
+  if (deploymentMode === "hosted" && session.authenticated && session.userId) {
+    const listed = await listOwnedHostedWorkspaces({ userId: session.userId });
+    if (listed.ok) hostedWorkspaces = listed.value.map(projectHostedWorkspace);
+    else hostedWorkspaceStatus = "unavailable";
+  }
 
   return (
     <main
@@ -65,6 +90,12 @@ export default async function ExecutivePage({
         datasetScenario={datasetScenario}
         entranceRequested={entranceRequested}
         resetEntrance={resetEntrance}
+        deploymentMode={deploymentMode}
+        session={session}
+        authProvider={authProvider}
+        authError={authError}
+        hostedWorkspaces={hostedWorkspaces}
+        hostedWorkspaceStatus={hostedWorkspaceStatus}
       />
     </main>
   );

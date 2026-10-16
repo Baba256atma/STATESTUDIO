@@ -10,9 +10,12 @@
 import type { NexoraKPIResult } from "../data-reality/dataRealityContracts.ts";
 import {
   listAllCsvRealDataImports,
+  listCsvRealDataImports,
   subscribeCsvRealDataImports,
   type CsvCommittedImport,
 } from "../data-reality/csvRealDataImportStore.ts";
+import { isRealManagerWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
+import { readLiveExecutiveDataWorkspaceId } from "../workspace/managerWorkspaceIdentity.ts";
 import { EXECUTIVE_OPERATIONS_OBJECT_IDENTITY_MAP } from "../data-reality/demo/executiveOperationsObjectBindings.ts";
 import type { NexoraLiveCommittedObservation } from "../data-reality/liveDataConnectorFoundation.ts";
 import {
@@ -60,6 +63,12 @@ const ingestedCsvKeys = new Set<string>();
 
 function contextKey(context: PostDecisionCaptureContext): string {
   return context.executionId ?? context.decisionId ?? context.subjectId ?? "unscoped";
+}
+
+function listCsvImportsForOutcomeCapture(): readonly CsvCommittedImport[] {
+  const live = readLiveExecutiveDataWorkspaceId();
+  if (isRealManagerWorkspaceId(live)) return listCsvRealDataImports(live);
+  return listAllCsvRealDataImports().filter((entry) => !isRealManagerWorkspaceId(entry.workspaceId));
 }
 
 function allContexts(): readonly PostDecisionCaptureContext[] {
@@ -190,7 +199,7 @@ function resolvePreExecutionBaseline(input: {
       best = { observationId: captured.observationId, measuredAt };
     }
   };
-  for (const committed of listAllCsvRealDataImports()) {
+  for (const committed of listCsvImportsForOutcomeCapture()) {
     const observedAt = committed.prepared.handoff?.dataset.capturedAt ?? committed.committedAt;
     const datasetId = committed.prepared.handoff?.dataset.id ?? committed.importId;
     const provenance = Object.freeze([committed.sourceContextId, committed.importId, committed.committedAt]);
@@ -306,7 +315,7 @@ function ingestCsvCommitted(committed: CsvCommittedImport): void {
 
 function onCsvDataRealityPublish(): void {
   if (allContexts().length === 0) return;
-  const latest = listAllCsvRealDataImports().at(-1);
+  const latest = listCsvImportsForOutcomeCapture().at(-1);
   if (latest) ingestCsvCommitted(latest);
 }
 
@@ -358,7 +367,7 @@ export function syncLiveExecutionCaptureContexts(input: {
   readonly scenarioImpactsById?: Readonly<Record<string, readonly LiveScenarioImpactHint[] | undefined>>;
   readonly focusedSubjectId?: string | null;
 }): void {
-  const latestPublished = listAllCsvRealDataImports().at(-1)?.committedAt ?? null;
+  const latestPublished = listCsvImportsForOutcomeCapture().at(-1)?.committedAt ?? null;
   for (const execution of input.executions) {
     const existing = contextsByExecution.get(execution.executionId) ?? null;
     const decision = input.decisions.find((item) => item.decisionId === execution.decisionId) ?? null;

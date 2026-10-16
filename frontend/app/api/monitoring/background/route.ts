@@ -1,6 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
+import { readNexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode";
+
 import {
   backgroundMonitoringRuntimeIdentity,
   BACKGROUND_MONITORING_RUNTIME_CLASSIFICATION,
@@ -23,6 +25,9 @@ function authorized(request: Request): boolean {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
+  if (readNexoraDeploymentMode() === "hosted") {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   const state = await getNexoraBackgroundMonitoringRepository().read();
   const workspaceId = new URL(request.url).searchParams.get("workspaceId");
   const ownsWorkspace = Boolean(state && (!workspaceId || state.monitoring.policies.some((policy) => policy.workspaceId === workspaceId && policy.executionOwner === "background")));
@@ -33,6 +38,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   let body: Readonly<{ action?: "sync" | "run-due" | "manual"; snapshot?: NexoraDurableMonitoringSnapshot; now?: string; workspaceId?: string; connectionId?: string }>;
   try { body = await request.json(); } catch { return NextResponse.json({ ok: false, message: "A valid request is required." }, { status: 400 }); }
   const now = typeof body.now === "string" && Number.isFinite(Date.parse(body.now)) ? body.now : new Date().toISOString();
+  if (readNexoraDeploymentMode() === "hosted" && body.action !== "run-due") {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   if (body.action === "run-due") {
     if (!authorized(request)) return NextResponse.json({ ok: false, message: "Scheduler authorization is required." }, { status: 401 });
     const report = await getNexoraBackgroundMonitoringScheduler().runDuePolicies(now, `pm6:protected:${now}`);

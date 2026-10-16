@@ -29,7 +29,13 @@ import {
 } from "../../../lib/data-reality/proactiveMonitoringFoundation.ts";
 import type { NexoraLiveCommittedObservation, NexoraLiveConnection } from "../../../lib/data-reality/liveDataConnectorFoundation.ts";
 import { disconnectNexoraLiveConnection, getLiveDataConnectionVersion, subscribeLiveDataConnections } from "../../../lib/data-reality/liveDataConnectionStore.ts";
+import { requestDemoLibraryFocus } from "../../../lib/demo-profile/demoLibrary.ts";
 import { readManagerLiveConnections, readManagerLiveObservations } from "../../../lib/workspace/legacyWorkspaceIdentityMigration.ts";
+import { removeHostedManagerSource } from "../../../lib/workspace-auth/hostedManagerDataClient.ts";
+import { readHostedManagerDataPhase, subscribeHostedManagerDataPhase } from "../../../lib/workspace-auth/hostedManagerDataPhase.ts";
+import { isCustomerHostedWorkspaceId } from "../../../lib/workspace-auth/hostedWorkspaceId.ts";
+import { isRealManagerWorkspaceId } from "../../../lib/workspace/liveManagerDataWorkspaceGuard.ts";
+import { getWorkspaceById } from "../../../lib/workspace/workspaceRegistryStore.ts";
 import {
   disableAutomaticMonitoring,
   enableAutomaticMonitoring,
@@ -71,6 +77,7 @@ export type NexoraExecutiveDataExplorerProps = Readonly<{
   removalReviewSourceId?: string | null;
   selectedSourceId?: string | null;
   onSelectSource?: (sourceId: string | null) => void;
+  workspaceKind?: "BUSINESS" | "PROJECT" | null;
 }>;
 
 function liveProjection(observation: NexoraLiveCommittedObservation): ExecutiveSourceProjectionInput {
@@ -252,12 +259,22 @@ function SourceIntelligenceView({
         <button type="button" style={actionStyle()} onClick={onUpdate}>Update source</button>
         {!removalReviewOpen ? <button type="button" data-testid="nexora-data-source-remove-intent" style={actionStyle(false, true)} onClick={() => { setLocalRemovalReview(true); setManagementMessage(null); }}>Remove data source</button> : null}
         {removalReviewOpen ? <section data-testid="nexora-data-source-removal-review" data-removal-impact={removalImpact.impactClass} data-source-id={source.sourceContextId} style={{ display: "grid", gap: "0.4rem" }}>
-          <strong style={{ color: cockpit.text, fontSize: "0.68rem" }}>Remove {source.prepared.fileName}?</strong>
+          <strong style={{ color: cockpit.text, fontSize: "0.68rem" }}>Remove “{source.prepared.fileName}” from {getWorkspaceById(source.workspaceId)?.workspaceName ?? "this workspace"}?</strong>
           <span style={{ color: cockpit.textSoft, fontSize: "0.61rem", lineHeight: 1.45 }}>{removalImpact.managerSummary}</span>
-          <span style={{ color: cockpit.muted, fontSize: "0.58rem", lineHeight: 1.4 }}>Historical records stay. This does not cancel a Decision or remove the source from history. Remove from Stage is a different action.</span>
+          <span style={{ color: cockpit.muted, fontSize: "0.58rem", lineHeight: 1.4 }}>Nexora will stop using this file. Its business rows are removed from this workspace. The file name can remain so removal stays traceable. This does not cancel a Decision. Remove from Stage is a different action.</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
             <button type="button" data-testid="nexora-data-source-remove-cancel" style={actionStyle()} onClick={() => { setLocalRemovalReview(false); onDismissRemovalReview(); }}>Cancel</button>
             <button type="button" data-testid="nexora-data-source-remove-confirm" style={actionStyle(false, true)} onClick={() => {
+              if (isCustomerHostedWorkspaceId(source.workspaceId)) {
+                void removeHostedManagerSource(source.workspaceId, source.sourceContextId).then(() => {
+                  setManagementMessage("Data source removed.");
+                  onSourceRemoved(source.sourceContextId);
+                  onRemoved();
+                }).catch(() => {
+                  setManagementMessage("The source could not be removed.");
+                });
+                return;
+              }
               const result = removeCsvRealDataImport({
                 workspaceId: source.workspaceId,
                 sourceContextId: source.sourceContextId,
@@ -379,7 +396,7 @@ function LiveSourceView({ connection, observations, activeSourceContextId, onAct
   </section>;
 }
 
-export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeLiveObservation, onImportCommitted, onLiveObservationActivated, onViewOnStage, onShowDataObjectOnStage, onAdvisorContext, onDataObjectSelection, selectedDataObjectId, onSemanticClarificationRequest, onSemanticClarificationCancel, awaitingClarificationFieldId, onSourceRemoved, onDismissRemovalReview, removalReviewSourceId, selectedSourceId: selectedSourceIdProp, onSelectSource }: NexoraExecutiveDataExplorerProps) {
+export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeLiveObservation, onImportCommitted, onLiveObservationActivated, onViewOnStage, onShowDataObjectOnStage, onAdvisorContext, onDataObjectSelection, selectedDataObjectId, onSemanticClarificationRequest, onSemanticClarificationCancel, awaitingClarificationFieldId, onSourceRemoved, onDismissRemovalReview, removalReviewSourceId, selectedSourceId: selectedSourceIdProp, onSelectSource, workspaceKind = null }: NexoraExecutiveDataExplorerProps) {
   const [adding, setAdding] = useState(false);
   const [addKind, setAddKind] = useState<"csv" | "live" | null>(null);
   const [csvIntake, setCsvIntake] = useState<"new" | "resume" | "update">("new");
@@ -395,6 +412,10 @@ export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeL
   const liveVersion = useSyncExternalStore(subscribeLiveDataConnections, getLiveDataConnectionVersion, () => 0);
   const durabilityHealth = useSyncExternalStore(subscribeCsvDurabilityHealth, getCsvDurabilityHealth, () => "idle" as const);
   const durabilityMessage = useSyncExternalStore(subscribeCsvDurabilityHealth, getCsvDurabilityHealthMessage, () => null);
+  const hostedDataPhase = useSyncExternalStore(subscribeHostedManagerDataPhase, readHostedManagerDataPhase, () => "idle" as const);
+  const hostedCustomer = isCustomerHostedWorkspaceId(workspaceId);
+  const projectWorkspace = workspaceKind === "PROJECT" || getWorkspaceById(workspaceId)?.kind === "PROJECT";
+  const managerDataWorkspace = isRealManagerWorkspaceId(workspaceId) || hostedCustomer;
   const imports = listCsvRealDataImports(workspaceId);
   const pendingCandidates = listCsvImportCandidates(workspaceId);
   const liveConnections = readManagerLiveConnections(workspaceId);
@@ -450,13 +471,14 @@ export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeL
   return <div data-testid="nexora-rdi2-data-explorer" data-data-rail="true" data-csv-durability={durabilityHealth} data-source-count={String(library.totalCount)} data-csv-count={String(library.csvCount)} data-csv-committed-count={String(library.committedCsvCount)} data-csv-pending-count={String(library.pendingCsvCount)} data-connected-count={String(library.connectedCount)} data-selected-source-id={selectedSourceId ?? "none"} data-selected-data-object-id={selectedPresentation?.dataObjectId ?? "none"} data-rdi3="executive-source-intelligence" data-rdi4="live-connector-foundation" data-rdi2-canonical-route="/executive" style={{ display: "flex", flexDirection: "column", gap: "0.85rem", padding: "0.15rem 0", minWidth: 0 }}>
     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><div><p style={{ margin: 0, color: cockpit.text, fontSize: "0.74rem", letterSpacing: "0.13em", textTransform: "uppercase" }}>Sources · {library.totalCount}</p><p style={{ margin: "0.28rem 0 0", color: cockpit.lowMuted, fontSize: "0.58rem" }}>CSV · {library.csvCount} · Ready · {library.committedCsvCount} · Pending · {library.pendingCsvCount} · Connected · {library.connectedCount}</p>{durabilityHealth === "session-only" && durabilityMessage ? <p data-testid="nexora-csv-durability-warning" style={{ margin: "0.35rem 0 0", color: cockpit.warning, fontSize: "0.58rem", lineHeight: 1.4 }}>{durabilityMessage}</p> : null}</div><strong data-testid="nexora-data-rail-source-count" style={{ color: cockpit.muted, fontSize: "0.68rem", fontWeight: 500 }}>{library.totalCount}</strong></header>
     {!adding ? <button type="button" data-testid="nexora-rdi2-add-data" style={{ ...actionStyle(false), border: "none", borderTop: `1px solid ${cockpit.border}`, borderBottom: `1px solid ${cockpit.border}`, borderRadius: 0, padding: "0.65rem 0.1rem", color: cockpit.accent, textAlign: "left" }} onClick={() => { setUpdatingSource(null); setCsvIntake("new"); setIntakeNonce((value) => value + 1); setAdding(true); setAddKind(null); }}>+ Add Data</button> : null}
-    {adding && addKind === null ? <section data-testid="nexora-rdi4-source-choice" style={{ display: "grid", gap: "0.42rem", border: `1px solid ${cockpit.border}`, borderRadius: cockpit.radius.md, padding: "0.62rem" }}><span style={{ color: cockpit.lowMuted, fontSize: "0.56rem", textTransform: "uppercase" }}>Add Data</span><button type="button" style={actionStyle()} onClick={() => setAddKind("csv")}><strong>Upload File</strong><span style={{ display: "block", color: cockpit.muted, fontSize: "0.55rem", marginTop: "0.12rem" }}>CSV</span></button><button type="button" style={actionStyle(true)} onClick={() => setAddKind("live")}><strong>Connect Source</strong><span style={{ display: "block", color: cockpit.muted, fontSize: "0.55rem", marginTop: "0.12rem" }}>GitHub Repository Health</span></button><button type="button" style={actionStyle()} onClick={() => setAdding(false)}>Cancel</button></section> : null}
-    {adding && addKind === "csv" ? <CsvRealDataImportFlow key={csvIntake === "new" ? `new-csv-${intakeNonce}` : resumingCandidate?.candidateId ?? updatingSource?.sourceContextId ?? "csv"} workspaceId={workspaceId} replacementSource={csvIntake === "update" ? updatingSource : null} initialCandidate={csvIntake === "resume" ? resumingCandidate : csvIntake === "update" ? updatingCandidate : null} intakeMode={csvIntake} onSemanticClarificationRequest={onSemanticClarificationRequest} onSemanticClarificationCancel={onSemanticClarificationCancel} awaitingClarificationFieldId={awaitingClarificationFieldId} onAdoptExistingSource={(source) => { setUpdatingSource(source); setCsvIntake("update"); }} onClose={() => { setAdding(false); setAddKind(null); setUpdatingSource(null); }} onCancelled={() => { if (csvIntake === "resume") setSelectedSourceId(null); }} onCompleted={(committed) => { onImportCommitted(committed); setAdding(false); setAddKind(null); setUpdatingSource(null); setSelectedSourceId(committed.sourceContextId); }} /> : null}
+    {managerDataWorkspace ? <p data-testid="manager-csv-storage-note" style={{ margin: 0, color: cockpit.muted, fontSize: "0.6rem", lineHeight: 1.45 }}>{hostedCustomer ? `Add data to ${getWorkspaceById(workspaceId)?.workspaceName ?? "this workspace"}. Accepted data is kept with your signed-in workspace.` : `Add data to ${getWorkspaceById(workspaceId)?.workspaceName ?? "this workspace"}. Your workspace data is stored in this browser for this MVP. Data added here belongs to this workspace and is not used by your other workspaces or Nexora demos. Data remains on this device until you remove it or clear the browser’s site data.`}</p> : null}
+    {adding && addKind === null ? <section data-testid="nexora-rdi4-source-choice" style={{ display: "grid", gap: "0.42rem", border: `1px solid ${cockpit.border}`, borderRadius: cockpit.radius.md, padding: "0.62rem" }}><span style={{ color: cockpit.lowMuted, fontSize: "0.56rem", textTransform: "uppercase" }}>Add Data</span>{managerDataWorkspace ? <button type="button" style={actionStyle()} onClick={() => setAddKind("csv")}><strong>Upload File</strong><span style={{ display: "block", color: cockpit.muted, fontSize: "0.55rem", marginTop: "0.12rem" }}>CSV</span></button> : <p data-testid="demo-csv-upload-unavailable" style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.64rem", lineHeight: 1.45 }}>This demo uses Nexora example data. Personal CSV files are not added here.</p>}<button type="button" style={actionStyle(true)} onClick={() => setAddKind("live")}><strong>Connect Source</strong><span style={{ display: "block", color: cockpit.muted, fontSize: "0.55rem", marginTop: "0.12rem" }}>GitHub Repository Health</span></button><button type="button" style={actionStyle()} onClick={() => setAdding(false)}>Cancel</button></section> : null}
+    {adding && addKind === "csv" ? <CsvRealDataImportFlow key={csvIntake === "new" ? `new-csv-${intakeNonce}` : resumingCandidate?.candidateId ?? updatingSource?.sourceContextId ?? "csv"} serverOwned={hostedCustomer} workspaceId={workspaceId} replacementSource={csvIntake === "update" ? updatingSource : null} initialCandidate={csvIntake === "resume" ? resumingCandidate : csvIntake === "update" ? updatingCandidate : null} intakeMode={csvIntake} onSemanticClarificationRequest={onSemanticClarificationRequest} onSemanticClarificationCancel={onSemanticClarificationCancel} awaitingClarificationFieldId={awaitingClarificationFieldId} onAdoptExistingSource={(source) => { setUpdatingSource(source); setCsvIntake("update"); }} onClose={() => { setAdding(false); setAddKind(null); setUpdatingSource(null); }} onCancelled={() => { if (csvIntake === "resume") setSelectedSourceId(null); }} onCompleted={(committed) => { onImportCommitted(committed); setAdding(false); setAddKind(null); setUpdatingSource(null); setSelectedSourceId(committed.sourceContextId); }} /> : null}
     {adding && addKind === "live" ? <NexoraLiveDataConnectionFlow workspaceId={workspaceId} onClose={() => { setAdding(false); setAddKind(null); }} onObservationCommitted={(observation, activate) => { setSelectedSourceId(observation.connectionId); if (activate) onLiveObservationActivated(observation); }} /> : null}
 
     <section aria-label="CSV files" style={{ display: "grid", gap: "0.18rem" }}>
       <p style={{ margin: 0, color: cockpit.lowMuted, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>CSV files</p>
-      {library.csvEmpty ? <div data-testid="nexora-data-rail-empty" style={{ padding: "0.85rem 0.25rem", borderBottom: `1px solid ${cockpit.border}` }}><p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem" }}>No CSV sources yet.</p><p style={{ margin: "0.45rem 0 0", color: cockpit.muted, fontSize: "0.64rem", lineHeight: 1.5 }}>Add a CSV to let Nexora work with your business data.</p></div> : null}
+      {library.csvEmpty ? <div data-testid="nexora-data-rail-empty" data-hosted-data-phase={hostedCustomer ? hostedDataPhase : "local"} style={{ padding: "0.85rem 0.25rem", borderBottom: `1px solid ${cockpit.border}` }}>{hostedCustomer && hostedDataPhase === "loading" ? <p data-testid="hosted-data-loading" style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem" }}>Loading workspace data…</p> : hostedCustomer && hostedDataPhase === "error" ? <p data-testid="hosted-data-error" style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem" }}>Unable to load workspace data</p> : managerDataWorkspace ? <div data-testid="manager-workspace-ready"><p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem", lineHeight: 1.45 }}>{projectWorkspace ? "Your project workspace is ready." : "Your workspace is ready."}</p><p style={{ margin: "0.35rem 0 0", color: cockpit.muted, fontSize: "0.64rem", lineHeight: 1.5 }}>{projectWorkspace ? "Add project data to begin." : "Add your business data to begin."}</p></div> : <><p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem" }}>No CSV sources yet.</p><p style={{ margin: "0.45rem 0 0", color: cockpit.muted, fontSize: "0.64rem", lineHeight: 1.5 }}>Add a CSV to let Nexora work with your business data.</p></>}{managerDataWorkspace && hostedDataPhase !== "loading" && hostedDataPhase !== "error" && library.connectedCount === 0 ? <div data-testid="try-a-demo" style={{ marginTop: "0.7rem" }}><p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.68rem", lineHeight: 1.45 }}>Want to see how Nexora works?</p><button type="button" data-testid="try-a-demo-action" aria-label="Try a Demo. Opens example situations without changing this workspace." onClick={() => requestDemoLibraryFocus()} style={{ marginTop: "0.4rem", font: "inherit", fontSize: "0.68rem", color: cockpit.text, background: "transparent", border: `1px solid ${cockpit.border}`, borderRadius: "0.3rem", padding: "0.28rem 0.5rem", cursor: "pointer" }}>Try a Demo</button><p style={{ margin: "0.35rem 0 0", color: cockpit.lowMuted, fontSize: "0.6rem", lineHeight: 1.4 }}>Your workspace stays unchanged.</p></div> : null}</div> : null}
       {library.csvRows.map((row) => {
         const committed = imports.find((entry) => entry.sourceContextId === row.id) ?? null;
         const selectedCard = selectedSourceId === row.id;

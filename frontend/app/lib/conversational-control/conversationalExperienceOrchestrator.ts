@@ -44,6 +44,7 @@ import { answerNexoraExiUtterance, classifyNexoraExiUtterance } from "@/app/lib/
 import { synchronizeLiveExecutionOutcomeEvaluation } from "@/app/lib/nex-mvp/nexoraOutcomeLearningRuntimeIntegration.ts";
 import { listSupportedGroundedLearningForSubject } from "@/app/lib/executive-intelligence/nexoraGroundedLearningIntelligence.ts";
 import { managerLearningWorkspaceId } from "@/app/lib/workspace/legacyWorkspaceIdentityMigration.ts";
+import { readLiveExecutiveDataWorkspaceId } from "@/app/lib/workspace/managerWorkspaceIdentity.ts";
 import {
   type NexoraConversationalExperienceResult,
   type NexoraConversationalExperienceStatus,
@@ -7292,7 +7293,7 @@ function finalize(args: {
       nmiBundle: args.nmiAdvisorBundle ?? null,
       catalog: args.catalog ?? null,
       comparisonCandidateIds: ncaPost4Comparison?.candidateSet.candidateIds ?? [],
-      workspaceId: directorRuntimeState.workspace,
+      workspaceId: readLiveExecutiveDataWorkspaceId(),
       advisorDataDialogue: persistedDataDialogue,
       scenario: readActiveScenarioContext(groundedScenarioSession, llmResolvedSubjectId),
       decision: readDecisionContext({

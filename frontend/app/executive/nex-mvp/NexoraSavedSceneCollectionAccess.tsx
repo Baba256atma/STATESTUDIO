@@ -11,8 +11,13 @@ type Props = {
   readonly scenes: readonly SceneOrgSavedScene[];
   readonly activeSceneId: string | null;
   readonly onOpenScene: (scene: SceneOrgSavedScene) => void;
-  readonly onRenameScene: (sceneId: string, name: string) => SceneOrgSavedSceneMutationResult;
-  readonly onDeleteScene: (sceneId: string) => SceneOrgSavedSceneMutationResult;
+  readonly onRenameScene: (
+    sceneId: string,
+    name: string,
+  ) => SceneOrgSavedSceneMutationResult | Promise<SceneOrgSavedSceneMutationResult>;
+  readonly onDeleteScene: (
+    sceneId: string,
+  ) => SceneOrgSavedSceneMutationResult | Promise<SceneOrgSavedSceneMutationResult>;
 };
 
 /**
@@ -167,13 +172,14 @@ export function NexoraSavedSceneCollectionAccess({
                     data-testid={`nexora-saved-scene-rename-form-${scene.sceneId}`}
                     onSubmit={(event) => {
                       event.preventDefault();
-                      const result = onRenameScene(scene.sceneId, row.draft);
-                      if (
-                        result.status === "renamed" ||
-                        result.status === "unchanged"
-                      ) {
-                        setActiveRow(null);
-                      }
+                      void Promise.resolve(onRenameScene(scene.sceneId, row.draft)).then((result) => {
+                        if (
+                          result.status === "renamed" ||
+                          result.status === "unchanged"
+                        ) {
+                          setActiveRow(null);
+                        }
+                      });
                     }}
                     style={{ margin: "0.25rem 0 0.1rem 0.4rem" }}
                   >
@@ -226,8 +232,9 @@ export function NexoraSavedSceneCollectionAccess({
                         type="button"
                         data-testid={`nexora-saved-scene-delete-confirm-button-${scene.sceneId}`}
                         onClick={() => {
-                          const result = onDeleteScene(scene.sceneId);
-                          if (result.status === "deleted") setActiveRow(null);
+                          void Promise.resolve(onDeleteScene(scene.sceneId)).then((result) => {
+                            if (result.status === "deleted") setActiveRow(null);
+                          });
                         }}
                         style={actionButtonStyle}
                       >

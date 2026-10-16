@@ -1,5 +1,6 @@
 import { devDiagnosticLog } from "../runtime/diagnosticSwitch.ts";
 import type { WorkspaceId } from "./workspaceRegistryContract.ts";
+import { refuseCrossWorkspaceCsvTarget } from "./liveManagerDataWorkspaceGuard.ts";
 import { getActiveWorkspace } from "./workspaceRegistryStore.ts";
 import {
   importWorkspaceDataSource,
@@ -226,10 +227,36 @@ export async function uploadWorkspaceCsv(
     });
   }
 
+  if (refuseCrossWorkspaceCsvTarget(resolvedWorkspaceId)) {
+    const message = resolveWorkspaceCsvUploadUserMessage("wrong_workspace");
+    appendStatusEntry(
+      buildStatusEntry({
+        uploadId,
+        workspaceId: resolvedWorkspaceId,
+        status: "failed",
+        metadata: null,
+        dataSourceId: null,
+        errorCode: "wrong_workspace",
+        message,
+        updatedAt: uploadTime,
+      })
+    );
+    emitCsvUploadDiagnostic("Upload Failed", { uploadId, reason: "wrong_workspace" });
+    return buildUploadResult({
+      success: false,
+      status: "failed",
+      uploadId,
+      dataSource: null,
+      metadata: null,
+      errorCode: "wrong_workspace",
+      message,
+      reason: "wrong_workspace",
+    });
+  }
+
   emitCsvUploadDiagnostic("Upload Started", {
     uploadId,
     workspaceId: resolvedWorkspaceId,
-    fileName: file?.name ?? null,
   });
 
   appendStatusEntry(

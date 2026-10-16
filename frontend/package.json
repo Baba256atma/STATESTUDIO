@@ -140,9 +140,12 @@
     "gen:api": "../backend/.venv/bin/python ../backend/scripts/export_openapi.py ../backend/openapi.json && node ./scripts/generate-api-types.mjs ../backend/openapi.json ./app/lib/api/generated.ts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.3.14",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
-    "next": "16.0.10",
+    "next": "16.4.2",
+    "next-auth": "^4.24.15",
+    "pg": "^8.23.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "three": "^0.182.0",
@@ -151,6 +154,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "baseline-browser-mapping": "^2.10.0",

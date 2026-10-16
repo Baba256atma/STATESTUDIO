@@ -1,0 +1,12 @@
+{
+  "profileId": "project",
+  "testOnly": true,
+  "runtimeImport": false,
+  "scheduleConvention": "positive Schedule Variance Days means behind plan",
+  "signals": [
+    "planned/actual progress gap is increasing",
+    "resource load is increasing",
+    "schedule performance is deteriorating",
+    "project delivery pressure is emerging"
+  ]
+}

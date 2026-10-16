@@ -1,0 +1,13 @@
+{
+  "profileId": "manufacturing",
+  "testOnly": true,
+  "runtimeImport": false,
+  "signals": [
+    "demand trend increasing",
+    "capacity utilization increasing",
+    "available slack shrinking",
+    "inventory pressure increasing",
+    "fulfillment pressure emerging"
+  ],
+  "fulfillmentNote": "No backlog column is committed. Tests treat rising orders, rising utilization, and falling inventory together as emerging fulfillment pressure."
+}

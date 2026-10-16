@@ -8,6 +8,7 @@
 import type { DataRealityAwareAdvisorBindingResult } from "../data-reality/dataRealityAwareAdvisorExperienceBinding.ts";
 import { readLiveExecutiveDataWorkspaceId } from "../workspace/managerWorkspaceIdentity.ts";
 import { isRealManagerWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
+import { readActiveDemoProfile } from "../demo-profile/demoProfileStore.ts";
 import type { NexoraProfessionalAdvisorNarrative } from "./nexoraMVPProfessionalAdvisorPresentation.ts";
 import {
   NEXORA_MVP_CONTEXT_LINK_FIXTURES,
@@ -83,10 +84,25 @@ function directionForKind(relationKind: string): SharedEpistemicRelationshipDire
   return "undirected";
 }
 
+function legacyProductFixturesPermitted(): boolean {
+  if (isRealManagerWorkspaceId(readLiveExecutiveDataWorkspaceId())) return false;
+  return readActiveDemoProfile() == null;
+}
+
+/**
+ * An explicit snapshot wins over live browser stores.
+ * SSR and the first client render must share that snapshot.
+ */
+function productFixturesArePermitted(explicit: boolean | undefined): boolean {
+  if (typeof explicit === "boolean") return explicit;
+  return legacyProductFixturesPermitted();
+}
+
 export function collectNexoraLiveRelationshipSources(
   subjectId: string | null,
+  productFixturesPermitted?: boolean,
 ): readonly SharedEpistemicRelationshipSource[] {
-  if (subjectId == null) return Object.freeze([]);
+  if (subjectId == null || !productFixturesArePermitted(productFixturesPermitted)) return Object.freeze([]);
   const subjectLabel = labelFor(subjectId);
   const edges: SharedEpistemicRelationshipSource[] = [];
   for (const link of NEXORA_MVP_CONTEXT_LINK_FIXTURES) {
@@ -252,6 +268,7 @@ export function projectNexoraLiveSharedEpistemicFoundation(input: {
   readonly presentationMode?: string | null;
   readonly validatedDataSource?: boolean;
   readonly advisorBinding?: DataRealityAwareAdvisorBindingResult | null;
+  readonly productFixturesPermitted?: boolean;
 }): NexoraSharedEpistemicProjection {
   const isCollection = input.presentationMode === "collection";
   const subjectId = isCollection ? null : input.narrative.currentSubjectId;
@@ -273,7 +290,7 @@ export function projectNexoraLiveSharedEpistemicFoundation(input: {
     subjectKind: isOverview ? null : input.narrative.currentSubjectKind,
     isOverview,
     observation,
-    relationships: isOverview ? [] : collectNexoraLiveRelationshipSources(subjectId),
+    relationships: isOverview ? [] : collectNexoraLiveRelationshipSources(subjectId, input.productFixturesPermitted),
     scenario: collectScenario(input.narrative, subjectId),
   });
 }
@@ -281,6 +298,7 @@ export function projectNexoraLiveSharedEpistemicFoundation(input: {
 export function projectNexoraLiveCausalConstraintIntelligence(input: {
   readonly narrative: NexoraProfessionalAdvisorNarrative;
   readonly presentationMode?: string | null;
+  readonly productFixturesPermitted?: boolean;
 }): GroundedCausalConstraintIntelligence {
   const isCollection = input.presentationMode === "collection";
   const subjectId = isCollection ? null : input.narrative.currentSubjectId;
@@ -291,7 +309,7 @@ export function projectNexoraLiveCausalConstraintIntelligence(input: {
     subjectLabel: isOverview ? null : input.narrative.currentSubjectLabel,
     subjectKind: isOverview ? null : input.narrative.currentSubjectKind,
     isOverview,
-    relationships: isOverview ? [] : collectNexoraLiveRelationshipSources(subjectId),
+    relationships: isOverview ? [] : collectNexoraLiveRelationshipSources(subjectId, input.productFixturesPermitted),
   });
 }
 
@@ -357,8 +375,10 @@ function resolveLivePriorityScope(input: {
   return "workspace";
 }
 
-export function collectNexoraLivePrioritySources(): readonly ExecutivePriorityCandidateSource[] {
-  if (isRealManagerWorkspaceId(readLiveExecutiveDataWorkspaceId())) {
+export function collectNexoraLivePrioritySources(
+  productFixturesPermitted?: boolean,
+): readonly ExecutivePriorityCandidateSource[] {
+  if (!productFixturesArePermitted(productFixturesPermitted)) {
     return Object.freeze([]);
   }
   const catalog = [
@@ -401,6 +421,7 @@ export function projectNexoraLiveExecutivePriorityIntelligence(input: {
   readonly narrative: NexoraProfessionalAdvisorNarrative;
   readonly presentationMode?: string | null;
   readonly collectionCategory?: string | null;
+  readonly productFixturesPermitted?: boolean;
 }): ExecutivePriorityAssessment {
   const isCollection = input.presentationMode === "collection";
   const subjectId = isCollection ? null : input.narrative.currentSubjectId;
@@ -412,7 +433,7 @@ export function projectNexoraLiveExecutivePriorityIntelligence(input: {
     subjectKind: isOverview ? null : input.narrative.currentSubjectKind,
     collectionCategory: input.collectionCategory,
   });
-  const sources = collectNexoraLivePrioritySources().filter((source) => {
+  const sources = collectNexoraLivePrioritySources(input.productFixturesPermitted).filter((source) => {
     if (scopeId === "problems") return source.eligibleKind === "problem";
     if (scopeId === "decisions") return source.eligibleKind === "decision";
     if (scopeId === "risks") {

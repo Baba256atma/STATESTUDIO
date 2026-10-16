@@ -31,6 +31,7 @@ export type WorkspaceCsvUploadErrorCode =
   | "oversized_csv"
   | "unsupported_file_type"
   | "missing_workspace"
+  | "wrong_workspace"
   | "read_failed"
   | "registration_failed";
 
@@ -90,6 +91,7 @@ export const WORKSPACE_CSV_UPLOAD_USER_MESSAGES: Readonly<
   oversized_csv: "This CSV exceeds the platform upload limit of 2 MB.",
   unsupported_file_type: "Only .csv files are supported for this upload.",
   missing_workspace: "Select a workspace before uploading a CSV.",
+  wrong_workspace: "This file was not added. Open the workspace that should own it, then try again.",
   read_failed: "The CSV could not be read. Try again or choose a different file.",
   registration_failed: "The CSV validated but could not be registered to this workspace.",
 });

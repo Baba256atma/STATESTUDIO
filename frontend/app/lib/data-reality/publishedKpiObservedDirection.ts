@@ -15,6 +15,9 @@ import {
   type CsvPublishedKpiObservation,
 } from "./csvRealDataImportStore.ts";
 import { listAllNexoraLiveCommittedObservations } from "./liveDataConnectionStore.ts";
+import { isRealManagerWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
+import { readLiveExecutiveDataWorkspaceId } from "../workspace/managerWorkspaceIdentity.ts";
+import { DEMO_WORKSPACE_ID } from "../workspace/workspaceRegistryContract.ts";
 
 export const publishedKpiObservedDirectionIdentity =
   "RDI-DIR:1/PublishedKpiObservedDirection" as const;
@@ -181,11 +184,16 @@ export function listPublishedKpiObservations(filter?: {
   readonly subjectId?: string;
   readonly workspaceId?: string;
 }): readonly PublishedKpiObservation[] {
+  const live = readLiveExecutiveDataWorkspaceId();
+  const workspaceId = filter?.workspaceId ?? (isRealManagerWorkspaceId(live) ? live : undefined);
   const merged = freezeList([
     ...listCsvPublishedKpiObservations()
-      .filter((entry) => filter?.workspaceId == null || entry.workspaceId === filter.workspaceId)
+      .filter((entry) => {
+        if (workspaceId) return entry.workspaceId === workspaceId;
+        return !(live === DEMO_WORKSPACE_ID && isRealManagerWorkspaceId(entry.workspaceId));
+      })
       .map(fromCsv),
-    ...fromLive(filter?.workspaceId),
+    ...fromLive(workspaceId),
   ]);
   return freezeList(
     merged.filter((entry) => {

@@ -1,9 +1,11 @@
 import { devDiagnosticLog } from "../runtime/diagnosticSwitch.ts";
+import { isCustomerHostedWorkspaceId } from "../workspace-auth/hostedWorkspaceId.ts";
 import {
   DEMO_WORKSPACE,
   DEMO_WORKSPACE_ID,
   WORKSPACE_REGISTRY_VERSION,
   isLegacyWorkflowWorkspaceIdentifier,
+  isManagerWorkspaceKind,
   isWorkspace,
   normalizeWorkspaceId,
   type Workspace,
@@ -491,6 +493,56 @@ export function deleteWorkspace(workspaceId: WorkspaceId): WorkspaceRegistrySnap
     });
   }
   return next;
+}
+
+/**
+ * Session pointer for an already-authorized hosted workspace.
+ * The server record remains the durable authority. This does not write the browser registry.
+ */
+export function adoptAuthorizedHostedWorkspace(workspace: Workspace): boolean {
+  initializeWorkspaceRegistry();
+  if (!isCustomerHostedWorkspaceId(workspace.workspaceId)) return false;
+  if (!isManagerWorkspaceKind(workspace.kind)) return false;
+  const upserted = reduceWorkspaceRegistryMutation(registrySnapshot, {
+    type: "upsertWorkspace",
+    workspace,
+  });
+  const next = reduceWorkspaceRegistryMutation(upserted, {
+    type: "setActiveWorkspace",
+    workspaceId: workspace.workspaceId,
+  });
+  if (next.activeWorkspaceId !== workspace.workspaceId) return false;
+  registrySnapshot = next;
+  logWorkspaceRegistryDiagnostic("[WorkspaceRegistry][Mutation]", {
+    type: "adoptAuthorizedHostedWorkspace",
+    activeWorkspaceId: registrySnapshot.activeWorkspaceId,
+    workspaceCount: registrySnapshot.workspaceOrder.length,
+  });
+  logWorkspaceRegistryDiagnostic("[ActiveWorkspace][Resolved]", getActiveWorkspace());
+  emitWorkspaceRegistryChange();
+  return true;
+}
+
+/**
+ * Drops an in-memory hosted workspace pointer after the server deletes it.
+ * This does not write the browser registry.
+ */
+export function releaseAuthorizedHostedWorkspace(workspaceId: string): void {
+  initializeWorkspaceRegistry();
+  if (!isCustomerHostedWorkspaceId(workspaceId)) return;
+  if (!registrySnapshot.workspaces[workspaceId] && registrySnapshot.activeWorkspaceId !== workspaceId) return;
+  const workspaces = { ...registrySnapshot.workspaces };
+  delete workspaces[workspaceId];
+  const workspaceOrder = registrySnapshot.workspaceOrder.filter((id) => id !== workspaceId);
+  const activeWorkspaceId = registrySnapshot.activeWorkspaceId === workspaceId
+    ? DEMO_WORKSPACE_ID
+    : registrySnapshot.activeWorkspaceId;
+  registrySnapshot = freezeWorkspaceRegistrySnapshot({
+    workspaces,
+    workspaceOrder,
+    activeWorkspaceId,
+  });
+  emitWorkspaceRegistryChange();
 }
 
 export function resetWorkspaceRegistryForTests(): void {

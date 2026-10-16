@@ -12,6 +12,7 @@ env/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Node
 node_modules/
@@ -25,3 +26,6 @@ out/
 
 # Temporary compiler output for psych smoke test
 .tmp/*.blend
+
+# Next.js generated build/runtime directories
+.next-hosted-*/

@@ -7,6 +7,7 @@
  */
 
 import {
+  DEMO_WORKSPACE_ID,
   isLegacyWorkflowWorkspaceIdentifier,
   isManagerWorkspaceKind,
   type WorkspaceId,
@@ -17,6 +18,23 @@ import { readLiveExecutiveDataWorkspaceId } from "./managerWorkspaceIdentity.ts"
 export function legacyWorkflowKeyBlockedForActiveManager(workspaceId: unknown): boolean {
   if (!isLegacyWorkflowWorkspaceIdentifier(workspaceId)) return false;
   return isManagerWorkspaceKind(getActiveWorkspace()?.kind);
+}
+
+/**
+ * OWN-MVP:2 — manager CSV may be written only for the canonical live workspace.
+ * A workflow mode is not an owner. A caller-supplied id is not reassigned.
+ */
+export function refuseCrossWorkspaceCsvTarget(
+  workspaceId: unknown,
+): "wrong_workspace" | "refused_workflow_key" | null {
+  if (isLegacyWorkflowWorkspaceIdentifier(workspaceId)) {
+    return legacyWorkflowKeyBlockedForActiveManager(workspaceId) ? "refused_workflow_key" : null;
+  }
+  if (typeof workspaceId !== "string" || workspaceId.trim().length === 0) return "wrong_workspace";
+  const live = readLiveExecutiveDataWorkspaceId();
+  if (isRealManagerWorkspaceId(workspaceId) && workspaceId !== live) return "wrong_workspace";
+  if (workspaceId === DEMO_WORKSPACE_ID && isRealManagerWorkspaceId(live)) return "wrong_workspace";
+  return null;
 }
 
 export function isRealManagerWorkspaceId(workspaceId: WorkspaceId): boolean {

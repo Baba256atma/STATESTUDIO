@@ -261,6 +261,11 @@ export type ComposeNexoraExecutiveIntelligenceExperienceInput = Readonly<{
   } | null;
   /** Canonical Manager Workspace for Learning. Omitted callers stay on the historical bucket. */
   readonly learningWorkspaceId?: string | null;
+  /**
+   * Hydration snapshot from the shell. When set, fixture priority must not
+   * read the browser demo profile or workspace registry directly.
+   */
+  readonly productFixturesPermitted?: boolean;
 }>;
 
 function field(
@@ -430,11 +435,13 @@ export function composeNexoraExecutiveIntelligenceExperience(
   const narrative = input.narrative;
   const subjectId = isCollection ? null : narrative.currentSubjectId;
   const isOverview = isCollection || narrative.isOverview || subjectId == null;
+  const fixtureSnapshot = input.productFixturesPermitted;
   const epistemicFoundation = projectNexoraLiveSharedEpistemicFoundation({
     narrative,
     presentationMode: input.presentationMode,
     validatedDataSource: input.validatedDataSource,
     advisorBinding: input.advisorBinding,
+    productFixturesPermitted: fixtureSnapshot,
   });
   const observationClaim = epistemicFoundation.observation;
   const interpretationClaim = epistemicFoundation.interpretation;
@@ -518,6 +525,7 @@ export function composeNexoraExecutiveIntelligenceExperience(
   const coreIntelligence = projectNexoraLiveCausalConstraintIntelligence({
     narrative: focusedNarrative,
     presentationMode: input.presentationMode,
+    productFixturesPermitted: fixtureSnapshot,
   });
   const causeAssessment = composeNexoraExiCauseAssessment(focusedNarrative, {
     epistemic: interpretationClaim,
@@ -538,6 +546,7 @@ export function composeNexoraExecutiveIntelligenceExperience(
     narrative,
     presentationMode: input.presentationMode,
     collectionCategory: input.collectionCategory,
+    productFixturesPermitted: fixtureSnapshot,
   });
   const currentKpi = input.currentKpi ?? null;
   const runtimeIntegration = integrateNexoraOutcomeLearningRuntime({

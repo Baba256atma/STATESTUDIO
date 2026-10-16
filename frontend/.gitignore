@@ -33,6 +33,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -55,12 +56,14 @@ env/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Node
 node_modules/
 
 # Next.js
 .next/
+.next-hosted-mvp/
 out/
 
 # Mac

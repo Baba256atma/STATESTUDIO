@@ -16,6 +16,7 @@ import {
   subscribeProactiveAdvisorDelivery,
   type NexoraProactiveAdvisorBrief,
 } from "@/app/lib/data-reality/proactiveAdvisorDelivery";
+import { readLiveExecutiveDataWorkspaceId } from "@/app/lib/workspace/managerWorkspaceIdentity";
 import {
   applyNexoraMVPIntelligenceResolution,
   deriveNexoraMVPExecutiveIntelligenceContext,
@@ -128,6 +129,8 @@ type Props = {
   readonly onAskObjectCard?: (question: string) => void;
   /** Canonical Manager Workspace for Learning produced by this surface. */
   readonly learningWorkspaceId?: string | null;
+  /** False until Manager Workspace recovery has settled, and false for real workspaces. */
+  readonly productFixturesPermitted?: boolean;
 };
 
 function projectConversationalAction(
@@ -212,6 +215,7 @@ export function NexoraAdvisorInsightRegion({
   onInvestigationLevelChange,
   onAskObjectCard,
   learningWorkspaceId = null,
+  productFixturesPermitted = true,
 }: Props) {
   const [internalPanelChrome, setInternalPanelChrome] = useState(() =>
     createSceneOrgRightPanelChromeState(),
@@ -223,7 +227,7 @@ export function NexoraAdvisorInsightRegion({
     getProactiveAdvisorDeliveryVersion,
     () => 0,
   );
-  const proactiveBrief = getNextProactiveAdvisorBrief(advisorBridge.activeWorkspace);
+  const proactiveBrief = getNextProactiveAdvisorBrief(readLiveExecutiveDataWorkspaceId());
 
   useEffect(() => {
     if (
@@ -332,9 +336,20 @@ export function NexoraAdvisorInsightRegion({
       flowExecutions,
       decisionRuntime: decisionRuntime ?? null,
       learningWorkspaceId,
+      productFixturesPermitted,
     });
+    const visibleExperience = productFixturesPermitted
+      ? experience
+      : Object.freeze({
+          ...experience,
+          presentation: Object.freeze({
+            ...experience.presentation,
+            topPriorityLabel: null,
+            topPriorityWhy: null,
+          }),
+        });
     const narrative = applyNexoraDecisionTheatreAdvisorGuidance(
-      applyNexoraExecutiveIntelligenceExperienceToAdvisor(composed, experience),
+      applyNexoraExecutiveIntelligenceExperienceToAdvisor(composed, visibleExperience),
       theatreComposition,
     );
 
@@ -343,7 +358,7 @@ export function NexoraAdvisorInsightRegion({
       advisor,
       context,
       narrative,
-      experience,
+      experience: visibleExperience,
       theatreGuidance: projectNexoraDecisionTheatreAdvisorGuidance(
         theatreComposition,
       ),
@@ -361,6 +376,7 @@ export function NexoraAdvisorInsightRegion({
     decisionRuntime,
     theatreComposition,
     learningWorkspaceId,
+    productFixturesPermitted,
   ]);
 
   useEffect(() => {

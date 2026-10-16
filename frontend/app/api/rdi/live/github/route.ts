@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { readNexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode";
 import {
   createGithubRepositoryConnector,
   createNexoraLiveConnection,
@@ -25,6 +26,9 @@ function safeText(value: unknown, maximum = 120): string {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  if (readNexoraDeploymentMode() === "hosted") {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   let body: RequestBody;
   try { body = await request.json() as RequestBody; } catch { return NextResponse.json({ ok: false, message: "A valid request is required." }, { status: 400 }); }
   const workspaceId = safeText(body.workspaceId); const connectionId = safeText(body.connectionId);

@@ -289,7 +289,7 @@ export function NexoraWorkspaceDial({
 
       <div
         role="listbox"
-        aria-label="Executive workspaces"
+        aria-label="Workflow modes"
         aria-activedescendant={`nexora-workspace-option-${dial.activeWorkspace}`}
         style={{
           display: "flex",

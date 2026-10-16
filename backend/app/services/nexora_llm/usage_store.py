@@ -13,7 +13,7 @@ from __future__ import annotations
 import fcntl
 import json
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -120,6 +120,103 @@ class NexoraLlmUsageStore:
             bucket["records"].append(compact)
             self._write(state)
 
+    def admit_rate(
+        self,
+        *,
+        scope_id: str,
+        now: datetime,
+        window_seconds: int,
+        limit: int,
+        burst_window_seconds: int,
+        burst_limit: int,
+    ) -> str | None:
+        with self._locked() as state:
+            node = self._traffic(state, scope_id)
+            stamps = [stamp for stamp in (self._parse_time(item) for item in node["rateTimestamps"]) if stamp is not None]
+            horizon = now - timedelta(seconds=window_seconds)
+            burst_horizon = now - timedelta(seconds=burst_window_seconds)
+            stamps = [stamp for stamp in stamps if stamp >= horizon]
+            burst_count = sum(1 for stamp in stamps if stamp >= burst_horizon)
+            if len(stamps) >= limit or burst_count >= burst_limit:
+                node["rateTimestamps"] = [stamp.isoformat() for stamp in stamps]
+                self._write(state)
+                return "rate_limit_exceeded"
+            stamps.append(now)
+            node["rateTimestamps"] = [stamp.isoformat() for stamp in stamps]
+            self._write(state)
+            return None
+
+    def acquire_turn(self, *, scope_id: str, turn_id: str, limit: int) -> bool:
+        with self._locked() as state:
+            node = self._traffic(state, scope_id)
+            active = [item for item in node["activeTurns"] if isinstance(item, str)]
+            if turn_id in active:
+                return True
+            if len(active) >= limit:
+                return False
+            active.append(turn_id)
+            node["activeTurns"] = active
+            self._write(state)
+            return True
+
+    def release_turn(self, *, scope_id: str, turn_id: str) -> None:
+        with self._locked() as state:
+            node = self._traffic(state, scope_id)
+            node["activeTurns"] = [item for item in node["activeTurns"] if item != turn_id]
+            self._write(state)
+
+    def spent_usd(self, *, scope_id: str, period_key: str, floor_usd: float) -> float:
+        with self._locked() as state:
+            bucket = self._bucket(state, scope_id, period_key)
+            return self._spent(bucket, floor_usd)
+
+    def spent_usd_for_user(self, *, user_id: str, period_key: str, floor_usd: float) -> float:
+        prefix = f"hosted:{user_id}:"
+        with self._locked() as state:
+            total = 0.0
+            for scope_id, scope in state.get("scopes", {}).items():
+                if not isinstance(scope_id, str) or not scope_id.startswith(prefix) or not isinstance(scope, dict):
+                    continue
+                bucket = scope.get(period_key)
+                if isinstance(bucket, dict):
+                    total += self._spent(bucket, floor_usd)
+            return total
+
+    def close_reservation(self, *, scope_id: str, period_key: str, turn_id: str) -> None:
+        with self._locked() as state:
+            bucket = self._bucket(state, scope_id, period_key)
+            existing = bucket["reservations"].get(turn_id)
+            if existing and existing.get("state") == "reserved":
+                existing["state"] = "settled"
+                self._write(state)
+
+    def prune_expired_details(self, *, now: datetime, retention_days: int) -> None:
+        cutoff = now - timedelta(days=retention_days)
+        with self._locked() as state:
+            for scope in state.get("scopes", {}).values():
+                if not isinstance(scope, dict):
+                    continue
+                for key, bucket in scope.items():
+                    if key in {"rateTimestamps", "activeTurns"} or not isinstance(bucket, dict):
+                        continue
+                    kept = []
+                    for record in bucket.get("records", []):
+                        stamp = self._parse_time(record.get("recordedAt") if isinstance(record, dict) else None)
+                        if stamp is not None and stamp >= cutoff:
+                            kept.append(record)
+                    bucket["records"] = kept
+                    kept_turns = {record.get("turnId") for record in kept if isinstance(record, dict)}
+                    reservations = bucket.get("reservations", {})
+                    if isinstance(reservations, dict):
+                        for turn_id, reservation in list(reservations.items()):
+                            if (
+                                isinstance(reservation, dict)
+                                and reservation.get("state") == "settled"
+                                and turn_id not in kept_turns
+                            ):
+                                del reservations[turn_id]
+            self._write(state)
+
     def authorized_attempts(self, *, scope_id: str, period_key: str) -> int:
         with self._locked() as state:
             bucket = self._bucket(state, scope_id, period_key)
@@ -129,6 +226,37 @@ class NexoraLlmUsageStore:
         with self._locked() as state:
             bucket = self._bucket(state, scope_id, period_key)
             return list(bucket["records"])
+
+    def _traffic(self, state: dict[str, Any], scope_id: str) -> dict[str, Any]:
+        scopes = state.setdefault("scopes", {})
+        scope = scopes.setdefault(scope_id, {})
+        scope.setdefault("rateTimestamps", [])
+        scope.setdefault("activeTurns", [])
+        return scope
+
+    def _spent(self, bucket: dict[str, Any], floor_usd: float) -> float:
+        total = 0.0
+        for record in bucket.get("records", []):
+            if not isinstance(record, dict):
+                continue
+            cost = record.get("cost") if isinstance(record.get("cost"), dict) else {}
+            amount = cost.get("amount")
+            if isinstance(amount, (int, float)) and not isinstance(amount, bool):
+                total += float(amount)
+            elif record.get("request", {}).get("attempted") is True:
+                total += floor_usd
+        return total
+
+    def _parse_time(self, value: Any) -> datetime | None:
+        if not isinstance(value, str) or not value.strip():
+            return None
+        try:
+            stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if stamp.tzinfo is None:
+            stamp = stamp.replace(tzinfo=timezone.utc)
+        return stamp.astimezone(timezone.utc)
 
     def _bucket(self, state: dict[str, Any], scope_id: str, period_key: str) -> dict[str, Any]:
         scopes = state.setdefault("scopes", {})

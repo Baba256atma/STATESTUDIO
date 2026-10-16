@@ -37,6 +37,7 @@ import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexo
 import {
   getCsvRealDataImportVersion,
   listCsvRealDataImports,
+  releaseWorkspaceCsvAuthority,
   subscribeCsvRealDataImports,
   type CsvCommittedImport,
 } from "@/app/lib/data-reality/csvRealDataImportStore";
@@ -48,6 +49,15 @@ import {
   subscribeCsvDurabilityHealth,
 } from "@/app/lib/data-reality/csvRealDataImportDurability";
 import { ensureCsvMvpDemoBootstrap } from "@/app/lib/data-reality/csvRealDataMvpDemoBootstrap";
+import { isDemoProfileId, MANUFACTURING_DEMO_PROFILE_ID, PROJECT_DEMO_PROFILE_ID } from "@/app/lib/demo-profile/demoProfileContract";
+import { ensureManufacturingDemoPackage } from "@/app/lib/demo-profile/manufacturingDemoPackage";
+import { ensureProjectDemoPackage } from "@/app/lib/demo-profile/projectDemoPackage";
+import { resetActiveDemo, subscribeDemoReset } from "@/app/lib/demo-profile/demoProfileReset";
+import { retireAllDemoProfileImports } from "@/app/lib/demo-profile/demoProfilePackageTransition";
+import {
+  readStoredDemoProfile,
+  subscribeDemoProfile,
+} from "@/app/lib/demo-profile/demoProfileStore";
 import {
   acceptNewManagerPersistenceWorkspaceId,
   readLiveExecutiveDataWorkspaceId,
@@ -55,7 +65,14 @@ import {
 } from "@/app/lib/workspace/managerWorkspaceIdentity";
 import { isRealManagerWorkspaceId } from "@/app/lib/workspace/liveManagerDataWorkspaceGuard";
 import { DEMO_WORKSPACE_ID } from "@/app/lib/workspace/workspaceRegistryContract";
-import { subscribeWorkspaceRegistry } from "@/app/lib/workspace/workspaceRegistryStore";
+import { hostedManagerRegistryRecovery, type NexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode";
+import { loadHostedManagerSnapshot } from "@/app/lib/workspace-auth/hostedManagerDataClient";
+import { loadHostedOperations, saveHostedOperations } from "@/app/lib/workspace-auth/hostedOperationalClient";
+import { setHostedManagerDataPhase } from "@/app/lib/workspace-auth/hostedManagerDataPhase";
+import { isCustomerHostedWorkspaceId } from "@/app/lib/workspace-auth/hostedWorkspaceId";
+import type { NexoraAuthProviderId } from "@/app/lib/auth/nexoraAuthProviders";
+import { ANONYMOUS_NEXORA_SESSION, type NexoraClientSessionProjection } from "@/app/lib/auth/nexoraPrincipal";
+import { recoverWorkspaceRegistryFromStorage, subscribeWorkspaceRegistry } from "@/app/lib/workspace/workspaceRegistryStore";
 import type {
   CsvSemanticClarification,
   CsvSemanticClarificationResult,
@@ -131,6 +148,8 @@ import type { NexoraConversationalCommand } from "@/app/lib/conversational-contr
 import type { NexoraConversationalWorkspaceActionPayload } from "@/app/lib/conversational-control/conversationalIntent";
 import { executeNexoraConversationalExperience } from "@/app/lib/conversational-control/conversationalExperienceOrchestrator";
 import { completeNexoraLlmManagerPresentation } from "@/app/lib/conversational-control/nexoraLlmManagerPresentation";
+import { readHostedLlmWorkspaceId } from "@/app/lib/workspace-auth/hostedActiveWorkspace";
+import type { HostedWorkspaceProjection } from "@/app/lib/workspace-auth/hostedWorkspaceRecord";
 import {
   ECA_EXECUTIVE_ACTION_PLAN_IDENTITY,
   planEcaExecutiveConversationAction,
@@ -407,6 +426,7 @@ import {
 } from "@/app/lib/scene-org/sceneOrgSavedSceneCollectionAccess";
 import {
   applySceneOrgSavedSceneCollectionMutation,
+  type SceneOrgSavedSceneCollectionMutation,
   type SceneOrgSavedSceneMutationResult,
 } from "@/app/lib/scene-org/sceneOrgSavedSceneCollectionMutation";
 import { NexoraSavedSceneCollectionAccess } from "./NexoraSavedSceneCollectionAccess";
@@ -458,10 +478,22 @@ export function NexoraExecutiveShell({
   datasetScenario = "baseline",
   entranceRequested = false,
   resetEntrance = false,
+  deploymentMode = "local",
+  session = ANONYMOUS_NEXORA_SESSION,
+  authProvider = "none",
+  authError = null,
+  hostedWorkspaces = [],
+  hostedWorkspaceStatus = "ready",
 }: {
   readonly datasetScenario?: NexoraMVPDataRealityDatasetScenario;
   readonly entranceRequested?: boolean;
   readonly resetEntrance?: boolean;
+  readonly deploymentMode?: NexoraDeploymentMode;
+  readonly session?: NexoraClientSessionProjection;
+  readonly authProvider?: NexoraAuthProviderId;
+  readonly authError?: string | null;
+  readonly hostedWorkspaces?: readonly HostedWorkspaceProjection[];
+  readonly hostedWorkspaceStatus?: "ready" | "unavailable";
 }) {
   const shellIdentity = getNexoraExecutiveShellIdentity();
   const [application, setApplication] = useState(
@@ -519,21 +551,111 @@ export function NexoraExecutiveShell({
     readLiveExecutiveDataWorkspaceId,
     () => DEMO_WORKSPACE_ID,
   );
-  const permitProductFixtures = !isRealManagerWorkspaceId(dataWorkspaceId);
+  const storedDemoProfile = useSyncExternalStore(
+    subscribeDemoProfile,
+    readStoredDemoProfile,
+    () => null,
+  );
+  const managerWorkspaceProjectionReady = useSyncExternalStore(
+    subscribeWorkspaceRegistry,
+    () => true,
+    () => false,
+  );
+  const modernDemoActive =
+    isDemoProfileId(storedDemoProfile) && dataWorkspaceId === DEMO_WORKSPACE_ID;
+  const permitProductFixtures =
+    managerWorkspaceProjectionReady &&
+    !isRealManagerWorkspaceId(dataWorkspaceId) &&
+    !modernDemoActive;
   const dataWorkspaceIdRef = useRef(dataWorkspaceId);
   dataWorkspaceIdRef.current = dataWorkspaceId;
+  useLayoutEffect(() => {
+    if (hostedManagerRegistryRecovery(deploymentMode) === "contain") return;
+    recoverWorkspaceRegistryFromStorage();
+  }, [deploymentMode]);
   useEffect(() => {
+    setActiveCsvImport((current) => current && current.workspaceId !== dataWorkspaceId ? null : current);
+  }, [dataWorkspaceId]);
+  useEffect(() => {
+    if (hostedManagerRegistryRecovery(deploymentMode) === "contain") {
+      let cancelled = false;
+      if (isCustomerHostedWorkspaceId(dataWorkspaceId)) {
+        setHostedManagerDataPhase("loading");
+        releaseWorkspaceCsvAuthority(dataWorkspaceId);
+        void loadHostedManagerSnapshot(dataWorkspaceId).then((phase) => {
+          if (cancelled || dataWorkspaceIdRef.current !== dataWorkspaceId) return;
+          setHostedManagerDataPhase(phase);
+          setCsvHydrated(true);
+        }).catch(() => {
+          if (cancelled || dataWorkspaceIdRef.current !== dataWorkspaceId) return;
+          releaseWorkspaceCsvAuthority(dataWorkspaceId);
+          setHostedManagerDataPhase("error");
+          setCsvHydrated(true);
+        });
+        return () => {
+          cancelled = true;
+        };
+      }
+      setHostedManagerDataPhase("idle");
+      const binding = resolveLiveExecutiveDataWorkspace();
+      const storedProfile = readStoredDemoProfile();
+      const modernProfile = isDemoProfileId(storedProfile) && dataWorkspaceId === DEMO_WORKSPACE_ID;
+      if (
+        modernProfile &&
+        binding.workspaceId === dataWorkspaceId &&
+        acceptNewManagerPersistenceWorkspaceId(binding.workspaceId)
+      ) {
+        if (storedProfile === PROJECT_DEMO_PROFILE_ID) {
+          ensureProjectDemoPackage({ workspaceId: binding.workspaceId });
+        } else if (storedProfile === MANUFACTURING_DEMO_PROFILE_ID) {
+          ensureManufacturingDemoPackage({ workspaceId: binding.workspaceId });
+        }
+      } else if (
+        binding.demoBootstrapPermitted &&
+        binding.workspaceId === dataWorkspaceId &&
+        acceptNewManagerPersistenceWorkspaceId(binding.workspaceId)
+      ) {
+        retireAllDemoProfileImports(binding.workspaceId);
+        ensureCsvMvpDemoBootstrap({ workspaceId: binding.workspaceId });
+      }
+      setCsvHydrated(true);
+      return;
+    }
+    if (hostedManagerRegistryRecovery(deploymentMode) !== "contain") {
+      recoverWorkspaceRegistryFromStorage();
+    }
     let cancelled = false;
     let unbind: (() => void) | null = null;
     void (async () => {
       await recoverCsvRealDataImportDurabilityBrowser();
       if (cancelled) return;
       const binding = resolveLiveExecutiveDataWorkspace();
+      if (isRealManagerWorkspaceId(binding.workspaceId)) {
+        await persistCsvRealDataImportDurabilityBrowser();
+        if (cancelled) return;
+        setCsvHydrated(true);
+        unbind = bindCsvRealDataImportDurabilityPersistence();
+        return;
+      }
+      const storedProfile = readStoredDemoProfile();
+      const modernProfile =
+        isDemoProfileId(storedProfile) && dataWorkspaceId === DEMO_WORKSPACE_ID;
       if (
+        modernProfile &&
+        binding.workspaceId === dataWorkspaceId &&
+        acceptNewManagerPersistenceWorkspaceId(binding.workspaceId)
+      ) {
+        if (storedProfile === PROJECT_DEMO_PROFILE_ID) {
+          ensureProjectDemoPackage({ workspaceId: binding.workspaceId });
+        } else if (storedProfile === MANUFACTURING_DEMO_PROFILE_ID) {
+          ensureManufacturingDemoPackage({ workspaceId: binding.workspaceId });
+        }
+      } else if (
         binding.demoBootstrapPermitted &&
         binding.workspaceId === dataWorkspaceId &&
         acceptNewManagerPersistenceWorkspaceId(binding.workspaceId)
       ) {
+        retireAllDemoProfileImports(binding.workspaceId);
         ensureCsvMvpDemoBootstrap({ workspaceId: binding.workspaceId });
       }
       await persistCsvRealDataImportDurabilityBrowser();
@@ -545,7 +667,7 @@ export function NexoraExecutiveShell({
       cancelled = true;
       unbind?.();
     };
-  }, [dataWorkspaceId]);
+  }, [dataWorkspaceId, storedDemoProfile, deploymentMode]);
   const committedCsvImports = useMemo(
     () => listCsvRealDataImports(dataWorkspaceId),
     [csvImportStoreVersion, dataWorkspaceId],
@@ -774,7 +896,10 @@ export function NexoraExecutiveShell({
     status: "pending" | "loaded" | "empty" | "unavailable" | "invalid" | "incompatible";
     rejectedRecords: number;
   }>>({ status: "pending", rejectedRecords: 0 });
+  const [hostedOperationalPhase, setHostedOperationalPhase] = useState<"idle" | "ready" | "error">("idle");
+  const hostedOperationalApplyRef = useRef(false);
   useEffect(() => {
+    if (deploymentMode === "hosted") return;
     const loaded = loadSceneOrgSavedScenes();
     savedScenesRef.current = loaded.scenes;
     setSavedScenes(loaded.scenes);
@@ -787,7 +912,7 @@ export function NexoraExecutiveShell({
         `Saved Scene durability rejected ${loaded.rejectedRecords} record(s): ${loaded.status}.`,
       );
     }
-  }, []);
+  }, [deploymentMode]);
   const [activeSavedSceneId, setActiveSavedSceneId] = useState<string | null>(null);
   const [savedSceneAccessResolution, setSavedSceneAccessResolution] =
     useState<SceneOrgSavedSceneAccessResolution | null>(null);
@@ -901,6 +1026,96 @@ export function NexoraExecutiveShell({
   }
   const executionRuntime = executionRuntimeRef.current;
   useEffect(() => {
+    return subscribeDemoReset((result) => {
+      if (result.status !== "reset") return;
+      setActiveCsvImport(null);
+      setActiveLiveObservation(null);
+      setSourceAdvisorContext(null);
+      setScenarioSession(createEmptyNexoraExecutiveScenarioSession());
+      setDecisionSession(createEmptyNexoraExecutiveDecisionSession());
+      setExecutiveContext(
+        createEmptyNexoraExecutiveContextSnapshot({
+          currentWorkspaceId: "overview",
+          managerWorkspaceId: DEMO_WORKSPACE_ID,
+        }),
+      );
+      setConversationalMessages(
+        Object.freeze([
+          composeNexoraGuidedEntranceIntroMessage({ seed: "nex-ent1-intro" }),
+        ]),
+      );
+      setInteraction(
+        createInitialNexoraMVPObjectInteractionState({
+          workspace: application.workspace,
+          presentationState: application.presentationState,
+          environmentIntent: application.environmentIntent,
+        }),
+      );
+      setFlowDomain(
+        containNexoraMVPFlowDomainForManagerWorkspace(createEmptyNexoraMVPFlowDomainState(), {
+          workspaceId: DEMO_WORKSPACE_ID,
+          decisions: decisionRuntime.adapter.listDecisions(),
+          executions: executionRuntime.listExecutions(),
+        }),
+      );
+    });
+  }, [application.environmentIntent, application.presentationState, application.workspace, decisionRuntime, executionRuntime]);
+  useEffect(() => {
+    if (deploymentMode === "hosted" && !isCustomerHostedWorkspaceId(dataWorkspaceId)) {
+      hostedOperationalApplyRef.current = true;
+      decisionRuntime.hydrateDecisions([]);
+      executionRuntime.hydrateExecutions([]);
+      const emptyScenes = Object.freeze([]);
+      savedScenesRef.current = emptyScenes;
+      setSavedScenes(emptyScenes);
+      setSavedSceneHydration({ status: "empty", rejectedRecords: 0 });
+      hostedOperationalApplyRef.current = false;
+      return;
+    }
+    const hosted = deploymentMode === "hosted" && isCustomerHostedWorkspaceId(dataWorkspaceId);
+    if (hosted) {
+      let cancelled = false;
+      hostedOperationalApplyRef.current = true;
+      const project = () => {
+        setFlowDomain((current) =>
+          containNexoraMVPFlowDomainForManagerWorkspace(
+            projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
+              createEmptyNexoraMVPFlowDomainState(),
+              decisionRuntime.adapter,
+            ),
+            {
+              workspaceId: dataWorkspaceId,
+              decisions: decisionRuntime.adapter.listDecisions(),
+              executions: executionRuntime.listExecutions(),
+            },
+          ),
+        );
+        setDecisionRevision((revision) => revision + 1);
+      };
+      void loadHostedOperations(dataWorkspaceId).then((snapshot) => {
+        if (cancelled || dataWorkspaceIdRef.current !== dataWorkspaceId) return;
+        decisionRuntime.hydrateDecisions(snapshot.decisions);
+        executionRuntime.hydrateExecutions(snapshot.executions);
+        const scenes = Object.freeze([...snapshot.scenes]);
+        savedScenesRef.current = scenes;
+        setSavedScenes(scenes);
+        setSavedSceneHydration({
+          status: snapshot.scenes.length > 0 ? "loaded" : "empty",
+          rejectedRecords: 0,
+        });
+        setHostedOperationalPhase("ready");
+        hostedOperationalApplyRef.current = false;
+        project();
+      }).catch(() => {
+        if (cancelled || dataWorkspaceIdRef.current !== dataWorkspaceId) return;
+        setHostedOperationalPhase("error");
+        setSavedSceneHydration({ status: "unavailable", rejectedRecords: 0 });
+        hostedOperationalApplyRef.current = false;
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     const fixtures = bootstrapCanonicalDecisionsFromFlowFixtures(
       createInitialNexoraMVPFlowDecisionRecords(),
     );
@@ -952,8 +1167,58 @@ export function NexoraExecutiveShell({
 
     syncDecisionProjection();
     return decisionRuntime.subscribe(syncDecisionProjection);
-  }, [dataWorkspaceId, decisionRuntime, executionRuntime, permitProductFixtures]);
+  }, [dataWorkspaceId, decisionRuntime, deploymentMode, executionRuntime, permitProductFixtures]);
   useEffect(() => {
+    if (deploymentMode === "hosted" && !isCustomerHostedWorkspaceId(dataWorkspaceId)) return;
+    const hosted = deploymentMode === "hosted" && isCustomerHostedWorkspaceId(dataWorkspaceId);
+    if (hosted) {
+      const persist = () => {
+        if (hostedOperationalApplyRef.current || dataWorkspaceIdRef.current !== dataWorkspaceId) return;
+        const decisions = decisionRuntime.adapter.listDecisions().filter(
+          (record) => record.workspaceId === dataWorkspaceId,
+        );
+        const executions = executionRuntime.listExecutions().filter(
+          (record) => record.workspaceId === dataWorkspaceId,
+        );
+        void saveHostedOperations(dataWorkspaceId, { decisions, executions }).then(() => {
+          if (dataWorkspaceIdRef.current === dataWorkspaceId) setHostedOperationalPhase("ready");
+        }).catch(() => {
+          if (dataWorkspaceIdRef.current === dataWorkspaceId) setHostedOperationalPhase("error");
+        });
+      };
+      const unsubscribeDecision = decisionRuntime.subscribe(() => {
+        setFlowDomain((current) =>
+          containNexoraMVPFlowDomainForManagerWorkspace(
+            projectNexoraMVPFlowDecisionsFromCanonicalRuntime(current, decisionRuntime.adapter),
+            {
+              workspaceId: dataWorkspaceId,
+              decisions: decisionRuntime.adapter.listDecisions(),
+              executions: executionRuntime.listExecutions(),
+            },
+          ),
+        );
+        setDecisionRevision((revision) => revision + 1);
+        persist();
+      });
+      const unsubscribeExecution = executionRuntime.subscribe(() => {
+        setFlowDomain((current) =>
+          containNexoraMVPFlowDomainForManagerWorkspace(
+            projectNexoraMVPFlowExecutionsFromCanonicalRuntime(current, executionRuntime),
+            {
+              workspaceId: dataWorkspaceId,
+              decisions: decisionRuntime.adapter.listDecisions(),
+              executions: executionRuntime.listExecutions(),
+            },
+          ),
+        );
+        setExecutionRevision((revision) => revision + 1);
+        persist();
+      });
+      return () => {
+        unsubscribeDecision();
+        unsubscribeExecution();
+      };
+    }
     let hydrated: readonly NexoraCanonicalExecution[] = Object.freeze([]);
     try {
       hydrated = hydrateNexoraCanonicalExecutionRuntimeRecords(
@@ -996,7 +1261,7 @@ export function NexoraExecutiveShell({
 
     persistExecutionProjection();
     return executionRuntime.subscribe(persistExecutionProjection);
-  }, [dataWorkspaceId, decisionRuntime, executionRuntime, permitProductFixtures]);
+  }, [dataWorkspaceId, decisionRuntime, deploymentMode, executionRuntime, permitProductFixtures]);
   const executiveContextRef = useRef(executiveContext);
   executiveContextRef.current = executiveContext;
   const [conversationalProcessing, setConversationalProcessing] =
@@ -1880,10 +2145,10 @@ export function NexoraExecutiveShell({
   interactionRef.current = interaction;
 
   const applyWorkspacePresentationAction = useCallback(
-    (
+    async (
       action: NexoraConversationalWorkspaceActionPayload,
       resolvedTargetId: string | null,
-    ): string | null => {
+    ): Promise<string | null> => {
       const current = interactionRef.current;
       const currentSubjectId =
         resolvedTargetId ??
@@ -2013,13 +2278,27 @@ export function NexoraExecutiveShell({
             ),
             scene,
           ]);
-          const persistence = persistSceneOrgSavedScenes(nextScenes);
-          if (!persistence.persisted) {
+          if (!(deploymentMode === "hosted" && isCustomerHostedWorkspaceId(sceneOwnerId))) {
+            const persistence = persistSceneOrgSavedScenes(nextScenes);
+            if (!persistence.persisted) {
+              return `I couldn't durably save ${sceneLabel}; the previous Saved Scenes are unchanged.`;
+            }
+            savedScenesRef.current = nextScenes;
+            setSavedScenes(nextScenes);
+            setActiveSavedSceneId(sceneId);
+            return `Saved ${sceneLabel} as view and canonical reference metadata.`;
+          }
+          try {
+            await saveHostedOperations(sceneOwnerId, {
+              scenes: nextScenes.filter((candidate) => candidate.managerWorkspaceId === sceneOwnerId),
+            });
+          } catch {
             return `I couldn't durably save ${sceneLabel}; the previous Saved Scenes are unchanged.`;
           }
           savedScenesRef.current = nextScenes;
           setSavedScenes(nextScenes);
           setActiveSavedSceneId(sceneId);
+          setHostedOperationalPhase("ready");
           return `Saved ${sceneLabel} as view and canonical reference metadata.`;
         }
         case "SHOW_SAVED_SCENES": {
@@ -2145,6 +2424,19 @@ export function NexoraExecutiveShell({
                   }),
             ),
           );
+          if (deploymentMode === "hosted" && isCustomerHostedWorkspaceId(sceneOwnerId)) {
+            try {
+              await saveHostedOperations(sceneOwnerId, {
+                scenes: nextScenes.filter((scene) => scene.managerWorkspaceId === sceneOwnerId),
+              });
+            } catch {
+              return "I couldn't durably change the default Scene; the previous Saved Scenes are unchanged.";
+            }
+            savedScenesRef.current = nextScenes;
+            setSavedScenes(nextScenes);
+            setHostedOperationalPhase("ready");
+            return "Made the current saved scene the default view.";
+          }
           const persistence = persistSceneOrgSavedScenes(nextScenes);
           if (!persistence.persisted) {
             return "I couldn't durably change the default Scene; the previous Saved Scenes are unchanged.";
@@ -2160,6 +2452,7 @@ export function NexoraExecutiveShell({
       activeSavedSceneId,
       dataRealityExperience.catalog,
       rightPanelChrome.collapsed,
+      deploymentMode,
       savedSceneHydration.status,
       selectAdvisorTab,
       syncExecutiveContextFromRuntime,
@@ -2405,14 +2698,18 @@ export function NexoraExecutiveShell({
           theatreProposedCandidateId: proposedCandidateId,
           nmiAdvisorBundle: nmiLiveRef.current.advisorBundle,
         });
-        const presented = await completeNexoraLlmManagerPresentation(result);
+        const presented = await completeNexoraLlmManagerPresentation(result, {
+          deploymentMode,
+          principal: session.authenticated && session.userId ? { userId: session.userId } : null,
+          workspaceId: deploymentMode === "hosted" ? readHostedLlmWorkspaceId() : null,
+        });
 
         const workspaceCommand = result.commandResult?.command;
         const workspaceResponse =
           result.runtimeResult?.status === "applied" &&
           workspaceCommand?.kind === "workspace-presentation" &&
           workspaceCommand.workspaceAction
-            ? applyWorkspacePresentationAction(
+            ? await applyWorkspacePresentationAction(
                 workspaceCommand.workspaceAction,
                 workspaceCommand.primaryTargetId,
               )
@@ -3112,9 +3409,76 @@ export function NexoraExecutiveShell({
           ? "Execution Details"
           : "Executive Overlay";
 
+  const commitHostedOrLocalSceneMutation = useCallback((
+    mutation: SceneOrgSavedSceneCollectionMutation,
+  ): SceneOrgSavedSceneMutationResult | Promise<SceneOrgSavedSceneMutationResult> => {
+    const managerWorkspaceId = readLiveExecutiveDataWorkspaceId();
+    const accept = (result: SceneOrgSavedSceneMutationResult) => {
+      setSavedSceneMutation(result);
+      if (result.status === "renamed" || result.status === "deleted") {
+        savedScenesRef.current = result.scenes;
+        setSavedScenes(result.scenes);
+        if (result.status === "deleted" && activeSavedSceneId === mutation.sceneId) {
+          setActiveSavedSceneId(null);
+        }
+      }
+      return result;
+    };
+    if (!(deploymentMode === "hosted" && isCustomerHostedWorkspaceId(managerWorkspaceId))) {
+      return accept(applySceneOrgSavedSceneCollectionMutation({
+        scenes: savedScenesRef.current,
+        mutation,
+        managerWorkspaceId,
+      }));
+    }
+    const captured: { scenes: readonly SceneOrgSavedScene[] | null } = { scenes: null };
+    const probed = applySceneOrgSavedSceneCollectionMutation({
+      scenes: savedScenesRef.current,
+      mutation,
+      managerWorkspaceId,
+      persist: (next) => {
+        captured.scenes = next;
+        return { persisted: false, reason: "write-failed" };
+      },
+    });
+    if (probed.status !== "persistence-failed" || captured.scenes == null) return accept(probed);
+    const nextScenes = captured.scenes;
+    return saveHostedOperations(managerWorkspaceId, {
+      scenes: nextScenes.filter((scene) => scene.managerWorkspaceId === managerWorkspaceId),
+    }).then(() => {
+      setHostedOperationalPhase("ready");
+      return accept({
+        ...probed,
+        status: mutation.kind === "rename" ? "renamed" : "deleted",
+        scenes: nextScenes,
+      });
+    }).catch(() => {
+      setHostedOperationalPhase("error");
+      return accept({
+        ...probed,
+        status: "persistence-failed",
+        scenes: savedScenesRef.current,
+      });
+    });
+  }, [activeSavedSceneId, deploymentMode]);
+  const hostedDecisionIds = decisionRuntime.adapter.listDecisions()
+    .filter((record) => record.workspaceId === dataWorkspaceId)
+    .map((record) => record.decisionId)
+    .join(",");
+  const hostedExecutionIds = executionRuntime.listExecutions()
+    .filter((record) => record.workspaceId === dataWorkspaceId)
+    .map((record) => record.executionId)
+    .join(",");
+  const hostedDefaultSceneId = managerSavedScenes.find((scene) => scene.kind === "DEFAULT_MANAGER")?.sceneId ?? "none";
   return (
     <div
       data-testid="nexora-executive-shell"
+      data-hosted-operational-phase={hostedOperationalPhase}
+      data-hosted-decision-ids={hostedDecisionIds || "none"}
+      data-hosted-execution-ids={hostedExecutionIds || "none"}
+      data-hosted-default-scene-id={hostedDefaultSceneId}
+      data-hosted-decision-revision={String(decisionRevision)}
+      data-hosted-execution-revision={String(executionRevision)}
       data-csv-hydrated={csvHydrated ? "true" : "false"}
       data-csv-durability={csvDurability}
       data-data-rail-open={detailWorkspaceOpen ? "true" : "false"}
@@ -3977,12 +4341,26 @@ export function NexoraExecutiveShell({
         activeSourceContextId={activeLiveObservation?.sourceContextId ?? activeCsvImport?.sourceContextId ?? null}
         onActiveObservation={onLiveObservationActivated}
       />
+      {hostedOperationalPhase === "error" ? (
+        <p role="status" data-testid="hosted-operational-failure">
+          Decision, Execution, and Saved Scene changes were not saved.
+        </p>
+      ) : null}
       <ExecutiveContextBar
         context={context}
         onThemeChange={setTheme}
         compact
         onHelp={() => setFloatingKind("wizard")}
-        managerWorkspace={<NexoraManagerWorkspaceControl />}
+        managerWorkspace={
+          <NexoraManagerWorkspaceControl
+            deploymentMode={deploymentMode}
+            session={session}
+            authProvider={authProvider}
+            authError={authError}
+            hostedWorkspaces={hostedWorkspaces}
+            hostedWorkspaceStatus={hostedWorkspaceStatus}
+          />
+        }
       />
 
       <div
@@ -4090,35 +4468,12 @@ export function NexoraExecutiveShell({
                       null,
                     );
                   }}
-                  onRenameScene={(sceneId, name) => {
-                    const result = applySceneOrgSavedSceneCollectionMutation({
-                      scenes: savedScenesRef.current,
-                      mutation: { kind: "rename", sceneId, name },
-                      managerWorkspaceId: readLiveExecutiveDataWorkspaceId(),
-                    });
-                    setSavedSceneMutation(result);
-                    if (result.status === "renamed") {
-                      savedScenesRef.current = result.scenes;
-                      setSavedScenes(result.scenes);
-                    }
-                    return result;
-                  }}
-                  onDeleteScene={(sceneId) => {
-                    const result = applySceneOrgSavedSceneCollectionMutation({
-                      scenes: savedScenesRef.current,
-                      mutation: { kind: "delete", sceneId },
-                      managerWorkspaceId: readLiveExecutiveDataWorkspaceId(),
-                    });
-                    setSavedSceneMutation(result);
-                    if (result.status === "deleted") {
-                      savedScenesRef.current = result.scenes;
-                      setSavedScenes(result.scenes);
-                      if (activeSavedSceneId === sceneId) {
-                        setActiveSavedSceneId(null);
-                      }
-                    }
-                    return result;
-                  }}
+                  onRenameScene={(sceneId, name) =>
+                    commitHostedOrLocalSceneMutation({ kind: "rename", sceneId, name })
+                  }
+                  onDeleteScene={(sceneId) =>
+                    commitHostedOrLocalSceneMutation({ kind: "delete", sceneId })
+                  }
                 /><NexoraStageDataControl open={detailWorkspaceOpen} attention={false} guidedAttentionCue={
                   guidedAttention.presentation?.target === "DATA_ENTRY"
                     ? guidedAttention.presentation.cue
@@ -4272,6 +4627,7 @@ export function NexoraExecutiveShell({
             onInvestigationLevelChange={setInvestigationLevel}
             onAskObjectCard={onSubmitConversationalUtterance}
             learningWorkspaceId={dataWorkspaceId}
+            productFixturesPermitted={permitProductFixtures}
             advisorBridge={advisorBridge}
             presentationViewModel={presentationViewModel}
             focusedSubject={advisorFocusedSubject}

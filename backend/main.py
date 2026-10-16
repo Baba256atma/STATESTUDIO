@@ -208,6 +208,8 @@ install_exception_handlers(app, logging.getLogger("nexora.api"))
 @app.get("/health")
 def nexora_health():
     """B.26 — Fast liveness + subsystem flags; must not throw."""
+    if os.environ.get("NEXORA_DEPLOYMENT_MODE") == "hosted":
+        return {"ok": True}
     try:
         now = datetime.now(timezone.utc).isoformat()
     except Exception:
@@ -249,6 +251,17 @@ app.add_middleware(
 app.add_middleware(RequestAuditMiddleware)
 # Simple in-memory per-IP rate limiting for MVP safety.
 app.add_middleware(RateLimitMiddleware, max_requests=60, window_seconds=60)
+
+
+HOSTED_PUBLIC_PATHS = frozenset({"/health", "/nexora/llm/runtime"})
+
+
+@app.middleware("http")
+async def hosted_public_closure(request: Request, call_next):
+    """Hosted mode keeps the legacy surface unreachable. Local mode is unchanged."""
+    if os.environ.get("NEXORA_DEPLOYMENT_MODE") == "hosted" and request.url.path not in HOSTED_PUBLIC_PATHS:
+        return JSONResponse({"error": "not_found"}, status_code=404)
+    return await call_next(request)
 app.include_router(human_catalog_router)
 app.include_router(analysis_router)
 app.include_router(replay_router)

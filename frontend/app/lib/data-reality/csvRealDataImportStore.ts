@@ -1,7 +1,7 @@
 /** Workspace-scoped atomic commit store for prepared RDI:2 imports. */
 
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
-import { legacyWorkflowKeyBlockedForActiveManager } from "../workspace/liveManagerDataWorkspaceGuard.ts";
+import { refuseCrossWorkspaceCsvTarget } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import type {
   CsvImportFlowState,
   CsvMappingReview,
@@ -30,6 +30,7 @@ export type CsvImportCommitResult = Readonly<{
     | "not_ready"
     | "workspace_mismatch"
     | "refused_workflow_key"
+    | "wrong_workspace"
     | "source_exists";
   previous: CsvCommittedImport | null;
   current: CsvCommittedImport | null;
@@ -37,7 +38,7 @@ export type CsvImportCommitResult = Readonly<{
 
 export type CsvImportRemoveResult = Readonly<{
   removed: boolean;
-  reason: "removed" | "not_found" | "workspace_mismatch" | "active_source";
+  reason: "removed" | "not_found" | "workspace_mismatch" | "active_source" | "wrong_workspace" | "refused_workflow_key";
   removedImport: CsvCommittedImport | null;
   historicalReference: CsvRemovedSourceReference | null;
 }>;
@@ -58,7 +59,7 @@ export type CsvImportCandidate = Readonly<{
 
 export type SaveCsvImportCandidateResult = Readonly<{
   saved: boolean;
-  reason: "saved" | "pending_duplicate" | "refused_workflow_key";
+  reason: "saved" | "pending_duplicate" | "refused_workflow_key" | "wrong_workspace" | "workspace_mismatch";
   candidate: CsvImportCandidate;
   existing: CsvImportCandidate | null;
 }>;
@@ -156,6 +157,28 @@ export function listCsvPublishedKpiObservations(): readonly CsvPublishedKpiObser
   return csvPublishedKpiObservations;
 }
 
+/**
+ * Drops published KPI observations that belong to sources just removed from one
+ * workspace. Other workspaces and unrelated sources stay. This is the same
+ * ownership filter used by removeCsvRealDataImport.
+ */
+export function releaseCsvPublishedKpiObservationsForRemovedSources(
+  workspaceId: WorkspaceId,
+  sources: readonly { readonly sourceContextId: string; readonly importId: string }[],
+): void {
+  if (sources.length === 0) return;
+  const sourceIds = new Set(sources.map((source) => source.sourceContextId));
+  const importIds = new Set(sources.map((source) => source.importId));
+  csvPublishedKpiObservations = Object.freeze(
+    csvPublishedKpiObservations.filter((entry) => {
+      if (entry.workspaceId !== workspaceId) return true;
+      if (sourceIds.has(entry.sourceContextId)) return false;
+      if (importIds.has(entry.importId)) return false;
+      return true;
+    }),
+  );
+}
+
 function notify(kind: CsvStoreLifecycleKind): void {
   lastLifecycleKind = kind;
   version += 1;
@@ -228,10 +251,19 @@ export function saveCsvImportCandidate(
   candidate: CsvImportCandidate,
   options?: Readonly<{ replaceCandidateId?: string | null }>,
 ): SaveCsvImportCandidateResult {
-  if (legacyWorkflowKeyBlockedForActiveManager(candidate.workspaceId)) {
+  const refusal = refuseCrossWorkspaceCsvTarget(candidate.workspaceId);
+  if (refusal) {
     return Object.freeze({
       saved: false,
-      reason: "refused_workflow_key",
+      reason: refusal,
+      candidate,
+      existing: null,
+    });
+  }
+  if (candidate.input.workspaceId !== candidate.workspaceId) {
+    return Object.freeze({
+      saved: false,
+      reason: "workspace_mismatch",
       candidate,
       existing: null,
     });
@@ -255,6 +287,7 @@ export function saveCsvImportCandidate(
 }
 
 export function discardCsvImportCandidate(workspaceId: WorkspaceId, candidateId: string): CsvImportCandidate | null {
+  if (refuseCrossWorkspaceCsvTarget(workspaceId)) return null;
   const workspace = { ...(pendingByWorkspace[workspaceId] ?? {}) };
   const existing = workspace[candidateId] ?? null;
   if (!existing) return null;
@@ -277,11 +310,12 @@ export function commitPreparedCsvRealDataImport(input: Readonly<{
   mode: CsvReimportMode;
   committedAt: string;
 }>): CsvImportCommitResult {
-  if (legacyWorkflowKeyBlockedForActiveManager(input.expectedWorkspaceId)) {
+  const refusal = refuseCrossWorkspaceCsvTarget(input.expectedWorkspaceId);
+  if (refusal) {
     const existing = getCsvRealDataImport(input.expectedWorkspaceId, input.prepared.sourceContextId);
     return Object.freeze({
       committed: false,
-      reason: "refused_workflow_key",
+      reason: refusal,
       previous: existing,
       current: existing,
     });
@@ -335,6 +369,15 @@ export function removeCsvRealDataImport(input: Readonly<{
   confirmedActiveRemoval?: boolean;
   removedAt?: string;
 }>): CsvImportRemoveResult {
+  const removalRefusal = refuseCrossWorkspaceCsvTarget(input.workspaceId);
+  if (removalRefusal) {
+    return Object.freeze({
+      removed: false,
+      reason: removalRefusal,
+      removedImport: null,
+      historicalReference: null,
+    });
+  }
   const existing = getCsvRealDataImport(input.workspaceId, input.sourceContextId);
   if (!existing) {
     return Object.freeze({
@@ -390,12 +433,63 @@ export function removeCsvRealDataImport(input: Readonly<{
     ...removedByWorkspace,
     [input.workspaceId]: workspaceHistory,
   });
+  releaseCsvPublishedKpiObservationsForRemovedSources(input.workspaceId, [{
+    sourceContextId: input.sourceContextId,
+    importId: existing.importId,
+  }]);
   notify("remove");
   return Object.freeze({
     removed: true,
     reason: "removed",
     removedImport: existing,
     historicalReference,
+  });
+}
+
+/**
+ * Removes every CSV record owned by one workspace. Does not clear other workspaces.
+ * Refuses a target that is not the canonical live workspace.
+ */
+export function removeWorkspaceCsvData(workspaceId: WorkspaceId): Readonly<{
+  removed: boolean;
+  reason: "removed" | "wrong_workspace" | "refused_workflow_key";
+  removedSourceIds: readonly string[];
+  discardedCandidateIds: readonly string[];
+}> {
+  const refusal = refuseCrossWorkspaceCsvTarget(workspaceId);
+  if (refusal) {
+    return Object.freeze({
+      removed: false,
+      reason: refusal,
+      removedSourceIds: Object.freeze([]),
+      discardedCandidateIds: Object.freeze([]),
+    });
+  }
+  const removedSourceIds: string[] = [];
+  for (const entry of listCsvRealDataImports(workspaceId)) {
+    const result = removeCsvRealDataImport({
+      workspaceId,
+      sourceContextId: entry.sourceContextId,
+      activeSourceContextId: null,
+      removedAt: entry.committedAt,
+    });
+    if (result.removed) removedSourceIds.push(entry.sourceContextId);
+  }
+  const discardedCandidateIds: string[] = [];
+  for (const candidate of listCsvImportCandidates(workspaceId)) {
+    const discarded = discardCsvImportCandidate(workspaceId, candidate.candidateId);
+    if (discarded) discardedCandidateIds.push(candidate.candidateId);
+  }
+  const replacements = Object.values(pendingByWorkspace[workspaceId] ?? {});
+  for (const candidate of replacements) {
+    const discarded = discardCsvImportCandidate(workspaceId, candidate.candidateId);
+    if (discarded) discardedCandidateIds.push(candidate.candidateId);
+  }
+  return Object.freeze({
+    removed: true,
+    reason: "removed",
+    removedSourceIds: Object.freeze(removedSourceIds),
+    discardedCandidateIds: Object.freeze(discardedCandidateIds),
   });
 }
 
@@ -438,6 +532,48 @@ function groupByWorkspace<T extends { workspaceId: WorkspaceId }>(
   return Object.freeze(Object.fromEntries(
     Object.entries(next).map(([workspaceId, values]) => [workspaceId, freezeWorkspaceMap(values)]),
   ));
+}
+
+function withoutWorkspaceKpis(workspaceId: WorkspaceId): void {
+  csvPublishedKpiObservations = Object.freeze(
+    csvPublishedKpiObservations.filter((entry) => entry.workspaceId !== workspaceId),
+  );
+}
+
+/** Drops one workspace from the runtime projection. Does not write browser durability. */
+export function releaseWorkspaceCsvAuthority(workspaceId: WorkspaceId): void {
+  const next = { ...committedByWorkspace };
+  delete next[workspaceId];
+  committedByWorkspace = Object.freeze(next);
+  const pending = { ...pendingByWorkspace };
+  delete pending[workspaceId];
+  pendingByWorkspace = Object.freeze(pending);
+  withoutWorkspaceKpis(workspaceId);
+  notify("hydrate");
+}
+
+/**
+ * Installs server-accepted imports for one workspace.
+ * Hydration does not call the IndexedDB persist hook.
+ */
+export function installAuthoritativeWorkspaceCsv(imports: readonly CsvCommittedImport[]): void {
+  if (imports.length === 0) return;
+  const workspaceId = imports[0]!.workspaceId;
+  const next = { ...committedByWorkspace };
+  delete next[workspaceId];
+  committedByWorkspace = Object.freeze(next);
+  withoutWorkspaceKpis(workspaceId);
+  const workspaceImports: Record<string, CsvCommittedImport> = {};
+  for (const entry of imports) {
+    if (entry.workspaceId !== workspaceId) continue;
+    workspaceImports[entry.sourceContextId] = Object.freeze(entry);
+    recordCsvPublishedKpiObservations(entry);
+  }
+  committedByWorkspace = Object.freeze({
+    ...committedByWorkspace,
+    [workspaceId]: Object.freeze(workspaceImports),
+  });
+  notify("hydrate");
 }
 
 export function hydrateCsvRealDataImportState(input: CsvRealDataImportExportedState): void {

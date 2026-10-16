@@ -7,6 +7,9 @@
  * governance locally. Not a second Advisor, runtime, or cost guard.
  */
 
+import { evaluateHostedLlmProviderGate } from "@/app/lib/auth/hostedLlmProviderGate.ts";
+import type { NexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode.ts";
+import type { NexoraPrincipal } from "@/app/lib/auth/nexoraPrincipal.ts";
 import { apiBase } from "@/app/lib/apiBase.ts";
 import type { NexoraMVPObjectInteractionState } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
 import type { NexoraConversationalExperienceResult } from "./conversationalExperience.ts";
@@ -40,6 +43,9 @@ function statusFromHttp(body: {
 type NexoraLlmManagerPresentationOptions = {
   readonly fetchImpl?: typeof fetch;
   readonly apiBaseUrl?: string;
+  readonly deploymentMode?: NexoraDeploymentMode;
+  readonly principal?: NexoraPrincipal | null;
+  readonly workspaceId?: string | null;
 };
 
 type NexoraConversationalRuntimeResult = NexoraConversationalExperienceResult & {
@@ -65,7 +71,34 @@ export async function completeNexoraLlmManagerPresentation(
   }
   const context = result.llmManagementContext;
   if (!context) return result;
+  const deploymentMode = options?.deploymentMode ?? "local";
+  const providerGate = evaluateHostedLlmProviderGate({
+    deploymentMode,
+    principal: options?.principal ?? null,
+    workspaceId: options?.workspaceId,
+  });
+  if (!providerGate.allowed) {
+    const governed = governNexoraLlmOutput({
+      deterministicResponse: deterministic,
+      contribution: null,
+      participantStatus: "skipped-by-policy",
+      policyReason: providerGate.reason,
+      managementContext: context,
+    });
+    return overlayPresentation(result, {
+      turn: freezeTurn({
+        status: "skipped-by-policy",
+        invoked: false,
+        fallbackUsed: false,
+        contribution: null,
+        deterministicResponse: deterministic,
+        policyReason: providerGate.reason,
+      }),
+      governed,
+    });
+  }
   const fetchImpl = options?.fetchImpl ?? fetch;
+  const hosted = deploymentMode === "hosted";
   const base = (options?.apiBaseUrl ?? apiBase()).replace(/\/$/, "");
   let body: {
     contribution?: unknown;
@@ -73,7 +106,7 @@ export async function completeNexoraLlmManagerPresentation(
     policy?: { reason?: unknown } | null;
   };
   try {
-    const response = await fetchImpl(`${base}${NEXORA_LLM_RUNTIME_HTTP_PATH}`, {
+    const response = await fetchImpl(hosted ? "/api/nexora/llm" : `${base}${NEXORA_LLM_RUNTIME_HTTP_PATH}`, {
       method: "POST",
       headers: Object.freeze({ "Content-Type": "application/json" }),
       body: JSON.stringify({
@@ -81,6 +114,7 @@ export async function completeNexoraLlmManagerPresentation(
         deterministicResponse: deterministic,
         experienceStatus: result.status,
         managementContext: context,
+        ...(hosted ? { workspaceId: options?.workspaceId } : {}),
       }),
     });
     if (!response.ok) {
