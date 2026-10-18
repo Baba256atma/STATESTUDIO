@@ -149,7 +149,8 @@ def test_concurrency_releases_after_completion(tmp_path: Path) -> None:
     assert second.calls == 1
 
 
-def test_payload_csv_provider_failures_and_retention(tmp_path: Path) -> None:
+def test_payload_csv_provider_failures_and_retention(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.setattr("app.services.nexora_llm.usage_guard.utc_now", lambda: NOW.isoformat())
     store = NexoraLlmUsageStore(tmp_path / "usage.json")
     adapter = FakeAdapter()
     roomy = {

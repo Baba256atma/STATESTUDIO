@@ -14,7 +14,8 @@ No secret values belong in this list. Mark an item only after the operator confi
 - [ ] `NEXORA_AUTH_DEV_SIGN_IN` is not `true`
 - [ ] FastAPI is reachable only from the web service
 - [ ] Web service and FastAPI are each one instance
-- [ ] Usage ledger path is a persistent disk on that one FastAPI instance
+- [ ] Render Persistent Disk is attached to the private FastAPI service at `/var/data`
+- [ ] `NEXORA_LLM_USAGE_STORE_PATH=/var/data/nexora_llm/usage.json` is set on the private FastAPI service
 - [ ] `GET /api/health` returns ready
 - [ ] Rate, burst, concurrency, and budget limits are the HOSTED-MVP:5 values
 - [ ] Manufacturing Demo, Project Demo, and Reset Demo work without a paid provider call

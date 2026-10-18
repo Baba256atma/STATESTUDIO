@@ -12,16 +12,30 @@ from __future__ import annotations
 
 import fcntl
 import json
+import os
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 from uuid import uuid4
 
 USAGE_STORE_IDENTITY = "LLM-MVP:4/UsageStore"
+NEXORA_LLM_USAGE_STORE_PATH = "NEXORA_LLM_USAGE_STORE_PATH"
 
 
-def default_usage_store_path() -> Path:
+def default_usage_store_path(environ: Mapping[str, str] | None = None) -> Path:
+    env = environ if environ is not None else os.environ
+    configured = env.get(NEXORA_LLM_USAGE_STORE_PATH)
+    if configured is not None:
+        raw_path = str(configured).strip()
+        if not raw_path:
+            raise ValueError(f"{NEXORA_LLM_USAGE_STORE_PATH} must not be empty")
+        path = Path(raw_path)
+        if not path.is_absolute():
+            raise ValueError(f"{NEXORA_LLM_USAGE_STORE_PATH} must be an absolute path")
+        return path
+    if env.get("NEXORA_DEPLOYMENT_MODE") == "hosted":
+        raise ValueError(f"{NEXORA_LLM_USAGE_STORE_PATH} is required in hosted mode")
     return Path(__file__).resolve().parents[3] / "data" / "nexora_llm" / "usage.json"
 
 

@@ -8,8 +8,19 @@ This runbook is for the single-instance Public Hosted MVP. It does not create a 
 2. Set the server-only values listed in `LAUNCH-CHECKLIST.md`. Do not put them in Git or in any `NEXT_PUBLIC_` variable.
 3. Build the web app with `npm run build` in `frontend`.
 4. Start the web app with `npm run start`.
-5. Start the FastAPI runtime on a private network address that only the web app can reach.
+5. From the `backend` root directory, start the FastAPI runtime on a private network address that only the web app can reach with `uvicorn main:app --host 0.0.0.0 --port $PORT`.
 6. Confirm `GET /api/health` returns `{"ok":true,"database":"ready"}`.
+
+### Private FastAPI persistent usage ledger
+
+Attach one Render Persistent Disk to the private FastAPI service and configure:
+
+- Persistent Disk mount path: `/var/data`
+- `NEXORA_LLM_USAGE_STORE_PATH=/var/data/nexora_llm/usage.json`
+
+Only files below `/var/data` persist across Render deploys and restarts. The disk is required for the current single-instance Hosted MVP LLM usage authority; a missing, invalid, or unusable configured ledger path fails closed before a provider call. The service remains single-instance because an attached Render disk prevents horizontal multi-instance scaling. A future multi-instance architecture must move the usage authority to a shared durable store rather than treating this filesystem ledger as distributed.
+
+This disk stores only the operational LLM usage ledger. Manager Workspace, Data, Decision, Execution, and Scene truth remain in the Hosted PostgreSQL authority.
 
 The production web process refuses to start when the required production configuration is missing. It does not fall back to the development directory database or the development sign-in.
 

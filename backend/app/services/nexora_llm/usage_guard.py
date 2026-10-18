@@ -231,7 +231,11 @@ def execute_nexora_llm_guarded_runtime(
             return _skipped(refusal)
         user_scope = f"hosted-user:{hosted[0]}"
 
-    ledger = store or NexoraLlmUsageStore()
+    try:
+        ledger = store or NexoraLlmUsageStore()
+    except (OSError, ValueError):
+        logger.info("nexora_llm_policy reason=USAGE_UNAVAILABLE turn=%s", turn)
+        return _skipped("USAGE_UNAVAILABLE")
     stamp = now or datetime.now(timezone.utc)
     key = period_key(config.period, stamp)
     slots: list[str] = []
