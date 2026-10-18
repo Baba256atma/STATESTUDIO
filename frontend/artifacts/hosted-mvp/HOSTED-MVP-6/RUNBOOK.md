@@ -8,8 +8,19 @@ This runbook is for the single-instance Public Hosted MVP. It does not create a 
 2. Set the server-only values listed in `LAUNCH-CHECKLIST.md`. Do not put them in Git or in any `NEXT_PUBLIC_` variable.
 3. Build the web app with `npm run build` in `frontend`.
 4. Start the web app with `npm run start`.
-5. From the `backend` root directory, start the FastAPI runtime on a private network address that only the web app can reach with `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-6. Confirm `GET /api/health` returns `{"ok":true,"database":"ready"}`.
+5. Configure the Render Private FastAPI service with Root Directory `backend`, Python `3.12.11` from the repository-root `.python-version`, and Build Command `pip install -r requirements.txt`.
+6. Start the FastAPI runtime on a private network address that only the web app can reach with `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+7. Confirm `GET /api/health` returns `{"ok":true,"database":"ready"}`.
+
+### Private FastAPI production build
+
+`backend/requirements.txt` is the production dependency authority. Do not replace it with a local `.venv`, `pip freeze`, or an unbounded install. Render must use the repository-owned `.python-version` value rather than its moving default Python version.
+
+The first Render Private FastAPI deployment at commit `a9b1a32c` failed during Build because `backend/requirements.txt` did not exist. It did not reach application startup.
+
+For a clean local build check, create a temporary Python 3.12 virtual environment outside the repository, run `pip install -r requirements.txt` from `backend`, then verify `python -c "import main; assert main.app is not None"`, `python -c "import openai"`, and the production-equivalent Uvicorn command. Use an empty provider key and test-only gateway/ledger values; do not make a live provider call.
+
+If Render reports that `requirements.txt` is missing, verify that the file is committed and the service Root Directory is exactly `backend`. If Render selects Python 3.14, verify that the repository-root `.python-version` is committed and contains `3.12.11`, and that no higher-precedence `PYTHON_VERSION` service variable overrides it.
 
 ### Private FastAPI persistent usage ledger
 

@@ -1,0 +1,8 @@
+# Hosted production runtime. Keep direct dependencies explicit and review upgrades.
+fastapi==0.135.1
+httpx==0.28.1
+openai==3.35.1
+pydantic==2.12.5
+pydantic-settings==2.16.0
+starlette==1.9.0
+uvicorn==0.42.0

@@ -14,6 +14,10 @@ No secret values belong in this list. Mark an item only after the operator confi
 - [ ] `NEXORA_AUTH_DEV_SIGN_IN` is not `true`
 - [ ] FastAPI is reachable only from the web service
 - [ ] Web service and FastAPI are each one instance
+- [ ] Private FastAPI Root Directory is `backend`
+- [ ] Repository-root `.python-version` selects Python `3.12.11` (no conflicting `PYTHON_VERSION` override)
+- [ ] Private FastAPI Build Command is `pip install -r requirements.txt`
+- [ ] Private FastAPI Start Command is `uvicorn main:app --host 0.0.0.0 --port $PORT`
 - [ ] Render Persistent Disk is attached to the private FastAPI service at `/var/data`
 - [ ] `NEXORA_LLM_USAGE_STORE_PATH=/var/data/nexora_llm/usage.json` is set on the private FastAPI service
 - [ ] `GET /api/health` returns ready
