@@ -102,7 +102,18 @@ export async function dispatchAuthorizedHostedLlm(input: {
       body: { status: "skipped", contribution: null, policy: { reason: "workspace_unavailable" } },
     });
   }
-  const base = (input.apiBaseUrl ?? process.env.NEXORA_PRIVATE_API_BASE ?? apiBase()).replace(/\/$/, "");
+  const configuredBase = input.apiBaseUrl
+    ?? (process.env.NEXORA_DEPLOYMENT_MODE === "hosted"
+      ? process.env.NEXORA_PRIVATE_API_BASE
+      : process.env.NEXORA_PRIVATE_API_BASE ?? apiBase());
+  if (!configuredBase?.trim()) {
+    return Object.freeze({
+      forwarded: false,
+      status: 503,
+      body: { status: "skipped", contribution: null, policy: { reason: "workspace_unavailable" } },
+    });
+  }
+  const base = configuredBase.trim().replace(/\/$/, "");
   const fetchImpl = input.fetchImpl ?? fetch;
   const response = await fetchImpl(`${base}/nexora/llm/runtime`, {
     method: "POST",

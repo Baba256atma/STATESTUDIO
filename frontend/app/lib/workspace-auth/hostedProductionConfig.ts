@@ -24,12 +24,23 @@ export function readHostedProductionConfig(
   } catch {
     httpsOrigin = false;
   }
+  const privateApiOrigin = env.NEXORA_PRIVATE_API_BASE?.trim() ?? "";
+  let privateApiReady = false;
+  try {
+    const url = new URL(privateApiOrigin);
+    privateApiReady = (url.protocol === "http:" || url.protocol === "https:")
+      && url.hostname !== "localhost"
+      && url.hostname !== "127.0.0.1";
+  } catch {
+    privateApiReady = false;
+  }
   const ready = Boolean(env.DATABASE_URL?.trim())
     && Boolean(env.NEXTAUTH_SECRET?.trim())
     && Boolean(env.NEXORA_LLM_GATEWAY_SECRET?.trim())
     && Boolean(env.GITHUB_ID?.trim())
     && Boolean(env.GITHUB_SECRET?.trim())
     && httpsOrigin
+    && privateApiReady
     && env.NEXORA_AUTH_DEV_SIGN_IN !== "true";
   return ready
     ? Object.freeze({ ok: true })

@@ -12,6 +12,8 @@ This runbook is for the single-instance Public Hosted MVP. It does not create a 
 6. Start the FastAPI runtime on a private network address that only the web app can reach with `uvicorn main:app --host 0.0.0.0 --port $PORT`.
 7. Confirm `GET /api/health` returns `{"ok":true,"database":"ready"}`.
 
+The Web Service must set `NEXORA_PRIVATE_API_BASE` to the same-region Render private-service origin (for example, `http://<private-service-address>`). Hosted production rejects a missing or loopback value and never falls back to a browser-exposed API base.
+
 ### Private FastAPI production build
 
 `backend/requirements.txt` is the production dependency authority. Do not replace it with a local `.venv`, `pip freeze`, or an unbounded install. Render must use the repository-owned `.python-version` value rather than its moving default Python version.

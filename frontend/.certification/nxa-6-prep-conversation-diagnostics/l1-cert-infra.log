@@ -1,14 +1,31 @@
-✔ duplicate running starts are not recorded (1.228334ms)
-✔ CERTIFIED barrier requires finished inspected passing required tasks (0.453458ms)
-✔ a long-lived nonessential task does not block certification (0.235792ms)
-✔ diagnosis never authorizes a Fix on the record itself (0.360542ms)
-✔ insufficient evidence cannot begin a Fix (0.050792ms)
+✔ duplicate running starts are not recorded (1.781459ms)
+✔ CERTIFIED barrier requires finished inspected passing required tasks (0.386458ms)
+✔ a long-lived nonessential task does not block certification (0.158458ms)
+✔ diagnosis never authorizes a Fix on the record itself (0.650583ms)
+✔ insufficient evidence cannot begin a Fix (0.111416ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -939,11 +956,11 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ certified seed cases pass in deterministic order (703.193667ms)
-✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (7.186208ms)
-✔ response failure is distinct from Stage-effect failure (8.101542ms)
-✔ harness uses isolated runtime state per case (18.010208ms)
-✔ funnel catalog has four levels, no skips, and Level 4 is last (0.114041ms)
+✔ certified seed cases pass in deterministic order (795.675833ms)
+✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (8.835125ms)
+✔ response failure is distinct from Stage-effect failure (9.164541ms)
+✔ harness uses isolated runtime state per case (14.789583ms)
+✔ funnel catalog has four levels, no skips, and Level 4 is last (0.206833ms)
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
@@ -956,21 +973,38 @@
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
+[WorkspaceRegistry][Init] {
+  version: 'NW-A:1',
+  workspaceCount: 1,
+  activeWorkspaceId: 'demo_workspace'
+}
+[ActiveWorkspace][Resolved] {
+  workspaceId: 'demo_workspace',
+  workspaceName: 'Demo Workspace',
+  status: 'active',
+  createdAt: '2026-06-19T00:00:00.000Z',
+  updatedAt: '2026-06-19T00:00:00.000Z',
+  lastOpenedAt: '2026-06-19T00:00:00.000Z',
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: { source: 'demo_runtime_migration', phase: 'NW-A:1' }
+}
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 8
 [Topology][Flow] Connections: 7
 [Topology][Flow] Generating flow layout
 [Topology][Flow] Nodes: 2
 [Topology][Flow] Connections: 1
-✔ conversation path scope is quiet until explicitly enabled (0.853541ms)
-✔ path projection reads existing Stage and DIR results without a second store (185.230333ms)
-✔ diagnostics are enabled in development by default (0.774458ms)
-✔ panel diagnostics are quiet until the panel scope is enabled (0.162917ms)
-✔ scene diagnostics are quiet until the scene scope is enabled (0.134542ms)
-✔ dthDecisionTheatre diagnostics are quiet until the scope is enabled (0.375916ms)
-✔ nxaConversation diagnostics are quiet until the scope is enabled (0.258792ms)
-✔ acceptance gate diagnostics are quiet until the scope is enabled (0.159167ms)
-✔ console helper disables global diagnostics and scoped diagnostics (0.451875ms)
+✔ conversation path scope is quiet until explicitly enabled (0.911291ms)
+✔ path projection reads existing Stage and DIR results without a second store (197.271083ms)
+✔ diagnostics are enabled in development by default (1.629625ms)
+✔ panel diagnostics are quiet until the panel scope is enabled (0.32875ms)
+✔ scene diagnostics are quiet until the scene scope is enabled (0.213875ms)
+✔ dthDecisionTheatre diagnostics are quiet until the scope is enabled (0.231375ms)
+✔ nxaConversation diagnostics are quiet until the scope is enabled (0.178917ms)
+✔ acceptance gate diagnostics are quiet until the scope is enabled (0.160417ms)
+✔ console helper disables global diagnostics and scoped diagnostics (0.225041ms)
 ℹ tests 19
 ℹ suites 0
 ℹ pass 19
@@ -978,5 +1012,5 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 1692.857042
+ℹ duration_ms 2663.030333
 

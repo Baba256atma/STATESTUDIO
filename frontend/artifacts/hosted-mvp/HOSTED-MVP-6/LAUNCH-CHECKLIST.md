@@ -9,6 +9,7 @@ No secret values belong in this list. Mark an item only after the operator confi
 - [ ] `DATABASE_URL` set on the web service only
 - [ ] Managed Postgres backups enabled, with retention recorded
 - [ ] `NEXORA_LLM_GATEWAY_SECRET` set on the web service and the private runtime
+- [ ] `NEXORA_PRIVATE_API_BASE` set to the same-region Render Private FastAPI origin
 - [ ] Provider API key set on the private runtime only
 - [ ] `NEXORA_DEPLOYMENT_MODE=hosted`
 - [ ] `NEXORA_AUTH_DEV_SIGN_IN` is not `true`
