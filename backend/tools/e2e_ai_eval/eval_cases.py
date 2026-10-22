@@ -159,7 +159,8 @@ def get_default_evaluation_cases() -> list[EvaluationCase]:
             expected_local_required=False,
             expected_provider="openai",
             expected_selected_model="cloud-reasoning-model",
-            expected_audit_stages=DEFAULT_AUDIT_STAGES,
+            expected_fallback_behavior=True,
+            expected_audit_stages=FALLBACK_AUDIT_STAGES,
             provider_scenarios=[
                 ProviderScenario(
                     provider="ollama",
@@ -198,7 +199,7 @@ def get_default_evaluation_cases() -> list[EvaluationCase]:
         EvaluationCase(
             case_id="invalid_structured_response_case",
             task_type="explain",
-            input_text="Explain the public roadmap update in structured form.",
+            input_text="Explain the public product announcement in structured form.",
             metadata={"task": "explain", "cloud_allowed": True, "cloud_permitted": True},
             expected_sensitivity_level="public",
             expected_privacy_mode="cloud_allowed",

@@ -87,4 +87,3 @@ def summarize_generation(*, recommended_title: str | None, preferred_focus: str,
         f"{recommended_title} is the strongest current strategy.",
         f"Nexora generated {strategy_count} deterministic options and ranked them against the current {preferred_focus} focus.",
     )
-

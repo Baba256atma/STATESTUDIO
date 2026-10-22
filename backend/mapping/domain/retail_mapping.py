@@ -78,4 +78,3 @@ RETAIL_OBJECT_VOCABULARY: dict[str, dict[str, object]] = {
         "related_objects": ("obj_delivery", "obj_process"),
     },
 }
-

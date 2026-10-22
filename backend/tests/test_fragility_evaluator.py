@@ -12,9 +12,9 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-from app.services.scanner.fragility_evaluator import evaluate_fragility
-from ingestion.schemas import Signal, SignalBundle, SourceDocument
-from mapping.schemas import ObjectImpact, ObjectImpactSet
+from app.services.scanner.fragility_evaluator import evaluate_fragility  # noqa: E402  # import follows sys.path setup
+from ingestion.schemas import Signal, SignalBundle, SourceDocument  # noqa: E402  # import follows sys.path setup
+from mapping.schemas import ObjectImpact, ObjectImpactSet  # noqa: E402  # import follows sys.path setup
 
 
 def _bundle(*signals: Signal) -> SignalBundle:

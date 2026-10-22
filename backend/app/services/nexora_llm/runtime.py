@@ -41,7 +41,8 @@ class RuntimeAdapter(Protocol):
         system_instruction: str,
         user_payload: str,
         timeout_seconds: float,
-    ) -> ProviderCompletion: ...
+    ) -> ProviderCompletion:
+        ...
 
 
 def _usage() -> RuntimeUsage:

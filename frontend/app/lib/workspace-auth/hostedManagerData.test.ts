@@ -59,6 +59,22 @@ function companyCsv(value: number): string {
   return `Date,Warehouse Used Capacity,Raw Note,Warehouse Total Capacity\n2026-01-01,1000,${RAW},2000\n2026-02-01,${value},${RAW},5000\n`;
 }
 
+/** Match a stored data value. Generated ids can contain the same digits and are not data. */
+function containsDataValue(value: unknown, needle: string): boolean {
+  const token = new RegExp(`(^|[^A-Za-z0-9])${needle}([^A-Za-z0-9]|$)`);
+  const walk = (entry: unknown): boolean => {
+    if (typeof entry === "number") return String(entry) === needle;
+    if (typeof entry === "string") {
+      if (/^(ws_|imp_|obs_|src_|rdi2:)/.test(entry)) return false;
+      return token.test(entry);
+    }
+    if (Array.isArray(entry)) return entry.some((item) => walk(item));
+    if (entry && typeof entry === "object") return Object.values(entry).some((item) => walk(item));
+    return false;
+  };
+  return walk(value);
+}
+
 async function workspace(principal: { userId: string }, name: string, kind: "BUSINESS" | "PROJECT") {
   const created = await createHostedWorkspace({ principal, name, kind });
   assert.equal(created.ok, true);
@@ -139,10 +155,14 @@ test("hosted manager data is workspace-owned, temporary, and server-authoritativ
     });
     const companyOnly = await readHostedManagerDataSnapshot(companyA.workspaceId);
     const projectOnly = await readHostedManagerDataSnapshot(projectA.workspaceId);
-    assert.equal(JSON.stringify(companyOnly).includes("4242"), true);
-    assert.equal(JSON.stringify(companyOnly).includes("77"), false);
-    assert.equal(JSON.stringify(projectOnly).includes("77"), true);
-    assert.equal(JSON.stringify(projectOnly).includes("4242"), false);
+    assert.equal(companyOnly.workspaceId, companyA.workspaceId);
+    assert.equal(projectOnly.workspaceId, projectA.workspaceId);
+    assert.equal(companyOnly.sources.every((source) => source.workspaceId === companyA.workspaceId), true);
+    assert.equal(projectOnly.sources.every((source) => source.workspaceId === projectA.workspaceId), true);
+    assert.equal(containsDataValue(companyOnly, "4242"), true);
+    assert.equal(containsDataValue(companyOnly, "77"), false);
+    assert.equal(containsDataValue(projectOnly, "77"), true);
+    assert.equal(containsDataValue(projectOnly, "4242"), false);
 
     const foreign = await authorizeNexoraWorkspace({ principal: userB, workspaceId: companyA.workspaceId });
     assert.notEqual(foreign.outcome, "AUTHORIZED");
@@ -217,7 +237,9 @@ test("hosted manager data is workspace-owned, temporary, and server-authoritativ
     await closeHostedWorkspaceDatabaseForTests();
     await openHostedWorkspaceDatabaseForTests(directory);
     const reopened = await readHostedManagerDataSnapshot(projectA.workspaceId);
-    assert.equal(JSON.stringify(reopened).includes("77"), true);
+    assert.equal(reopened.workspaceId, projectA.workspaceId);
+    assert.equal(containsDataValue(reopened, "77"), true);
+    assert.equal(containsDataValue(reopened, "4242"), false);
     assert.equal(await hostedDatabaseContainsText(RAW), false);
 
     failHostedWorkspaceDatabaseForTests(true);

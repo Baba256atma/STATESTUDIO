@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 Event = Dict[str, object]
 
@@ -49,7 +49,7 @@ class EventLog:
         bucket = self._events.get(user_id, [])
         bucket.append(entry)
         if len(bucket) > self.max_per_user:
-            bucket = bucket[-self.max_per_user :]
+            bucket = bucket[-self.max_per_user:]
         self._events[user_id] = bucket
         self._persist()
 

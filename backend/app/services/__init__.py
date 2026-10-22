@@ -6,3 +6,12 @@ from .business_loops_service import (
     apply_loop_tick,
 )
 from .loop_engine import evaluate_loops
+
+__all__ = [
+    "load_loop_library",
+    "build_loops_from_kpi",
+    "score_loops",
+    "pick_active_loop",
+    "apply_loop_tick",
+    "evaluate_loops",
+]

@@ -1,7 +1,6 @@
 """Monte Carlo endpoints (v0)."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 import random
 import math

@@ -223,6 +223,9 @@ function HostedMyWorkspaceGate({
   authPhase,
   authError,
   displayLabel,
+  accountName,
+  accountEmail,
+  accountImage,
   workspaces,
   unavailable,
   selectedId,
@@ -238,6 +241,9 @@ function HostedMyWorkspaceGate({
   readonly authPhase: "idle" | "loading" | "failed";
   readonly authError: string | null;
   readonly displayLabel: string | null;
+  readonly accountName: string | null;
+  readonly accountEmail: string | null;
+  readonly accountImage: string | null;
   readonly workspaces: readonly HostedWorkspaceProjection[];
   readonly unavailable: boolean;
   readonly selectedId: string | null;
@@ -255,9 +261,15 @@ function HostedMyWorkspaceGate({
   if (access === "authenticated-account") {
     return (
       <div data-testid="hosted-my-workspace" style={{ display: "flex", flexDirection: "column", gap: "0.4rem", padding: "0.15rem 0.7rem 0.35rem" }}>
-        <p data-testid="nexora-signed-in" style={{ margin: 0, color: cockpit.text, fontSize: "0.72rem" }}>
-          {displayLabel ?? "Signed in"}
-        </p>
+        <div data-testid="nexora-signed-in" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          {accountImage ? (
+            <img data-testid="nexora-signed-in-avatar" src={accountImage} alt="" width={22} height={22} style={{ borderRadius: "999px" }} />
+          ) : null}
+          <span style={{ color: cockpit.text, fontSize: "0.72rem" }}>{accountName ?? displayLabel ?? "Signed in"}</span>
+          {accountEmail ? (
+            <span data-testid="nexora-signed-in-email" style={{ color: cockpit.muted, fontSize: "0.66rem" }}>{accountEmail}</span>
+          ) : null}
+        </div>
         {unavailable ? (
           <p role="alert" data-testid="hosted-workspace-unavailable" style={{ margin: 0, color: cockpit.warning, fontSize: "0.68rem", lineHeight: 1.4 }}>
             Workspaces cannot be verified right now.
@@ -423,7 +435,7 @@ function HostedMyWorkspaceGate({
           onClick={() => void onSignIn()}
           style={quietButton}
         >
-          Sign in
+          Sign in with GitHub
         </button>
       )}
       {authPhase === "loading" ? (
@@ -486,7 +498,7 @@ export function NexoraManagerWorkspaceControl({
   const projectImportCount = demoImports.filter((entry) =>
     entry.importId.startsWith("demo-profile:project:"),
   ).length;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => readDemoLibraryFocus() > 0);
   const [draftKind, setDraftKind] = useState<ManagerWorkspaceKind | null>(null);
   const [draftName, setDraftName] = useState("");
   const [failure, setFailure] = useState<string | null>(null);
@@ -495,7 +507,6 @@ export function NexoraManagerWorkspaceControl({
   const [authPhase, setAuthPhase] = useState<"idle" | "loading" | "failed">("idle");
   const [accountWorkspaces, setAccountWorkspaces] = useState(hostedWorkspaces);
   const releasedHostedWorkspaceIds = useRef(new Set<string>());
-  const [selectedHostedId, setSelectedHostedId] = useState<string | null>(null);
   const [menuBox, setMenuBox] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -517,19 +528,15 @@ export function NexoraManagerWorkspaceControl({
     const stored = readStoredHostedWorkspaceSelection();
     const known = hostedWorkspaces.find((workspace) => workspace.workspaceId === stored);
     if (!known) return;
-    if (!selectAuthorizedHostedWorkspace(known, hostedWorkspaces)) return;
-    setSelectedHostedId(known.workspaceId);
+    selectAuthorizedHostedWorkspace(known, hostedWorkspaces);
   }, [deploymentMode, hostedWorkspaces]);
 
-  useEffect(() => {
-    if (libraryFocus > 0) setOpen(true);
-  }, [libraryFocus]);
+  useEffect(() => subscribeDemoLibraryFocus(() => {
+    if (readDemoLibraryFocus() > 0) setOpen(true);
+  }), []);
 
-  useEffect(() => {
-    if (!open || !anchorRef.current) {
-      setMenuBox(null);
-      return;
-    }
+  useLayoutEffect(() => {
+    if (!open) return;
     const place = () => {
       const rect = anchorRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -612,9 +619,7 @@ export function NexoraManagerWorkspaceControl({
         }
         const created = body.workspace as HostedWorkspaceProjection;
         setAccountWorkspaces((current) => [...current, created]);
-        if (selectAuthorizedHostedWorkspace(created, [...accountWorkspaces, created])) {
-          setSelectedHostedId(created.workspaceId);
-        }
+        selectAuthorizedHostedWorkspace(created, [...accountWorkspaces, created]);
         close();
       }).catch(() => {
         setFailure("Workspaces cannot be verified right now.");
@@ -634,6 +639,9 @@ export function NexoraManagerWorkspaceControl({
   const csvHealth = useSyncExternalStore(subscribeCsvDurabilityHealth, getCsvDurabilityHealth, () => "idle" as const);
   const saveStatus = managerOwned ? saveActiveManagerWorkspace() : null;
   const csvStoreFailed = csvHealth === "session-only";
+  const selectedHostedId = accountWorkspaces.some((workspace) => workspace.workspaceId === snapshot.activeWorkspaceId)
+    ? snapshot.activeWorkspaceId
+    : null;
   const selectedHosted = accountWorkspaces.find((workspace) => workspace.workspaceId === selectedHostedId) ?? null;
   const headerLabel = manufacturingActive
     ? "Nexora Demo · Manufacturing"
@@ -873,6 +881,9 @@ export function NexoraManagerWorkspaceControl({
                     authPhase={authError ? "failed" : authPhase}
                     authError={authError ?? (authPhase === "failed" ? "Sign-in failed. No session was created." : null)}
                     displayLabel={session.displayLabel}
+                    accountName={session.name}
+                    accountEmail={session.email}
+                    accountImage={session.image}
                     workspaces={accountWorkspaces}
                     unavailable={hostedWorkspaceStatus === "unavailable"}
                     selectedId={selectedHostedId}
@@ -882,7 +893,6 @@ export function NexoraManagerWorkspaceControl({
                         setFailure("That workspace could not be opened.");
                         return;
                       }
-                      setSelectedHostedId(workspace.workspaceId);
                       close();
                     }}
                     onCreate={beginCreate}
@@ -894,10 +904,8 @@ export function NexoraManagerWorkspaceControl({
                       releaseAuthorizedHostedWorkspace(workspaceId);
                       const next = remaining[0] ?? null;
                       if (selectedHostedId === workspaceId) {
-                        if (next && selectAuthorizedHostedWorkspace(next, remaining)) setSelectedHostedId(next.workspaceId);
-                        else {
+                        if (!next || !selectAuthorizedHostedWorkspace(next, remaining)) {
                           rememberHostedWorkspaceSelection(null);
-                          setSelectedHostedId(null);
                         }
                       }
                     }}
@@ -908,7 +916,6 @@ export function NexoraManagerWorkspaceControl({
                         releaseAuthorizedHostedWorkspace(workspace.workspaceId);
                       }
                       rememberHostedWorkspaceSelection(null);
-                      setSelectedHostedId(null);
                       setAccountWorkspaces([]);
                     }}
                     onSignIn={async (userId) => {

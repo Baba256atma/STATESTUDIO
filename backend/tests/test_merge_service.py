@@ -13,9 +13,9 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-from app.connectors.merge_contract import ConnectorRunInput, MultiSourceIngestionRequest
-from app.connectors.merge_service import run_multi_source_ingestion
-from ingestion.schemas import Signal, SignalBundle, SourceDocument
+from app.connectors.merge_contract import ConnectorRunInput, MultiSourceIngestionRequest  # noqa: E402  # import follows sys.path setup
+from app.connectors.merge_service import run_multi_source_ingestion  # noqa: E402  # import follows sys.path setup
+from ingestion.schemas import Signal, SignalBundle, SourceDocument  # noqa: E402  # import follows sys.path setup
 
 
 def _bundle(
@@ -253,4 +253,3 @@ def test_merge_service_successful_sources_zero_signals(monkeypatch) -> None:
     assert res.bundle.signals == []
     assert res.bundle.merge_meta["weighted_signal_count"] == 0
     assert "manual_text" in res.bundle.merge_meta["source_weights"]
-

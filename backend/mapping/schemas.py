@@ -71,4 +71,3 @@ class ObjectImpactSet(BaseModel):
     primary: list[ObjectImpact] = Field(default_factory=list)
     affected: list[ObjectImpact] = Field(default_factory=list)
     context: list[ObjectImpact] = Field(default_factory=list)
-

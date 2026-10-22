@@ -15,9 +15,9 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-from app.routers.scenario_router import router as scenario_router
-from app.services.scenario.propagation_rules import classify_scenario_type
-from app.utils.responses import install_exception_handlers
+from app.routers.scenario_router import router as scenario_router  # noqa: E402  # import follows sys.path setup
+from app.services.scenario.propagation_rules import classify_scenario_type  # noqa: E402  # import follows sys.path setup
+from app.utils.responses import install_exception_handlers  # noqa: E402  # import follows sys.path setup
 
 
 def _client() -> TestClient:

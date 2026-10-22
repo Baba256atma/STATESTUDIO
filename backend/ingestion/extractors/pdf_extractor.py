@@ -31,4 +31,3 @@ def extract_text(payload: str) -> str:
         if page_text:
             pages.append(page_text)
     return "\n\n".join(pages)
-

@@ -1,7 +1,5 @@
 # backend/main.py
 import os
-import json
-import time
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -10,7 +8,6 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pathlib import Path
 
-from ai.enrichment import generate_ai_reply
 from chaos_engine.core import ChaosEngine
 from chaos_engine.scene_adapter import build_scene_actions
 from fastapi.middleware.cors import CORSMiddleware
@@ -77,8 +74,6 @@ from app.models.system_archetypes import SystemArchetypeState
 from app.semantics.nexora_semantics import infer_allowed_objects_from_text
 from app.engines.fragility_v1 import compute_fragility_v1
 from core.scene_templates import map_state_to_scene_objects, map_loops_from_state
-from app.services.replay_store import ReplayStore
-from app.models.replay import ReplayFrame, ReplayMeta
 from app.models.scanner_output import (
     FragilityDriver,
     FragilitySceneHint,
@@ -128,6 +123,7 @@ _EPISODE_BY_USER: dict[str, str] = {}
 _KPI_DEFAULT = {"inventory": 0.5, "delivery": 0.5, "risk": 0.5}
 TICK_TEXT = "__tick__"
 
+
 def _kpi_step(user_id: str, text: str, allowed_objects: list[str], mode: str) -> dict:
     return _run_kpi_step(
         user_id=user_id,
@@ -138,6 +134,7 @@ def _kpi_step(user_id: str, text: str, allowed_objects: list[str], mode: str) ->
         kpi_default=_KPI_DEFAULT,
         build_loops=build_loops_from_kpi,
     )
+
 
 def _load_object_dict() -> dict[str, dict]:
     return _registry_load_object_dict(_OBJECT_DICT_PATH, _INSTANCE_DICT_PATH)
@@ -200,6 +197,7 @@ def _infer_allowed_objects_from_text(text: str, mode: str | None = None, allowed
         legacy_objects=_LEGACY_OBJECTS,
         allowed_only=allowed_only,
     )
+
 
 app = FastAPI(title="StateStudio API")
 install_exception_handlers(app, logging.getLogger("nexora.api"))
@@ -289,6 +287,7 @@ app.include_router(psych_interpret_router)
 app.include_router(strategic_council_router)
 app.include_router(decision_execution_router)
 
+
 @app.get("/objects")
 def list_objects():
     items = []
@@ -308,6 +307,7 @@ def get_object(obj_id: str):
         "ok": True,
         "object": profile,
     }
+
 
 logger = logging.getLogger(__name__)
 

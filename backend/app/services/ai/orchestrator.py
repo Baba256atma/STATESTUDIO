@@ -132,16 +132,17 @@ class LocalAIOrchestrator:
         provider_factory: AIProviderFactory | None = None,
         audit_logger: AIAuditLogger | None = None,
         telemetry_collector: AITelemetryCollector | None = None,
+        env_policy_dir: str | None = None,
     ) -> None:
         self.settings = settings or get_local_ai_settings()
         self.provider_factory = provider_factory or AIProviderFactory(settings=self.settings)
         self.provider = provider or (_LegacyClientProviderAdapter(client) if client is not None else None)
-        self.selection_engine = LocalAIModelSelectionEngine(self.settings)
-        self.privacy_classifier = PrivacyClassifier(self.settings)
-        self.routing_policy = HybridRoutingPolicy(self.settings)
+        self.selection_engine = LocalAIModelSelectionEngine(self.settings, env_policy_dir=env_policy_dir)
+        self.privacy_classifier = PrivacyClassifier(self.settings, env_policy_dir=env_policy_dir)
+        self.routing_policy = HybridRoutingPolicy(self.settings, env_policy_dir=env_policy_dir)
         self.selection_metrics = get_selection_metrics_store()
-        self.audit_logger = audit_logger or AIAuditLogger(self.settings)
-        self.telemetry_collector = telemetry_collector or AITelemetryCollector(self.settings)
+        self.audit_logger = audit_logger or AIAuditLogger(self.settings, env_policy_dir=env_policy_dir)
+        self.telemetry_collector = telemetry_collector or AITelemetryCollector(self.settings, env_policy_dir=env_policy_dir)
         self.system_modeling_engine = UniversalSystemModelingEngine()
 
     async def get_health(self) -> HealthResponse:

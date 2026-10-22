@@ -21,15 +21,15 @@ for path in (PROJECT_ROOT, BACKEND_DIR):
         sys.path.insert(0, normalized)
 
 
-from app.core.config import LocalAISettings
-from app.schemas.ai import AIRequest
-from app.services.ai.audit_logger import AIAuditLogger
-from app.services.ai.orchestrator import LocalAIOrchestrator
-from app.services.ai.privacy_types import PrivacyClassificationRequest
-from app.services.ai.providers.base import AIProvider
-from app.services.ai.providers.exceptions import ProviderInvalidResponseError, ProviderUnavailableError
-from app.services.ai.providers.registry import AIProviderRegistry
-from app.services.ai.providers.types import (
+from app.core.config import LocalAISettings  # noqa: E402  # import follows sys.path setup
+from app.schemas.ai import AIRequest  # noqa: E402  # import follows sys.path setup
+from app.services.ai.audit_logger import AIAuditLogger  # noqa: E402  # import follows sys.path setup
+from app.services.ai.orchestrator import LocalAIOrchestrator  # noqa: E402  # import follows sys.path setup
+from app.services.ai.privacy_types import PrivacyClassificationRequest  # noqa: E402  # import follows sys.path setup
+from app.services.ai.providers.base import AIProvider  # noqa: E402  # import follows sys.path setup
+from app.services.ai.providers.exceptions import ProviderInvalidResponseError, ProviderUnavailableError  # noqa: E402  # import follows sys.path setup
+from app.services.ai.providers.registry import AIProviderRegistry  # noqa: E402  # import follows sys.path setup
+from app.services.ai.providers.types import (  # noqa: E402  # import follows sys.path setup
     ProviderChatRequest,
     ProviderChatResponse,
     ProviderDescriptor,
@@ -37,12 +37,12 @@ from app.services.ai.providers.types import (
     ProviderModelInfo,
     ProviderModelList,
 )
-from app.services.ai.validators import validate_structured_output
-from tools.e2e_ai_eval.eval_assertions import evaluate_case_result
-from tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
-from tools.e2e_ai_eval.eval_report import build_summary, print_console_report, write_json_report
-from tools.e2e_ai_eval.eval_results import EvaluationRunResult
-from tools.e2e_ai_eval.eval_types import EvaluationCase, ObservedEvaluationState, ProviderScenario
+from app.services.ai.validators import validate_structured_output  # noqa: E402  # import follows sys.path setup
+from tools.e2e_ai_eval.eval_assertions import evaluate_case_result  # noqa: E402  # import follows sys.path setup
+from tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases  # noqa: E402  # import follows sys.path setup
+from tools.e2e_ai_eval.eval_report import build_summary, print_console_report, write_json_report  # noqa: E402  # import follows sys.path setup
+from tools.e2e_ai_eval.eval_results import EvaluationRunResult  # noqa: E402  # import follows sys.path setup
+from tools.e2e_ai_eval.eval_types import EvaluationCase, ObservedEvaluationState, ProviderScenario  # noqa: E402  # import follows sys.path setup
 
 
 DEFAULT_OUTPUT_PATH = BACKEND_DIR / "tools" / "e2e_ai_eval" / "e2e_eval_results.json"
@@ -200,11 +200,12 @@ async def _run_case(case: EvaluationCase) -> ObservedEvaluationState:
             ai_audit_keep_in_memory=True,
             ai_audit_log_to_file=False,
         )
-        audit_logger = AIAuditLogger(settings)
+        audit_logger = AIAuditLogger(settings, env_policy_dir=temp_dir)
         orchestrator = LocalAIOrchestrator(
             settings=settings,
             provider_factory=StaticProviderFactory(case.provider_scenarios),
             audit_logger=audit_logger,
+            env_policy_dir=temp_dir,
         )
 
         privacy_request = PrivacyClassificationRequest(
@@ -242,9 +243,9 @@ async def _run_case(case: EvaluationCase) -> ObservedEvaluationState:
                 parsed_output = None
         validation = validate_structured_output(parsed_output)
         audit_events = audit_logger.list_events(trace_id=trace_id)
-        fallback_used = bool(response.metadata.get("selection_fallback_used")) or any(
-            event.stage == "fallback_applied" for event in audit_events
-        )
+        # Provider fallback is the routing audit stage. Model-selection
+        # substitution (benchmark override) is a separate signal.
+        fallback_used = any(event.stage == "fallback_applied" for event in audit_events)
         benchmark_used = bool(response.metadata.get("selection_benchmark_used"))
         return ObservedEvaluationState(
             case_id=case.case_id,

@@ -156,4 +156,3 @@ class WebConnector(NexoraConnector):
         }
         print("[Nexora][Connector][Policy] validated", {"domain": domain, "trust": meta["trust_level"]})
         return NormalizedIngestionInput(input_type="text", payload={"text": text}, metadata=meta)
-

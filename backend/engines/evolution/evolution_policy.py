@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from engines.evolution.learning_models import EvolutionState, PolicyAdjustment
+from engines.evolution.learning_models import EvolutionState
 
 
 def clamp01(value: float) -> float:

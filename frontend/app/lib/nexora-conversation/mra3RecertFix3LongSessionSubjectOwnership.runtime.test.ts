@@ -159,7 +159,7 @@ describe("MRA:3-RECERT-FIX3 long-session subject ownership", () => {
   });
 
   it("F2: explicit return exits stale comparison before Capacity Gap follow-ups", () => {
-    let turn = chain(
+    const turn = chain(
       "show me scenarios",
       "which one has less risk?",
       "Okay, go back to Capacity Gap.",
@@ -179,7 +179,7 @@ describe("MRA:3-RECERT-FIX3 long-session subject ownership", () => {
   });
 
   it("H2: Risk remains primary through evidence, uncertainty, and investigation", () => {
-    let turn = chain(
+    const turn = chain(
       "Margin Pressure",
       "show me Risk",
       "what evidence do we have?",

@@ -234,7 +234,7 @@ def _build_synthesis(
     )
     summary = _compact_summary(
         [
-            f"The CEO wants structural resilience, the CFO wants controlled spend, and the COO wants a sequence the system can absorb.",
+            "The CEO wants structural resilience, the CFO wants controlled spend, and the COO wants a sequence the system can absorb.",
             f"Top pressure is coming from {signals['drivers'][0]}." if signals["drivers"] else "",
         ]
     )

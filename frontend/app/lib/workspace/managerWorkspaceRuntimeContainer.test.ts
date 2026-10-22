@@ -53,7 +53,7 @@ import {
 } from "./legacyWorkspaceIdentityMigration.ts";
 import { bindWorkflowMode, createManagerWorkspace, readLiveExecutiveDataWorkspaceId, resolveActiveManagerWorkspace, type ManagerWorkspace } from "./managerWorkspaceIdentity.ts";
 import { DEMO_WORKSPACE_ID, isLegacyWorkflowWorkspaceIdentifier } from "./workspaceRegistryContract.ts";
-import { getActiveWorkspaceId, resetWorkspaceRegistryForTests } from "./workspaceRegistryStore.ts";
+import { getActiveWorkspaceId, resetWorkspaceRegistryForTests, setActiveWorkspace } from "./workspaceRegistryStore.ts";
 
 const shellSource = readFileSync(new URL("../../executive/nex-mvp/NexoraExecutiveShell.tsx", import.meta.url), "utf8");
 const persistenceSource = readFileSync(new URL("./workspacePersistence.ts", import.meta.url), "utf8");
@@ -130,7 +130,9 @@ test("MWI:4 I1/I2/I3 two workspaces isolate monitoring, connections, and the dia
   saveNexoraLiveConnection(connection(project.workspaceId, "conn-project"));
   enableAutomaticMonitoring({ workspaceId: business.workspaceId, connectionId: "conn-business", targetId: "target-business", frequency: "daily", enabledAt: "2026-10-12T12:00:00.000Z" });
   enableAutomaticMonitoring({ workspaceId: project.workspaceId, connectionId: "conn-project", targetId: "target-project", frequency: "daily", enabledAt: "2026-10-12T12:00:00.000Z" });
+  setActiveWorkspace(business.workspaceId);
   commitNamedCsv(business.workspaceId, "business.csv", "mwi4-business");
+  setActiveWorkspace(project.workspaceId);
   commitNamedCsv(project.workspaceId, "project.csv", "mwi4-project");
 
   assert.deepEqual(listCsvRealDataImports(business.workspaceId).map((item) => item.importId), ["mwi4-business"]);
@@ -151,6 +153,51 @@ test("MWI:4 I1/I2/I3 two workspaces isolate monitoring, connections, and the dia
     assert.deepEqual(listCsvRealDataImports(business.workspaceId).map((item) => item.importId), ["mwi4-business"]);
     assert.deepEqual(listCsvRealDataImports(project.workspaceId).map((item) => item.importId), ["mwi4-project"]);
   }
+});
+
+test("MWI:4 CSV writes follow the active Manager Workspace", () => {
+  const company = requireCreatedWorkspace({ name: "Company A", kind: "BUSINESS" });
+  const project = requireCreatedWorkspace({ name: "Project B", kind: "PROJECT" });
+
+  setActiveWorkspace(company.workspaceId);
+  commitNamedCsv(company.workspaceId, "company.csv", "mwi4-company-ok");
+  const crossWorkspace = prepareCsvRealDataImport({
+    workspaceId: project.workspaceId,
+    fileName: "project-cross.csv",
+    fileSize: CSV_MVP_DEMO_INVENTORY_TEXT.length,
+    csvText: CSV_MVP_DEMO_INVENTORY_TEXT,
+    importId: "mwi4-cross",
+    importedAt: "2026-10-12T12:00:00.000Z",
+  });
+  const rejected = commitPreparedCsvRealDataImport({
+    prepared: crossWorkspace,
+    expectedWorkspaceId: project.workspaceId,
+    mode: "new",
+    committedAt: "2026-10-12T12:00:01.000Z",
+  });
+  assert.equal(rejected.committed, false);
+  assert.equal(rejected.reason, "wrong_workspace");
+  assert.deepEqual(listCsvRealDataImports(project.workspaceId), []);
+
+  setActiveWorkspace(project.workspaceId);
+  commitNamedCsv(project.workspaceId, "project-after-switch.csv", "mwi4-project-switch");
+  const rejectedAfterSwitch = commitPreparedCsvRealDataImport({
+    prepared: prepareCsvRealDataImport({
+      workspaceId: company.workspaceId,
+      fileName: "company-cross.csv",
+      fileSize: CSV_MVP_DEMO_INVENTORY_TEXT.length,
+      csvText: CSV_MVP_DEMO_INVENTORY_TEXT,
+      importId: "mwi4-cross-back",
+      importedAt: "2026-10-12T12:00:00.000Z",
+    }),
+    expectedWorkspaceId: company.workspaceId,
+    mode: "new",
+    committedAt: "2026-10-12T12:00:01.000Z",
+  });
+  assert.equal(rejectedAfterSwitch.committed, false);
+  assert.equal(rejectedAfterSwitch.reason, "wrong_workspace");
+  assert.deepEqual(listCsvRealDataImports(company.workspaceId).map((item) => item.importId), ["mwi4-company-ok"]);
+  assert.deepEqual(listCsvRealDataImports(project.workspaceId).map((item) => item.importId), ["mwi4-project-switch"]);
 });
 
 test("MWI:4 I4/I5/I6 historical monitoring moves only with one explicit proof and stays idempotent", () => {

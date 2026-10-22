@@ -58,8 +58,13 @@ export function DomainSelectionScreen({
             padding: 24,
           }}
         >
-          <div style={{ color: "#93c5fd", fontSize: 12, fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase" }}>
-            Nexora Domains
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <div style={{ color: "#93c5fd", fontSize: 12, fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase" }}>
+              Nexora Domains
+            </div>
+            <Link href="/executive" data-testid="nexora-sign-in-entry" style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 650 }}>
+              Sign in
+            </Link>
           </div>
           <div style={{ color: "#f8fafc", fontSize: 32, fontWeight: 800, marginTop: 10, lineHeight: 1.05 }}>
             Choose the intelligence context before entering the workspace.

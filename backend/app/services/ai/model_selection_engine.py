@@ -18,11 +18,11 @@ from app.services.ai.selection_policy import resolve_benchmark_priority, resolve
 class LocalAIModelSelectionEngine:
     """Select the best available model for a local AI task."""
 
-    def __init__(self, settings: LocalAISettings) -> None:
+    def __init__(self, settings: LocalAISettings, *, env_policy_dir: str | None = None) -> None:
         self.settings = settings
-        self.control_plane = AIControlPlaneService(settings)
+        self.control_plane = AIControlPlaneService(settings, env_policy_dir=env_policy_dir)
         self._profiles = build_default_model_profiles(settings)
-        self._benchmark_loader = BenchmarkPreferencesLoader(settings)
+        self._benchmark_loader = BenchmarkPreferencesLoader(settings, env_policy_dir=env_policy_dir)
 
     def select(self, request: ModelSelectionRequest, *, default_model: str) -> ModelSelectionResult:
         """Resolve a model selection result using deterministic policy rules."""

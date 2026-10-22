@@ -15,6 +15,11 @@ import {
   selectNexoraAuthProvider,
   stableProviderUserId,
 } from "./nexoraAuthProviders.ts";
+import {
+  safePrincipalEmail,
+  safePrincipalImage,
+  safePrincipalName,
+} from "./nexoraPrincipal.ts";
 
 function activeProvider() {
   const selected = selectNexoraAuthProvider(process.env, process.env.NODE_ENV);
@@ -67,10 +72,13 @@ export const nexoraAuthOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, profile }) {
       const provider = account?.provider === "github" || account?.provider === "nexora-dev"
         ? account.provider
         : null;
+      const profileRecord = profile && typeof profile === "object"
+        ? profile as { name?: unknown; email?: unknown; avatar_url?: unknown }
+        : {};
       const rawId = provider === "github"
         ? account?.providerAccountId
         : provider === "nexora-dev"
@@ -79,17 +87,35 @@ export const nexoraAuthOptions: NextAuthOptions = {
       const stable = provider && typeof rawId === "string"
         ? stableProviderUserId(provider, rawId)
         : null;
-      if (stable) token.sub = stable;
+      if (stable && account) {
+        token.sub = stable;
+        const name = safePrincipalName(user?.name ?? profileRecord.name);
+        const email = safePrincipalEmail(user?.email ?? profileRecord.email);
+        const image = safePrincipalImage(user?.image ?? profileRecord.avatar_url);
+        if (name) token.nexoraName = name;
+        else delete token.nexoraName;
+        if (email) token.nexoraEmail = email;
+        else delete token.nexoraEmail;
+        if (image) token.nexoraImage = image;
+        else delete token.nexoraImage;
+      }
       delete token.email;
       delete token.name;
       delete token.picture;
+      delete token.accessToken;
+      delete token.refreshToken;
       return token;
     },
     async session({ session, token }) {
       const userId = typeof token.sub === "string" ? token.sub : "";
       return {
         ...session,
-        user: { id: userId, name: "Signed in" },
+        user: {
+          id: userId,
+          name: typeof token.nexoraName === "string" ? token.nexoraName : null,
+          email: typeof token.nexoraEmail === "string" ? token.nexoraEmail : null,
+          image: typeof token.nexoraImage === "string" ? token.nexoraImage : null,
+        },
       };
     },
   },

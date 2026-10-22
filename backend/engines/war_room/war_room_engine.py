@@ -16,7 +16,6 @@ from engines.war_room.outcome_evaluator import WarRoomOutcomeEvaluator
 from engines.war_room.strategy_interaction import StrategyInteractionEngine
 from engines.war_room.strategy_model import StrategyModel
 from engines.war_room.war_room_schema import (
-    WarRoomActor,
     WarRoomResult,
     WarRoomSimulation,
     WarRoomTimelineStep,

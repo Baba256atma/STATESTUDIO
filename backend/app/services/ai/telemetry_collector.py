@@ -29,9 +29,9 @@ logger = logging.getLogger("nexora.ai.telemetry")
 class AITelemetryCollector:
     """Collect recent AI telemetry events and optional JSONL records."""
 
-    def __init__(self, settings: LocalAISettings) -> None:
+    def __init__(self, settings: LocalAISettings, *, env_policy_dir: str | None = None) -> None:
         self.settings = settings
-        self.control_plane = AIControlPlaneService(settings)
+        self.control_plane = AIControlPlaneService(settings, env_policy_dir=env_policy_dir)
         self._events: deque[TelemetryEvent] = deque(maxlen=self.control_plane.get_telemetry_policy().max_events)
 
     def record_event(

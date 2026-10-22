@@ -11,12 +11,12 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-from app.connectors.source_trust import (
+from app.connectors.source_trust import (  # noqa: E402  # import follows sys.path setup
     apply_source_weight_to_signal,
     resolve_source_trust_label,
     resolve_source_trust_score,
 )
-from ingestion.schemas import Signal
+from ingestion.schemas import Signal  # noqa: E402  # import follows sys.path setup
 
 
 def test_verified_web_trust_exceeds_csv() -> None:

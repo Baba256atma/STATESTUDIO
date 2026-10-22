@@ -64,7 +64,7 @@ class DecisionMemoryStore:
         events = doc.get("events") if isinstance(doc.get("events"), list) else []
         events.append(event if isinstance(event, dict) else {})
         if len(events) > self.max_events:
-            events = events[-self.max_events :]
+            events = events[-self.max_events:]
         doc["events"] = events
         self.save(user_id, doc)
 

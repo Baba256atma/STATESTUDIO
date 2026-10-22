@@ -12,8 +12,8 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-from ingestion.schemas import Signal, SignalBundle, SourceDocument
-from mapping.service import map_signals_to_objects
+from ingestion.schemas import Signal, SignalBundle, SourceDocument  # noqa: E402  # import follows sys.path setup
+from mapping.service import map_signals_to_objects  # noqa: E402  # import follows sys.path setup
 
 
 def _bundle(*signals: Signal) -> SignalBundle:

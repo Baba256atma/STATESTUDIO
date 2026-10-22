@@ -2,8 +2,10 @@
 import re
 import math
 
+
 def clamp01(x: float) -> float:
     return max(0.0, min(1.0, x))
+
 
 def detect_character_archetype(text: str) -> str | None:
     t = text.lower()
@@ -16,6 +18,7 @@ def detect_character_archetype(text: str) -> str | None:
     if re.search(r"\brogue\b|\bassassin\b|\bthief\b|قاتل|دزد", t):
         return "rogue"
     return None
+
 
 def detect_character_mood(text: str) -> str | None:
     t = text.lower()
@@ -30,6 +33,7 @@ def detect_character_mood(text: str) -> str | None:
     if re.search(r"confident|bold|جسور|بااعتماد", t):
         return "confident"
     return None
+
 
 def detect_topics(text: str) -> set[str]:
     t = text.lower()
@@ -64,6 +68,7 @@ def detect_topics(text: str) -> set[str]:
 
     return topics
 
+
 def chaos_defaults(user_text: str) -> dict:
     t = user_text.lower()
     attractor = "lorenz_like"
@@ -82,9 +87,11 @@ def chaos_defaults(user_text: str) -> dict:
 
     return {"instability": clamp01(instability), "noise": clamp01(noise), "attractor": attractor}
 
+
 def _pseudo_rand(i: int, seed: float = 0.0) -> float:
     # deterministic pseudo-random in [0,1)
     return (math.sin(i * 12.9898 + seed * 78.233) * 43758.5453) % 1.0
+
 
 def generate_orbit(attractor: str, steps: int, noise: float) -> list[list[float]]:
     x, y, z = 0.1, 0.0, 0.0

@@ -19,9 +19,9 @@ REASONING_TASKS = {"analyze_scenario", "explain", "summarize_context"}
 class HybridRoutingPolicy:
     """Compute deterministic provider routing decisions for Nexora AI requests."""
 
-    def __init__(self, settings: LocalAISettings) -> None:
+    def __init__(self, settings: LocalAISettings, *, env_policy_dir: str | None = None) -> None:
         self.settings = settings
-        self.control_plane = AIControlPlaneService(settings)
+        self.control_plane = AIControlPlaneService(settings, env_policy_dir=env_policy_dir)
 
     def describe_policy(self) -> RoutingPolicyResponse:
         """Return a static snapshot of the current routing policy."""
@@ -113,6 +113,7 @@ class HybridRoutingPolicy:
             and policy.cloud_for_reasoning_enabled
             and cloud_allowed
             and cloud_available
+            and local_available
         ):
             return self._decision(
                 selected_provider=cloud_state.provider if cloud_state else self.settings.default_provider,

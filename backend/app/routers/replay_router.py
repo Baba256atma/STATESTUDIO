@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -58,8 +58,8 @@ def get_episode(episode_id: str) -> ReplayEpisode:
         return store.get_episode(episode_id)
     except FileNotFoundError:
         raise HTTPException(
-          status_code=404,
-          detail=responses.error("NOT_FOUND", "Episode not found"),
+            status_code=404,
+            detail=responses.error("NOT_FOUND", "Episode not found"),
         ) from None
 
 
@@ -70,8 +70,8 @@ def append_frame(episode_id: str, frame: ReplayFrame) -> dict:
         return responses.ok(_episode_summary(episode), warnings=warnings or None)
     except FileNotFoundError:
         raise HTTPException(
-          status_code=404,
-          detail=responses.error("NOT_FOUND", "Episode not found"),
+            status_code=404,
+            detail=responses.error("NOT_FOUND", "Episode not found"),
         ) from None
     except Exception as exc:
         raise HTTPException(
@@ -87,8 +87,8 @@ def export_episode(episode_id: str) -> dict:
         return json.loads(episode.model_dump_json())
     except FileNotFoundError:
         raise HTTPException(
-          status_code=404,
-          detail=responses.error("NOT_FOUND", "Episode not found"),
+            status_code=404,
+            detail=responses.error("NOT_FOUND", "Episode not found"),
         ) from None
 
 
@@ -238,8 +238,8 @@ def compare_episodes(a: str, b: str):
             improved.append(name)
 
     add_if("inventory", delta_kpi["inventory"] < -0.05, delta_kpi["inventory"] > 0.05)
-    add_if("delivery",   delta_kpi["delivery"]   < -0.05, delta_kpi["delivery"]   > 0.05)
-    add_if("risk",       delta_kpi["risk"]       > 0.05,  delta_kpi["risk"]       < -0.05)
+    add_if("delivery", delta_kpi["delivery"] < -0.05, delta_kpi["delivery"] > 0.05)
+    add_if("risk", delta_kpi["risk"] > 0.05, delta_kpi["risk"] < -0.05)
 
     if delta_fragility_score > 0.02:
         headline = f"Fragility increased ({a_level} → {b_level})"
@@ -253,11 +253,11 @@ def compare_episodes(a: str, b: str):
 
     # Short text the manager can read in 2 seconds
     if delta_fragility_score > 0.02:
-        executive_summary = "Risk profile worsened; consider stabilizing the biggest drivers before scaling." 
+        executive_summary = "Risk profile worsened; consider stabilizing the biggest drivers before scaling."
     elif delta_fragility_score < -0.02:
-        executive_summary = "Risk profile improved; keep the stabilizing actions and monitor key drivers." 
+        executive_summary = "Risk profile improved; keep the stabilizing actions and monitor key drivers."
     else:
-        executive_summary = "Risk profile is stable; small changes detected—monitor drivers and KPIs." 
+        executive_summary = "Risk profile is stable; small changes detected—monitor drivers and KPIs."
 
     scorecard = {
         "fragility": {"a": {"score": a_score, "level": a_level}, "b": {"score": b_score, "level": b_level}, "delta_score": delta_fragility_score},

@@ -43,6 +43,10 @@ import type {
   ExecutiveObjectGeometryFamily,
   ExecutiveObjectMaterialPresentation,
 } from "@/app/lib/spatial-presentation/executiveObjectVisualFoundation";
+import { EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION } from "@/app/lib/spatial-presentation/executiveLightingFoundation";
+
+const stageObjectShadow = EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION.stageObjectGeometry;
+const pickingHelperShadow = EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION.pickingHelpers;
 
 type GeometryProps = {
   readonly family: ExecutiveObjectGeometryFamily;
@@ -519,15 +523,15 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
           rotation={[0, 0, 0]}
         >
           {needsExpandedPick ? (
-            <mesh castShadow={false} receiveShadow={false} {...pointerHandlers}>
+            <mesh castShadow={pickingHelperShadow.castShadow} receiveShadow={pickingHelperShadow.receiveShadow} {...pointerHandlers}>
               <planeGeometry args={[pickW, pickH]} />
               <meshBasicMaterial transparent opacity={0} depthWrite={false} />
             </mesh>
           ) : null}
           <mesh
             ref={ref}
-            castShadow={false}
-            receiveShadow={false}
+            castShadow={stageObjectShadow.castShadow}
+            receiveShadow={stageObjectShadow.receiveShadow}
             rotation={[0, 0, 0]}
             {...(needsExpandedPick || !interactive ? {} : pointerHandlers)}
           >
@@ -620,8 +624,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
           ref={ref}
           position={[0, 0, centerZ]}
           rotation={[Math.PI / 2, 0, 0]}
-          castShadow={false}
-          receiveShadow={false}
+          castShadow={stageObjectShadow.castShadow}
+          receiveShadow={stageObjectShadow.receiveShadow}
           {...handlers}
         >
           <cylinderGeometry
@@ -644,8 +648,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
           ref={ref}
           position={[0, 0, centerZ]}
           rotation={[Math.PI / 2, 0, zRot]}
-          castShadow={false}
-          receiveShadow={false}
+          castShadow={stageObjectShadow.castShadow}
+          receiveShadow={stageObjectShadow.receiveShadow}
           {...handlers}
         >
           <cylinderGeometry
@@ -670,8 +674,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
           radius={Math.max(0.012, bevel)}
           smoothness={visualOn ? 4 : 3}
           position={[0, 0, centerZ]}
-          castShadow={false}
-          receiveShadow={false}
+          castShadow={stageObjectShadow.castShadow}
+          receiveShadow={stageObjectShadow.receiveShadow}
           {...handlers}
         >
           {bodyMaterialNode}
@@ -684,8 +688,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
           ref={ref}
           position={[0, 0, centerZ]}
           rotation={[0, 0, 0]}
-          castShadow={false}
-          receiveShadow={false}
+          castShadow={stageObjectShadow.castShadow}
+          receiveShadow={stageObjectShadow.receiveShadow}
           {...handlers}
         >
           <boxGeometry args={[width, height, depth]} />
@@ -859,8 +863,8 @@ export const ExecutiveObjectGeometryRenderer = forwardRef<Mesh, GeometryProps>(
       >
         {needsExpandedPick ? (
           <mesh
-            castShadow={false}
-            receiveShadow={false}
+            castShadow={pickingHelperShadow.castShadow}
+            receiveShadow={pickingHelperShadow.receiveShadow}
             position={[0, 0, centerZ]}
             {...pointerHandlers}
           >

@@ -31,7 +31,7 @@ class ScenarioOverrideIn(BaseModel):
 
     # KPI overrides (delta = add/subtract, abs = set)
     delta: Dict[str, float] = Field(default_factory=dict)   # e.g. {"inventory": -0.1}
-    absolute: Dict[str, float] = Field(default_factory=dict) # e.g. {"risk": 0.8}
+    absolute: Dict[str, float] = Field(default_factory=dict)  # e.g. {"risk": 0.8}
 
 
 def _clamp01(x: Any) -> float:
@@ -132,15 +132,21 @@ def scenario_override(payload: ScenarioOverrideIn):
 
     # Apply absolute first
     absd = payload.absolute if isinstance(payload.absolute, dict) else {}
-    if "inventory" in absd: inv = _clamp01(absd["inventory"])
-    if "delivery" in absd: delv = _clamp01(absd["delivery"])
-    if "risk" in absd: rsk = _clamp01(absd["risk"])
+    if "inventory" in absd:
+        inv = _clamp01(absd["inventory"])
+    if "delivery" in absd:
+        delv = _clamp01(absd["delivery"])
+    if "risk" in absd:
+        rsk = _clamp01(absd["risk"])
 
     # Then delta
     delt = payload.delta if isinstance(payload.delta, dict) else {}
-    if "inventory" in delt: inv = _clamp01(inv + float(delt["inventory"]))
-    if "delivery" in delt: delv = _clamp01(delv + float(delt["delivery"]))
-    if "risk" in delt: rsk = _clamp01(rsk + float(delt["risk"]))
+    if "inventory" in delt:
+        inv = _clamp01(inv + float(delt["inventory"]))
+    if "delivery" in delt:
+        delv = _clamp01(delv + float(delt["delivery"]))
+    if "risk" in delt:
+        rsk = _clamp01(rsk + float(delt["risk"]))
 
     new_kpi = {"inventory": inv, "delivery": delv, "risk": rsk}
 

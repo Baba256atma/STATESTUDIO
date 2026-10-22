@@ -11,10 +11,8 @@
  */
 
 import type { Metadata } from "next";
-import { selectNexoraAuthProvider } from "@/app/lib/auth/nexoraAuthProviders";
-import { readNexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode";
-import { ANONYMOUS_NEXORA_SESSION } from "@/app/lib/auth/nexoraPrincipal";
-import { readNexoraClientSession } from "@/app/lib/auth/nexoraPrincipalServer";
+import { readNexoraExecutiveGate } from "@/app/lib/auth/nexoraPrincipalServer";
+import { NexoraAccountControl, NexoraExecutiveAuthBoundary } from "./components/NexoraAuthBoundary";
 import { listOwnedHostedWorkspaces } from "@/app/lib/workspace-auth/hostedWorkspaceCommands";
 import { projectHostedWorkspace, type HostedWorkspaceProjection } from "@/app/lib/workspace-auth/hostedWorkspaceRecord";
 import { ExecutiveShell } from "./components/ExecutiveShell";
@@ -49,17 +47,29 @@ export default async function ExecutivePage({
   const entranceRequested =
     entranceRaw === "1" || entranceRaw === "true" || entranceRaw === "first-time";
   const resetEntrance = resetRaw === "1" || resetRaw === "true";
-  const deploymentMode = readNexoraDeploymentMode();
-  const session = deploymentMode === "hosted"
-    ? await readNexoraClientSession()
-    : ANONYMOUS_NEXORA_SESSION;
-  const authProvider = deploymentMode === "hosted"
-    ? selectNexoraAuthProvider(process.env, process.env.NODE_ENV)
-    : "none";
+  const gate = await readNexoraExecutiveGate();
+  const { deploymentMode, authProvider, access, session } = gate;
   const errorRaw = Array.isArray(params.error) ? params.error[0] : params.error;
-  const authError = deploymentMode === "hosted" && errorRaw
+  const authError = access.access === "authentication-boundary" && errorRaw
     ? "Sign-in failed. No session was created."
     : null;
+  if (access.access === "authentication-boundary") {
+    return (
+      <main
+        data-testid="executive-auth-page"
+        style={{
+          height: "100vh",
+          minHeight: "100vh",
+          display: "flex",
+          background: "#0a0e14",
+          color: "#e8eef6",
+          fontFamily: '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
+        }}
+      >
+        <NexoraExecutiveAuthBoundary provider={access.provider} authError={authError} />
+      </main>
+    );
+  }
   let hostedWorkspaces: readonly HostedWorkspaceProjection[] = [];
   let hostedWorkspaceStatus: "ready" | "unavailable" = "ready";
   if (deploymentMode === "hosted" && session.authenticated && session.userId) {
@@ -86,6 +96,7 @@ export default async function ExecutivePage({
           '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
       }}
     >
+      {access.access === "authenticated-executive" ? <NexoraAccountControl session={session} /> : null}
       <ExecutiveShell
         datasetScenario={datasetScenario}
         entranceRequested={entranceRequested}
@@ -93,7 +104,7 @@ export default async function ExecutivePage({
         deploymentMode={deploymentMode}
         session={session}
         authProvider={authProvider}
-        authError={authError}
+        authError={null}
         hostedWorkspaces={hostedWorkspaces}
         hostedWorkspaceStatus={hostedWorkspaceStatus}
       />

@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import json
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.models.chat import ChatRequest
 from app.services import ai_commander
-from app.services.ai_commander import Action, ChatResponse, handle_chat
+from app.services.ai_commander import ChatResponse, handle_chat
 import main
 
 

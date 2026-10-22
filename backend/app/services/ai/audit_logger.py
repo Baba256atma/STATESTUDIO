@@ -34,9 +34,9 @@ POLICY_DECISION_STAGES: set[AuditStage] = {
 class AIAuditLogger:
     """Store recent audit events and optionally append JSONL records."""
 
-    def __init__(self, settings: LocalAISettings) -> None:
+    def __init__(self, settings: LocalAISettings, *, env_policy_dir: str | None = None) -> None:
         self.settings = settings
-        self.control_plane = AIControlPlaneService(settings)
+        self.control_plane = AIControlPlaneService(settings, env_policy_dir=env_policy_dir)
         self._events: deque[AuditEvent] = deque(maxlen=self.control_plane.get_audit_policy().max_events)
 
     def describe_policy(self) -> AuditPolicyResponse:

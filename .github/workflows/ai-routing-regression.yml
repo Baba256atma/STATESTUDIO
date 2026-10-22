@@ -26,11 +26,13 @@ jobs:
       - name: Validate backend syntax
         run: python -m compileall backend
 
+      # backend/ is the import root for app and tests. The repository root is not.
       - name: Run fast routing regression subset
-        run: pytest backend/tests/ai_regression -m "privacy or routing or provider" -q
+        working-directory: backend
+        run: python -m pytest tests/ai_regression -m "privacy or routing or provider" -q
 
       - name: Run full AI routing regression suite
-        run: ./scripts/run_ai_regression.sh
+        run: bash scripts/run_ai_regression.sh
 
       - name: Upload evaluation artifacts
         uses: actions/upload-artifact@v4

@@ -53,9 +53,9 @@ INTERNAL_KEYWORDS = {
 class PrivacyClassifier:
     """Classify request sensitivity before provider routing."""
 
-    def __init__(self, settings: LocalAISettings) -> None:
+    def __init__(self, settings: LocalAISettings, *, env_policy_dir: str | None = None) -> None:
         self.settings = settings
-        self.control_plane = AIControlPlaneService(settings)
+        self.control_plane = AIControlPlaneService(settings, env_policy_dir=env_policy_dir)
 
     def describe_policy(self) -> PrivacyPolicyResponse:
         """Return a static snapshot of the active privacy policy."""

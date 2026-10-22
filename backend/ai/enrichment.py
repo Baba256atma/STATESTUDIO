@@ -46,9 +46,11 @@ def _spirit_reply(chaos: ChaosResult) -> str:
         f"Leverage focus: {_format_list(chaos.affected_objects)}."
     )
 
+
 def _debug_enabled() -> bool:
     flag = os.getenv("STATESTUDIO_DEBUG", "")
     return flag.lower() in {"1", "true", "yes", "on"}
+
 
 def _forbidden_word() -> str:
     return "".join(["c", "h", "a", "k", "r", "a"])

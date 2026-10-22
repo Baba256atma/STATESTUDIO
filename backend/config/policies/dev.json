@@ -33,6 +33,7 @@
     "assume_uploaded_content_confidential": true,
     "cloud_blocked_sensitivity_levels": [
       "confidential",
+      "internal",
       "restricted"
     ],
     "local_required_sensitivity_levels": [

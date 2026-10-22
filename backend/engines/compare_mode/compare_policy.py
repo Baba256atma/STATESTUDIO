@@ -180,4 +180,3 @@ def classify_path_interpretation(delta: float) -> str:
     if delta < -0.05:
         return "weaker"
     return "equal"
-

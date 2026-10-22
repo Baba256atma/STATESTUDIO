@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { ManagementLevelSpatialComposition } from "@/app/lib/nmi/nmiManagementLevelSpatialContract.ts";
 import { nmiManagementLevelInteractionIdentity } from "@/app/lib/nmi/nmiManagementLevelInteractionIdentity.ts";
@@ -82,7 +82,9 @@ export function NexoraManagementLevelContextNav({
   }, [fingerprint, resolvedSelected, reducedMotion, composition]);
 
   const sample = sampleManagementLevelMotion(plan, progress);
-  liveRef.current = liveSamplesFromMotionSample(sample);
+  useLayoutEffect(() => {
+    liveRef.current = liveSamplesFromMotionSample(sample);
+  }, [sample]);
 
   const ancestors = sample.participants.filter((item) => {
     const contextualRole = item.targetRole ?? item.sourceRole;

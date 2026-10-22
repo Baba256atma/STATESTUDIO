@@ -49,4 +49,3 @@ def evaluate_generated_strategy(
         expected_impact=compute_expected_impact(compare_dict),
     )
     return evaluated, compare_dict
-

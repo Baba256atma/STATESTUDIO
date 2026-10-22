@@ -15,8 +15,8 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-from app.routers.decision_router import router as decision_router
-from app.utils.responses import install_exception_handlers
+from app.routers.decision_router import router as decision_router  # noqa: E402  # import follows sys.path setup
+from app.utils.responses import install_exception_handlers  # noqa: E402  # import follows sys.path setup
 
 
 def _client() -> TestClient:

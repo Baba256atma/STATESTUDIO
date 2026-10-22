@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full 40-character SHA of the current main HEAD to release
+        required: true
+        type: string
+
+# Write access can start this workflow. It is not a second-person review.
+# The job still refuses every SHA except the current main HEAD with trusted
+# successful Frontend CI, Frontend Lint, Backend Lint, and AI Routing jobs.
+# A push cannot start this workflow. actions: read is required to inspect
+# those workflow runs; it does not grant a second deploy path.
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  release:
+    name: Authorize Render release
+    if: github.repository == 'Baba256atma/STATESTUDIO' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release authority
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+
+      - name: Authorize the requested commit
+        id: authorize
+        env:
+          RELEASE_SHA: ${{ inputs.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: node frontend/scripts/releaseAuthorization.mjs
+
+      - name: Require the Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          python3 - <<'PY'
+          import os
+          hook = os.environ.get("RENDER_DEPLOY_HOOK_URL", "").strip()
+          if not hook.startswith("https://api.render.com/deploy/"):
+              print("Deployment blocked: the Render deploy hook is not configured for this repository.")
+              raise SystemExit(1)
+          PY
+
+      - name: Request Render deploy for the authorized commit
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          DEPLOY_SHA: ${{ steps.authorize.outputs.authorized_sha }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import urllib.parse
+          import urllib.request
+
+          hook = os.environ.get("RENDER_DEPLOY_HOOK_URL", "").strip()
+          sha = os.environ.get("DEPLOY_SHA", "").strip()
+          if not hook.startswith("https://api.render.com/deploy/") or len(sha) != 40:
+              print("Deployment blocked: the Render deploy hook is not configured for this repository.")
+              raise SystemExit(1)
+          parts = urllib.parse.urlsplit(hook)
+          query = urllib.parse.parse_qs(parts.query)
+          query["ref"] = [sha]
+          url = urllib.parse.urlunsplit((
+              parts.scheme,
+              parts.netloc,
+              parts.path,
+              urllib.parse.urlencode({key: values[0] for key, values in query.items()}),
+              "",
+          ))
+          try:
+              with urllib.request.urlopen(urllib.request.Request(url, method="POST"), timeout=60) as response:
+                  if response.status >= 300:
+                      print("Deployment blocked: Render did not accept the commit.")
+                      raise SystemExit(1)
+          except Exception:
+              print("Deployment blocked: Render did not accept the commit.")
+              raise SystemExit(1)
+          print(f"Render deploy requested for {sha}")
+          PY

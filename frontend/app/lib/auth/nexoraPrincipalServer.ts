@@ -5,6 +5,9 @@
 
 import { getServerSession } from "next-auth";
 
+import { selectNexoraAuthProvider, type NexoraAuthProviderId } from "./nexoraAuthProviders.ts";
+import { readNexoraDeploymentMode, type NexoraDeploymentMode } from "./nexoraDeploymentMode.ts";
+import { resolveExecutiveAccess, type NexoraExecutiveAccess } from "./nexoraExecutiveAccess.ts";
 import { nexoraAuthOptions } from "./nexoraAuthOptions.ts";
 import {
   projectNexoraClientSession,
@@ -24,4 +27,28 @@ export async function readAuthenticatedNexoraPrincipal(): Promise<NexoraPrincipa
 
 export async function readNexoraClientSession(): Promise<NexoraClientSessionProjection> {
   return projectNexoraClientSession(await readAuthenticatedNexoraPrincipal());
+}
+
+/** One server decision for every Executive route. */
+export async function readNexoraExecutiveGate(): Promise<{
+  readonly deploymentMode: NexoraDeploymentMode;
+  readonly authProvider: NexoraAuthProviderId;
+  readonly access: NexoraExecutiveAccess;
+  readonly session: NexoraClientSessionProjection;
+}> {
+  const deploymentMode = readNexoraDeploymentMode();
+  const authProvider = selectNexoraAuthProvider(process.env, process.env.NODE_ENV);
+  const principal = deploymentMode === "hosted" || authProvider !== "none"
+    ? await readAuthenticatedNexoraPrincipal()
+    : null;
+  return {
+    deploymentMode,
+    authProvider,
+    access: resolveExecutiveAccess({
+      deploymentMode,
+      provider: authProvider,
+      principal,
+    }),
+    session: projectNexoraClientSession(principal),
+  };
 }

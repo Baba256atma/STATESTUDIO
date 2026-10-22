@@ -154,4 +154,3 @@ async def run_multi_source_ingestion(
         bundle=merged_bundle,
         errors=top_level_errors,
     )
-

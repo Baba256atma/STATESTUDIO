@@ -1,7 +1,7 @@
 """Replay capture helpers for deterministic frame construction."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from app.models.replay import ReplayFrame, ReplayMeta
 

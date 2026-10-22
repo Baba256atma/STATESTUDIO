@@ -57,4 +57,3 @@ def validate_url_policy(url: str, policy: WebIngestionPolicy) -> str:
         raise ValueError(f"Domain not allowed: {domain}")
 
     return domain
-

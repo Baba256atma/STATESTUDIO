@@ -190,10 +190,10 @@ class ChaosEngine:
             "general": (),
         }
 
-
     # --------------------
     # Utility: deterministic hash -> floats
     # --------------------
+
     def _seed_from(self, text: str, history: Optional[List[str]]) -> int:
         """Create a deterministic integer seed from the inputs."""
         h = hashlib.sha256()

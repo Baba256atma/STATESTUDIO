@@ -13,8 +13,6 @@ def build_conflict_map_v0(kpi: dict, fragility: dict):
     kpi = kpi if isinstance(kpi, dict) else {}
     fragility = fragility if isinstance(fragility, dict) else {}
 
-    inv = float(kpi.get("inventory", 0.5) or 0.5)
-    delivery = float(kpi.get("delivery", 0.5) or 0.5)
     risk = float(kpi.get("risk", 0.5) or 0.5)
 
     drivers: dict[str, Any] = fragility.get("drivers", {}) if isinstance(fragility.get("drivers"), dict) else {}

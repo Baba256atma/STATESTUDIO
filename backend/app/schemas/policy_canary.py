@@ -124,4 +124,3 @@ class CanaryReleaseState(BaseModel):
     canary_snapshot: AIPolicySnapshot
     health_summary: CanaryHealthSummary | None = None
     decision: CanaryDecisionResult | None = None
-

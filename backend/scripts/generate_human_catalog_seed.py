@@ -9,7 +9,7 @@ import sys
 BASE_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(BASE_DIR))
 
-from app.models.human_catalog import (
+from app.models.human_catalog import (  # noqa: E402  # import follows sys.path setup
     HumanCatalog,
     HumanArchetypeDefinition,
     HumanArchetypeOutputs,

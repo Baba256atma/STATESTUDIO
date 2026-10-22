@@ -320,7 +320,6 @@ def execute_chat_pipeline(payload: Any, request: Request, deps: ChatPipelineDepe
 
         text_l = (text or "").strip().lower()
         is_intensity_up = any(k in text_l for k in ["increase intensity", "more intensity", "boost intensity", "raise intensity"])
-        is_intensity_down = any(k in text_l for k in ["decrease intensity", "less intensity", "reduce intensity", "lower intensity"])
         effective_intensity = float(getattr(chaos, "intensity", 0.34) or 0.34)
 
         objects = scene_actions.get("objects") if isinstance(scene_actions, dict) else None

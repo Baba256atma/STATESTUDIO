@@ -18,7 +18,7 @@ try:
     )
     from app.services.scanner.fragility_evaluator import evaluate_fragility
     from app.services.scanner.scene_payload_builder import build_fragility_scene_payload
-    from ingestion.schemas import SignalBundle, SourceDocument
+    from ingestion.schemas import SignalBundle
     from ingestion.service import IngestionService
     from mapping.service import map_signals_to_objects
 except ModuleNotFoundError:
@@ -34,7 +34,7 @@ except ModuleNotFoundError:
     )
     from app.services.scanner.fragility_evaluator import evaluate_fragility
     from app.services.scanner.scene_payload_builder import build_fragility_scene_payload
-    from ingestion.schemas import SignalBundle, SourceDocument
+    from ingestion.schemas import SignalBundle
     from ingestion.service import IngestionService
     from mapping.service import map_signals_to_objects
 

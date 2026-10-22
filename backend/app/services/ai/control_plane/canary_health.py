@@ -24,7 +24,6 @@ class CanaryHealthEvaluator:
         """Return canary health summary and recommended decision."""
         stable_telemetry = _channel_events(telemetry_events, "stable", state.stable_policy_version)
         canary_telemetry = _channel_events(telemetry_events, "canary", state.canary_policy_version)
-        stable_audit = _channel_events(audit_events, "stable", state.stable_policy_version)
         canary_audit = _channel_events(audit_events, "canary", state.canary_policy_version)
 
         stable_trace_count = _trace_count(stable_telemetry)

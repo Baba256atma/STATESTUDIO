@@ -15,6 +15,10 @@ const eslintConfig = defineConfig([
     // Temporary tsc emit for executiveIntent/executiveMemory experiments (not governed source).
     // Owner: Frontend Tooling. Parallel to `.tmp/` psych smoke outDir; never linted as product code.
     ".tmp-em/**",
+    // Tracked scratch probes. They are not product source, and CI lint failed
+    // them for require() and explicit any after the product prefer-const repair.
+    ".tmp-f18-c.ts",
+    ".tmp-f18-revert.cjs",
     // Certification artifacts and Node capture scripts are not product runtime.
     // They use CommonJS `require()` by design and must not fail the product lint gate.
     ".certification/**",

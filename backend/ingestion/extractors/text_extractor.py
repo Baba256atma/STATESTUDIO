@@ -29,4 +29,3 @@ def extract_text(payload: str | Mapping[str, Any]) -> str:
     if not text:
         raise TextExtractionError("Text ingestion payload cannot be empty.")
     return text
-

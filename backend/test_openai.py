@@ -5,7 +5,6 @@ import argparse
 import os
 import sys
 import traceback
-from typing import Optional
 
 try:
     from dotenv import load_dotenv  # type: ignore

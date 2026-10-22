@@ -14,6 +14,10 @@ class LocalAISettings(BaseSettings):
     model_config = SettingsConfigDict(
         extra="ignore",
         case_sensitive=False,
+        # Tests and the eval harness construct settings by field name.
+        # Env aliases remain the deployment interface. Without this, those
+        # field-name arguments are ignored and cloud policy stays at the default.
+        populate_by_name=True,
     )
 
     ai_local_enabled: bool = Field(
@@ -93,7 +97,7 @@ class LocalAISettings(BaseSettings):
         validation_alias="AI_DEFAULT_PRIVACY_MODE",
     )
     ai_cloud_blocked_sensitivity_levels: str = Field(
-        default="confidential,restricted",
+        default="internal,confidential,restricted",
         validation_alias="AI_CLOUD_BLOCKED_SENSITIVITY_LEVELS",
     )
     ai_local_required_sensitivity_levels: str = Field(

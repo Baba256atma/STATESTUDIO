@@ -28,9 +28,9 @@ class BenchmarkPreferencesSnapshot:
 class BenchmarkPreferencesLoader:
     """Load benchmark summary data from a local JSON report file."""
 
-    def __init__(self, settings: LocalAISettings) -> None:
+    def __init__(self, settings: LocalAISettings, *, env_policy_dir: str | None = None) -> None:
         self.settings = settings
-        self.control_plane = AIControlPlaneService(settings)
+        self.control_plane = AIControlPlaneService(settings, env_policy_dir=env_policy_dir)
         self._lock = Lock()
         self._last_mtime_ns: int | None = None
         benchmark_policy = self.control_plane.get_benchmark_policy()

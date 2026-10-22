@@ -50,7 +50,9 @@ test("anonymous, invalid, and expired sessions have no principal", () => {
 
 test("authenticated principal is a stable user id, not company or entrance identity", () => {
   const principal = projectNexoraPrincipal({ user: { id: "dev:user_a", email: "hidden@example.com" }, expires: future });
-  assert.deepEqual(principal, { userId: "dev:user_a" });
+  assert.equal(principal?.userId, "dev:user_a");
+  assert.equal(principal?.provider, "nexora-dev");
+  assert.notEqual(principal?.userId, principal?.email);
   const again = projectNexoraPrincipal({ user: { id: "dev:user_a" }, expires: future });
   assert.equal(again?.userId, principal?.userId);
   const other = projectNexoraPrincipal({ user: { id: "dev:user_b" }, expires: future });
@@ -59,9 +61,12 @@ test("authenticated principal is a stable user id, not company or entrance ident
   assert.equal(stableProviderUserId("nexora-dev", "user_a"), "dev:user_a");
   assert.equal(stableProviderUserId("github", "person@example.com"), null);
   const projection = projectNexoraClientSession(principal);
-  assert.deepEqual(Object.keys(projection).sort(), ["authenticated", "displayLabel", "userId"]);
-  assert.equal(projection.displayLabel, "Signed in");
-  assert.equal(JSON.stringify(projection).includes("hidden@example.com"), false);
+  assert.deepEqual(
+    Object.keys(projection).sort(),
+    ["authenticated", "displayLabel", "email", "image", "name", "provider", "userId"],
+  );
+  assert.equal(projection.userId, "dev:user_a");
+  assert.equal(projection.email, "hidden@example.com");
   assert.equal(JSON.stringify(projection).includes("token"), false);
   assert.ok(NON_AUTHORITATIVE_IDENTITY_FIELDS.includes("localStorage:nexora.company_id"));
   assert.ok(NON_AUTHORITATIVE_IDENTITY_FIELDS.includes("sessionStorage:nexora.entrance.identity.session.v1"));

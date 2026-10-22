@@ -69,15 +69,19 @@ export function NexoraSceneEnvironmentController({
   const targetBg = useRef(new Color(environment.background));
   const targetGround = useRef(new Color(environment.groundColor));
   const groundShadow = EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION.stageGround;
-  const centerHaze = useMemo(() => {
-    const texture = createStageCenterHazeTexture(environment.atmosphereHaze);
-    return texture;
-  }, [
-    environment.atmosphereHaze.center,
-    environment.atmosphereHaze.edge,
-    environment.atmosphereHaze.mid,
-    environment.atmosphereHaze.rim,
-  ]);
+  const hazeCenter = environment.atmosphereHaze.center;
+  const hazeMid = environment.atmosphereHaze.mid;
+  const hazeEdge = environment.atmosphereHaze.edge;
+  const hazeRim = environment.atmosphereHaze.rim;
+  const centerHaze = useMemo(
+    () => createStageCenterHazeTexture({
+      center: hazeCenter,
+      mid: hazeMid,
+      edge: hazeEdge,
+      rim: hazeRim,
+    }),
+    [hazeCenter, hazeMid, hazeEdge, hazeRim],
+  );
 
   useEffect(() => {
     targetBg.current.set(environment.background);

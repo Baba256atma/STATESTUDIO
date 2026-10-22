@@ -26,6 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8
 
-      # Run flake8 against the backend and ignore long line warnings to reduce noise.
+      # E501 stays ignored: the historical line-length policy.
+      # W503 stays ignored: this tree breaks before binary operators, which is
+      # the current PEP 8 preference and the opposite of W504. Ignoring W503
+      # does not disable unused-import, undefined-name, or import-order checks.
       - name: Run flake8
-        run: flake8 backend --ignore=E501
+        run: flake8 backend --ignore=E501,W503 --exclude=backend/.venv,backend/.cache

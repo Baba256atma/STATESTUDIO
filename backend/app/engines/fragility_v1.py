@@ -70,6 +70,7 @@ def compute_fragility_v1(
 
     # short business reasons
     reasons: List[Dict[str, Any]] = []
+
     def add(code: str, weight: float, msg: str) -> None:
         reasons.append({"code": code, "weight": float(_clamp01(weight)), "message": msg})
 

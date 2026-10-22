@@ -59,4 +59,3 @@ class StrategyGenerationResult(BaseModel):
     strategies: list[EvaluatedStrategy] = Field(default_factory=list)
     recommended_strategy_id: str | None = None
     summary: StrategyGenerationSummary
-

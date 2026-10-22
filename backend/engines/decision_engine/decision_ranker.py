@@ -140,6 +140,7 @@ def _executive_rationale(
     parts = [p for p in (anchor, compare) if p]
     return _clip(" ".join(parts), 240)
 
+
 def _why_this(
     decision_summary: str | None,
     winner: StrategyEvaluation,
@@ -163,6 +164,7 @@ def _why_this(
         edge = "It is the strongest available path to raise stability and contain risk."
     base = decision_summary or anchor or "This option targets the most fragile pressure point first."
     return _clip(f"{base} {edge}", 240)
+
 
 def _evidence(
     winner: StrategyEvaluation,
@@ -192,6 +194,7 @@ def _evidence(
 
     return [_clip(item, 140) for item in bullets[:4]]
 
+
 def _tradeoffs(winner: StrategyEvaluation, runner: StrategyEvaluation | None) -> str:
     if winner.unintended_consequences:
         return _clip(winner.unintended_consequences[0], 140)
@@ -206,6 +209,7 @@ def _tradeoffs(winner: StrategyEvaluation, runner: StrategyEvaluation | None) ->
             140,
         )
     return "Requires disciplined execution to realize the projected stability gains."
+
 
 def _confidence_reason(
     winner: StrategyEvaluation,
@@ -229,6 +233,7 @@ def _confidence_reason(
         f"and baseline risk is {baseline_risk:.2f} ({priority} priority). {rationale}.",
         220,
     )
+
 
 class DecisionRanker:
     """Rank strategies using weighted evaluation output."""

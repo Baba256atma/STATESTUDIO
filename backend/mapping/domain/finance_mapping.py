@@ -15,4 +15,3 @@ FINANCE_OBJECT_VOCABULARY: dict[str, dict[str, object]] = {
         "related_objects": ("obj_cashflow",),
     },
 }
-

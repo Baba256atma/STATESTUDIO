@@ -4,7 +4,6 @@ import os
 from fastapi import APIRouter, HTTPException
 
 from app.models.chat import ChatResponse, Action
-from archetypes.visual_mapper import map_archetype_to_visual_state
 from archetypes.state_compat import normalize_archetype_state
 from archetypes.library import get_archetype_library
 
@@ -20,7 +19,7 @@ def contracts():
         user_id="demo",
         reply="Sample reply",
         actions=[
-          Action(type="applyObject", object="obj_demo", value={"color": "#88ccff"}),  # type: ignore
+            Action(type="applyObject", object="obj_demo", value={"color": "#88ccff"}),  # type: ignore
         ],
         scene_json={"scene": {}},
         source="ai",
@@ -36,6 +35,7 @@ def state_fields():
         raise HTTPException(status_code=404, detail="Not found")
     sample_state = get_archetype_library().items[0]  # definition
     # Build a minimal compatible state using the first definition id
+
     class DummyState:
         def __init__(self, aid: str):
             self.timestamp = 0

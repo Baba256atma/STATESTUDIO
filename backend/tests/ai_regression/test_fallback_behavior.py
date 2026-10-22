@@ -23,7 +23,7 @@ def test_fallback_disabled_triggers_safe_failure():
     case = clone_case(
         base_case,
         case_id="fallback_disabled_safe_failure",
-        metadata={"task": "explain"},
+        metadata={"task": "explain", "cloud_not_allowed": True},
         expected_privacy_mode="default",
         expected_cloud_allowed=False,
         expected_provider=None,

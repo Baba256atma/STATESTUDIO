@@ -87,12 +87,12 @@ def _positive_float(env: Mapping[str, str], name: str, default: float) -> float:
 def hosted_scope_parts(scope: str) -> tuple[str, str] | None:
     if not scope.startswith("hosted:"):
         return None
-    rest = scope[len("hosted:") :]
+    rest = scope[len("hosted:"):]
     marker = ":ws_"
     index = rest.rfind(marker)
     if index <= 0:
         return None
-    return rest[:index], rest[index + 1 :]
+    return rest[:index], rest[index + 1:]
 
 
 def hosted_payload_refusal(request: dict[str, Any] | None) -> str | None:

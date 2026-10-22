@@ -8,11 +8,9 @@ from engines.evolution.evolution_policy import build_policy_inputs
 from engines.evolution.learning_models import EvolutionState
 from engines.evolution.learning_service import run_learning_pass
 from engines.evolution.memory_models import (
-    ComparisonMemoryRecord,
     MemorySaveRequest,
     OutcomeUpdateRequest,
     ScenarioMemoryRecord,
-    StrategyMemoryRecord,
 )
 from engines.evolution.memory_store import (
     get_all_records,

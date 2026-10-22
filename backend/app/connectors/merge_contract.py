@@ -94,4 +94,3 @@ class MultiSourceIngestionResponse(BaseModel):
     ok: bool
     bundle: MergedSignalBundle
     errors: list[str] = Field(default_factory=list)
-

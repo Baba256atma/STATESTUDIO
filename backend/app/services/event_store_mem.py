@@ -29,7 +29,7 @@ class EventStoreMem:
         bucket = self._events.get(user_id, [])
         bucket.append(event)
         if len(bucket) > self.max_per_user:
-            bucket = bucket[-self.max_per_user :]
+            bucket = bucket[-self.max_per_user:]
         self._events[user_id] = bucket
         return event
 
@@ -42,5 +42,5 @@ class EventStoreMem:
         if from_event_id:
             for idx, evt in enumerate(events):
                 if evt.get("id") == from_event_id:
-                    return events[idx + 1 : idx + 1 + limit]
+                    return events[idx + 1: idx + 1 + limit]
         return events[-limit:]

@@ -4,7 +4,7 @@ import json
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 LOOPS_CONFIG_PATH = Path(__file__).resolve().parents[2] / "data" / "business_loops.json"
 
@@ -147,7 +147,7 @@ def build_loops_from_kpi(kpi: Dict[str, float], allowed_objects: Optional[List[s
             }
         )
 
-    runtime.sort(key=lambda l: l.get("weight", 0), reverse=True)
+    runtime.sort(key=lambda loop: loop.get("weight", 0), reverse=True)
     return runtime
 
 

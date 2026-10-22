@@ -242,7 +242,7 @@ export function resolveExecutiveOvsObjectStateVisual(
   const reducedMotion = input.reducedMotion === true;
 
   let emissiveScale = base.emissiveScale;
-  let roughnessBias = base.roughnessBias;
+  const roughnessBias = base.roughnessBias;
   let opacityScale = base.opacityScale;
   let depthBias = base.depthBias;
   let edgeOpacity = base.edgeOpacity;

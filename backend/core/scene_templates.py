@@ -38,6 +38,7 @@ BASE_SCENE = {
     },
 }
 
+
 def new_scene(domain: str = "business") -> dict:
     data = deepcopy(BASE_SCENE)
     data["meta"]["domain"] = domain
@@ -47,6 +48,7 @@ def new_scene(domain: str = "business") -> dict:
 # =========================
 # Nexora MVP Mapping Layer
 # =========================
+
 
 def _clamp01(x: float) -> float:
     try:
@@ -66,13 +68,11 @@ def map_state_to_scene_objects(scene: dict) -> dict:
     """
 
     state = scene.get("state_vector", {}) or {}
-    domain = scene.get("domain_model", {}).get("business", {}) or {}
 
     objects = []
 
     # ---- Time Pressure Object ----
     time_pressure = _clamp01(state.get("time_pressure", 0.0))
-    time_status = domain.get("time", {}).get("schedule_status", "on_track")
 
     objects.append({
         "id": "obj_time",
@@ -84,7 +84,6 @@ def map_state_to_scene_objects(scene: dict) -> dict:
 
     # ---- Inventory Pressure Object ----
     inv_pressure = _clamp01(state.get("inventory_pressure", 0.0))
-    inv_status = domain.get("inventory", {}).get("status", "normal")
 
     objects.append({
         "id": "obj_inventory",
@@ -96,7 +95,6 @@ def map_state_to_scene_objects(scene: dict) -> dict:
 
     # ---- Quality Risk Object ----
     quality_risk = _clamp01(state.get("quality_risk", 0.0))
-    defect_rate = domain.get("quality", {}).get("defect_rate", 0.0)
 
     objects.append({
         "id": "obj_quality",

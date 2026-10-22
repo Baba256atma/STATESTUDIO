@@ -15,17 +15,17 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-import ingestion.router as ingestion_router_mod
-from ingestion.router import router as ingestion_router
-from ingestion.service import IngestionService
-from app.utils.responses import install_exception_handlers
-from app.connectors.merge_contract import (
+import ingestion.router as ingestion_router_mod  # noqa: E402  # import follows sys.path setup
+from ingestion.router import router as ingestion_router  # noqa: E402  # import follows sys.path setup
+from ingestion.service import IngestionService  # noqa: E402  # import follows sys.path setup
+from app.utils.responses import install_exception_handlers  # noqa: E402  # import follows sys.path setup
+from app.connectors.merge_contract import (  # noqa: E402  # import follows sys.path setup
     ConnectorRunResult,
     MergedSignalBundle,
     MultiSourceIngestionRequest,
     MultiSourceIngestionResponse,
 )
-from ingestion.schemas import Signal, SignalBundle, SourceDocument
+from ingestion.schemas import Signal, SignalBundle, SourceDocument  # noqa: E402  # import follows sys.path setup
 
 
 def _client() -> TestClient:

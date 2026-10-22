@@ -12,7 +12,7 @@ for path in (BACKEND_DIR, ROOT_DIR):
     if normalized not in sys.path:
         sys.path.insert(0, normalized)
 
-from app.engines.fragility_scoring import compute_fragility_score, map_score_to_level
+from app.engines.fragility_scoring import compute_fragility_score, map_score_to_level  # noqa: E402  # import follows sys.path setup
 
 
 def test_fragility_scoring_empty_signal_case():
