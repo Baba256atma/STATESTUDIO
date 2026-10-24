@@ -14,6 +14,7 @@ import {
   fetchFrontendCheck,
   frontendCheckFromApiPayloads,
 } from "./renderBuildGate.mjs";
+import { planRenderBuildEntry } from "./renderBuildEntry.mjs";
 
 const sha = "1dead5f6abd8500be70c74d4fe34dee1c9f812f5";
 const otherSha = "a".repeat(40);
@@ -273,6 +274,9 @@ test("the local build script still typechecks and the Render script uses the bou
   const workflow = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
   assert.match(script, /max-old-space-size=8192/);
   assert.match(script, /RENDER_BUILD_HEAP_MB/);
+  assert.match(script, /planRenderBuildEntry/);
+  assert.doesNotMatch(script, /console\.error\(decision\.reason\)/);
+  assert.doesNotMatch(script, /process\.env\.NEXORA_RENDER_BUILD\s*=/);
   assert.doesNotMatch(config, /ignoreBuildErrors:\s*true/);
   assert.match(config, /decideRenderBuild/);
   assert.match(workflow, /hostedWorkspaceAuthorization\.test\.ts/);
@@ -285,4 +289,109 @@ test("the local build script still typechecks and the Render script uses the bou
   assert.doesNotMatch(release, /workflow_run:/);
   assert.match(release, /steps\.authorize\.outputs\.authorized_sha/);
   assert.match(release, /len\(sha\) != 40/);
+});
+
+function renderShell(extra = {}) {
+  return {
+    RENDER: "true",
+    RENDER_GIT_BRANCH: REQUIRED_BRANCH,
+    RENDER_GIT_COMMIT: sha,
+    ...extra,
+  };
+}
+
+function assertRefused(plan) {
+  assert.equal(plan.action, "refuse");
+  assert.equal(plan.compile, false);
+  assert.equal(plan.exitCode, 1);
+  assert.equal(typeof plan.message, "string");
+  assert.equal(plan.message.includes("undefined"), false);
+  assert.equal(plan.message.length > 0, true);
+}
+
+test("authorized Render entry sets the build mode before the CI gate", () => {
+  const env = renderShell();
+  const plan = planRenderBuildEntry({ env, check: passed });
+  assert.equal(env.NEXORA_RENDER_BUILD, undefined);
+  assert.equal(plan.gateEnv.NEXORA_RENDER_BUILD, "1");
+  assert.equal(plan.gateEnv.RENDER, "true");
+  assert.equal(plan.action, "compile-after-ci");
+  assert.equal(plan.compile, true);
+  assert.equal(plan.decision.sha, sha);
+  assert.equal(plan.decision.heapMb, RENDER_BUILD_HEAP_MB);
+  assert.equal(plan.decision.ignoreBuildErrors, true);
+});
+
+test("missing Frontend CI refuses the Render entry before compilation", () => {
+  assertRefused(planRenderBuildEntry({ env: renderShell(), check: null }));
+});
+
+test("failed Frontend CI refuses the Render entry before compilation", () => {
+  assertRefused(planRenderBuildEntry({
+    env: renderShell(),
+    check: evidence({ job: { conclusion: "failure" } }),
+  }));
+});
+
+test("trusted CI for a different SHA refuses the Render entry", () => {
+  assertRefused(planRenderBuildEntry({
+    env: renderShell({ RENDER_GIT_COMMIT: otherSha }),
+    check: passed,
+  }));
+});
+
+test("untrusted provenance refuses the Render entry", () => {
+  assertRefused(planRenderBuildEntry({
+    env: renderShell(),
+    check: evidence({ check: { app: { slug: "untrusted-app" } } }),
+  }));
+});
+
+test("a non-main branch refuses the Render entry", () => {
+  assertRefused(planRenderBuildEntry({
+    env: renderShell({ RENDER_GIT_BRANCH: "feature/test" }),
+    check: passed,
+  }));
+});
+
+test("GitHub API failure refuses the Render entry", async () => {
+  const check = await fetchFrontendCheck(sha, async () => {
+    throw new Error("network down");
+  });
+  assert.equal(check, null);
+  assertRefused(planRenderBuildEntry({ env: renderShell(), check }));
+});
+
+test("a local environment does not enter the Render shortcut", () => {
+  const env = {};
+  const plan = planRenderBuildEntry({ env, check: passed });
+  assert.equal(plan.action, "local");
+  assert.equal(plan.compile, false);
+  assert.equal(plan.gateEnv.NEXORA_RENDER_BUILD, undefined);
+  const local = decideRenderBuild({ env });
+  assert.equal(local.action, "full-typecheck");
+  assert.equal(local.ignoreBuildErrors, false);
+});
+
+test("an unexpected Render decision is reported and does not compile", () => {
+  const plan = planRenderBuildEntry({
+    env: renderShell(),
+    check: passed,
+    decide: () => ({ action: "full-typecheck" }),
+  });
+  assert.equal(plan.action, "unexpected");
+  assert.equal(plan.compile, false);
+  assert.equal(plan.exitCode, 1);
+  assert.equal(plan.message, "nexora_render_build unexpected_decision=full-typecheck");
+  assert.equal(plan.message.includes("undefined"), false);
+});
+
+test("a refusal without a reason still prints an explicit diagnostic", () => {
+  const plan = planRenderBuildEntry({
+    env: renderShell(),
+    check: null,
+    decide: () => ({ action: "refuse" }),
+  });
+  assert.equal(plan.message, "Render build refused.");
+  assert.equal(plan.compile, false);
 });

@@ -18,6 +18,7 @@ import {
   fetchFrontendCheck,
   readLocalTypecheckProof,
 } from "./renderBuildGate.mjs";
+import { planRenderBuildEntry } from "./renderBuildEntry.mjs";
 
 const frontendRoot = new URL("..", import.meta.url).pathname;
 const RSS_BUDGET_KB = 7.2 * 1024 * 1024;
@@ -31,15 +32,16 @@ if (process.env.RENDER === "true") {
     fetch,
     process.env.GITHUB_TOKEN,
   );
-  const decision = decideRenderBuild({ env: process.env, check });
-  if (decision.action !== "compile-after-ci") {
-    console.error(decision.reason);
-    process.exit(1);
+  const plan = planRenderBuildEntry({ env: process.env, check });
+  if (!plan.compile) {
+    console.error(plan.message);
+    process.exit(plan.exitCode);
   }
-  process.exit(await compile(decision.heapMb, {
+  process.exit(await compile(plan.decision.heapMb, {
     NEXORA_RENDER_BUILD: "1",
     RENDER: "true",
-    RENDER_GIT_COMMIT: decision.sha,
+    RENDER_GIT_BRANCH: "main",
+    RENDER_GIT_COMMIT: plan.decision.sha,
   }));
 }
 
