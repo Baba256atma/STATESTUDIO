@@ -52,6 +52,9 @@ ENABLED = {
     "NEXORA_LLM_ENABLED": "true",
     "NEXORA_LLM_USAGE_LIMIT": "5",
     "NEXORA_LLM_USAGE_PERIOD": "daily",
+    "NEXORA_LLM_MAX_OUTPUT_TOKENS": "64",
+    "NEXORA_LLM_MAX_REQUEST_USD": "0.01",
+    "NEXORA_LLM_LEDGER_INITIALIZE": "true",
 }
 SCOPE = "hosted:dev:user_a:ws_companyAcompanyAcompanyA"
 NOW = datetime(2026, 10, 18, tzinfo=timezone.utc)
@@ -132,5 +135,5 @@ def test_hosted_unusable_path_fails_closed(tmp_path: Path, monkeypatch: Any) -> 
         request("turn-unusable"), adapter, environ=ENABLED, now=NOW, usage_scope=SCOPE
     )
 
-    assert result["policy"]["reason"] == "USAGE_UNAVAILABLE"
+    assert result["policy"]["reason"] == "LEDGER_PERSISTENCE_FAILED"
     assert adapter.calls == 0

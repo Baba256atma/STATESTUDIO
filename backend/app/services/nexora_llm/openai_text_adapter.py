@@ -121,7 +121,9 @@ class OpenAITextAdapter:
             from openai import OpenAI
         except Exception as exc:  # pragma: no cover
             raise AdapterError("NOT_CONFIGURED", "OpenAI SDK is not installed.") from exc
-        return OpenAI(api_key=key)
+        # max_retries=0 keeps one admission equal to one provider HTTP attempt.
+        # This does not cap the OpenAI invoice. Nexora has no provider-side spend API.
+        return OpenAI(api_key=key, max_retries=0)
 
     def complete(
         self,
@@ -129,18 +131,22 @@ class OpenAITextAdapter:
         system_instruction: str,
         user_payload: str,
         timeout_seconds: float,
+        max_output_tokens: int | None = None,
     ) -> ProviderCompletion:
         model = self._model or selected_openai_model()
         try:
             client = self._client()
-            response = client.responses.create(
-                model=model,
-                input=[
+            request: dict[str, Any] = {
+                "model": model,
+                "input": [
                     {"role": "system", "content": system_instruction},
                     {"role": "user", "content": user_payload},
                 ],
-                timeout=timeout_seconds,
-            )
+                "timeout": timeout_seconds,
+            }
+            if max_output_tokens is not None:
+                request["max_output_tokens"] = max_output_tokens
+            response = client.responses.create(**request)
         except AdapterError:
             raise
         except Exception as exc:

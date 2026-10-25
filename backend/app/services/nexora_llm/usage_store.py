@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import fcntl
 import json
+import math
 import os
 import threading
 from datetime import datetime, timedelta, timezone
@@ -21,6 +22,18 @@ from uuid import uuid4
 
 USAGE_STORE_IDENTITY = "LLM-MVP:4/UsageStore"
 NEXORA_LLM_USAGE_STORE_PATH = "NEXORA_LLM_USAGE_STORE_PATH"
+LEDGER_CORRUPTED = "LEDGER_CORRUPTED"
+LEDGER_UNAVAILABLE = "LEDGER_UNAVAILABLE"
+LEDGER_PERSISTENCE_FAILED = "LEDGER_PERSISTENCE_FAILED"
+LEDGER_INTEGRITY_VIOLATION = "LEDGER_INTEGRITY_VIOLATION"
+
+
+class LedgerError(Exception):
+    """Fail-closed ledger fault. The code is the policy reason."""
+
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
 
 
 def default_usage_store_path(environ: Mapping[str, str] | None = None) -> Path:
@@ -40,9 +53,15 @@ def default_usage_store_path(environ: Mapping[str, str] | None = None) -> Path:
 
 
 class NexoraLlmUsageStore:
-    def __init__(self, path: Path | None = None) -> None:
+    def __init__(self, path: Path | None = None, *, create_if_missing: bool | None = None) -> None:
         self.path = path or default_usage_store_path()
         self._thread = threading.Lock()
+        if create_if_missing is None:
+            hosted = os.environ.get("NEXORA_DEPLOYMENT_MODE") == "hosted"
+            authorized = os.environ.get("NEXORA_LLM_LEDGER_INITIALIZE", "").strip().lower() == "true"
+            self.create_if_missing = (not hosted) or authorized
+        else:
+            self.create_if_missing = create_if_missing
 
     def try_reserve(
         self,
@@ -98,6 +117,7 @@ class NexoraLlmUsageStore:
                 return
             existing["state"] = "released"
             bucket["authorizedAttempts"] = max(0, int(bucket["authorizedAttempts"]) - 1)
+            self._drop_hold(bucket, turn_id)
             self._write(state)
 
     def settle(
@@ -112,7 +132,9 @@ class NexoraLlmUsageStore:
         with self._locked() as state:
             bucket = self._bucket(state, scope_id, period_key)
             existing = bucket["reservations"].get(turn_id)
+            self._drop_hold(bucket, turn_id)
             if existing and existing.get("state") == "settled":
+                self._write(state)
                 return
             if existing and existing.get("state") == "reserved":
                 existing["state"] = "settled"
@@ -241,6 +263,196 @@ class NexoraLlmUsageStore:
             bucket = self._bucket(state, scope_id, period_key)
             return list(bucket["records"])
 
+    def admit_hosted(
+        self,
+        *,
+        workspace_scope: str,
+        user_scope: str,
+        user_id: str,
+        period_key: str,
+        turn_id: str,
+        now: datetime,
+        workspace_limit: int,
+        user_limit: int,
+        workspace_rate_limit: int,
+        user_rate_limit: int,
+        rate_window_seconds: int,
+        burst_window_seconds: int,
+        burst_limit: int,
+        workspace_concurrency: int,
+        user_concurrency: int,
+        workspace_budget_usd: float,
+        user_budget_usd: float,
+        reserve_usd: float,
+        floor_usd: float,
+    ) -> dict[str, Any]:
+        """Rate, budget, concurrency, and count admission under one file lock."""
+        if not all(
+            _positive_finite_money(value)
+            for value in (workspace_budget_usd, user_budget_usd, reserve_usd, floor_usd)
+        ):
+            return {"allowed": False, "reason": "CONFIGURATION_ERROR", "reservationId": None}
+        with self._locked() as state:
+            for scope_id, limit in (
+                (workspace_scope, workspace_rate_limit),
+                (user_scope, user_rate_limit),
+            ):
+                reason = self._rate_state(
+                    state,
+                    scope_id=scope_id,
+                    now=now,
+                    window_seconds=rate_window_seconds,
+                    limit=limit,
+                    burst_window_seconds=burst_window_seconds,
+                    burst_limit=burst_limit,
+                )
+                if reason:
+                    self._write(state)
+                    return {"allowed": False, "reason": reason, "reservationId": None}
+            workspace_spent = self._scope_spent(state, workspace_scope, period_key, floor_usd)
+            user_spent = self._user_spent(state, user_id, period_key, floor_usd)
+            if _budget_exceeded(workspace_spent, reserve_usd, workspace_budget_usd) or _budget_exceeded(
+                user_spent, reserve_usd, user_budget_usd
+            ):
+                return {"allowed": False, "reason": "BUDGET_EXHAUSTED", "reservationId": None}
+            if not self._acquire_state(state, workspace_scope, turn_id, workspace_concurrency):
+                return {"allowed": False, "reason": "concurrency_exceeded", "reservationId": None}
+            if not self._acquire_state(state, user_scope, turn_id, user_concurrency):
+                self._release_turn_state(state, workspace_scope, turn_id)
+                self._write(state)
+                return {"allowed": False, "reason": "concurrency_exceeded", "reservationId": None}
+            workspace_reservation = self._reserve_state(
+                state, workspace_scope, period_key, turn_id, workspace_limit
+            )
+            if not workspace_reservation["allowed"]:
+                self._release_turn_state(state, workspace_scope, turn_id)
+                self._release_turn_state(state, user_scope, turn_id)
+                self._write(state)
+                return workspace_reservation
+            user_reservation = self._reserve_state(state, user_scope, period_key, turn_id, user_limit)
+            if not user_reservation["allowed"]:
+                self._release_count_state(state, workspace_scope, period_key, turn_id)
+                self._release_turn_state(state, workspace_scope, turn_id)
+                self._release_turn_state(state, user_scope, turn_id)
+                self._write(state)
+                return user_reservation
+            bucket = self._bucket(state, workspace_scope, period_key)
+            holds = bucket.setdefault("holds", {})
+            holds[turn_id] = {"amount": float(reserve_usd), "state": "held"}
+            self._write(state)
+            return {
+                "allowed": True,
+                "reason": "ALLOWED",
+                "reservationId": workspace_reservation["reservationId"],
+            }
+
+    def _drop_hold(self, bucket: dict[str, Any], turn_id: str) -> None:
+        holds = bucket.get("holds")
+        if isinstance(holds, dict):
+            holds.pop(turn_id, None)
+
+    def _scope_spent(self, state: dict[str, Any], scope_id: str, period_key: str, floor_usd: float) -> float:
+        scope = state.get("scopes", {}).get(scope_id)
+        if not isinstance(scope, dict):
+            return 0.0
+        bucket = scope.get(period_key)
+        if not isinstance(bucket, dict):
+            return 0.0
+        return self._spent(bucket, floor_usd)
+
+    def _user_spent(self, state: dict[str, Any], user_id: str, period_key: str, floor_usd: float) -> float:
+        prefix = f"hosted:{user_id}:"
+        total = 0.0
+        for scope_id, scope in state.get("scopes", {}).items():
+            if not isinstance(scope_id, str) or not scope_id.startswith(prefix) or not isinstance(scope, dict):
+                continue
+            bucket = scope.get(period_key)
+            if isinstance(bucket, dict):
+                total += self._spent(bucket, floor_usd)
+        return total
+
+    def _rate_state(
+        self,
+        state: dict[str, Any],
+        *,
+        scope_id: str,
+        now: datetime,
+        window_seconds: int,
+        limit: int,
+        burst_window_seconds: int,
+        burst_limit: int,
+    ) -> str | None:
+        node = self._traffic(state, scope_id)
+        stamps = [stamp for stamp in (self._parse_time(item) for item in node["rateTimestamps"]) if stamp is not None]
+        horizon = now - timedelta(seconds=window_seconds)
+        burst_horizon = now - timedelta(seconds=burst_window_seconds)
+        stamps = [stamp for stamp in stamps if stamp >= horizon]
+        burst_count = sum(1 for stamp in stamps if stamp >= burst_horizon)
+        if len(stamps) >= limit or burst_count >= burst_limit:
+            node["rateTimestamps"] = [stamp.isoformat() for stamp in stamps]
+            return "rate_limit_exceeded"
+        stamps.append(now)
+        node["rateTimestamps"] = [stamp.isoformat() for stamp in stamps]
+        return None
+
+    def _acquire_state(self, state: dict[str, Any], scope_id: str, turn_id: str, limit: int) -> bool:
+        node = self._traffic(state, scope_id)
+        active = [item for item in node["activeTurns"] if isinstance(item, str)]
+        if turn_id in active:
+            return True
+        if len(active) >= limit:
+            return False
+        active.append(turn_id)
+        node["activeTurns"] = active
+        return True
+
+    def _release_turn_state(self, state: dict[str, Any], scope_id: str, turn_id: str) -> None:
+        node = self._traffic(state, scope_id)
+        node["activeTurns"] = [item for item in node["activeTurns"] if item != turn_id]
+
+    def _reserve_state(
+        self,
+        state: dict[str, Any],
+        scope_id: str,
+        period_key: str,
+        turn_id: str,
+        limit: int,
+    ) -> dict[str, Any]:
+        bucket = self._bucket(state, scope_id, period_key)
+        existing = bucket["reservations"].get(turn_id)
+        if existing and existing.get("state") in {"settled", "reserved"}:
+            return {
+                "allowed": False,
+                "reason": "POLICY_DECLINED",
+                "reservationId": existing.get("reservationId"),
+                "replay": True,
+            }
+        if int(bucket["authorizedAttempts"]) >= int(limit):
+            return {
+                "allowed": False,
+                "reason": "ALLOWANCE_EXHAUSTED",
+                "reservationId": None,
+                "replay": False,
+            }
+        reservation_id = f"res_{uuid4().hex[:12]}"
+        bucket["authorizedAttempts"] = int(bucket["authorizedAttempts"]) + 1
+        bucket["reservations"][turn_id] = {"reservationId": reservation_id, "state": "reserved"}
+        return {
+            "allowed": True,
+            "reason": "ALLOWED",
+            "reservationId": reservation_id,
+            "replay": False,
+        }
+
+    def _release_count_state(self, state: dict[str, Any], scope_id: str, period_key: str, turn_id: str) -> None:
+        bucket = self._bucket(state, scope_id, period_key)
+        existing = bucket["reservations"].get(turn_id)
+        if not existing or existing.get("state") != "reserved":
+            return
+        existing["state"] = "released"
+        bucket["authorizedAttempts"] = max(0, int(bucket["authorizedAttempts"]) - 1)
+        self._drop_hold(bucket, turn_id)
+
     def _traffic(self, state: dict[str, Any], scope_id: str) -> dict[str, Any]:
         scopes = state.setdefault("scopes", {})
         scope = scopes.setdefault(scope_id, {})
@@ -253,12 +465,27 @@ class NexoraLlmUsageStore:
         for record in bucket.get("records", []):
             if not isinstance(record, dict):
                 continue
-            cost = record.get("cost") if isinstance(record.get("cost"), dict) else {}
-            amount = cost.get("amount")
-            if isinstance(amount, (int, float)) and not isinstance(amount, bool):
-                total += float(amount)
-            elif record.get("request", {}).get("attempted") is True:
-                total += floor_usd
+            cost = record.get("cost")
+            if cost is None:
+                amount = None
+            elif isinstance(cost, dict):
+                amount = cost.get("amount")
+            else:
+                raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+            if amount is None:
+                if isinstance(record.get("request"), dict) and record["request"].get("attempted") is True:
+                    total = _add_money(total, _nonnegative_money(floor_usd))
+            else:
+                total = _add_money(total, _nonnegative_money(amount))
+        holds = bucket.get("holds")
+        if isinstance(holds, dict):
+            for hold in holds.values():
+                if not isinstance(hold, dict):
+                    continue
+                amount = hold.get("amount")
+                if amount is None:
+                    continue
+                total = _add_money(total, _nonnegative_money(amount))
         return total
 
     def _parse_time(self, value: Any) -> datetime | None:
@@ -287,24 +514,65 @@ class NexoraLlmUsageStore:
     def _locked(self):
         return _FileLock(self)
 
-    def _read(self) -> dict[str, Any]:
+    def _load(self) -> dict[str, Any]:
         if not self.path.exists():
-            return {"identity": USAGE_STORE_IDENTITY, "scopes": {}}
+            if not self.create_if_missing:
+                raise LedgerError(LEDGER_UNAVAILABLE)
+            return {"identity": USAGE_STORE_IDENTITY, "initialized": True, "scopes": {}}
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
-        except Exception:
-            return {"identity": USAGE_STORE_IDENTITY, "scopes": {}}
-        if not isinstance(raw, dict):
-            return {"identity": USAGE_STORE_IDENTITY, "scopes": {}}
-        raw.setdefault("identity", USAGE_STORE_IDENTITY)
-        raw.setdefault("scopes", {})
+        except OSError as exc:
+            raise LedgerError(LEDGER_PERSISTENCE_FAILED) from exc
+        except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
+            raise LedgerError(LEDGER_CORRUPTED) from exc
+        if not isinstance(raw, dict) or not isinstance(raw.get("scopes"), dict):
+            raise LedgerError(LEDGER_CORRUPTED)
+        if raw.get("identity") != USAGE_STORE_IDENTITY:
+            raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+        self._validate(raw)
         return raw
 
+    def _validate(self, raw: dict[str, Any]) -> None:
+        for scope in raw["scopes"].values():
+            if not isinstance(scope, dict):
+                raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+            for key, bucket in scope.items():
+                if key in {"rateTimestamps", "activeTurns"}:
+                    if not isinstance(bucket, list):
+                        raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+                    continue
+                if not isinstance(bucket, dict):
+                    raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+                attempts = bucket.get("authorizedAttempts", 0)
+                if isinstance(attempts, bool) or not isinstance(attempts, int) or attempts < 0:
+                    raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+                if "reservations" in bucket and not isinstance(bucket["reservations"], dict):
+                    raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+                if "records" in bucket and not isinstance(bucket["records"], list):
+                    raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+                holds = bucket.get("holds", {})
+                if not isinstance(holds, dict):
+                    raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+                for hold in holds.values():
+                    amount = hold.get("amount") if isinstance(hold, dict) else None
+                    _nonnegative_money(amount)
+                for record in bucket.get("records", []):
+                    if not isinstance(record, dict) or record.get("cost") is None:
+                        continue
+                    cost = record.get("cost")
+                    if not isinstance(cost, dict):
+                        raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+                    if cost.get("amount") is not None:
+                        _nonnegative_money(cost.get("amount"))
+
     def _write(self, state: dict[str, Any]) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-        tmp.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
-        tmp.replace(self.path)
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_suffix(self.path.suffix + ".tmp")
+            tmp.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+            tmp.replace(self.path)
+        except OSError as exc:
+            raise LedgerError(LEDGER_PERSISTENCE_FAILED) from exc
 
 
 class _FileLock:
@@ -314,10 +582,21 @@ class _FileLock:
 
     def __enter__(self) -> dict[str, Any]:
         self.store._thread.acquire()
-        self.store.path.parent.mkdir(parents=True, exist_ok=True)
-        self.handle = self.store.path.open("a+", encoding="utf-8")
-        fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX)
-        return self.store._read()
+        try:
+            self.store.path.parent.mkdir(parents=True, exist_ok=True)
+            lock_path = self.store.path.with_name(self.store.path.name + ".lock")
+            self.handle = lock_path.open("a+", encoding="utf-8")
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX)
+            return self.store._load()
+        except BaseException:
+            if self.handle is not None:
+                try:
+                    fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+                finally:
+                    self.handle.close()
+                    self.handle = None
+            self.store._thread.release()
+            raise
 
     def __exit__(self, exc_type, exc, tb) -> None:
         if self.handle is not None:
@@ -326,6 +605,41 @@ class _FileLock:
             finally:
                 self.handle.close()
         self.store._thread.release()
+
+
+def _positive_finite_money(value: Any) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value) and value > 0
+    except (OverflowError, ValueError):
+        return False
+
+
+def _nonnegative_money(value: Any) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+    try:
+        finite = math.isfinite(value)
+    except (OverflowError, ValueError) as exc:
+        raise LedgerError(LEDGER_INTEGRITY_VIOLATION) from exc
+    if not finite or value < 0:
+        raise LedgerError(LEDGER_INTEGRITY_VIOLATION)
+    return float(value)
+
+
+def _add_money(total: float, amount: float) -> float:
+    updated = total + amount
+    if not math.isfinite(updated):
+        return math.inf
+    return updated
+
+
+def _budget_exceeded(spent: float, reserve: float, budget: float) -> bool:
+    if not math.isfinite(spent) or not math.isfinite(reserve) or not math.isfinite(budget):
+        return True
+    projected = spent + reserve
+    return (not math.isfinite(projected)) or projected > budget
 
 
 def utc_now() -> str:

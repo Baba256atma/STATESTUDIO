@@ -33,6 +33,8 @@ ENABLED = {
     "NEXORA_LLM_REQUEST_COST_FLOOR_USD": "0.01",
     "NEXORA_LLM_USAGE_RETENTION_DAYS": "30",
     "NEXORA_LLM_TIMEOUT_SECONDS": "8",
+    "NEXORA_LLM_MAX_OUTPUT_TOKENS": "64",
+    "NEXORA_LLM_MAX_REQUEST_USD": "0.01",
 }
 
 
@@ -194,11 +196,11 @@ def test_payload_csv_provider_failures_and_retention(tmp_path: Path, monkeypatch
 
 def test_usage_store_failure_is_closed(tmp_path: Path) -> None:
     class BrokenStore(NexoraLlmUsageStore):
-        def admit_rate(self, **kwargs: Any) -> str | None:
+        def _write(self, state: dict[str, Any]) -> None:
             raise OSError("ledger down")
 
     store = BrokenStore(tmp_path / "usage.json")
     adapter = FakeAdapter()
     result = run(store, adapter, "closed")
-    assert result.get("policy", {}).get("reason") == "USAGE_UNAVAILABLE"
+    assert result.get("policy", {}).get("reason") == "LEDGER_PERSISTENCE_FAILED"
     assert adapter.calls == 0

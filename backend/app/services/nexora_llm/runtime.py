@@ -41,6 +41,7 @@ class RuntimeAdapter(Protocol):
         system_instruction: str,
         user_payload: str,
         timeout_seconds: float,
+        max_output_tokens: int | None = None,
     ) -> ProviderCompletion:
         ...
 
@@ -147,6 +148,7 @@ def execute_nexora_llm_runtime(
     adapter: RuntimeAdapter | None = None,
     *,
     timeout_seconds: float | None = None,
+    max_output_tokens: int | None = None,
 ) -> RuntimeResult:
     timeout = (
         timeout_seconds
@@ -168,11 +170,14 @@ def execute_nexora_llm_runtime(
 
     started = time.perf_counter()
     try:
-        completion = selected.complete(
-            system_instruction=NEXORA_LLM_PARTICIPANT_SYSTEM_INSTRUCTION,
-            user_payload=build_user_payload(request),  # type: ignore[arg-type]
-            timeout_seconds=timeout,
-        )
+        completion_args: dict[str, Any] = {
+            "system_instruction": NEXORA_LLM_PARTICIPANT_SYSTEM_INSTRUCTION,
+            "user_payload": build_user_payload(request),  # type: ignore[arg-type]
+            "timeout_seconds": timeout,
+        }
+        if max_output_tokens is not None:
+            completion_args["max_output_tokens"] = max_output_tokens
+        completion = selected.complete(**completion_args)
     except AdapterError as exc:
         runtime["latencyMs"] = round((time.perf_counter() - started) * 1000, 3)
         logger.info(

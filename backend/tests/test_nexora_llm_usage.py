@@ -300,7 +300,7 @@ def test_http_endpoint_enforces_policy_and_ignores_client_quota(tmp_path: Path, 
     monkeypatch.setenv("NEXORA_LLM_ENABLED", "false")
     monkeypatch.setattr(
         "app.services.nexora_llm.usage_guard.NexoraLlmUsageStore",
-        lambda path=None: store,
+        lambda path=None, **_kwargs: store,
     )
     monkeypatch.setattr("app.services.nexora_llm.usage_guard.configured_adapter", lambda: adapter)
     app = FastAPI()

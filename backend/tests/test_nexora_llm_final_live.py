@@ -44,7 +44,7 @@ def test_final_live_http_runtime_is_the_product_seam(tmp_path: Path, monkeypatch
     monkeypatch.setenv("NEXORA_LLM_USAGE_SCOPE", "ws_default")
     monkeypatch.setattr(
         "app.services.nexora_llm.usage_guard.NexoraLlmUsageStore",
-        lambda path=None: store,
+        lambda path=None, **_kwargs: store,
     )
     monkeypatch.setattr(
         "app.services.nexora_llm.usage_guard.configured_adapter",

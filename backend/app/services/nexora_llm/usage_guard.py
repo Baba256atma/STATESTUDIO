@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -19,7 +20,7 @@ from app.services.nexora_llm.usage_policy import (
     load_usage_policy_config,
     period_key,
 )
-from app.services.nexora_llm.usage_store import NexoraLlmUsageStore, utc_now
+from app.services.nexora_llm.usage_store import LedgerError, NexoraLlmUsageStore, utc_now
 
 logger = logging.getLogger("nexora.llm.usage")
 
@@ -43,6 +44,9 @@ class HostedSecurityLimits:
     request_cost_floor_usd: float
     retention_days: int
     timeout_seconds: float
+    max_output_tokens: int | None
+    max_request_usd: float | None
+    max_input_tokens: int | None
 
 
 def load_hosted_security_limits(environ: Mapping[str, str] | None = None) -> HostedSecurityLimits:
@@ -61,25 +65,69 @@ def load_hosted_security_limits(environ: Mapping[str, str] | None = None) -> Hos
         request_cost_floor_usd=_positive_float(env, "NEXORA_LLM_REQUEST_COST_FLOOR_USD", 0.01),
         retention_days=_positive(env, "NEXORA_LLM_USAGE_RETENTION_DAYS", 30),
         timeout_seconds=_positive_float(env, "NEXORA_LLM_TIMEOUT_SECONDS", 8.0),
+        max_output_tokens=_optional_positive(env, "NEXORA_LLM_MAX_OUTPUT_TOKENS"),
+        max_request_usd=_optional_positive_float(env, "NEXORA_LLM_MAX_REQUEST_USD"),
+        max_input_tokens=_optional_positive(env, "NEXORA_LLM_MAX_INPUT_TOKENS"),
     )
+
+
+def _ledger_create_allowed(environ: Mapping[str, str] | None) -> bool:
+    env = environ if environ is not None else os.environ
+    mode = env.get("NEXORA_DEPLOYMENT_MODE")
+    if mode is None:
+        mode = os.environ.get("NEXORA_DEPLOYMENT_MODE")
+    if mode != "hosted":
+        return True
+    flag = env.get("NEXORA_LLM_LEDGER_INITIALIZE")
+    if flag is None:
+        flag = os.environ.get("NEXORA_LLM_LEDGER_INITIALIZE", "")
+    return str(flag).strip().lower() == "true"
+
+
+def _optional_positive(env: Mapping[str, str], name: str) -> int | None:
+    raw = env.get(name)
+    if raw is None or not str(raw).strip():
+        return None
+    return _positive_int(str(raw).strip(), name)
+
+
+def _optional_positive_float(env: Mapping[str, str], name: str) -> float | None:
+    raw = env.get(name)
+    if raw is None or not str(raw).strip():
+        return None
+    return _positive_finite(str(raw).strip(), name)
 
 
 def _positive(env: Mapping[str, str], name: str, default: int) -> int:
     raw = env.get(name)
     if raw is None or not str(raw).strip():
         return default
-    value = int(str(raw).strip())
-    if value < 1:
-        raise ValueError(name)
-    return value
+    return _positive_int(str(raw).strip(), name)
 
 
 def _positive_float(env: Mapping[str, str], name: str, default: float) -> float:
     raw = env.get(name)
     if raw is None or not str(raw).strip():
         return default
-    value = float(str(raw).strip())
-    if value <= 0:
+    return _positive_finite(str(raw).strip(), name)
+
+
+def _positive_int(raw: str, name: str) -> int:
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(name) from exc
+    if value < 1:
+        raise ValueError(name)
+    return value
+
+
+def _positive_finite(raw: str, name: str) -> float:
+    try:
+        value = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(name) from exc
+    if not math.isfinite(value) or value <= 0:
         raise ValueError(name)
     return value
 
@@ -232,7 +280,7 @@ def execute_nexora_llm_guarded_runtime(
         user_scope = f"hosted-user:{hosted[0]}"
 
     try:
-        ledger = store or NexoraLlmUsageStore()
+        ledger = store or NexoraLlmUsageStore(create_if_missing=_ledger_create_allowed(environ))
     except (OSError, ValueError):
         logger.info("nexora_llm_policy reason=USAGE_UNAVAILABLE turn=%s", turn)
         return _skipped("USAGE_UNAVAILABLE")
@@ -241,51 +289,56 @@ def execute_nexora_llm_guarded_runtime(
     slots: list[str] = []
     try:
         if hosted is not None and limits is not None and user_scope is not None:
+            if limits.max_output_tokens is None or limits.max_request_usd is None:
+                return _skipped("CONFIGURATION_ERROR")
+            if limits.max_input_tokens is not None and isinstance(request, dict):
+                encoded = json.dumps(request, ensure_ascii=False, separators=(",", ":"))
+                if (len(encoded) + 3) // 4 > limits.max_input_tokens:
+                    return _skipped("payload_too_large")
             ledger.prune_expired_details(now=stamp, retention_days=limits.retention_days)
-            for scope_id, limit in (
-                (config.scope_id, limits.workspace_rate_limit),
-                (user_scope, limits.user_rate_limit),
-            ):
-                rate_reason = ledger.admit_rate(
-                    scope_id=scope_id,
-                    now=stamp,
-                    window_seconds=limits.rate_window_seconds,
-                    limit=limit,
-                    burst_window_seconds=limits.burst_window_seconds,
-                    burst_limit=limits.burst_limit,
-                )
-                if rate_reason:
-                    return _skipped(rate_reason)
-            if ledger.spent_usd(scope_id=config.scope_id, period_key=key, floor_usd=limits.request_cost_floor_usd) >= limits.workspace_budget_usd:
-                return _skipped("BUDGET_EXHAUSTED")
-            if ledger.spent_usd_for_user(user_id=hosted[0], period_key=key, floor_usd=limits.request_cost_floor_usd) >= limits.user_budget_usd:
-                return _skipped("BUDGET_EXHAUSTED")
-            if not ledger.acquire_turn(scope_id=config.scope_id, turn_id=turn, limit=limits.workspace_concurrency):
-                return _skipped("concurrency_exceeded")
-            slots.append(config.scope_id)
-            if not ledger.acquire_turn(scope_id=user_scope, turn_id=turn, limit=limits.user_concurrency):
-                return _skipped("concurrency_exceeded")
-            slots.append(user_scope)
-        try:
-            reservation = ledger.try_reserve(
-                scope_id=config.scope_id,
+            reservation = ledger.admit_hosted(
+                workspace_scope=config.scope_id,
+                user_scope=user_scope,
+                user_id=hosted[0],
                 period_key=key,
                 turn_id=turn,
-                limit=config.limit,
+                now=stamp,
+                workspace_limit=config.limit,
+                user_limit=limits.user_usage_limit,
+                workspace_rate_limit=limits.workspace_rate_limit,
+                user_rate_limit=limits.user_rate_limit,
+                rate_window_seconds=limits.rate_window_seconds,
+                burst_window_seconds=limits.burst_window_seconds,
+                burst_limit=limits.burst_limit,
+                workspace_concurrency=limits.workspace_concurrency,
+                user_concurrency=limits.user_concurrency,
+                workspace_budget_usd=limits.workspace_budget_usd,
+                user_budget_usd=limits.user_budget_usd,
+                reserve_usd=limits.max_request_usd,
+                floor_usd=limits.request_cost_floor_usd,
             )
-            if reservation["allowed"] and hosted is not None and limits is not None and user_scope is not None:
-                user_reservation = ledger.try_reserve(
-                    scope_id=user_scope,
+            if not reservation["allowed"]:
+                logger.info(
+                    "nexora_llm_policy allowed=false reason=%s turn=%s",
+                    reservation["reason"],
+                    turn,
+                )
+                return _skipped(str(reservation["reason"]))
+            slots.extend((config.scope_id, user_scope))
+        else:
+            try:
+                reservation = ledger.try_reserve(
+                    scope_id=config.scope_id,
                     period_key=key,
                     turn_id=turn,
-                    limit=limits.user_usage_limit,
+                    limit=config.limit,
                 )
-                if not user_reservation["allowed"]:
-                    ledger.release(scope_id=config.scope_id, period_key=key, turn_id=turn)
-                    reservation = user_reservation
-        except Exception:
-            logger.info("nexora_llm_policy reason=USAGE_UNAVAILABLE turn=%s", turn)
-            return _skipped("USAGE_UNAVAILABLE")
+            except LedgerError as exc:
+                logger.info("nexora_llm_policy reason=%s turn=%s", exc.code, turn)
+                return _skipped(exc.code)
+            except Exception:
+                logger.info("nexora_llm_policy reason=USAGE_UNAVAILABLE turn=%s", turn)
+                return _skipped("USAGE_UNAVAILABLE")
 
         if not reservation["allowed"]:
             logger.info(
@@ -297,12 +350,15 @@ def execute_nexora_llm_guarded_runtime(
 
         selected = adapter if adapter is not None else configured_adapter()
         timeout = timeout_seconds if timeout_seconds is not None else (limits.timeout_seconds if limits is not None else None)
+        output_cap = limits.max_output_tokens if limits is not None else None
         if selected is None:
             ledger.release(scope_id=config.scope_id, period_key=key, turn_id=turn)
             if user_scope is not None:
                 ledger.release(scope_id=user_scope, period_key=key, turn_id=turn)
             return {
-                **execute_nexora_llm_runtime(request, None, timeout_seconds=timeout),
+                **execute_nexora_llm_runtime(
+                    request, None, timeout_seconds=timeout, max_output_tokens=output_cap
+                ),
                 "policy": {
                     "identity": NEXORA_LLM_USAGE_POLICY_IDENTITY,
                     "allowed": True,
@@ -313,7 +369,9 @@ def execute_nexora_llm_guarded_runtime(
             }
 
         probe = _DispatchProbe(selected)
-        result = execute_nexora_llm_runtime(request, probe, timeout_seconds=timeout)
+        result = execute_nexora_llm_runtime(
+            request, probe, timeout_seconds=timeout, max_output_tokens=output_cap
+        )
         if not probe.dispatched:
             ledger.release(scope_id=config.scope_id, period_key=key, turn_id=turn)
             if user_scope is not None:
@@ -337,7 +395,22 @@ def execute_nexora_llm_guarded_runtime(
             attempted=True,
             result=result,
         )
-        if compact.get("cost") is None and limits is not None:
+        if hosted is not None and limits is not None and limits.max_request_usd is not None:
+            amount = limits.max_request_usd
+            reported = result.get("cost") if isinstance(result.get("cost"), dict) else None
+            reported_amount = reported.get("amount") if reported else None
+            if (
+                result.get("status") == "ok"
+                and reported is not None
+                and reported.get("currency") == "USD"
+                and isinstance(reported_amount, (int, float))
+                and not isinstance(reported_amount, bool)
+                and math.isfinite(reported_amount)
+                and reported_amount > amount
+            ):
+                amount = float(reported_amount)
+            compact["cost"] = {"amount": amount, "currency": "USD"}
+        elif compact.get("cost") is None and limits is not None:
             compact["cost"] = {"amount": limits.request_cost_floor_usd, "currency": "USD"}
         try:
             ledger.settle(
@@ -367,6 +440,12 @@ def execute_nexora_llm_guarded_runtime(
             compact.get("usage"),
         )
         return out
+    except LedgerError as exc:
+        logger.info("nexora_llm_policy reason=%s turn=%s", exc.code, turn)
+        return _skipped(exc.code)
+    except OSError:
+        logger.info("nexora_llm_policy reason=LEDGER_PERSISTENCE_FAILED turn=%s", turn)
+        return _skipped("LEDGER_PERSISTENCE_FAILED")
     except Exception:
         logger.info("nexora_llm_policy reason=USAGE_UNAVAILABLE turn=%s", turn)
         return _skipped("USAGE_UNAVAILABLE")
