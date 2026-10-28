@@ -38,7 +38,11 @@ export const EXECUTIVE_STAGE_SAFE_VIEWPORT_FIT_BOUNDARY = Object.freeze({
   movesCanonicalXy: false as const,
 });
 
-/** Existing overlay surfaces that can cover the Stage canvas. */
+/**
+ * Overlay surfaces measured against the Stage canvas.
+ * Stage menu bars sit outside the canvas, so they add an inset only when a
+ * box still intersects the canvas.
+ */
 export const EXECUTIVE_STAGE_SAFE_VIEWPORT_OCCLUSION_TESTIDS = Object.freeze([
   "nexora-stage-interaction-breadcrumb",
   "nexora-presentation-state-selector",

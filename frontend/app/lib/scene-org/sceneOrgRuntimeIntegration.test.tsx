@@ -70,8 +70,7 @@ test("ORG:8 NMI open state is a presentation control on the same compact rail", 
 test("ORG:8 shell defaults to focused Stage density with NMI closed", () => {
   const html = renderToStaticMarkup(React.createElement(NexoraExecutiveShell));
   assert.match(html, /data-nmi-panel-open="false"/);
-  assert.match(html, /<aside[^>]*hidden=""[^>]*data-testid="nexora-executive-queue"/);
-  assert.match(html, /<aside[^>]*aria-hidden="true"[^>]*data-testid="nexora-executive-queue"/);
+  assert.doesNotMatch(html, /data-testid="nexora-executive-queue"/);
   assert.ok(html.indexOf('data-scene-org-region="center-stage"') < html.indexOf('data-scene-org-region="right-context"'));
 });
 

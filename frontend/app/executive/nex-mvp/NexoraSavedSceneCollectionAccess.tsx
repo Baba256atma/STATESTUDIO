@@ -44,6 +44,7 @@ export function NexoraSavedSceneCollectionAccess({
       style={{
         position: "relative",
         flex: "0 0 auto",
+        alignSelf: "center",
         fontSize: 12,
         color: "inherit",
       }}

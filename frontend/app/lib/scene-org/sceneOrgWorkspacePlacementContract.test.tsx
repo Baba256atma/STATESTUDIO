@@ -36,7 +36,7 @@ test("ORG:4 places NMI and Attention in Left Management presentation", () => {
   const stage = html.indexOf('data-scene-org-region="center-stage"');
   assert.ok(left >= 0 && stage > left);
   assert.match(html, /data-testid="executive-nav-nmi"/);
-  assert.match(html, /<aside[^>]*hidden=""[^>]*data-testid="nexora-executive-queue"/);
+  assert.doesNotMatch(html, /data-testid="nexora-executive-queue"/);
   const nmi = renderToStaticMarkup(
     React.createElement(NexoraExecutiveQueueOverlay, {
       placement: "left-management",

@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode, Ref } from "react";
 import type {
   NexoraMVPExecutiveFlowChain,
   NexoraMVPExecutiveWorkflowPresentation,
@@ -11,6 +11,9 @@ type Props = {
   readonly chain: NexoraMVPExecutiveFlowChain;
   readonly workflow?: NexoraMVPExecutiveWorkflowPresentation;
   readonly onSelectLink?: (subjectId: string) => void;
+  /** Existing management-level navigation. Not a second process trail. */
+  readonly context?: ReactNode;
+  readonly onStageSlotRef?: Ref<HTMLDivElement>;
 };
 
 /**
@@ -20,43 +23,17 @@ export function NexoraExecutiveFlowContextIndicator({
   chain,
   workflow,
   onSelectLink,
+  context = null,
+  onStageSlotRef,
 }: Props) {
-  if (chain.links.length === 0) {
-    return (
-      <div
-        data-testid="nexora-flow-chain"
-        data-nex-mvp="8"
-        data-ux5="executive-workflow"
-        data-flow-empty="true"
-        data-workflow-phase={workflow?.phase ?? "overview"}
-        data-workflow-readiness={
-          workflow?.readiness ?? "no-current-workflow"
-        }
-        data-workflow-current-subject={workflow?.currentSubjectId ?? "none"}
-        data-workflow-next-subject={
-          workflow?.nextAvailableSubject?.id ?? "none"
-        }
-        data-workflow-outcome={
-          workflow?.outcomeAvailability ?? "unavailable"
-        }
-        data-workflow-learning={
-          workflow?.learningAvailability ?? "unavailable"
-        }
-        aria-label="Executive flow overview"
-        style={{ ...barStyle, ...cockpit.visuallyHidden }}
-      >
-        <span style={{ color: cockpit.lowMuted, fontSize: "0.68rem" }}>
-          Overview · no focused flow chain
-        </span>
-      </div>
-    );
-  }
-
+  const empty = chain.links.length === 0;
   return (
     <nav
       data-testid="nexora-flow-chain"
+      data-stage-menu="process"
       data-nex-mvp="8"
       data-ux5="executive-workflow"
+      data-flow-empty={empty ? "true" : "false"}
       data-workflow-phase={workflow?.phase ?? "overview"}
       data-workflow-readiness={
         workflow?.readiness ?? "no-current-workflow"
@@ -65,11 +42,20 @@ export function NexoraExecutiveFlowContextIndicator({
       data-workflow-next-subject={
         workflow?.nextAvailableSubject?.id ?? "none"
       }
-      data-workflow-outcome={workflow?.outcomeAvailability ?? "unavailable"}
-      data-workflow-learning={workflow?.learningAvailability ?? "unavailable"}
-      aria-label="Executive flow chain"
+      data-workflow-outcome={
+        workflow?.outcomeAvailability ?? "unavailable"
+      }
+      data-workflow-learning={
+        workflow?.learningAvailability ?? "unavailable"
+      }
+      aria-label={empty ? "Executive flow overview" : "Executive flow chain"}
       style={barStyle}
     >
+      {empty ? (
+        <span style={{ ...cockpit.visuallyHidden, color: cockpit.lowMuted, fontSize: "0.68rem" }}>
+          Overview · no focused flow chain
+        </span>
+      ) : null}
       {chain.links.map((link, index) => {
         const isCurrent = workflow?.currentSubjectId === link.id;
         return (
@@ -118,12 +104,11 @@ export function NexoraExecutiveFlowContextIndicator({
           </button>
         </span>
       )})}
-      {workflow ? (
+      {workflow && !empty ? (
         <span
           data-testid="nexora-workflow-context"
           title={workflow.reason}
           style={{
-            marginLeft: "auto",
             display: "inline-flex",
             alignItems: "baseline",
             gap: "0.45rem",
@@ -158,6 +143,18 @@ export function NexoraExecutiveFlowContextIndicator({
           </span>
         </span>
       ) : null}
+      {context}
+      <div
+        ref={onStageSlotRef}
+        id="nexora-process-on-stage-slot"
+        data-testid="nexora-process-on-stage-slot"
+        style={{
+          marginLeft: "auto",
+          flex: "0 0 auto",
+          minWidth: "7.5rem",
+          position: "relative",
+        }}
+      />
     </nav>
   );
 }
@@ -166,9 +163,13 @@ const barStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   alignItems: "center",
-  gap: "0.1rem",
+  gap: "0.35rem",
   padding: "0.35rem 0.75rem",
   borderBottom: `1px solid ${cockpit.border}`,
   background: "var(--nx-bg-hud)",
   minHeight: "1.75rem",
+  minWidth: 0,
+  position: "relative",
+  zIndex: 5,
+  overflow: "visible",
 };

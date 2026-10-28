@@ -61,15 +61,15 @@ export function NexoraStageInteractionBreadcrumb({
       data-stage-navigation-ui="trail"
       aria-label="Stage navigation trail"
       style={{
-        position: "absolute",
-        left: "50%",
-        top: "0.7rem",
-        transform: "translateX(-50%)",
-        zIndex: 3,
+        position: "relative",
+        flex: "1 1 16rem",
+        minWidth: "12rem",
+        maxWidth: "100%",
+        zIndex: 1,
         display: "flex",
+        flexWrap: "wrap",
         alignItems: "center",
         gap: "0.4rem",
-        maxWidth: "min(36rem, calc(100% - 14rem))",
         padding: "0.3rem 0.55rem",
         borderRadius: cockpit.radius.md,
         border: `1px solid ${cockpit.border}`,

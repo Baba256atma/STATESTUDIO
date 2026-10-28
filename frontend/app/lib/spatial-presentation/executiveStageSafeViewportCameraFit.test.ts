@@ -149,6 +149,16 @@ test("E — Combined Advisor + top surface uses one resulting fit", () => {
   assert.equal(a.effectiveDistance, Math.max(11, a.requiredDistance));
 });
 
+test("F0 — A control above the canvas does not pull the camera", () => {
+  const measured = measureExecutiveStageSafeViewportInsets({
+    canvas: { left: 0, top: 96, right: 1000, bottom: 800, width: 1000, height: 704 },
+    overlays: [{ left: 12, top: 8, right: 420, bottom: 48 }],
+  });
+  assert.equal(measured.top, 0);
+  assert.equal(measured.left, 0);
+  assert.equal(measured.right, 0);
+});
+
 test("F — Bottom overlay increases bottom inset", () => {
   const measured = measureExecutiveStageSafeViewportInsets({
     canvas: { left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 },

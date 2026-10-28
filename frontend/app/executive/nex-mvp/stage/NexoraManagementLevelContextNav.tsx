@@ -110,9 +110,13 @@ export function NexoraManagementLevelContextNav({
       aria-label="Management context levels"
       style={{
         display: "flex",
-        justifyContent: "center",
+        flex: "1 1 auto",
+        flexWrap: "wrap",
+        justifyContent: "flex-start",
+        alignItems: "center",
         gap: 8,
-        padding: "6px 8px 2px",
+        minWidth: 0,
+        padding: "2px 12px",
         pointerEvents: "auto",
       }}
     >

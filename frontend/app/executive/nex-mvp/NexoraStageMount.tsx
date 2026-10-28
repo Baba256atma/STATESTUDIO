@@ -20,7 +20,7 @@ import type { NexoraDecisionTheatreInvestigationLevel } from "@/app/lib/decision
 import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
-import { Nexora3DExecutiveStage } from "./stage/Nexora3DExecutiveStage";
+import { Nexora3DExecutiveStage, type NexoraStageMenuSlotElements } from "./stage/Nexora3DExecutiveStage";
 import type { NexoraDecisionTheatreDecisionCommitment } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionCommitment.ts";
 import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
 import type { NexoraVisualView } from "@/app/lib/director/nexoraVisualIntelligence.ts";
@@ -101,6 +101,7 @@ type Props = {
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
   /** STAGE-VISIBILITY:FIX1 — Detail Workspace owns the surface when false. */
   readonly stageSurfaceActive?: boolean;
+  readonly menuSlots?: NexoraStageMenuSlotElements;
 };
 
 /**
@@ -149,6 +150,7 @@ export function NexoraStageMount({
   onAskDataObject,
   backGuidedAttentionCue = null,
   stageSurfaceActive = true,
+  menuSlots,
 }: Props) {
   const dthExpSpatial = useMemo(
     () => resolveNexoraLiveStageDthExpSpatial(theatreComposition),
@@ -357,6 +359,7 @@ export function NexoraStageMount({
         dataObjectStage={dataObjectStage}
         onSelectDataObject={onSelectDataObject}
         backGuidedAttentionCue={backGuidedAttentionCue}
+        menuSlots={menuSlots}
       />
       {dataObjectStage.participants.find((entry) => entry.dataObject.id === dataObjectStage.diagnostics.selectedDataObjectId) ? (
         <NexoraStageDataObjectInspection

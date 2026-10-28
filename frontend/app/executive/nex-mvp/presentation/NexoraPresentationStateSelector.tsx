@@ -124,10 +124,10 @@ export function NexoraPresentationStateSelector({
       tabIndex={0}
       onKeyDown={onKeyDown}
       style={{
-        position: "absolute",
-        right: "0.85rem",
-        top: "0.75rem",
-        zIndex: 8,
+        position: "relative",
+        flex: "0 0 auto",
+        marginLeft: "auto",
+        zIndex: 1,
         minWidth: "7.5rem",
         pointerEvents: "auto",
         outline: "none",

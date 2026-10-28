@@ -7,6 +7,11 @@ type Props = {
   readonly overlay?: ReactNode;
   readonly guidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
   /**
+   * Stage navigation bar. Reserves height above the canvas for Scenes,
+   * the navigation trail, and View.
+   */
+  readonly stageHeader?: ReactNode | null;
+  /**
    * Stage-associated control mount.
    * Defaults to EXS Mode Selector. Pass MVP Workspace Dial mount (or null)
    * to replace it without removing Stage ownership.
@@ -21,6 +26,7 @@ type Props = {
 export function ExecutiveStageFrame({
   children,
   overlay,
+  stageHeader = null,
   stageControls,
   guidedAttentionCue = null,
 }: Props) {
@@ -52,6 +58,28 @@ export function ExecutiveStageFrame({
         transition: `flex-basis ${cockpit.drawerMs} ease, background 250ms ease, box-shadow 250ms ease`,
       }}
     >
+      {stageHeader != null ? (
+        <div
+          data-testid="executive-stage-header"
+          data-stage-menu="navigation"
+          style={{
+            flex: "0 0 auto",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            columnGap: "0.85rem",
+            rowGap: "0.35rem",
+            padding: "0.35rem 0.75rem",
+            minWidth: 0,
+            position: "relative",
+            zIndex: 4,
+            background: "var(--nx-bg-hud)",
+            borderBottom: `1px solid ${cockpit.border}`,
+          }}
+        >
+          {stageHeader}
+        </div>
+      ) : null}
       <div
         data-testid="executive-stage-director"
         data-exs1-compat="exs1-stage"

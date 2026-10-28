@@ -9,12 +9,18 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Alternate Next distDirs used by hosted certification runs.
+    ".next-hosted-*/**",
+    // Bounded Render build output, including preserved nested measurements.
+    "**/.next-render-build/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
     // Temporary tsc emit for executiveIntent/executiveMemory experiments (not governed source).
     // Owner: Frontend Tooling. Parallel to `.tmp/` psych smoke outDir; never linted as product code.
     ".tmp-em/**",
+    // Generated Playwright browser binaries. Not application source.
+    ".tmp/playwright-browsers/**",
     // Tracked scratch probes. They are not product source, and CI lint failed
     // them for require() and explicit any after the product prefer-const repair.
     ".tmp-f18-c.ts",

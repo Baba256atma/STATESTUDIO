@@ -499,6 +499,8 @@ export function NexoraExecutiveShell({
   const [application, setApplication] = useState(
     createInitialNexoraExecutiveShellApplicationState,
   );
+  const [onStageSlot, setOnStageSlot] = useState<HTMLDivElement | null>(null);
+  const [navigationSlot, setNavigationSlot] = useState<HTMLDivElement | null>(null);
   const [entranceSession, setEntranceSession] = useState<NexoraEntranceSession>(
     () => {
       const stored = entranceRequested
@@ -4439,6 +4441,18 @@ export function NexoraExecutiveShell({
               chain={flowContext.chain}
               workflow={workflowPresentation}
               onSelectLink={onSelectSubject}
+              onStageSlotRef={setOnStageSlot}
+              context={
+                <NexoraManagementLevelContextNav
+                  composition={managementLevelSpatial}
+                  selectedCanonicalId={
+                    stageInteraction.focusedSubjectId ??
+                    stageInteraction.selectedSubjectId ??
+                    null
+                  }
+                  onSelectSubject={onSelectSubject}
+                />
+              }
             />
             <div
               data-testid="nexora-cc4-runtime-bridge"
@@ -4453,47 +4467,61 @@ export function NexoraExecutiveShell({
                   ? guidedAttention.presentation.cue
                   : null
               }
+              stageHeader={
+                <>
+                  <NexoraSavedSceneCollectionAccess
+                    scenes={managerSavedScenes}
+                    activeSceneId={activeSavedSceneId}
+                    onOpenScene={(scene) => {
+                      applyWorkspacePresentationAction(
+                        {
+                          action: "OPEN_SCENE",
+                          sceneName: scene.name,
+                          sceneId: scene.sceneId,
+                          useCurrentReferent: false,
+                        },
+                        null,
+                      );
+                    }}
+                    onRenameScene={(sceneId, name) =>
+                      commitHostedOrLocalSceneMutation({ kind: "rename", sceneId, name })
+                    }
+                    onDeleteScene={(sceneId) =>
+                      commitHostedOrLocalSceneMutation({ kind: "delete", sceneId })
+                    }
+                  />
+                  <div
+                    ref={setNavigationSlot}
+                    id="nexora-stage-navigation-slot"
+                    data-testid="nexora-stage-navigation-slot"
+                    data-stage-menu="navigation"
+                    style={{
+                      flex: "1 1 16rem",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: "0.45rem",
+                      minWidth: 0,
+                    }}
+                  />
+                </>
+              }
               stageControls={
-                <><NexoraSavedSceneCollectionAccess
-                  scenes={managerSavedScenes}
-                  activeSceneId={activeSavedSceneId}
-                  onOpenScene={(scene) => {
-                    applyWorkspacePresentationAction(
-                      {
-                        action: "OPEN_SCENE",
-                        sceneName: scene.name,
-                        sceneId: scene.sceneId,
-                        useCurrentReferent: false,
-                      },
-                      null,
-                    );
-                  }}
-                  onRenameScene={(sceneId, name) =>
-                    commitHostedOrLocalSceneMutation({ kind: "rename", sceneId, name })
-                  }
-                  onDeleteScene={(sceneId) =>
-                    commitHostedOrLocalSceneMutation({ kind: "delete", sceneId })
-                  }
-                /><NexoraStageDataControl open={detailWorkspaceOpen} attention={false} guidedAttentionCue={
-                  guidedAttention.presentation?.target === "DATA_ENTRY"
-                    ? guidedAttention.presentation.cue
-                    : null
-                } onToggle={() => setActiveNav(explorerKind === "data" ? "Home" : "Data")} /><NexoraWorkspaceDialMount
-                  activeWorkspace={application.workspace}
-                  onWorkspaceChange={onWorkspaceChange}
-                /></>
+                <>
+                  <NexoraStageDataControl open={detailWorkspaceOpen} attention={false} guidedAttentionCue={
+                    guidedAttention.presentation?.target === "DATA_ENTRY"
+                      ? guidedAttention.presentation.cue
+                      : null
+                  } onToggle={() => setActiveNav(explorerKind === "data" ? "Home" : "Data")} />
+                  <NexoraWorkspaceDialMount
+                    activeWorkspace={application.workspace}
+                    onWorkspaceChange={onWorkspaceChange}
+                  />
+                </>
               }
             >
-              <NexoraManagementLevelContextNav
-                composition={managementLevelSpatial}
-                selectedCanonicalId={
-                  stageInteraction.focusedSubjectId ??
-                  stageInteraction.selectedSubjectId ??
-                  null
-                }
-                onSelectSubject={onSelectSubject}
-              />
               <NexoraStageMount
+                menuSlots={{ onStage: onStageSlot, navigation: navigationSlot }}
                 liveFoundation={liveStageFoundation}
               workspaceLabel={workspaceLabel}
               interaction={stageInteraction}

@@ -12,6 +12,7 @@ import {
   type CSSProperties,
 } from "react";
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import { getNexora3DExecutiveStageIdentity } from "@/app/lib/nex-mvp/nexora3DExecutiveStage";
 import {
   isNexoraMvpStageBodyPhysicallyPresent,
@@ -196,6 +197,16 @@ const NexoraStageCanvas = dynamic(
   },
 );
 
+export type NexoraStageMenuSlotElements = {
+  readonly onStage: HTMLElement | null;
+  readonly navigation: HTMLElement | null;
+};
+
+const EMPTY_STAGE_MENU_SLOTS: NexoraStageMenuSlotElements = {
+  onStage: null,
+  navigation: null,
+};
+
 export type Nexora3DExecutiveStageProps = {
   readonly workspaceLabel: string;
   readonly interaction: NexoraMVPStageInteractionPresentation;
@@ -233,6 +244,8 @@ export type Nexora3DExecutiveStageProps = {
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
+  /** Portal targets owned by the process bar and stage navigation. Absent in isolated Stage renders. */
+  readonly menuSlots?: NexoraStageMenuSlotElements;
 };
 
 const EMPTY_DATA_OBJECT_STAGE = projectNexoraDecisionTheatreDataObjectsToStage({
@@ -409,6 +422,7 @@ export function Nexora3DExecutiveStage({
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
   backGuidedAttentionCue = null,
+  menuSlots = EMPTY_STAGE_MENU_SLOTS,
 }: Nexora3DExecutiveStageProps) {
   const identity = getNexora3DExecutiveStageIdentity();
   const [webglSupported] = useState(() => {
@@ -1038,6 +1052,347 @@ export function Nexora3DExecutiveStage({
     }
   ).collectionIntegrity;
 
+  const menuDock = menuSlots.onStage != null && menuSlots.navigation != null;
+
+  const onStageMenu = (
+    <>
+      <style>{`
+        details[data-testid="nexora-stage-object-list"]:not([open]) > [data-testid="nexora-stage-object-list-body"] {
+          display: none !important;
+        }
+        details[data-testid="nexora-stage-object-list"][open] > [data-testid="nexora-stage-object-list-body"] {
+          display: flex;
+        }
+      `}</style>
+      <details
+        data-testid="nexora-stage-object-list"
+        data-ux1-disclosure="objects"
+        aria-label={`${stageBodyPopulation.operatorFacingBadge} currently staged system objects`}
+        style={{
+          position: "relative",
+          flex: "0 0 auto",
+          alignSelf: "center",
+          zIndex: 2,
+          maxWidth: "11rem",
+          minWidth: "7.5rem",
+          pointerEvents: "auto",
+        }}
+      >
+        <summary
+          style={{
+            listStyle: "none",
+            cursor: "pointer",
+            fontSize: "0.58rem",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: cockpit.muted,
+            fontWeight: 600,
+            fontFamily: "inherit",
+            padding: "0.28rem 0.4rem",
+            borderRadius: cockpit.radius.md,
+            border: `1px solid ${cockpit.border}`,
+            background: cockpit.panelSoft,
+          }}
+        >
+          {stageBodyPopulation.operatorFacingBadge}
+        </summary>
+        <div
+          data-testid="nexora-stage-object-list-body"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            right: 0,
+            zIndex: 6,
+            flexDirection: "column",
+            gap: "0.25rem",
+            width: "11rem",
+            maxHeight: "12rem",
+            overflow: "auto",
+            boxSizing: "border-box",
+            padding: "0.35rem",
+            borderRadius: cockpit.radius.md,
+            border: `1px solid ${cockpit.border}`,
+            background: cockpit.panelSoft,
+            backdropFilter: "blur(8px)",
+          }}
+        >
+        {fixedCameraInteraction.scene.objects.map((object) => {
+          const showKpi =
+            object.focused &&
+            presentationViewModel.state === "minimum" &&
+            presentationViewModel.primaryKpi &&
+            presentationViewModel.subjectId === object.id;
+          const visual = visualPresentations[object.id];
+          const objectMotion = projectStageProdObjectMotion({
+            canonicalObjectId: object.id,
+            focused: object.focused,
+            selected: object.selected,
+          });
+          return (
+            <div
+              key={object.id}
+              hidden={!isNexoraMvpStageBodyPhysicallyPresent(object)}
+            >
+            <button
+              type="button"
+              data-testid={`nexora-stage-object-control-${object.id}`}
+              data-visual-family="executive-object"
+              data-role={object.role}
+              data-canonical-id={object.id}
+              data-object-type={object.kind}
+              data-management-kind={object.objectKind ?? object.kind}
+              data-stage-representation-role={
+                object.stageRepresentationRole ?? "unspecified"
+              }
+              data-stage-position={object.targetPosition.join(",")}
+              data-status={object.status}
+              data-attention={object.attention}
+              data-focused={object.focused ? "true" : "false"}
+              data-selected={object.selected ? "true" : "false"}
+              data-nexograph-form-token={visual?.formToken ?? `form-executive-${object.kind}`}
+              data-nexograph-state-token={visual?.stateToken ?? "state-neutral"}
+              data-nexograph-halo={visual?.haloToken ?? "halo-none"}
+              data-nexograph-scale={visual?.scaleToken ?? "size-equal"}
+              data-nexograph-opacity={visual?.opacityToken ?? "opacity-full"}
+              data-nexograph-focus={object.focused ? "true" : "false"}
+              data-nexograph-selection={object.selected ? "true" : "false"}
+              aria-label={visual?.accessibilityDescription ?? object.label}
+              data-opacity={String(object.opacity)}
+              data-scale={String(object.scale)}
+              data-label-prominence={object.labelProminence}
+              data-executive-visual-state={
+                object.executiveVisualState ?? "normal"
+              }
+              data-state-marker={object.stateMarker ?? "none"}
+              data-rim-intensity={String(object.rimIntensity ?? 0)}
+              data-visual-audit="stage-object"
+              data-stage-prod-activation="canonical-id"
+              data-stage-prod-activation-writes="false"
+              data-stage-prod-object-motion={objectMotion.identity}
+              data-stage-prod-motion-state={objectMotion.state}
+              data-stage-prod-motion-reason={objectMotion.reason}
+              data-stage-prod-motion-treatment={objectMotion.treatment}
+              data-stage-prod-motion-object-id={objectMotion.canonicalObjectId}
+              data-stage-prod-motion-writes="false"
+              className="nexora-stage-object-motion"
+              aria-pressed={object.focused}
+              onClick={() => onSelectSubject(object.id)}
+              style={{
+                border: object.focused
+                  ? `1px solid ${cockpit.accent}`
+                  : `1px solid ${cockpit.border}`,
+                background: object.focused
+                  ? cockpit.accentSoft
+                  : cockpit.panel,
+                color:
+                  object.role === "unrelated"
+                    ? cockpit.lowMuted
+                    : cockpit.textSoft,
+                fontSize: "0.62rem",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                textAlign: "left",
+                padding: "0.28rem 0.4rem",
+                borderRadius: "0.3rem",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              {object.label}
+              {showKpi ? (
+                <span
+                  data-testid={`nexora-stage-object-kpi-${object.id}`}
+                  style={{
+                    display: "block",
+                    marginTop: "0.12rem",
+                    fontSize: "0.58rem",
+                    letterSpacing: "0.04em",
+                    textTransform: "none",
+                    color: cockpit.accent,
+                  }}
+                >
+                  {presentationViewModel.primaryKpi?.value}
+                  {presentationViewModel.primaryKpi?.delta
+                    ? ` ${presentationViewModel.primaryKpi.delta}`
+                    : ""}
+                </span>
+              ) : null}
+            </button>
+            {iconicObjects
+              .filter((item) => item.ownerExecutiveObjectId === object.id)
+              .map((item) => (
+                <NexoraDecisionTheatreIconicSatellite
+                  key={item.presentationId}
+                  iconic={item}
+                />
+              ))}
+            </div>
+          );
+        })}
+
+        {interaction.contextNodes
+          .filter((node) => node.role !== "source-anchor")
+          .filter((node) => !isExecutiveThreadControlNode(node))
+          .map((node) => {
+            const isGateway =
+              node.role === "collapsed-thread" &&
+              node.gatewayMode === "discoverable-collapsed";
+            const gatewayCount =
+              node.gatewayCount ?? node.collapsedMemberIds?.length ?? 0;
+            return (
+              <div key={node.id}>
+              <button
+                type="button"
+                data-testid={`nexora-stage-context-control-${node.subjectId}`}
+                data-visual-family="executive-object"
+                data-role={node.role}
+                data-kind={node.kind}
+                data-canonical-id={node.id}
+                data-object-type={node.kind}
+                data-context-subject={node.subjectId}
+                data-gateway-mode={node.gatewayMode ?? undefined}
+                data-gateway-count={
+                  node.role === "collapsed-thread"
+                    ? String(gatewayCount)
+                    : undefined
+                }
+                data-opacity={String(node.opacity)}
+                data-scale={String(node.scale)}
+                data-context-visibility={
+                  node.opacity >= 0.5 ? "revealed" : "hidden-or-background"
+                }
+                data-visual-audit={
+                  isGateway ? "stage-thread-gateway" : "stage-context"
+                }
+                data-stage-prod-activation="canonical-id"
+                data-stage-prod-activation-writes="false"
+                aria-pressed={node.focused}
+                aria-expanded={
+                  node.role === "collapsed-thread" ? false : undefined
+                }
+                aria-label={
+                  isGateway
+                    ? `Open Executive Thread with ${gatewayCount} items`
+                    : undefined
+                }
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSelectSubject(node.subjectId);
+                }}
+                style={{
+                  border: isGateway
+                    ? `1px solid ${cockpit.accent}`
+                    : node.focused
+                      ? `1px solid ${cockpit.accent}`
+                      : `1px solid ${cockpit.border}`,
+                  background: isGateway
+                    ? cockpit.panel
+                    : cockpit.panelSoft,
+                  color: cockpit.textSoft,
+                  fontSize: isGateway ? "0.68rem" : "0.58rem",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  textAlign: "left",
+                  padding: isGateway
+                    ? "0.42rem 0.72rem"
+                    : "0.28rem 0.4rem",
+                  borderRadius: isGateway ? "999px" : "0.3rem",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  minWidth: isGateway ? "10.5rem" : undefined,
+                  opacity: 1,
+                }}
+              >
+                {isGateway
+                  ? node.label
+                  : `${node.kind}: ${node.label}`}
+              </button>
+              {iconicObjects
+                .filter((item) => item.ownerExecutiveObjectId === node.subjectId || item.ownerExecutiveObjectId === node.id)
+                .map((item) => (
+                  <NexoraDecisionTheatreIconicSatellite
+                    key={item.presentationId}
+                    iconic={item}
+                  />
+                ))}
+              </div>
+            );
+          })}
+
+        <button
+          type="button"
+          data-testid="nexora-stage-reset"
+          onClick={onOverview}
+          style={{
+            marginTop: "0.2rem",
+            border: "none",
+            background: "transparent",
+            color: cockpit.accent,
+            fontSize: "0.58rem",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            textAlign: "left",
+            fontFamily: "inherit",
+          }}
+        >
+          Overview
+        </button>
+        </div>
+      </details>
+    </>
+  );
+  const stageNavigation = (
+<>
+      <NexoraStageInteractionBreadcrumb
+        breadcrumb={interaction.breadcrumb}
+        canStepBack={interaction.canStepBack}
+        canStepForward={interaction.canStepForward === true}
+        breadcrumbHasOverflow={interaction.breadcrumbHasOverflow === true}
+        breadcrumbHasOverflowBefore={
+          interaction.breadcrumbHasOverflowBefore === true
+        }
+        breadcrumbHasOverflowAfter={
+          interaction.breadcrumbHasOverflowAfter === true
+        }
+        currentObjectId={
+          interaction.stage2dNavigationTrail?.activeObjectId ??
+          interaction.focusedSubjectId
+        }
+        currentTrailIndex={
+          interaction.stage2dNavigationTrail?.currentIndex ?? -1
+        }
+        onStepBack={onStepBack}
+        onStepForward={onStepForward}
+        onNavigateTrailIndex={onNavigateTrailIndex}
+        onOverview={onOverview}
+        guidedAttentionCue={backGuidedAttentionCue}
+        threadControlAction={threadControlAction}
+        threadControlSubjectId={threadControlNode?.subjectId ?? null}
+        threadControlLabel={threadControlNode?.label ?? null}
+        threadControlCount={
+          threadControlNode?.gatewayCount ??
+          threadControlNode?.collapsedMemberIds?.length ??
+          null
+        }
+        onThreadControl={
+          threadControlNode != null
+            ? () => onSelectSubject(threadControlNode.subjectId)
+            : undefined
+        }
+      />
+
+      <NexoraPresentationStateSelector
+        activePresentationState={presentationViewModel.state}
+        capability={presentationViewModel.capability}
+        onPresentationStateChange={onPresentationStateChange}
+      />
+
+</>
+  );
+
   const fallback = (
     <StageFallback
       message="Spatial rendering is unavailable in this environment. The Executive Shell remains operable."
@@ -1542,11 +1897,47 @@ export function Nexora3DExecutiveStage({
         height: "100%",
         minWidth: 0,
         minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
         overflow: "hidden",
         background: cockpit.stageBg,
         outline: "none",
       }}
     >
+      {menuDock && menuSlots.onStage
+        ? createPortal(onStageMenu, menuSlots.onStage)
+        : null}
+      {menuDock && menuSlots.navigation
+        ? createPortal(stageNavigation, menuSlots.navigation)
+        : null}
+      {menuDock ? null : (
+      <div
+        data-testid="nexora-stage-control-band"
+        style={{
+          flex: "0 0 auto",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+          gap: "0.45rem",
+          padding: "0.4rem 0.65rem",
+          minWidth: 0,
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        {onStageMenu}
+        {stageNavigation}
+      </div>
+      )}
+      <div
+        data-testid="nexora-stage-scene-region"
+        style={{
+          flex: "1 1 auto",
+          minHeight: 0,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
       <NexoraStagePerformanceProbe />
       <div
         data-testid="nexora-stage-atmosphere-overlay"
@@ -1576,311 +1967,6 @@ export function Nexora3DExecutiveStage({
             : ""
         }`}
       </div>
-
-      <NexoraStageInteractionBreadcrumb
-        breadcrumb={interaction.breadcrumb}
-        canStepBack={interaction.canStepBack}
-        canStepForward={interaction.canStepForward === true}
-        breadcrumbHasOverflow={interaction.breadcrumbHasOverflow === true}
-        breadcrumbHasOverflowBefore={
-          interaction.breadcrumbHasOverflowBefore === true
-        }
-        breadcrumbHasOverflowAfter={
-          interaction.breadcrumbHasOverflowAfter === true
-        }
-        currentObjectId={
-          interaction.stage2dNavigationTrail?.activeObjectId ??
-          interaction.focusedSubjectId
-        }
-        currentTrailIndex={
-          interaction.stage2dNavigationTrail?.currentIndex ?? -1
-        }
-        onStepBack={onStepBack}
-        onStepForward={onStepForward}
-        onNavigateTrailIndex={onNavigateTrailIndex}
-        onOverview={onOverview}
-        guidedAttentionCue={backGuidedAttentionCue}
-        threadControlAction={threadControlAction}
-        threadControlSubjectId={threadControlNode?.subjectId ?? null}
-        threadControlLabel={threadControlNode?.label ?? null}
-        threadControlCount={
-          threadControlNode?.gatewayCount ??
-          threadControlNode?.collapsedMemberIds?.length ??
-          null
-        }
-        onThreadControl={
-          threadControlNode != null
-            ? () => onSelectSubject(threadControlNode.subjectId)
-            : undefined
-        }
-      />
-
-      <NexoraPresentationStateSelector
-        activePresentationState={presentationViewModel.state}
-        capability={presentationViewModel.capability}
-        onPresentationStateChange={onPresentationStateChange}
-      />
-
-      <details
-        data-testid="nexora-stage-object-list"
-        data-ux1-disclosure="objects"
-        aria-label={`${stageBodyPopulation.operatorFacingBadge} currently staged system objects`}
-        style={{
-          position: "absolute",
-          left: "0.75rem",
-          top: "0.75rem",
-          zIndex: 2,
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.25rem",
-          maxWidth: "9.5rem",
-          maxHeight: "calc(100% - 5rem)",
-          overflow: "auto",
-          pointerEvents: "auto",
-          padding: "0.28rem 0.4rem 0.4rem",
-          borderRadius: cockpit.radius.md,
-          border: `1px solid ${cockpit.border}`,
-          background: cockpit.panelSoft,
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        <summary
-          style={{
-            listStyle: "none",
-            cursor: "pointer",
-            fontSize: "0.58rem",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: cockpit.muted,
-            fontWeight: 600,
-            fontFamily: "inherit",
-          }}
-        >
-          {stageBodyPopulation.operatorFacingBadge}
-        </summary>
-        {fixedCameraInteraction.scene.objects.map((object) => {
-          const showKpi =
-            object.focused &&
-            presentationViewModel.state === "minimum" &&
-            presentationViewModel.primaryKpi &&
-            presentationViewModel.subjectId === object.id;
-          const visual = visualPresentations[object.id];
-          const objectMotion = projectStageProdObjectMotion({
-            canonicalObjectId: object.id,
-            focused: object.focused,
-            selected: object.selected,
-          });
-          return (
-            <div
-              key={object.id}
-              hidden={!isNexoraMvpStageBodyPhysicallyPresent(object)}
-            >
-            <button
-              type="button"
-              data-testid={`nexora-stage-object-control-${object.id}`}
-              data-visual-family="executive-object"
-              data-role={object.role}
-              data-canonical-id={object.id}
-              data-object-type={object.kind}
-              data-management-kind={object.objectKind ?? object.kind}
-              data-stage-representation-role={
-                object.stageRepresentationRole ?? "unspecified"
-              }
-              data-stage-position={object.targetPosition.join(",")}
-              data-status={object.status}
-              data-attention={object.attention}
-              data-focused={object.focused ? "true" : "false"}
-              data-selected={object.selected ? "true" : "false"}
-              data-nexograph-form-token={visual?.formToken ?? `form-executive-${object.kind}`}
-              data-nexograph-state-token={visual?.stateToken ?? "state-neutral"}
-              data-nexograph-halo={visual?.haloToken ?? "halo-none"}
-              data-nexograph-scale={visual?.scaleToken ?? "size-equal"}
-              data-nexograph-opacity={visual?.opacityToken ?? "opacity-full"}
-              data-nexograph-focus={object.focused ? "true" : "false"}
-              data-nexograph-selection={object.selected ? "true" : "false"}
-              aria-label={visual?.accessibilityDescription ?? object.label}
-              data-opacity={String(object.opacity)}
-              data-scale={String(object.scale)}
-              data-label-prominence={object.labelProminence}
-              data-executive-visual-state={
-                object.executiveVisualState ?? "normal"
-              }
-              data-state-marker={object.stateMarker ?? "none"}
-              data-rim-intensity={String(object.rimIntensity ?? 0)}
-              data-visual-audit="stage-object"
-              data-stage-prod-activation="canonical-id"
-              data-stage-prod-activation-writes="false"
-              data-stage-prod-object-motion={objectMotion.identity}
-              data-stage-prod-motion-state={objectMotion.state}
-              data-stage-prod-motion-reason={objectMotion.reason}
-              data-stage-prod-motion-treatment={objectMotion.treatment}
-              data-stage-prod-motion-object-id={objectMotion.canonicalObjectId}
-              data-stage-prod-motion-writes="false"
-              className="nexora-stage-object-motion"
-              aria-pressed={object.focused}
-              onClick={() => onSelectSubject(object.id)}
-              style={{
-                border: object.focused
-                  ? `1px solid ${cockpit.accent}`
-                  : `1px solid ${cockpit.border}`,
-                background: object.focused
-                  ? cockpit.accentSoft
-                  : cockpit.panel,
-                color:
-                  object.role === "unrelated"
-                    ? cockpit.lowMuted
-                    : cockpit.textSoft,
-                fontSize: "0.62rem",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                textAlign: "left",
-                padding: "0.28rem 0.4rem",
-                borderRadius: "0.3rem",
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              {object.label}
-              {showKpi ? (
-                <span
-                  data-testid={`nexora-stage-object-kpi-${object.id}`}
-                  style={{
-                    display: "block",
-                    marginTop: "0.12rem",
-                    fontSize: "0.58rem",
-                    letterSpacing: "0.04em",
-                    textTransform: "none",
-                    color: cockpit.accent,
-                  }}
-                >
-                  {presentationViewModel.primaryKpi?.value}
-                  {presentationViewModel.primaryKpi?.delta
-                    ? ` ${presentationViewModel.primaryKpi.delta}`
-                    : ""}
-                </span>
-              ) : null}
-            </button>
-            {iconicObjects
-              .filter((item) => item.ownerExecutiveObjectId === object.id)
-              .map((item) => (
-                <NexoraDecisionTheatreIconicSatellite
-                  key={item.presentationId}
-                  iconic={item}
-                />
-              ))}
-            </div>
-          );
-        })}
-
-        {interaction.contextNodes
-          .filter((node) => node.role !== "source-anchor")
-          .filter((node) => !isExecutiveThreadControlNode(node))
-          .map((node) => {
-            const isGateway =
-              node.role === "collapsed-thread" &&
-              node.gatewayMode === "discoverable-collapsed";
-            const gatewayCount =
-              node.gatewayCount ?? node.collapsedMemberIds?.length ?? 0;
-            return (
-              <div key={node.id}>
-              <button
-                type="button"
-                data-testid={`nexora-stage-context-control-${node.subjectId}`}
-                data-visual-family="executive-object"
-                data-role={node.role}
-                data-kind={node.kind}
-                data-canonical-id={node.id}
-                data-object-type={node.kind}
-                data-context-subject={node.subjectId}
-                data-gateway-mode={node.gatewayMode ?? undefined}
-                data-gateway-count={
-                  node.role === "collapsed-thread"
-                    ? String(gatewayCount)
-                    : undefined
-                }
-                data-opacity={String(node.opacity)}
-                data-scale={String(node.scale)}
-                data-context-visibility={
-                  node.opacity >= 0.5 ? "revealed" : "hidden-or-background"
-                }
-                data-visual-audit={
-                  isGateway ? "stage-thread-gateway" : "stage-context"
-                }
-                data-stage-prod-activation="canonical-id"
-                data-stage-prod-activation-writes="false"
-                aria-pressed={node.focused}
-                aria-expanded={
-                  node.role === "collapsed-thread" ? false : undefined
-                }
-                aria-label={
-                  isGateway
-                    ? `Open Executive Thread with ${gatewayCount} items`
-                    : undefined
-                }
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onSelectSubject(node.subjectId);
-                }}
-                style={{
-                  border: isGateway
-                    ? `1px solid ${cockpit.accent}`
-                    : node.focused
-                      ? `1px solid ${cockpit.accent}`
-                      : `1px solid ${cockpit.border}`,
-                  background: isGateway
-                    ? cockpit.panel
-                    : cockpit.panelSoft,
-                  color: cockpit.textSoft,
-                  fontSize: isGateway ? "0.68rem" : "0.58rem",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  textAlign: "left",
-                  padding: isGateway
-                    ? "0.42rem 0.72rem"
-                    : "0.28rem 0.4rem",
-                  borderRadius: isGateway ? "999px" : "0.3rem",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  minWidth: isGateway ? "10.5rem" : undefined,
-                  opacity: 1,
-                }}
-              >
-                {isGateway
-                  ? node.label
-                  : `${node.kind}: ${node.label}`}
-              </button>
-              {iconicObjects
-                .filter((item) => item.ownerExecutiveObjectId === node.subjectId || item.ownerExecutiveObjectId === node.id)
-                .map((item) => (
-                  <NexoraDecisionTheatreIconicSatellite
-                    key={item.presentationId}
-                    iconic={item}
-                  />
-                ))}
-              </div>
-            );
-          })}
-
-        <button
-          type="button"
-          data-testid="nexora-stage-reset"
-          onClick={onOverview}
-          style={{
-            marginTop: "0.2rem",
-            border: "none",
-            background: "transparent",
-            color: cockpit.accent,
-            fontSize: "0.58rem",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            cursor: "pointer",
-            textAlign: "left",
-            fontFamily: "inherit",
-          }}
-        >
-          Overview
-        </button>
-      </details>
 
       <NexoraSubjectReport
         viewModel={presentationViewModel}
@@ -1919,7 +2005,8 @@ export function Nexora3DExecutiveStage({
             ref={canvasHostRef}
             data-testid="nexora-stage-canvas-host"
             style={{
-              position: "relative",
+              position: "absolute",
+              inset: 0,
               width: "100%",
               height: "100%",
               isolation: "isolate",
@@ -1943,6 +2030,7 @@ export function Nexora3DExecutiveStage({
           </div>
         </StageErrorBoundary>
       )}
+      </div>
     </div>
   );
 }

@@ -282,7 +282,13 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
     assert.match(html, /data-testid="nexora-advisor-insight-region"/);
     assert.match(html, /data-testid="executive-nav-nmi"/);
     assert.match(html, /data-nmi-panel-open="false"/);
-    assert.match(html, /<aside[^>]*hidden=""[^>]*data-testid="nexora-executive-queue"/);
+    assert.doesNotMatch(html, /data-testid="nexora-executive-queue"/);
+    const queueSource = readFileSync(
+      join(HERE, "stage/NexoraExecutiveQueueOverlay.tsx"),
+      "utf8",
+    );
+    assert.match(queueSource, /if \(entries\.length === 0\) \{\s*return null;/);
+    assert.match(queueSource, /hidden=\{!visible\}/);
     assert.match(html, /data-timeline-collapsed="true"/);
     assert.match(html, /data-manager-visible="false"/);
     assert.match(html, /data-testid="nexora-conversational-input"/);
