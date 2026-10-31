@@ -147,16 +147,6 @@ function rectsOverlap(
   );
 }
 
-function rectCenter(rect: ExecutiveStageLabelRect): Readonly<{
-  readonly x: number;
-  readonly y: number;
-}> {
-  return Object.freeze({
-    x: (rect.minX + rect.maxX) * 0.5,
-    y: (rect.minY + rect.maxY) * 0.5,
-  });
-}
-
 function distancePointToRect(
   x: number,
   y: number,
@@ -375,20 +365,40 @@ function sidePreferenceList(
   return Object.freeze(ordered);
 }
 
-function labelHalfForContent(
+/**
+ * Rendered captions wrap near one executive word and the Html portal
+ * anchors the projected point to the caption's top-left. Width stays on
+ * the column. Height grows with wrapped lines. `w`/`h` remain the radial
+ * half-box so uncontested anchors do not jump.
+ */
+function labelFootprintForContent(
   mode: Exclude<ExecutiveStageLabelVisibilityMode, "hidden">,
   primaryLine: string,
   secondaryLine: string | null,
-): Readonly<{ readonly w: number; readonly h: number }> {
+): Readonly<{
+  readonly w: number;
+  readonly h: number;
+  readonly paintedW: number;
+  readonly paintedH: number;
+}> {
   const base = labelHalfForMode(mode);
-  const longest = Math.max(
-    primaryLine.trim().length,
-    (secondaryLine ?? "").trim().length,
-    6,
-  );
+  const primary = primaryLine.trim();
+  const secondary = (secondaryLine ?? "").trim();
+  const longest = Math.max(primary.length, secondary.length, 6);
   const w = Math.min(1.18, Math.max(base.w, longest * 0.038));
-  const h = secondaryLine != null && secondaryLine.length > 0 ? base.h * 1.32 : base.h;
-  return Object.freeze({ w, h });
+  const h = secondary.length > 0 ? base.h * 1.32 : base.h;
+  const wrapChars = 10;
+  const primaryLines = Math.max(1, Math.ceil(Math.max(primary.length, 1) / wrapChars));
+  const lines = primaryLines + (secondary.length > 0 ? 1 : 0);
+  // Two lines match the historical half-box. Wrapped names add height only,
+  // capped so a long caption still has a legal side.
+  const extraLines = Math.min(2, Math.max(0, lines - 2));
+  return Object.freeze({
+    w,
+    h,
+    paintedW: base.w * 2,
+    paintedH: h * (1 + extraLines * 0.55),
+  });
 }
 
 function captionCloserToNeighborThanOwner(
@@ -425,29 +435,36 @@ function makeLabelRect(
   side: ExecutiveStageLabelSide,
   halfW: number,
   halfH: number,
+  paintedW: number,
+  paintedH: number,
 ): Readonly<{
   readonly rect: ExecutiveStageLabelRect;
   readonly offsetX: number;
   readonly offsetY: number;
   readonly ownerDistance: number;
+  readonly anchorX: number;
+  readonly anchorY: number;
 }> {
   const radial =
     ownerHalf +
     EXECUTIVE_STAGE_LABEL_POLICY.ownerGap +
     Math.max(halfH, halfW * 0.35);
   const offset = resolveExecutiveLabelWorldOffset(side, radial);
-  const centerX = stabilize(ownerX + offset.x);
-  const centerY = stabilize(ownerY + offset.y);
+  const anchorX = stabilize(ownerX + offset.x);
+  const anchorY = stabilize(ownerY + offset.y);
+  // The Html portal paints down and to the right of this projected point.
   return Object.freeze({
     rect: Object.freeze({
-      minX: centerX - halfW,
-      maxX: centerX + halfW,
-      minY: centerY - halfH,
-      maxY: centerY + halfH,
+      minX: anchorX,
+      maxX: anchorX + paintedW,
+      minY: anchorY - paintedH,
+      maxY: anchorY,
     }),
     offsetX: offset.x,
     offsetY: offset.y,
     ownerDistance: Math.hypot(offset.x, offset.y),
+    anchorX,
+    anchorY,
   });
 }
 
@@ -634,20 +651,22 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
         presentationLevel: level,
         visibility: mode,
       });
-      const half = labelHalfForContent(
+      const footprint = labelFootprintForContent(
         mode,
         content.primaryLine,
         content.secondaryLine,
       );
-      const maxDist = maxOwnerDistance(ownerHalf, half.w, half.h);
+      const maxDist = maxOwnerDistance(ownerHalf, footprint.w, footprint.h);
       for (const side of sides) {
         const placement = makeLabelRect(
           object.x,
           object.y,
           ownerHalf,
           side,
-          half.w,
-          half.h,
+          footprint.w,
+          footprint.h,
+          footprint.paintedW,
+          footprint.paintedH,
         );
         if (placement.ownerDistance > maxDist + 1e-6) continue;
 
@@ -688,11 +707,10 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
         }
         if (hitsLabel) continue;
 
-        const center = rectCenter(placement.rect);
         if (
           captionCloserToNeighborThanOwner(
-            center.x,
-            center.y,
+            placement.anchorX,
+            placement.anchorY,
             object.id,
             bodyById,
             EXECUTIVE_STAGE_LABEL_POLICY.associationPad,
@@ -704,22 +722,22 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
           minX:
             object.x -
             ownerHalf -
-            half.w -
+            footprint.w -
             EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
           maxX:
             object.x +
             ownerHalf +
-            half.w +
+            footprint.w +
             EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
           minY:
             object.y -
             ownerHalf -
-            half.h -
+            footprint.h -
             EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
           maxY:
             object.y +
             ownerHalf +
-            half.h +
+            footprint.h +
             EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
         });
 
@@ -808,11 +826,12 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
       if (bodyId === ownership.ownerObjectId) continue;
       if (rectsOverlap(ownership.bounds, body)) bodyOverlapCount += 1;
     }
-    const center = rectCenter(ownership.bounds);
+    const anchorX = ownership.anchorPoint[0] + ownership.worldOffsetX;
+    const anchorY = ownership.anchorPoint[1] + ownership.worldOffsetY;
     if (
       captionCloserToNeighborThanOwner(
-        center.x,
-        center.y,
+        anchorX,
+        anchorY,
         ownership.ownerObjectId,
         bodyById,
         EXECUTIVE_STAGE_LABEL_POLICY.associationPad,

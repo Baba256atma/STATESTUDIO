@@ -33,7 +33,10 @@ import { NexoraSceneEnvironmentController } from "../workspace/NexoraSceneEnviro
 import { NexoraExecutiveCameraController } from "./NexoraExecutiveCameraController";
 import { NexoraExecutiveLightingRig } from "./NexoraExecutiveLightingRig";
 import { NexoraStageConnections } from "./NexoraStageConnections";
-import { NexoraStageContextNodes } from "./NexoraStageContextNodes";
+import {
+  executiveStageObjectCaptionCanonicalIds,
+  NexoraStageContextNodes,
+} from "./NexoraStageContextNodes";
 import { NexoraStageDeepZEnvironment } from "./NexoraStageDeepZEnvironment";
 import { NexoraStageMotionController } from "./NexoraStageMotionController";
 import { NexoraStageObject } from "./NexoraStageObject";
@@ -515,6 +518,9 @@ export function NexoraStageScene({
             hoveredId={hoveredId}
             onSelect={onSelectSubject}
             onHover={setHoveredId}
+            objectCaptionCanonicalIds={executiveStageObjectCaptionCanonicalIds(
+              presentation.scene.objects,
+            )}
           />
         </group>
       </group>

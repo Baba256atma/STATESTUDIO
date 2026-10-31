@@ -6,6 +6,7 @@ import { Html } from "@react-three/drei";
 import type { Group, Mesh } from "three";
 import type { NexoraMVPContextNodePresentation } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import { EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION } from "@/app/lib/spatial-presentation/executiveLightingFoundation";
+import { EXECUTIVE_STAGE_VISUAL_BALANCE_BUDGET } from "@/app/lib/spatial-presentation/executiveStageVisualBalance";
 import {
   applyExecutiveLightingHierarchyToMaterial,
   resolveExecutiveLightingEmphasis,
@@ -22,7 +23,63 @@ type Props = {
   readonly hoveredId: string | null;
   readonly onSelect: (subjectId: string) => void;
   readonly onHover: (subjectId: string | null) => void;
+  /** Canonical ids that already own a STAGE-LABEL:1 object caption. */
+  readonly objectCaptionCanonicalIds?: ReadonlySet<string>;
 };
+
+type CaptionObject = {
+  readonly id: string;
+  readonly labelVisible?: boolean;
+  readonly labelVisibilityMode?: string;
+  readonly disclosureState?: string;
+  readonly opacity?: number;
+};
+
+/**
+ * Object captions already admitted by the Stage-label opacity contract.
+ * Context captions for these ids would duplicate the same canonical subject.
+ */
+export function executiveStageObjectCaptionCanonicalIds(
+  objects: readonly CaptionObject[],
+): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (const object of objects) {
+    if (
+      object.labelVisible !== false &&
+      object.labelVisibilityMode !== "hidden" &&
+      object.disclosureState !== "hidden" &&
+      (object.opacity ?? 1) >=
+        EXECUTIVE_STAGE_VISUAL_BALANCE_BUDGET.orphanLabelMinBodyOpacity
+    ) {
+      ids.add(object.id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Context Html captions follow the same body-opacity floor as object captions.
+ * A faded source anchor does not keep a label, and a subject that already has
+ * an object caption does not get a second one.
+ */
+export function executiveStageContextCaptionVisible(
+  node: Pick<
+    NexoraMVPContextNodePresentation,
+    "opacity" | "labelVisible" | "subjectId" | "role"
+  >,
+  objectCaptionCanonicalIds: ReadonlySet<string> = new Set(),
+): boolean {
+  if (node.role === "collapsed-thread") return false;
+  if (node.labelVisible === false) return false;
+  if (
+    node.opacity <
+    EXECUTIVE_STAGE_VISUAL_BALANCE_BUDGET.orphanLabelMinBodyOpacity
+  ) {
+    return false;
+  }
+  if (objectCaptionCanonicalIds.has(node.subjectId)) return false;
+  return true;
+}
 
 const KIND_COLOR: Record<string, string> = {
   object: "#7dd3fc",
@@ -40,11 +97,13 @@ function ContextNodeMesh({
   hoveredId,
   onSelect,
   onHover,
+  objectCaptionCanonicalIds,
 }: {
   readonly node: NexoraMVPContextNodePresentation;
   readonly hoveredId: string | null;
   readonly onSelect: (subjectId: string) => void;
   readonly onHover: (subjectId: string | null) => void;
+  readonly objectCaptionCanonicalIds: ReadonlySet<string>;
 }) {
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
@@ -58,7 +117,10 @@ function ContextNodeMesh({
   const isQuietCollapse =
     isCollapsedThread && node.gatewayMode === "quiet-collapse";
   const interactive = node.interactive !== false;
-  const labelVisible = node.labelVisible !== false;
+  const labelVisible = executiveStageContextCaptionVisible(
+    node,
+    objectCaptionCanonicalIds,
+  );
   const footprint = EXECUTIVE_THREAD_GATEWAY_FOOTPRINT;
   const hitWidth = isQuietCollapse
     ? footprint.collapseHitWidth
@@ -407,6 +469,7 @@ export function NexoraStageContextNodes({
   hoveredId,
   onSelect,
   onHover,
+  objectCaptionCanonicalIds = new Set<string>(),
 }: Props) {
   const sceneNodes = nodes.filter((node) => node.role !== "collapsed-thread");
   if (sceneNodes.length === 0) return null;
@@ -419,6 +482,7 @@ export function NexoraStageContextNodes({
           hoveredId={hoveredId}
           onSelect={onSelect}
           onHover={onHover}
+          objectCaptionCanonicalIds={objectCaptionCanonicalIds}
         />
       ))}
     </group>

@@ -494,23 +494,19 @@ export function Nexora3DExecutiveStage({
     });
   }, [interaction.scene]);
 
-  /** STAGE-2D:2 flatten → STAGE-2D:3/4 recomposition → STAGE-LABEL:1 → STAGE-2D:1 camera. */
+  /** STAGE-2D:2 flatten → STAGE-2D:3/4 recomposition → STAGE-2D:1 camera. Labels wait for final positions. */
   const directorComposition = useMemo(() => {
     const flattened =
       applyExecutiveStage2DTopologyPlaneToStagePresentation(interaction);
     const recomposed =
       applyExecutiveStage2DTopologyRecompositionToStagePresentation(flattened);
-    const withLabels =
-      applyExecutiveStageObjectLabelTerritoryToStagePresentation(recomposed, {
-        presentationLevel: presentationViewModel.state,
-      });
-    const fixed = applyExecutiveStageFixedCameraToStagePresentation(withLabels);
+    const fixed = applyExecutiveStageFixedCameraToStagePresentation(recomposed);
     return projectStageProdDirectorComposition({
       presentation: fixed,
       theatre: theatreComposition,
       spatial: dthExpSpatial,
     });
-  }, [interaction, presentationViewModel.state, theatreComposition, dthExpSpatial]);
+  }, [interaction, theatreComposition, dthExpSpatial]);
   const ovs3Visual = useMemo(() => {
     if (dthExpSpatial == null) return null;
     return projectExecutiveOvsIsometricTheatreVisual({
@@ -527,10 +523,24 @@ export function Nexora3DExecutiveStage({
             directorComposition.presentation,
             ovs3Visual,
           );
-    return applyManagementLevelSpatialToStagePresentation(placed, managementLevelSpatial, {
+    const leveled = applyManagementLevelSpatialToStagePresentation(placed, managementLevelSpatial, {
       theatreActive: theatreComposition != null,
     });
-  }, [directorComposition, ovs3Visual, managementLevelSpatial, theatreComposition]);
+    // STAGE-LABEL:1 runs once, after every pass that can move objects.
+    return applyExecutiveStageObjectLabelTerritoryToStagePresentation(leveled, {
+      presentationLevel:
+        presentationViewModel.state === "report" ||
+        presentationViewModel.state === "operation"
+          ? presentationViewModel.state
+          : "minimum",
+    });
+  }, [
+    directorComposition,
+    ovs3Visual,
+    managementLevelSpatial,
+    theatreComposition,
+    presentationViewModel.state,
+  ]);
   const stageBodyPopulation = useMemo(
     () =>
       resolveNexoraMvpStagePopulationSnapshot({
