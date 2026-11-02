@@ -24,6 +24,14 @@ export type NexoraMVPStageObjectFixture = {
    * Uses Manager Object vocabulary. Not geometry.
    */
   readonly objectKind?: ManagerObjectKind;
+  /** Owning Manager Workspace. Absent on the shared production catalog. */
+  readonly managerWorkspaceId?: string;
+  /** True only when this subject is the designated primary Company or Goal. */
+  readonly authoritativePrimary?: boolean;
+  /** False when presentation authorization is explicitly denied. */
+  readonly presentationAuthorized?: boolean;
+  /** False when disclosure withholds the subject. Absent stays eligible. */
+  readonly disclosed?: boolean;
   readonly position: readonly [number, number, number];
   /** Includes unresolved so missing runtime truth never falls back to healthy. */
   readonly status: "stable" | "watch" | "risk" | "unresolved";

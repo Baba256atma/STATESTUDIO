@@ -222,10 +222,22 @@ test("camera constants and Stage label order stay after final placement", () => 
   const management = pipeline.indexOf(
     "applyManagementLevelSpatialToStagePresentation(",
   );
+  const readability = pipeline.indexOf(
+    "applyExecutiveStage2DTopologyRecompositionToStagePresentation(",
+  );
+  const camera = pipeline.indexOf(
+    "applyExecutiveStageFixedCameraToStagePresentation(",
+  );
   const labels = pipeline.indexOf(
     "applyExecutiveStageObjectLabelTerritoryToStagePresentation(",
   );
-  assert.ok(isometric > 0 && management > isometric && labels > management);
+  assert.ok(
+    isometric > 0 &&
+      management > isometric &&
+      readability > management &&
+      camera > readability &&
+      labels > camera,
+  );
   assert.equal(
     stage.split("applyExecutiveStageObjectLabelTerritoryToStagePresentation(").length -
       1,

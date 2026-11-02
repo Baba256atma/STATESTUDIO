@@ -338,10 +338,32 @@ export function isExecutiveThreadWorkKind(
   );
 }
 
+/** Visible same-kind subjects share a sector origin and take distinct tangential slots. */
+export function executiveWorkSlotKey(canonicalId: string): string {
+  return `executive-work:${canonicalId}`;
+}
+
 export function resolveExecutiveThreadSectorPosition(
   kind: ExecutiveThreadWorkKind,
+  indexInKind = 0,
+  kindCount = 1,
 ): Readonly<{ readonly x: number; readonly y: number; readonly z: 0 }> {
-  return EXECUTIVE_THREAD_SECTOR_BY_KIND[kind];
+  const origin = EXECUTIVE_THREAD_SECTOR_BY_KIND[kind];
+  const count = Number.isFinite(kindCount) ? Math.max(1, Math.floor(kindCount)) : 1;
+  const index = Number.isFinite(indexInKind)
+    ? Math.max(0, Math.min(Math.floor(indexInKind), count - 1))
+    : 0;
+  if (count === 1) return origin;
+  const step = 1.12;
+  const offset = (index - (count - 1) / 2) * step;
+  const length = Math.hypot(origin.x, origin.y) || 1;
+  const tangentX = -origin.y / length;
+  const tangentY = origin.x / length;
+  return Object.freeze({
+    x: origin.x + tangentX * offset,
+    y: origin.y + tangentY * offset,
+    z: 0 as const,
+  });
 }
 
 export function formatExecutiveThreadGatewayLabel(count: number): string {

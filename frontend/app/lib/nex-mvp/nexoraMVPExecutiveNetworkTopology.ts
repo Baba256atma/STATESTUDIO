@@ -13,6 +13,7 @@ import {
   mapExecutive2DPositionToRenderWorld,
   worldTupleFromPresentationWorld,
 } from "@/app/lib/spatial-presentation/executivePresentationPlaneFoundation";
+import { executiveOverviewRingOwnsPlacement } from "@/app/lib/spatial-presentation/executiveTopologyGuidedStageComposition";
 import {
   resolveExecutiveNetworkTopology,
   type ExecutiveNetworkEdge,
@@ -75,6 +76,16 @@ export function applyExecutiveNetworkTopologyToStagePresentation(
   presentation: NexoraMVPStageInteractionPresentation,
   options?: ApplyExecutiveNetworkTopologyOptions,
 ): NexoraMVPStageInteractionPresentation {
+  if (
+    executiveOverviewRingOwnsPlacement({
+      mode: presentation.scene.mode,
+      overviewAnchorId: presentation.scene.overviewAnchorId,
+      focusedObjectId: presentation.scene.focusedObjectId,
+      focusedSubjectId: presentation.focusedSubjectId,
+    })
+  ) {
+    return presentation;
+  }
   const plane = createExecutivePresentationPlane();
   const visibleObjects = presentation.scene.objects.filter(
     (object) =>

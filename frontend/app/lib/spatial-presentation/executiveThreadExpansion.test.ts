@@ -26,7 +26,10 @@ import {
 } from "../nex-mvp/nexoraMVPObjectInteraction.ts";
 import { NEXORA_MVP_CONTEXT_LINK_FIXTURES } from "../nex-mvp/nexoraMVPObjectInteractionFixtures.ts";
 import {
+  EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG,
   EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
+  EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG,
+  resolveExecutiveStageFixedCameraTuple,
 } from "./executiveStage2DFixedCamera.ts";
 import { EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT } from "./executiveStage2DHardSeparation.ts";
 import { setExecutiveObjectPresenceV2Enabled } from "./executiveObjectPresenceIdentity.ts";
@@ -366,13 +369,12 @@ test("Q/R/S — Anchor {0,0,0}; semantic z===0; fixed camera unchanged", () => {
     if (object.disclosureState === "hidden") continue;
     assert.equal(object.targetPosition[2], 0);
   }
-  assert.equal(presentation.scene.camera.position[0], 0);
-  assert.equal(presentation.scene.camera.position[1], 0);
-  assert.equal(
-    presentation.scene.camera.position[2],
-    EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  );
-  assert.deepEqual(presentation.scene.camera.target, [0, 0, 0]);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG, 8);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG, 10);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE, 11);
+  const tuple = resolveExecutiveStageFixedCameraTuple();
+  assert.deepEqual(presentation.scene.camera.position, tuple.position);
+  assert.deepEqual(presentation.scene.camera.target, tuple.target);
 });
 
 test("T — Deep-Z unchanged", () => {
@@ -439,6 +441,25 @@ test("X — Minimum/Report/Operation retain gateway discoverability", () => {
     assert.equal(gateway!.interactive, true, level);
     assert.ok((gateway!.gatewayCount ?? 0) > 0, level);
   }
+});
+
+test("gateway stays off the focused center and out of overview", () => {
+  setExecutiveObjectPresenceV2Enabled(true);
+  const first = pipeline("obj-capacity", false).presentation;
+  const second = pipeline("obj-capacity", false).presentation;
+  const gateway = collapsedGateway(first)!;
+  const again = collapsedGateway(second)!;
+  assert.deepEqual(gateway.targetPosition, again.targetPosition);
+  assert.ok(Math.hypot(gateway.targetPosition[0], gateway.targetPosition[1]) > 0.9);
+  assert.equal(gateway.opacity >= 0.9, true);
+  const overview = deriveNexoraMVPStageInteractionPresentation(
+    createInitialNexoraMVPObjectInteractionState({
+      workspace: "overview",
+      presentationState: "minimum",
+      environmentIntent: "neutral",
+    }),
+  );
+  assert.equal(collapsedGateway(overview), undefined);
 });
 
 test("projected subject click keeps Capacity as business focus", () => {

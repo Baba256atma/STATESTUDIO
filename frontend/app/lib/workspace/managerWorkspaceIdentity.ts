@@ -232,6 +232,35 @@ export function readLiveExecutiveDataWorkspaceId(): WorkspaceId {
   return resolveLiveExecutiveDataWorkspace().workspaceId;
 }
 
+/**
+ * Stage composition workspace context.
+ * The registry id is forwarded unchanged. A missing record, a workflow mode,
+ * or the legacy unnamed bucket stays null so Circular Overview fails closed.
+ * The demo registry record is reported as demo; it is not promoted to
+ * BUSINESS or PROJECT.
+ */
+export function resolveStageActiveManagerWorkspaceId(): WorkspaceId | null {
+  const active = resolveActiveManagerWorkspace();
+  if (active.classification === "manager_workspace" && active.managerWorkspace) {
+    return acceptStageManagerWorkspaceId(active.managerWorkspace.workspaceId);
+  }
+  if (
+    active.classification === "demo_test" &&
+    active.activeWorkspaceId === DEMO_WORKSPACE_ID
+  ) {
+    return DEMO_WORKSPACE_ID;
+  }
+  return null;
+}
+
+/** Accept a caller-supplied Stage workspace id. Workflow modes are refused. */
+export function acceptStageManagerWorkspaceId(value: unknown): WorkspaceId | null {
+  const workspaceId = normalizeWorkspaceId(value);
+  if (!workspaceId || isLegacyWorkflowWorkspaceIdentifier(workspaceId)) return null;
+  if (workspaceId === "default_workspace") return null;
+  return workspaceId;
+}
+
 /** New manager persistence. Legacy workflow identifiers are not writable ids. */
 export function acceptNewManagerPersistenceWorkspaceId(workspaceId: unknown): boolean {
   const normalized = normalizeWorkspaceId(workspaceId);

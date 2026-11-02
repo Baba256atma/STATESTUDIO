@@ -62,6 +62,7 @@ import {
   acceptNewManagerPersistenceWorkspaceId,
   readLiveExecutiveDataWorkspaceId,
   resolveLiveExecutiveDataWorkspace,
+  resolveStageActiveManagerWorkspaceId,
 } from "@/app/lib/workspace/managerWorkspaceIdentity";
 import { isRealManagerWorkspaceId } from "@/app/lib/workspace/liveManagerDataWorkspaceGuard";
 import { DEMO_WORKSPACE_ID } from "@/app/lib/workspace/workspaceRegistryContract";
@@ -552,6 +553,11 @@ export function NexoraExecutiveShell({
     subscribeWorkspaceRegistry,
     readLiveExecutiveDataWorkspaceId,
     () => DEMO_WORKSPACE_ID,
+  );
+  const stageManagerWorkspaceId = useSyncExternalStore(
+    subscribeWorkspaceRegistry,
+    resolveStageActiveManagerWorkspaceId,
+    () => null,
   );
   const storedDemoProfile = useSyncExternalStore(
     subscribeDemoProfile,
@@ -1513,9 +1519,12 @@ export function NexoraExecutiveShell({
     const base = deriveNexoraMVPStageInteractionPresentation(
       interaction,
       stageCatalog,
-      experienceContext === "GUIDED_ENTRANCE"
-        ? { overviewOccupancy: "current-catalog" }
-        : undefined,
+      {
+        ...(experienceContext === "GUIDED_ENTRANCE"
+          ? { overviewOccupancy: "current-catalog" as const }
+          : {}),
+        activeManagerWorkspaceId: stageManagerWorkspaceId,
+      },
     );
     const withWorkspace = deriveNexoraMVPWorkspacePresentation(
       base,
@@ -1584,6 +1593,7 @@ export function NexoraExecutiveShell({
   }, [
     interaction,
     stageCatalog,
+    stageManagerWorkspaceId,
     experienceContext,
     dataRealitySceneChoreography.choreography,
     dataRealityConnectionsContext.connectionsContext,
@@ -2963,7 +2973,11 @@ export function NexoraExecutiveShell({
   const onExecuteNextBestAction = useCallback(
     (actionId: string) => {
       setInteraction((previous) => {
-        const presentation = deriveNexoraMVPStageInteractionPresentation(previous);
+        const presentation = deriveNexoraMVPStageInteractionPresentation(
+          previous,
+          undefined,
+          { activeManagerWorkspaceId: stageManagerWorkspaceId },
+        );
         const nba = presentation.nextBestAction;
         const action =
           nba?.recommendedAction?.id === actionId
@@ -2992,7 +3006,7 @@ export function NexoraExecutiveShell({
         return next;
       });
     },
-    [],
+    [stageManagerWorkspaceId],
   );
 
   const onSelectBriefOption = useCallback((objectId: string) => {

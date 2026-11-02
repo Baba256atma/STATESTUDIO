@@ -12,6 +12,7 @@
  * SP:4.1C grammar remains the upstream scale/separation pass for now.
  */
 
+import { executiveOverviewRingOwnsPlacement } from "@/app/lib/spatial-presentation/executiveTopologyGuidedStageComposition";
 import {
   EXECUTIVE_STAGE_COMPOSITION_MODE_DEFAULT,
   EXECUTIVE_STAGE_COMPOSITION_MODE_LEGACY,
@@ -364,8 +365,22 @@ export function applyExecutivePresentationPlaneToStagePresentation(
   }
 
   const plane = createExecutivePresentationPlane();
+  const preserveOverviewRing = executiveOverviewRingOwnsPlacement({
+    mode: presentation.scene.mode,
+    overviewAnchorId: presentation.scene.overviewAnchorId,
+    focusedObjectId: presentation.scene.focusedObjectId,
+    focusedSubjectId: presentation.focusedSubjectId,
+  });
   const objects = Object.freeze(
-    presentation.scene.objects.map((object) => enrichObject(object, plane)),
+    presentation.scene.objects.map((object) => {
+      const enriched = enrichObject(object, plane);
+      if (!preserveOverviewRing) return enriched;
+      return Object.freeze({
+        ...enriched,
+        targetPosition: object.targetPosition,
+        overviewPosition: object.overviewPosition,
+      });
+    }),
   );
   const enrichedContext = Object.freeze(
     presentation.contextNodes.map((node) => enrichContext(node, plane)),

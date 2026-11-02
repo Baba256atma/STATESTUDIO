@@ -31,6 +31,7 @@ import {
 } from "@/app/lib/spatial-presentation/executiveObjectLabelRelationshipGrammar";
 import {
   isExecutiveThreadWorkKind,
+  resolveExecutiveThreadGatewayPosition,
   resolveExecutiveThreadSectorPosition,
 } from "@/app/lib/spatial-presentation/executiveThreadExpansion";
 import {
@@ -40,7 +41,62 @@ import {
   NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES,
 } from "@/app/lib/nex-mvp/nexoraMVPStageFixtures";
 import type { NexoraMVPStageObjectRole } from "./nexora3DExecutiveStage";
-import type { NexoraMVPStageInteractionPresentation } from "./nexoraMVPObjectInteraction";
+import type {
+  NexoraMVPContextNodePresentation,
+  NexoraMVPStageInteractionPresentation,
+} from "./nexoraMVPObjectInteraction";
+
+type StageObjectPresentation =
+  NexoraMVPStageInteractionPresentation["scene"]["objects"][number];
+
+const DISCOVERABLE_GATEWAY_OPACITY = 0.92;
+
+function clearCollapsedThreadGateway(
+  node: NexoraMVPContextNodePresentation,
+  objects: readonly StageObjectPresentation[],
+  focusedObjectId: string | null | undefined,
+  classifications?: Readonly<Record<string, string>> | null,
+): NexoraMVPContextNodePresentation | null {
+  if (node.role !== "collapsed-thread" || node.gatewayMode == null) return null;
+  const footprint = EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT.minimum;
+  const occupiedCenters = objects
+    .filter((object) => object.disclosureState !== "hidden" && object.opacity > 0.05)
+    .map((object) => {
+      const classification =
+        classifications?.[object.id] ??
+        (object.id === focusedObjectId
+          ? "anchor"
+          : object.role === "related"
+            ? "related"
+            : "peripheral");
+      const halfExtent =
+        classification === "anchor"
+          ? footprint.anchor
+          : classification === "related"
+            ? footprint.related
+            : footprint.secondary;
+      return Object.freeze({
+        x: object.targetPosition[0],
+        y: object.targetPosition[1],
+        halfExtent,
+      });
+    });
+  const resolved = resolveExecutiveThreadGatewayPosition({
+    mode: node.gatewayMode,
+    occupiedCenters,
+  });
+  return Object.freeze({
+    ...node,
+    targetPosition: Object.freeze([resolved.x, resolved.y, 0] as const),
+    opacity:
+      node.gatewayMode === "discoverable-collapsed"
+        ? Math.max(node.opacity, DISCOVERABLE_GATEWAY_OPACITY)
+        : node.opacity,
+    interactive: true,
+    focused: false,
+    labelVisible: true,
+  });
+}
 
 export const nexoraMVPExecutiveStage2DTopologyReadabilityIdentity =
   "NEX-MVP/STAGE-2D:4/ExecutiveStage2DTopologyReadabilityBridge" as const;
@@ -256,13 +312,228 @@ export function resolveExecutiveStage2DTopologyReadabilityFromPresentation(
   });
 }
 
+export type ExecutiveStageFinalPlacementOptions = {
+  /**
+   * Theatre, isometric, and management-level passes already wrote preferred
+   * coordinates onto the presentation. This call is the last targetPosition
+   * writer: it keeps those preferences and recenters a focused anchor.
+   */
+  readonly sealExternalPlacement?: boolean;
+  /**
+   * Layout-only Overview center. Ignored while an interaction focus exists.
+   * Does not select the subject or write focusedObjectId.
+   */
+  readonly overviewAnchorId?: string | null;
+};
+
+function resolveExternalPlacementAnchorId(
+  presentation: NexoraMVPStageInteractionPresentation,
+): string | null {
+  const workCenter = presentation.scene.objects.find(
+    (object) =>
+      object.focused === true &&
+      object.stageRepresentationRole === "executive-work-center",
+  );
+  if (workCenter != null) return workCenter.id;
+  const focusedObject = presentation.scene.objects.find(
+    (object) => object.focused === true,
+  );
+  if (focusedObject != null) return focusedObject.id;
+  const declared =
+    presentation.focusedSubjectId ?? presentation.scene.focusedObjectId ?? null;
+  if (
+    declared != null &&
+    presentation.scene.objects.some((object) => object.id === declared)
+  ) {
+    return declared;
+  }
+  const focusedNode = presentation.contextNodes.find(
+    (node) => node.focused === true && node.role !== "collapsed-thread",
+  );
+  return focusedNode?.id ?? null;
+}
+
+function externalPlacementPosition(
+  presentation: NexoraMVPStageInteractionPresentation,
+  id: string,
+): readonly [number, number, number] | null {
+  const object = presentation.scene.objects.find((entry) => entry.id === id);
+  if (object != null) return object.targetPosition;
+  const node = presentation.contextNodes.find((entry) => entry.id === id);
+  return node?.targetPosition ?? null;
+}
+
+function sealPlane(x: number, y: number): readonly [number, number, number] {
+  return Object.freeze([
+    Math.abs(x) < 1e-9 ? 0 : x,
+    Math.abs(y) < 1e-9 ? 0 : y,
+    EXECUTIVE_STAGE_2D_DEPTH,
+  ]);
+}
+
+/**
+ * Last targetPosition writer when Theatre, isometric placement, or management
+ * levels supplied preferred coordinates. Focused anchors land on (0, 0, 0);
+ * every other subject keeps its offset from that anchor. Scale, opacity, and
+ * prominence stay as those passes left them.
+ */
+export function sealExecutiveStageExternalPlacement(
+  presentation: NexoraMVPStageInteractionPresentation,
+): NexoraMVPStageInteractionPresentation {
+  const anchorId = resolveExternalPlacementAnchorId(presentation);
+  const anchor = anchorId == null ? null : externalPlacementPosition(presentation, anchorId);
+  const dx = anchor?.[0] ?? 0;
+  const dy = anchor?.[1] ?? 0;
+  const place = (
+    id: string,
+    position: readonly [number, number, number],
+    locked: boolean,
+  ): readonly [number, number, number] => {
+    if (locked) return position;
+    if (id === anchorId) return sealPlane(0, 0);
+    return sealPlane(position[0] - dx, position[1] - dy);
+  };
+  const objects = Object.freeze(
+    presentation.scene.objects.map((object) => {
+      const targetPosition = place(object.id, object.targetPosition, false);
+      return Object.freeze({
+        ...object,
+        targetPosition,
+        overviewPosition: targetPosition,
+        presentationPosition: Object.freeze({
+          x: targetPosition[0],
+          y: targetPosition[1],
+        }),
+      });
+    }),
+  );
+  const sceneMeta = presentation.scene as {
+    readonly stage2dReadability?: ExecutiveStage2DTopologyReadability;
+    readonly stage2dRecomposition?: ExecutiveStage2DTopologyReadability;
+  };
+  const prior = sceneMeta.stage2dReadability;
+  const contextNodes = Object.freeze(
+    presentation.contextNodes.map((node) => {
+      const cleared = clearCollapsedThreadGateway(
+        node,
+        objects,
+        presentation.scene.focusedObjectId,
+        prior?.classifications,
+      );
+      if (cleared != null) return cleared;
+      const targetPosition = place(node.id, node.targetPosition, false);
+      return Object.freeze({
+        ...node,
+        targetPosition,
+      });
+    }),
+  );
+  const positions =
+    prior == null
+      ? null
+      : Object.freeze(
+          Object.fromEntries(
+            Object.entries(prior.positions).map(([id, position]) => [
+              id,
+              id === anchorId
+                ? Object.freeze({ x: 0, y: 0, z: EXECUTIVE_STAGE_2D_DEPTH })
+                : Object.freeze({
+                    x: position.x - dx,
+                    y: position.y - dy,
+                    z: EXECUTIVE_STAGE_2D_DEPTH,
+                  }),
+            ]),
+          ),
+        );
+  return Object.freeze({
+    ...presentation,
+    contextNodes,
+    scene: Object.freeze({
+      ...presentation.scene,
+      objects,
+      ...(prior != null && positions != null
+        ? {
+            stage2dReadability: Object.freeze({
+              ...prior,
+              positions,
+              ...(anchorId != null ? { anchorObjectId: anchorId } : {}),
+            }),
+            stage2dRecomposition: Object.freeze({
+              ...(sceneMeta.stage2dRecomposition ?? prior),
+              positions,
+              ...(anchorId != null ? { anchorObjectId: anchorId } : {}),
+            }),
+          }
+        : {}),
+    }),
+  });
+}
+
 /**
  * Apply STAGE-2D:4 readability (includes STAGE-2D:3 truth) when anchored.
  * Overview → passthrough with overview readability metadata.
+ * External placement preferences are sealed here and are not rewritten later.
  */
+function presentationHasInteractionFocus(
+  presentation: NexoraMVPStageInteractionPresentation,
+): boolean {
+  if (presentation.focusedSubjectId != null) return true;
+  if (presentation.scene.focusedObjectId != null) return true;
+  return presentation.scene.objects.some((object) => object.focused === true);
+}
+
+/** Recenters a layout-only Overview anchor. Focus and selection stay empty. */
+function placeExecutiveOverviewAnchor(
+  presentation: NexoraMVPStageInteractionPresentation,
+  overviewAnchorId: string,
+): NexoraMVPStageInteractionPresentation {
+  const anchor = presentation.scene.objects.find((object) => object.id === overviewAnchorId);
+  if (anchor == null) return presentation;
+  const dx = anchor.targetPosition[0];
+  const dy = anchor.targetPosition[1];
+  const shift = (
+    position: readonly [number, number, number],
+  ): readonly [number, number, number] =>
+    Object.freeze([
+      Math.abs(position[0] - dx) < 1e-9 ? 0 : position[0] - dx,
+      Math.abs(position[1] - dy) < 1e-9 ? 0 : position[1] - dy,
+      0,
+    ]);
+  return Object.freeze({
+    ...presentation,
+    focusedSubjectId: null,
+    scene: Object.freeze({
+      ...presentation.scene,
+      focusedObjectId: null,
+      objects: Object.freeze(
+        presentation.scene.objects.map((object) => {
+          const targetPosition = shift(object.targetPosition);
+          return Object.freeze({
+            ...object,
+            targetPosition,
+            overviewPosition: targetPosition,
+            focused: false,
+            selected: false,
+          });
+        }),
+      ),
+    }),
+  });
+}
+
 export function applyExecutiveStage2DTopologyReadabilityToStagePresentation(
   presentation: NexoraMVPStageInteractionPresentation,
+  options?: ExecutiveStageFinalPlacementOptions,
 ): NexoraMVPStageInteractionPresentation {
+  const overviewAnchorId = options?.overviewAnchorId ?? null;
+  const placed =
+    overviewAnchorId != null && !presentationHasInteractionFocus(presentation)
+      ? placeExecutiveOverviewAnchor(presentation, overviewAnchorId)
+      : presentation;
+  if (options?.sealExternalPlacement === true) {
+    return sealExecutiveStageExternalPlacement(placed);
+  }
+  presentation = placed;
   const readability =
     resolveExecutiveStage2DTopologyReadabilityFromPresentation(presentation);
 
@@ -519,13 +790,21 @@ export function applyExecutiveStage2DTopologyReadabilityToStagePresentation(
   const contextNodes = Object.freeze(
     presentation.contextNodes.map((node) => {
       if (node.role === "collapsed-thread") {
-        // STAGE-THREAD:FIX1 — Thread open/collapse is Stage chrome, not world occupancy.
-        return Object.freeze({
-          ...node,
-          interactive: true,
-          focused: false,
-          labelVisible: true,
-        });
+        // STAGE-THREAD:1-FIX — chrome clears final object bodies; objects stay put.
+        return (
+          clearCollapsedThreadGateway(
+            node,
+            objects,
+            presentation.scene.focusedObjectId,
+            readability.classifications,
+          ) ??
+          Object.freeze({
+            ...node,
+            interactive: true,
+            focused: false,
+            labelVisible: true,
+          })
+        );
       }
       if (!secondarySet.has(node.id)) {
         return Object.freeze({

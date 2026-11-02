@@ -29,6 +29,7 @@ import {
   resolveExecutiveTopologyGuidedStageComposition,
 } from "@/app/lib/spatial-presentation/executiveTopologyGuidedStageComposition";
 import { normalizeExecutiveStage2DPositionTuple } from "@/app/lib/spatial-presentation/executiveStage2DTopologyPlane";
+import { acceptStageManagerWorkspaceId } from "@/app/lib/workspace/managerWorkspaceIdentity";
 import {
   resolveExecutiveStageDisclosure,
   type ExecutiveStageSpatialRole,
@@ -109,6 +110,11 @@ export type NexoraMVPStageObject = {
   readonly kind: string;
   /** Management identity passthrough. Absent means `kind` is the identity. */
   readonly objectKind?: ManagerObjectKind;
+  readonly managerWorkspaceId?: string;
+  readonly authoritativePrimary?: boolean;
+  readonly presentationAuthorized?: boolean;
+  /** False when disclosure withholds the subject. Absent stays eligible. */
+  readonly disclosed?: boolean;
   readonly position: readonly [number, number, number];
   readonly status?: string;
   readonly attention?: NexoraMVPStageAttention;
@@ -317,6 +323,8 @@ export type NexoraMVPStageScenePresentation = {
   readonly compositionMode?: "spatial-3d" | "executive-2_5d";
   /** SP:4.3 topology kind when executive-network is active. */
   readonly topologyKind?: "executive-network" | "flow" | "hub" | "stage-2d-recomposition";
+  /** Layout-only Overview center. Null keeps Flow. Never an interaction focus. */
+  readonly overviewAnchorId?: string | null;
 };
 
 export type ResolveNexoraMVPStageSceneInput = {
@@ -327,6 +335,8 @@ export type ResolveNexoraMVPStageSceneInput = {
   readonly presentationState: NexoraMVPPresentationState;
   readonly environmentIntent: NexoraMVPSceneEnvironmentIntent;
   readonly overviewOccupancy?: "executive-workspace" | "current-catalog";
+  /** Registry workspace. Workflow mode names are not accepted as this id. */
+  readonly activeManagerWorkspaceId?: string | null;
 };
 
 function attentionScale(attention: NexoraMVPStageAttention): number {
@@ -379,15 +389,38 @@ function mapSpatialRoleToLegacyDisclosureState(
  * SP:4.1 — Topology positions the disclosed set (WHERE).
  * Focus choreography continues to supply roles + camera.
  */
+function stageSubjectAdmitted(
+  object: NexoraMVPStageObjectFixture | NexoraMVPStageObject,
+  activeManagerWorkspaceId: string | null,
+): boolean {
+  if (object.presentationAuthorized === false) return false;
+  if (object.disclosed === false) return false;
+  const owner = object.managerWorkspaceId;
+  if (activeManagerWorkspaceId == null || owner == null || owner === "") return true;
+  return owner === activeManagerWorkspaceId;
+}
+
 export function resolveNexoraMVPStageScenePresentation(
   input: ResolveNexoraMVPStageSceneInput,
 ): NexoraMVPStageScenePresentation {
+  const activeManagerWorkspaceId = acceptStageManagerWorkspaceId(
+    input.activeManagerWorkspaceId,
+  );
+  const stageObjects = input.objects.filter((object) =>
+    stageSubjectAdmitted(object, activeManagerWorkspaceId),
+  );
+  const admittedIds = new Set(stageObjects.map((object) => object.id));
+  const stageRelationships = input.relationships.filter(
+    (relationship) =>
+      admittedIds.has(relationship.sourceId) &&
+      admittedIds.has(relationship.targetId),
+  );
   const focusedId = input.focusedObjectId ?? input.selectedObjectId;
   const selectedId = input.selectedObjectId;
   const mode = focusedId == null ? "overview" : "focus";
 
   const productivityDisclosure = resolveExecutiveStageDisclosure({
-    subjects: input.objects.map((object) =>
+    subjects: stageObjects.map((object) =>
       Object.freeze({
         subjectId: object.id,
         label: object.label,
@@ -397,7 +430,7 @@ export function resolveNexoraMVPStageScenePresentation(
         status: object.status,
       }),
     ),
-    relationships: input.relationships.map((relationship) =>
+    relationships: stageRelationships.map((relationship) =>
       Object.freeze({
         id: relationship.id,
         sourceId: relationship.sourceId,
@@ -417,11 +450,11 @@ export function resolveNexoraMVPStageScenePresentation(
       .filter((entry) => entry.participatesInTopology)
       .map((entry) => entry.objectId)
       .filter((subjectId) =>
-        input.objects.some((object) => object.id === subjectId),
+        stageObjects.some((object) => object.id === subjectId),
       ),
   );
 
-  const topologyObjects = input.objects
+  const topologyObjects = stageObjects
     .filter((object) => disclosedBusinessIds.has(object.id))
     .map((object) =>
       Object.freeze({
@@ -432,7 +465,7 @@ export function resolveNexoraMVPStageScenePresentation(
       }),
     );
 
-  const topologyRelationships = input.relationships
+  const topologyRelationships = stageRelationships
     .filter(
       (relationship) =>
         disclosedBusinessIds.has(relationship.sourceId) &&
@@ -448,15 +481,27 @@ export function resolveNexoraMVPStageScenePresentation(
 
   /** Overview home layout — full catalog home positions (navigation restore). */
   const overviewTopology = resolveExecutiveTopologyGuidedStageComposition({
-    objects: input.objects.map((object) =>
+    objects: stageObjects.map((object) =>
       Object.freeze({
         objectId: object.id,
         label: object.label,
         attention: object.attention,
         status: object.status,
+        ...(object.objectKind != null ? { objectKind: object.objectKind } : {}),
+        ...(object.managerWorkspaceId != null
+          ? { managerWorkspaceId: object.managerWorkspaceId }
+          : {}),
+        ...(object.authoritativePrimary != null
+          ? { authoritativePrimary: object.authoritativePrimary }
+          : {}),
+        ...(object.presentationAuthorized != null
+          ? { presentationAuthorized: object.presentationAuthorized }
+          : {}),
+        ...(object.disclosed != null ? { disclosed: object.disclosed } : {}),
       }),
     ),
-    relationships: input.relationships.map((relationship) =>
+    activeManagerWorkspaceId,
+    relationships: stageRelationships.map((relationship) =>
       Object.freeze({
         id: relationship.id,
         sourceId: relationship.sourceId,
@@ -479,7 +524,7 @@ export function resolveNexoraMVPStageScenePresentation(
   const activeById = buildExecutiveTopologyStagePositionMap(activeTopology);
 
   const preferredBounds = buildExecutiveOccupiedBoundsFromPositions(
-    input.objects.map((object) => {
+    stageObjects.map((object) => {
       const overview = overviewById.get(object.id) ?? object.position;
       return Object.freeze({
         x: overview[0],
@@ -529,7 +574,7 @@ export function resolveNexoraMVPStageScenePresentation(
 
   const focusPlan = resolveExecutiveFocusChoreography({
     focusedObjectId: focusedId,
-    objects: input.objects.map((object) => {
+    objects: stageObjects.map((object) => {
       const overview = overviewById.get(object.id) ?? object.position;
       return Object.freeze({
         objectId: object.id,
@@ -541,7 +586,7 @@ export function resolveNexoraMVPStageScenePresentation(
         retainDiscoverability: object.attention === "critical",
       });
     }),
-    connections: input.relationships.map((relationship) =>
+    connections: stageRelationships.map((relationship) =>
       Object.freeze({
         id: relationship.id,
         sourceId: relationship.sourceId,
@@ -552,11 +597,18 @@ export function resolveNexoraMVPStageScenePresentation(
     cameraFov: densityFraming.cameraFov,
   });
 
-  const objects = input.objects.map((object) => {
+  const circularCenterId =
+    mode === "overview" ? overviewTopology.overviewAnchorId ?? null : null;
+  const objects = stageObjects.map((object) => {
     const selected = object.id === selectedId;
     const focused = object.id === focusedId;
     const productivityEntry = productivityDisclosure.byId.get(object.id);
-    const spatialRole = productivityEntry?.spatialRole ?? "hidden";
+    const onOverviewRing =
+      circularCenterId != null && overviewById.has(object.id);
+    let spatialRole = productivityEntry?.spatialRole ?? "hidden";
+    if (onOverviewRing) {
+      spatialRole = object.id === circularCenterId ? "center" : "related";
+    }
     const disclosureState = mapSpatialRoleToLegacyDisclosureState(spatialRole);
     const interactive = spatialRole !== "hidden";
     const labelVisible = spatialRole !== "hidden";
@@ -572,8 +624,11 @@ export function resolveNexoraMVPStageScenePresentation(
       overviewById.get(object.id) ?? object.position;
     const topologyTarget =
       activeById.get(object.id) ?? overviewPosition;
-    const targetPosition =
-      disclosureState !== "hidden" ? topologyTarget : overviewPosition;
+    const targetPosition = onOverviewRing
+      ? overviewPosition
+      : disclosureState !== "hidden"
+        ? topologyTarget
+        : overviewPosition;
 
     const baseScale = attentionScale(object.attention ?? "normal");
     // Provisional scale — SP:4.1C grammar replaces dramatic focus scale.
@@ -699,7 +754,10 @@ export function resolveNexoraMVPStageScenePresentation(
           ? object
           : Object.freeze({
               ...object,
-              targetPosition: grammarEntry.targetPosition,
+              targetPosition:
+                circularCenterId != null && overviewById.has(object.id)
+                  ? object.targetPosition
+                  : grammarEntry.targetPosition,
               scale: grammarEntry.scale,
               labelProminence: grammarEntry.label.prominence,
               visualGrammarRole: grammarEntry.visualRole,
@@ -720,7 +778,7 @@ export function resolveNexoraMVPStageScenePresentation(
     }),
   );
 
-    const connections = input.relationships.map((relationship) => {
+    const connections = stageRelationships.map((relationship) => {
     const sourceEntry = productivityDisclosure.byId.get(relationship.sourceId);
     const targetEntry = productivityDisclosure.byId.get(relationship.targetId);
     const bothVisible =
@@ -780,6 +838,7 @@ export function resolveNexoraMVPStageScenePresentation(
     objects: calibratedObjects,
     connections: Object.freeze(connections),
     camera: mode === "focus" ? focusCamera : overviewCamera,
+    overviewAnchorId: mode === "overview" ? overviewTopology.overviewAnchorId : null,
   });
 }
 

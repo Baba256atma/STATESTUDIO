@@ -28,6 +28,7 @@ import type {
   TopologyNode,
   TopologyType,
 } from "../scene/topology/topologyTypes.ts";
+import { isLegacyWorkflowWorkspaceIdentifier } from "../workspace/workspaceRegistryContract.ts";
 import {
   EXECUTIVE_FOCUS_ANCHOR_TARGET,
 } from "./executiveCameraFoundation.ts";
@@ -135,6 +136,16 @@ export type ExecutiveTopologyStageObjectInput = {
   readonly attention?: string;
   readonly status?: string;
   readonly stateMarker?: string;
+  /** Management kind. Company and Goal are layout eligibility signals. */
+  readonly objectKind?: string;
+  /** Manager workspace that owns this subject. Absent means ownership is unproven. */
+  readonly managerWorkspaceId?: string | null;
+  /** Explicit primary when more than one Company or Goal is eligible. */
+  readonly authoritativePrimary?: boolean;
+  /** Presentation authorization. False excludes the subject. */
+  readonly presentationAuthorized?: boolean;
+  /** Disclosure. False excludes the subject from the ring and the center. */
+  readonly disclosed?: boolean;
 };
 
 export type ExecutiveTopologyStageRelationshipInput = {
@@ -160,6 +171,8 @@ export type ResolveExecutiveTopologyGuidedStageCompositionInput = {
   readonly focusedObjectId?: string | null;
   readonly topologyType?: ExecutiveTopologyRequestedType;
   readonly bounds?: ExecutiveSpatialCompositionBounds;
+  /** Registry workspace id. Workflow names are not workspace ids. */
+  readonly activeManagerWorkspaceId?: string | null;
 };
 
 export type ExecutiveTopologyGuidedStageCompositionResult = {
@@ -170,6 +183,8 @@ export type ExecutiveTopologyGuidedStageCompositionResult = {
   readonly autoSelected: boolean;
   readonly selectionReason: string;
   readonly focusedObjectId: string | null;
+  /** Layout-only Overview center. Never an interaction focus. */
+  readonly overviewAnchorId: string | null;
   readonly hubAnchorObjectId: string | null;
   readonly flowOrder: readonly string[];
   readonly relatedObjectIds: readonly string[];
@@ -179,6 +194,16 @@ export type ExecutiveTopologyGuidedStageCompositionResult = {
   readonly canonicalConnections: readonly ExecutiveTopologyStageRelationshipInput[];
   readonly generatedAt: 0;
 };
+
+/** Symmetric volume for one Overview ring. The legacy Stage band clamps Y to 0.58. */
+const EXECUTIVE_OVERVIEW_RING_BOUNDS: ExecutiveSpatialCompositionBounds = Object.freeze({
+  minX: -2.6,
+  maxX: 2.6,
+  minY: -2.6,
+  maxY: 2.6,
+  minZ: -1.85,
+  maxZ: 1.4,
+});
 
 export const EXECUTIVE_TOPOLOGY_STAGE_LAYOUT = Object.freeze({
   /** Stage-fit hub radius (XY plane) — scaled from topology HUB_RADIUS. */
@@ -298,10 +323,116 @@ export function resolveExecutiveTopologyFlowOrder(input: {
   return Object.freeze([...ordered, ...leftover]);
 }
 
+function isOverviewCompanyKind(kind: string | undefined): boolean {
+  const value = (kind ?? "").toLowerCase().trim();
+  return (
+    value === "company" ||
+    value === "executive" ||
+    value === "executive-context" ||
+    value === "business-context" ||
+    value === "enterprise" ||
+    value === "pack"
+  );
+}
+
+function isOverviewGoalKind(kind: string | undefined): boolean {
+  return (kind ?? "").toLowerCase().trim().includes("goal");
+}
+
+function overviewSubjectEligible(
+  object: ExecutiveTopologyStageObjectInput,
+  workspaceId: string,
+): boolean {
+  if (object.managerWorkspaceId !== workspaceId) return false;
+  if (object.presentationAuthorized === false) return false;
+  if (object.disclosed === false) return false;
+  return true;
+}
+
+function pickAuthoritativeOverviewSubject(
+  subjects: readonly ExecutiveTopologyStageObjectInput[],
+): string | null {
+  if (subjects.length === 0) return null;
+  if (subjects.length === 1) return subjects[0]!.objectId;
+  const primaries = subjects.filter((subject) => subject.authoritativePrimary === true);
+  if (primaries.length === 1) return primaries[0]!.objectId;
+  return null;
+}
+
+/**
+ * The authorized Overview ring already owns XY.
+ * Later grammar and network passes must not replace those positions.
+ */
+export function executiveOverviewRingOwnsPlacement(input: {
+  readonly mode?: string | null;
+  readonly overviewAnchorId?: string | null;
+  readonly focusedObjectId?: string | null;
+  readonly focusedSubjectId?: string | null;
+}): boolean {
+  return (
+    input.mode === "overview" &&
+    input.overviewAnchorId != null &&
+    input.focusedObjectId == null &&
+    input.focusedSubjectId == null
+  );
+}
+
+/**
+ * Layout-only Overview center.
+ * Company wins over Goal. Ambiguous sets preserve Flow.
+ * Missing workspace ownership or a workflow id preserves Flow.
+ */
+export function resolveExecutiveOverviewAnchor(input: {
+  readonly objects: readonly ExecutiveTopologyStageObjectInput[];
+  readonly activeManagerWorkspaceId?: string | null;
+}): string | null {
+  const workspaceId = input.activeManagerWorkspaceId ?? null;
+  if (workspaceId == null || isLegacyWorkflowWorkspaceIdentifier(workspaceId)) {
+    return null;
+  }
+  const eligible = input.objects.filter((object) =>
+    overviewSubjectEligible(object, workspaceId),
+  );
+  const companies = eligible.filter((object) => isOverviewCompanyKind(object.objectKind));
+  if (companies.length > 0) {
+    return pickAuthoritativeOverviewSubject(companies);
+  }
+  const goals = eligible.filter((object) => isOverviewGoalKind(object.objectKind));
+  return pickAuthoritativeOverviewSubject(goals);
+}
+
+function overviewRingIds(input: {
+  readonly anchorId: string;
+  readonly objects: readonly ExecutiveTopologyStageObjectInput[];
+  readonly relationships: readonly ExecutiveTopologyStageRelationshipInput[];
+  readonly workspaceId: string;
+}): readonly string[] {
+  const allowed = new Set(
+    input.objects
+      .filter(
+        (object) =>
+          object.objectId !== input.anchorId &&
+          overviewSubjectEligible(object, input.workspaceId),
+      )
+      .map((object) => object.objectId),
+  );
+  const related = new Set<string>();
+  for (const relationship of input.relationships) {
+    if (relationship.sourceId === input.anchorId && allowed.has(relationship.targetId)) {
+      related.add(relationship.targetId);
+    }
+    if (relationship.targetId === input.anchorId && allowed.has(relationship.sourceId)) {
+      related.add(relationship.sourceId);
+    }
+  }
+  return Object.freeze([...related].sort(compareIds));
+}
+
 export function selectExecutiveTopologyType(input: {
   readonly focusedObjectId?: string | null;
   readonly objectIds: readonly string[];
   readonly requested?: ExecutiveTopologyRequestedType;
+  readonly overviewAnchorId?: string | null;
 }): Readonly<{
   readonly topology: ResolvedTopologyType;
   readonly autoSelected: boolean;
@@ -339,6 +470,18 @@ export function selectExecutiveTopologyType(input: {
       topology: "hub",
       autoSelected: true,
       selectionReason: "focus-anchor→hub",
+    });
+  }
+
+  const overviewAnchorId = input.overviewAnchorId ?? null;
+  if (
+    overviewAnchorId != null &&
+    input.objectIds.includes(overviewAnchorId)
+  ) {
+    return Object.freeze({
+      topology: "hub",
+      autoSelected: true,
+      selectionReason: "overview-anchor→hub",
     });
   }
 
@@ -578,6 +721,7 @@ export function resolveExecutiveTopologyGuidedStageComposition(
   input: ResolveExecutiveTopologyGuidedStageCompositionInput,
 ): ExecutiveTopologyGuidedStageCompositionResult {
   const bounds = input.bounds ?? EXECUTIVE_SPATIAL_COMPOSITION_BOUNDS;
+  let compositionBounds = bounds;
   const objectIds = Object.freeze(
     input.objects.map((object) => object.objectId),
   );
@@ -597,20 +741,38 @@ export function resolveExecutiveTopologyGuidedStageComposition(
       : null;
   const mode: ExecutiveTopologyStageMode =
     focusedObjectId == null ? "overview" : "focus";
+  const overviewAnchorId =
+    focusedObjectId == null
+      ? resolveExecutiveOverviewAnchor({
+          objects: input.objects,
+          activeManagerWorkspaceId: input.activeManagerWorkspaceId,
+        })
+      : null;
 
   const selection = selectExecutiveTopologyType({
     focusedObjectId,
     objectIds,
     requested: input.topologyType ?? "auto",
+    overviewAnchorId,
   });
 
+  const overviewRing =
+    overviewAnchorId != null && input.activeManagerWorkspaceId != null
+      ? overviewRingIds({
+          anchorId: overviewAnchorId,
+          objects: input.objects,
+          relationships: input.relationships,
+          workspaceId: input.activeManagerWorkspaceId,
+        })
+      : Object.freeze([]);
+
   const relatedObjectIds =
-    focusedObjectId == null
-      ? Object.freeze([])
-      : resolveExecutiveFocusRelatedObjectIds({
+    focusedObjectId != null
+      ? resolveExecutiveFocusRelatedObjectIds({
           focusedObjectId,
           connections: input.relationships,
-        });
+        })
+      : overviewRing;
   const relatedSet = new Set(relatedObjectIds);
 
   const canonicalConnections = Object.freeze(
@@ -641,6 +803,18 @@ export function resolveExecutiveTopologyGuidedStageComposition(
     const nodes = buildTopologyNodes(flowOrder, labelsById);
     const layout = generateFlowTopology(nodes);
     rawPositions = scaleFlowPositions(layout.nodes, bounds);
+  } else if (focusedObjectId == null && overviewAnchorId != null) {
+    hubAnchorObjectId = overviewAnchorId;
+    compositionBounds = EXECUTIVE_OVERVIEW_RING_BOUNDS;
+    flowOrder = Object.freeze([overviewAnchorId, ...overviewRing]);
+    const nodes = buildTopologyNodes(flowOrder, labelsById);
+    const layout = generateHubTopology(nodes);
+    rawPositions = scaleHubPositions(
+      layout.nodes,
+      relatedSet,
+      overviewAnchorId,
+      compositionBounds,
+    );
   } else {
     hubAnchorObjectId = focusedObjectId;
     const relatedSorted = [...relatedObjectIds].sort(compareIds);
@@ -688,17 +862,37 @@ export function resolveExecutiveTopologyGuidedStageComposition(
             z: base.z + depthBiasFor(role),
           }),
         ),
-        bounds,
+        compositionBounds,
       ),
     );
   }
 
-  const calibrated = calibrateExecutiveTopologyStagePositions({
-    positions: depthAdjusted,
-    orderedObjectIds: flowOrder,
-    hubAnchorObjectId,
-    bounds,
-  });
+  const calibrated =
+    overviewAnchorId != null
+      ? depthAdjusted
+      : calibrateExecutiveTopologyStagePositions({
+          positions: depthAdjusted,
+          orderedObjectIds: flowOrder,
+          hubAnchorObjectId,
+          bounds: compositionBounds,
+        });
+  if (overviewAnchorId != null) {
+    const anchor = calibrated.get(overviewAnchorId);
+    if (anchor != null && (anchor.x !== 0 || anchor.y !== 0)) {
+      for (const [objectId, position] of calibrated) {
+        calibrated.set(
+          objectId,
+          stabilizeVector(
+            normalizeExecutiveStage2DPosition({
+              x: position.x - anchor.x,
+              y: position.y - anchor.y,
+              z: EXECUTIVE_STAGE_2D_DEPTH,
+            }),
+          ),
+        );
+      }
+    }
+  }
 
   const positions = Object.freeze(
     flowOrder
@@ -732,6 +926,7 @@ export function resolveExecutiveTopologyGuidedStageComposition(
     autoSelected: selection.autoSelected,
     selectionReason: selection.selectionReason,
     focusedObjectId,
+    overviewAnchorId,
     hubAnchorObjectId,
     flowOrder,
     relatedObjectIds,

@@ -31,8 +31,12 @@ import {
   NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES,
 } from "../nex-mvp/nexoraMVPStageFixtures.ts";
 import {
+  EXECUTIVE_STAGE_FIXED_CAMERA,
+  EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG,
   EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
+  EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG,
   resolveExecutiveStageFixedCamera,
+  resolveExecutiveStageFixedCameraTuple,
 } from "./executiveStage2DFixedCamera.ts";
 import {
   EXECUTIVE_STAGE_2D_ANCHOR_AUTHORITY,
@@ -137,16 +141,18 @@ test("Invariant B — Anchor exact center", () => {
 });
 
 test("Invariant C — Camera regression", () => {
+  // STAGE-SPATIAL:2 pose is azimuth 8° and elevation 10° at distance 11,
+  // not an on-axis (0, 0, 11) camera. Constants are unchanged.
   const camera = resolveExecutiveStageFixedCamera();
-  assert.deepEqual(camera.position, {
-    x: 0,
-    y: 0,
-    z: EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE,
-  });
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_AZIMUTH_DEG, 8);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_ELEVATION_DEG, 10);
+  assert.equal(EXECUTIVE_STAGE_FIXED_CAMERA_DISTANCE, 11);
+  assert.deepEqual(camera.position, EXECUTIVE_STAGE_FIXED_CAMERA.position);
   assert.deepEqual(camera.target, { x: 0, y: 0, z: 0 });
   const presentation = pipeline("obj-budget");
-  assert.deepEqual(presentation.scene.camera.position, [0, 0, 11]);
-  assert.deepEqual(presentation.scene.camera.target, [0, 0, 0]);
+  const tuple = resolveExecutiveStageFixedCameraTuple();
+  assert.deepEqual(presentation.scene.camera.position, tuple.position);
+  assert.deepEqual(presentation.scene.camera.target, tuple.target);
 });
 
 test("Invariant D — True 2D regression z === 0", () => {

@@ -738,7 +738,9 @@ export function resolveExecutiveStage2DTopologyReadability(
     EXECUTIVE_STAGE_2D_READABILITY_LAYOUT.maxSecondaryVisible;
 
   // Preserve STAGE-2D:3 related truth — readability may only reorder layout.
-  const relatedObjectIds = [...base.relatedObjectIds.slice(0, maxRelated)];
+  const relatedObjectIds = [...base.relatedObjectIds.slice(0, maxRelated)].sort((a, b) =>
+    a.localeCompare(b),
+  );
   const relatedSet = new Set(relatedObjectIds);
   const densityBand = resolveExecutiveStage2DDensityBand(relatedObjectIds.length);
 
@@ -780,6 +782,26 @@ export function resolveExecutiveStage2DTopologyReadability(
     priority[objectId] = 80 - index;
   });
 
+  const workMembers = new Map<string, string[]>();
+  for (const objectId of secondaryObjectIds) {
+    const kind = filteredSecondary.find((entry) => entry.id === objectId)?.kind;
+    if (
+      kind === "problem" ||
+      kind === "scenario" ||
+      kind === "decision" ||
+      kind === "execution"
+    ) {
+      const members = workMembers.get(kind) ?? [];
+      if (!members.includes(objectId)) members.push(objectId);
+      workMembers.set(kind, members);
+    }
+  }
+  for (const members of workMembers.values()) {
+    members.sort((left, right) =>
+      `executive-work:${left}`.localeCompare(`executive-work:${right}`),
+    );
+  }
+
   secondaryObjectIds.forEach((objectId, index) => {
     const candidate = filteredSecondary.find((entry) => entry.id === objectId);
     const kind = candidate?.kind;
@@ -791,7 +813,12 @@ export function resolveExecutiveStage2DTopologyReadability(
     ) {
       // Smaller secondary footprint + high priority keeps all four visible.
       classifications[objectId] = "secondary";
-      const sector = resolveExecutiveThreadSectorPosition(kind);
+      const members = workMembers.get(kind) ?? [objectId];
+      const sector = resolveExecutiveThreadSectorPosition(
+        kind,
+        members.indexOf(objectId),
+        members.length,
+      );
       positions[objectId] = normalizeExecutiveStage2DPosition({
         x: sector.x,
         y: sector.y,

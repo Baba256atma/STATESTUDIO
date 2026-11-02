@@ -6,6 +6,7 @@
  * presentation while preserving workspace, presentation, and environment.
  */
 
+import { acceptStageManagerWorkspaceId } from "@/app/lib/workspace/managerWorkspaceIdentity";
 import type {
   NexoraMVPPresentationState,
   NexoraMVPSceneEnvironmentIntent,
@@ -1346,7 +1347,10 @@ function contextLayoutPosition(
   kindCount: number,
 ): readonly [number, number, number] {
   const base = KIND_BASE_ANGLE[kind];
-  const spread = (indexInKind - (kindCount - 1) / 2) * 0.42;
+  const count = Math.max(1, kindCount);
+  const index = Math.max(0, Math.min(indexInKind, count - 1));
+  // One visible subject stays on the kind angle. Extra subjects spread around it.
+  const spread = count === 1 ? 0 : (index - (count - 1) / 2) * 0.42;
   const angle = base + spread;
   const radius = 2.6;
   // STAGE-2D:2 — context nodes occupy the XY Stage plane.
@@ -2026,7 +2030,8 @@ function buildContextNodes(
             0,
           ] as const,
           scale: 0.38,
-          opacity: 0.18,
+          // STAGE-THREAD:1-FIX — discoverable capsule. Below 0.5 is hidden-or-background.
+          opacity: 0.92,
           selected: false,
           focused: false,
           attention: "elevated",
@@ -2103,7 +2108,25 @@ function buildContextNodes(
       (candidate) => candidate.id === entry.subjectId,
     );
     if (subject == null) continue;
-    const kindIndex = KIND_ORDER.indexOf(subject.kind);
+    if (nodes.some((node) => node.id === subject.id)) continue;
+    const sameKind = disclosure.entries.filter((candidate) => {
+      if (candidate.family !== "executive-work") return false;
+      if (
+        candidate.state !== "visible-primary" &&
+        candidate.state !== "visible-related"
+      ) {
+        return false;
+      }
+      const peer = catalog.contextSubjects.find(
+        (item) => item.id === candidate.subjectId,
+      );
+      return peer?.kind === subject.kind;
+    });
+    const orderedIds = [...new Set(sameKind.map((candidate) => candidate.subjectId))].sort(
+      (left, right) =>
+        `executive-work:${left}`.localeCompare(`executive-work:${right}`),
+    );
+    const slotIndex = Math.max(0, orderedIds.indexOf(subject.id));
     nodes.push(
       Object.freeze({
         id: subject.id,
@@ -2112,8 +2135,8 @@ function buildContextNodes(
         role: entry.state === "visible-primary" ? "focused" : "context",
         targetPosition: contextLayoutPosition(
           subject.kind,
-          Math.max(0, kindIndex),
-          KIND_ORDER.length,
+          slotIndex,
+          orderedIds.length,
         ),
         scale: entry.state === "visible-primary" ? 1.05 : 0.78,
         opacity: entry.state === "visible-primary" ? 1 : 0.92,
@@ -2241,6 +2264,11 @@ function buildContextConnections(
 export type DeriveNexoraMVPStageInteractionPresentationOptions = {
   readonly consultExecutiveChangeSessionStore?: boolean;
   readonly overviewOccupancy?: "executive-workspace" | "current-catalog";
+  /**
+   * Active Manager Workspace from the registry. Workflow modes are refused.
+   * Omitted or null keeps Circular Overview closed.
+   */
+  readonly activeManagerWorkspaceId?: string | null;
 };
 
 /**
@@ -2300,6 +2328,13 @@ export function deriveNexoraMVPStageInteractionPresentation(
     environmentIntent: state.environmentIntent,
     ...(options?.overviewOccupancy !== undefined
       ? { overviewOccupancy: options.overviewOccupancy }
+      : {}),
+    ...(options?.activeManagerWorkspaceId !== undefined
+      ? {
+          activeManagerWorkspaceId: acceptStageManagerWorkspaceId(
+            options.activeManagerWorkspaceId,
+          ),
+        }
       : {}),
   });
 
@@ -2791,9 +2826,25 @@ export function deriveNexoraMVPStageInteractionPresentation(
         })
       : Object.freeze([]);
 
+  const threadIdsByKind = new Map<string, string[]>();
+  for (const subject of projectedThreadSubjects) {
+    const members = threadIdsByKind.get(subject.kind) ?? [];
+    if (!members.includes(subject.id)) members.push(subject.id);
+    threadIdsByKind.set(subject.kind, members);
+  }
+  for (const members of threadIdsByKind.values()) {
+    members.sort((left, right) =>
+      `executive-work:${left}`.localeCompare(`executive-work:${right}`),
+    );
+  }
   const projectedThreadObjects: NexoraMVPStageObjectPresentation[] =
     projectedThreadSubjects.map((subject) => {
-      const sector = resolveExecutiveThreadSectorPosition(subject.kind);
+      const members = threadIdsByKind.get(subject.kind) ?? [subject.id];
+      const sector = resolveExecutiveThreadSectorPosition(
+        subject.kind,
+        Math.max(0, members.indexOf(subject.id)),
+        members.length,
+      );
       const selected = state.selectedSubject?.id === subject.id;
       const labels = formatExecutiveThreadSubjectLabel({
         label: subject.label,
@@ -2957,9 +3008,13 @@ export function deriveNexoraMVPStageInteractionPresentation(
               presentationLevel: state.presentationState,
             })
           : null;
+        const preserveOverviewRing =
+          state.mode === "overview" && scene.overviewAnchorId != null;
         return Object.freeze({
           ...object,
-          targetPosition: entry.targetPosition,
+          targetPosition: preserveOverviewRing
+            ? object.targetPosition
+            : entry.targetPosition,
           scale: entry.scale,
           labelProminence: entry.label.prominence,
           visualGrammarRole: entry.visualRole,
@@ -2977,15 +3032,17 @@ export function deriveNexoraMVPStageInteractionPresentation(
       const entry = grammar.byId.get(node.id);
       if (entry == null) return node;
       // Avoid "PROBLEM · PROBLEM · …" double-kind merge.
+      // STAGE-THREAD:1-FIX — gateway placement and opacity stay with the thread contract.
+      if (node.role === "collapsed-thread" && node.gatewayMode != null) {
+        return node;
+      }
       const label =
-        node.role === "collapsed-thread"
-          ? node.label
-          : entry.label.secondaryLine != null &&
-              !entry.label.primaryLine
-                .toLowerCase()
-                .includes((entry.label.secondaryLine ?? "").toLowerCase())
-            ? `${entry.label.primaryLine} · ${entry.label.secondaryLine}`
-            : entry.label.primaryLine;
+        entry.label.secondaryLine != null &&
+        !entry.label.primaryLine
+          .toLowerCase()
+          .includes((entry.label.secondaryLine ?? "").toLowerCase())
+          ? `${entry.label.primaryLine} · ${entry.label.secondaryLine}`
+          : entry.label.primaryLine;
       return Object.freeze({
         ...node,
         targetPosition: entry.targetPosition,

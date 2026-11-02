@@ -85,7 +85,8 @@ test("On Stage list body floats and does not stretch the process bar", () => {
   const bodyStyle = stageSource.slice(bodyAt, bodyAt + 700);
   assert.doesNotMatch(detailsStyle, /flexDirection:\s*"column"/);
   assert.match(bodyStyle, /position:\s*"absolute"/);
-  assert.match(bodyStyle, /right:\s*0/);
+  assert.match(bodyStyle, /top:\s*"calc\(100% \+ 4\.5rem\)"/);
+  assert.match(bodyStyle, /right:\s*"calc\(100% \+ 8\.75rem\)"/);
   assert.match(bodyStyle, /overflow:\s*"auto"/);
   assert.match(bodyStyle, /maxHeight:\s*"12rem"/);
   assert.match(

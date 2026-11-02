@@ -494,15 +494,16 @@ export function Nexora3DExecutiveStage({
     });
   }, [interaction.scene]);
 
-  /** STAGE-2D:2 flatten → STAGE-2D:3/4 recomposition → STAGE-2D:1 camera. Labels wait for final positions. */
+  /**
+   * STAGE-2D:2 flatten, then Theatre placement preferences.
+   * Readability is the last targetPosition writer and runs after isometric
+   * and management-level preferences.
+   */
   const directorComposition = useMemo(() => {
     const flattened =
       applyExecutiveStage2DTopologyPlaneToStagePresentation(interaction);
-    const recomposed =
-      applyExecutiveStage2DTopologyRecompositionToStagePresentation(flattened);
-    const fixed = applyExecutiveStageFixedCameraToStagePresentation(recomposed);
     return projectStageProdDirectorComposition({
-      presentation: fixed,
+      presentation: flattened,
       theatre: theatreComposition,
       spatial: dthExpSpatial,
     });
@@ -526,8 +527,24 @@ export function Nexora3DExecutiveStage({
     const leveled = applyManagementLevelSpatialToStagePresentation(placed, managementLevelSpatial, {
       theatreActive: theatreComposition != null,
     });
-    // STAGE-LABEL:1 runs once, after every pass that can move objects.
-    return applyExecutiveStageObjectLabelTerritoryToStagePresentation(leveled, {
+    const externalPlacement =
+      directorComposition.status === "applied" ||
+      ovs3Visual?.sceneStatus === "available" ||
+      (managementLevelSpatial != null &&
+        managementLevelSpatial.visibleLevelCount >= 2);
+    // Final targetPosition writer. Theatre, isometric, and management-level
+    // coordinates are preferences. Camera and captions follow this write.
+    const composed = applyExecutiveStage2DTopologyRecompositionToStagePresentation(
+      leveled,
+      {
+        ...(externalPlacement ? { sealExternalPlacement: true as const } : {}),
+        ...(leveled.scene.overviewAnchorId != null
+          ? { overviewAnchorId: leveled.scene.overviewAnchorId }
+          : {}),
+      },
+    );
+    const fixed = applyExecutiveStageFixedCameraToStagePresentation(composed);
+    return applyExecutiveStageObjectLabelTerritoryToStagePresentation(fixed, {
       presentationLevel:
         presentationViewModel.state === "report" ||
         presentationViewModel.state === "operation"
@@ -1110,8 +1127,10 @@ export function Nexora3DExecutiveStage({
           data-testid="nexora-stage-object-list-body"
           style={{
             position: "absolute",
-            top: "calc(100% + 4px)",
-            right: 0,
+            top: "calc(100% + 4.5rem)",
+            // The open selector is wider than this control and sits on the
+            // same right edge. Clear that full header control before dropping.
+            right: "calc(100% + 8.75rem)",
             zIndex: 6,
             flexDirection: "column",
             gap: "0.25rem",

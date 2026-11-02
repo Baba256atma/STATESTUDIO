@@ -7,6 +7,7 @@
  */
 
 import { resolveExecutiveFocusVisualGrammar } from "@/app/lib/spatial-presentation/executiveFocusVisualGrammar";
+import { executiveOverviewRingOwnsPlacement } from "@/app/lib/spatial-presentation/executiveTopologyGuidedStageComposition";
 import type { ExecutiveFocusPresentationDepth } from "@/app/lib/spatial-presentation/executiveFocusSceneDisclosure";
 
 import type { NexoraMVPStageObjectPresentation } from "./nexora3DExecutiveStage";
@@ -118,6 +119,12 @@ export function applyExecutiveFocusVisualGrammarToStagePresentation(
     subjects: grammarSubjects,
   });
 
+  const preserveOverviewRing = executiveOverviewRingOwnsPlacement({
+    mode: presentation.scene.mode,
+    overviewAnchorId: presentation.scene.overviewAnchorId,
+    focusedObjectId: presentation.scene.focusedObjectId,
+    focusedSubjectId: presentation.focusedSubjectId,
+  });
   const objects = Object.freeze(
     presentation.scene.objects.map((object) => {
       const entry = grammar.byId.get(object.id);
@@ -126,7 +133,9 @@ export function applyExecutiveFocusVisualGrammarToStagePresentation(
       }
       return Object.freeze({
         ...object,
-        targetPosition: entry.targetPosition,
+        targetPosition: preserveOverviewRing
+          ? object.targetPosition
+          : entry.targetPosition,
         scale: entry.scale,
         labelProminence: entry.label.prominence,
         visualGrammarRole: entry.visualRole,
