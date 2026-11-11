@@ -3,7 +3,7 @@
  * Commits governed demo CSV through the existing prepare+commit path.
  * Not a second Data Reality, chart engine, or conversation owner.
  */
-import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { BUSINESS_DEMO_WORKSPACE_ID, type WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
 import { isRealManagerWorkspaceId } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import {
   commitPreparedCsvRealDataImport,
@@ -141,12 +141,24 @@ export type CsvMvpDemoBootstrapReport = Readonly<{
   pendingSeeded: boolean;
   pendingAlreadyPresent: boolean;
   refused: boolean;
-  refusalReason: "manager_workspace" | null;
+  refusalReason: "manager_workspace" | "business_demo" | null;
 }>;
 
 export function ensureCsvMvpDemoBootstrap(input: {
   readonly workspaceId: WorkspaceId;
 }): CsvMvpDemoBootstrapReport {
+  if (input.workspaceId === BUSINESS_DEMO_WORKSPACE_ID) {
+    return Object.freeze({
+      identity: csvRealDataMvpDemoBootstrapIdentity,
+      workspaceId: input.workspaceId,
+      inventoryAlreadyPresent: false,
+      inventorySeeded: false,
+      pendingAlreadyPresent: false,
+      pendingSeeded: false,
+      refused: true,
+      refusalReason: "business_demo" as const,
+    });
+  }
   if (isRealManagerWorkspaceId(input.workspaceId)) {
     return Object.freeze({
       identity: csvRealDataMvpDemoBootstrapIdentity,

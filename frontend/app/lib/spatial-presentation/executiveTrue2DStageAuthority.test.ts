@@ -275,10 +275,10 @@ test("5–10. focus {0,0} maps to usable center for Delivery/Budget/Inventory/Re
   }
 });
 
-test("11. Overview remains network topology", () => {
+test("11. Overview without a disclosed layout edge keeps Flow", () => {
   const presentation = overviewPipeline();
   assert.equal(presentation.scene.mode, "overview");
-  assert.equal(presentation.scene.topologyKind, "executive-network");
+  assert.notEqual(presentation.scene.topologyKind, "executive-network");
   assert.equal(presentation.scene.focusedObjectId, null);
 });
 

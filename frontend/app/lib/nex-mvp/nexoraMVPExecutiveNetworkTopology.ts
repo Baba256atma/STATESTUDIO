@@ -2,8 +2,15 @@
  * SP:4.3 Stage bridge — apply executive network topology after SP:4.1C grammar
  * and before SP:4.2 presentation-plane mapping.
  *
- * Overview → executive-network (no flow).
- * Focus → explicit anchor owns exact presentation {0,0}.
+ * Selection at this boundary:
+ *   Company / Goal overview ring already owns XY → leave it.
+ *   No layout-eligible relationship among admitted objects → keep Flow XY.
+ *   At least one layout-eligible relationship → existing network placement.
+ *
+ * A layout edge is a canonical stage connection whose source and target are
+ * both visible business objects in this presentation. Context, thread, hidden,
+ * stale, and cross-catalog endpoints are not layout edges. Global fixture
+ * relationships are not consulted.
  *
  * Does not invent relationships. Does not own scale or SP:4.4 choreography.
  */
@@ -20,10 +27,10 @@ import {
   type ExecutiveNetworkNode,
   type ExecutiveNetworkTopology,
 } from "@/app/lib/spatial-presentation/executiveNetworkTopology";
-import {
-  NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES,
-} from "@/app/lib/nex-mvp/nexoraMVPStageFixtures";
 
+import type {
+  NexoraMVPStageConnectionPresentation,
+} from "./nexora3DExecutiveStage";
 import type { NexoraMVPStageInteractionPresentation } from "./nexoraMVPObjectInteraction";
 
 export type ApplyExecutiveNetworkTopologyOptions = {
@@ -42,30 +49,50 @@ function isVisibleBusinessObject(disclosureState: string | undefined): boolean {
   );
 }
 
-function collectCanonicalEdges(
-  presentation: NexoraMVPStageInteractionPresentation,
-  override?: readonly ExecutiveNetworkEdge[],
-): readonly ExecutiveNetworkEdge[] {
-  if (override != null) return override;
-  const fromScene = presentation.scene.connections
-    .filter((connection) => connection.visualRole !== "hidden")
-    .map((connection) =>
+/**
+ * Layout-eligible relationships for this presentation.
+ * Both endpoints must be visible admitted business objects.
+ * Hidden and context connections stay display-only.
+ * Endpoints outside the admitted set are stale or cross-workspace and are dropped.
+ */
+export function resolveExecutiveStageLayoutEdges(input: {
+  readonly connections: readonly {
+    readonly id: string;
+    readonly sourceId: string;
+    readonly targetId: string;
+    readonly visualRole?: NexoraMVPStageConnectionPresentation["visualRole"];
+  }[];
+  readonly eligibleObjectIds: ReadonlySet<string>;
+}): readonly ExecutiveNetworkEdge[] {
+  const accepted: ExecutiveNetworkEdge[] = [];
+  const seen = new Set<string>();
+  for (const connection of input.connections) {
+    if (connection.visualRole === "hidden" || connection.visualRole === "context") {
+      continue;
+    }
+    const sourceId = connection.sourceId.trim();
+    const targetId = connection.targetId.trim();
+    if (sourceId.length === 0 || targetId.length === 0 || sourceId === targetId) {
+      continue;
+    }
+    if (
+      !input.eligibleObjectIds.has(sourceId) ||
+      !input.eligibleObjectIds.has(targetId)
+    ) {
+      continue;
+    }
+    const key = `${sourceId}\u0000${targetId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    accepted.push(
       Object.freeze({
-        id: connection.id,
-        sourceId: connection.sourceId,
-        targetId: connection.targetId,
+        id: connection.id.trim().length > 0 ? connection.id : key,
+        sourceId,
+        targetId,
       }),
     );
-  if (fromScene.length > 0) return Object.freeze(fromScene);
-  return Object.freeze(
-    NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES.map((edge) =>
-      Object.freeze({
-        id: edge.id,
-        sourceId: edge.sourceId,
-        targetId: edge.targetId,
-      }),
-    ),
-  );
+  }
+  return Object.freeze(accepted);
 }
 
 /**
@@ -105,7 +132,17 @@ export function applyExecutiveNetworkTopologyToStagePresentation(
     }),
   );
 
-  const edges = collectCanonicalEdges(presentation, options?.edges);
+  const eligibleObjectIds = new Set(nodes.map((node) => node.objectId));
+  const edges = resolveExecutiveStageLayoutEdges({
+    connections:
+      options?.edges != null
+        ? options.edges
+        : presentation.scene.connections,
+    eligibleObjectIds,
+  });
+  if (edges.length === 0) {
+    return presentation;
+  }
 
   const anchorObjectId =
     options?.anchorObjectId !== undefined

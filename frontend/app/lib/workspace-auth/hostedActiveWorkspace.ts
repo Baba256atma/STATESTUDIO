@@ -4,7 +4,11 @@
  * The selected id is not ownership. The server authorizes it again.
  */
 
-import { readActiveDemoProfile, releaseDemoProfileForManagerWorkspace } from "@/app/lib/demo-profile/demoProfileStore.ts";
+import {
+  readActiveDemoProfile,
+  readStoredDemoProfile,
+  releaseDemoProfileForManagerWorkspace,
+} from "@/app/lib/demo-profile/demoProfileStore.ts";
 import { readLiveExecutiveDataWorkspaceId } from "@/app/lib/workspace/managerWorkspaceIdentity.ts";
 import type { Workspace } from "@/app/lib/workspace/workspaceRegistryContract.ts";
 import { adoptAuthorizedHostedWorkspace, getActiveWorkspaceId } from "@/app/lib/workspace/workspaceRegistryStore.ts";
@@ -26,6 +30,11 @@ export function readStoredHostedWorkspaceSelection(): string | null {
   if (typeof sessionStorage === "undefined") return selectedWorkspaceId;
   const stored = sessionStorage.getItem(HOSTED_ACTIVE_WORKSPACE_KEY);
   return stored && stored.length > 0 ? stored : null;
+}
+
+/** An explicit demo profile wins over a stale hosted company id during hydration. */
+export function hostedWorkspaceSelectionForHydration(storedHostedId: string | null): string | null {
+  return readStoredDemoProfile() ? null : storedHostedId;
 }
 
 /**

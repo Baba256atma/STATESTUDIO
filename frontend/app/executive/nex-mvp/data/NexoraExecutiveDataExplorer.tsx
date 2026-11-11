@@ -28,13 +28,26 @@ import {
   evaluateProactiveMonitoring,
 } from "../../../lib/data-reality/proactiveMonitoringFoundation.ts";
 import type { NexoraLiveCommittedObservation, NexoraLiveConnection } from "../../../lib/data-reality/liveDataConnectorFoundation.ts";
-import { disconnectNexoraLiveConnection, getLiveDataConnectionVersion, subscribeLiveDataConnections } from "../../../lib/data-reality/liveDataConnectionStore.ts";
+import { disconnectNexoraLiveConnection, getLiveDataConnectionVersion, removeWorkspaceLiveObservation, subscribeLiveDataConnections } from "../../../lib/data-reality/liveDataConnectionStore.ts";
 import { requestDemoLibraryFocus } from "../../../lib/demo-profile/demoLibrary.ts";
 import { readManagerLiveConnections, readManagerLiveObservations } from "../../../lib/workspace/legacyWorkspaceIdentityMigration.ts";
 import { removeHostedManagerSource } from "../../../lib/workspace-auth/hostedManagerDataClient.ts";
 import { readHostedManagerDataPhase, subscribeHostedManagerDataPhase } from "../../../lib/workspace-auth/hostedManagerDataPhase.ts";
 import { isCustomerHostedWorkspaceId } from "../../../lib/workspace-auth/hostedWorkspaceId.ts";
+import {
+  assignManagerDatasetReference,
+  listManagerDeckDatasetIds,
+  listManagerDecksReferencingDataset,
+  removeManagerDatasetReference,
+} from "../../../lib/deck/nexoraDeckDatasetReferenceAuthority.ts";
+import {
+  getDeckDatasetReferenceSnapshot,
+  subscribeDeckDatasetReferences,
+} from "../../../lib/deck/nexoraDeckDatasetReferenceRegistry.ts";
+import { managerDeckWorkspaceEligible } from "../../../lib/deck/nexoraDeckRegistryAuthority.ts";
+import { getDeckRegistrySnapshot, subscribeDeckRegistry } from "../../../lib/deck/nexoraDeckRegistry.ts";
 import { isRealManagerWorkspaceId } from "../../../lib/workspace/liveManagerDataWorkspaceGuard.ts";
+import { coordinateWorkspaceMutation } from "../../../lib/workspace/workspaceAuthorityFence.ts";
 import { getWorkspaceById } from "../../../lib/workspace/workspaceRegistryStore.ts";
 import {
   disableAutomaticMonitoring,
@@ -50,7 +63,7 @@ import {
   updateAutomaticMonitoringFrequency,
   type NexoraMonitoringFrequency,
 } from "../../../lib/data-reality/automaticMonitoringRuntime.ts";
-import { persistDurableMonitoringRuntimeBrowser } from "../../../lib/data-reality/durableMonitoringRuntime.ts";
+import { persistDurableMonitoringRuntimeBrowser, recoverDurableMonitoringRuntimeBrowser } from "../../../lib/data-reality/durableMonitoringRuntime.ts";
 import { getCsvDurabilityHealth, getCsvDurabilityHealthMessage, subscribeCsvDurabilityHealth } from "../../../lib/data-reality/csvRealDataImportDurability.ts";
 import { requestBackgroundMonitoringRefresh, syncBackgroundMonitoringSnapshot } from "../../../lib/data-reality/backgroundMonitoringClient.ts";
 import { requestNexoraLiveObservation } from "../../../lib/data-reality/liveDataObservationClient.ts";
@@ -349,7 +362,15 @@ function LiveSourceView({ connection, observations, activeSourceContextId, onAct
       });
       if (result.reason === "already-observing") setMessage("An automatic observation is already running. No duplicate refresh was started.");
       else if (!result.completed) setMessage("Refresh failed. Previous active truth remains intact.");
-      else setMessage("New observation saved for review. Active truth was not changed.");
+      else {
+        try {
+          await persistDurableMonitoringRuntimeBrowser(globalThis.localStorage, observedAt);
+          setMessage("New observation saved for review. Active truth was not changed.");
+        } catch {
+          await recoverDurableMonitoringRuntimeBrowser(globalThis.localStorage, new Date().toISOString());
+          setMessage("Refresh failed. Previous active truth remains intact.");
+        }
+      }
     } finally { setBusy(false); }
   };
   return <section data-testid="nexora-rdi4-live-source" style={{ display: "grid", gap: "0.58rem", padding: "0.62rem", border: `1px solid ${cockpit.borderStrong}`, borderRadius: cockpit.radius.md, background: cockpit.panelSoft }}>
@@ -378,7 +399,7 @@ function LiveSourceView({ connection, observations, activeSourceContextId, onAct
     <details data-testid="nexora-pm2-automatic-monitoring" data-monitoring-enabled={monitoringPolicy?.enabled === true} data-monitoring-status={monitoringRuntime?.status ?? "idle"} style={{ display: "grid", gap: "0.38rem", borderTop: `1px solid ${cockpit.border}`, paddingTop: "0.5rem" }}>
       <summary style={{ color: cockpit.muted, cursor: "pointer", fontSize: "0.58rem" }}>Monitoring</summary>
       <div style={{ display: "flex", justifyContent: "space-between", gap: "0.4rem", alignItems: "baseline" }}><span style={{ color: cockpit.lowMuted, fontSize: "0.54rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>Automatic Monitoring</span><strong style={{ color: monitoringPolicy?.enabled && !monitoringPolicy.paused ? cockpit.success : cockpit.muted, fontSize: "0.58rem", textTransform: "uppercase" }}>{monitoringPolicy?.enabled ? monitoringPolicy.paused ? "Paused" : "On" : "Off"}</strong></div>
-      {!monitoringPolicy?.enabled ? <><label style={{ color: cockpit.textSoft, fontSize: "0.58rem" }}>Frequency<select aria-label="Monitoring frequency" value={frequency} onChange={(event) => setFrequency(event.target.value as NexoraMonitoringFrequency)} style={{ display: "block", width: "100%", marginTop: "0.25rem", background: cockpit.panel, border: `1px solid ${cockpit.border}`, borderRadius: cockpit.radius.sm, color: cockpit.textSoft, fontFamily: "inherit", fontSize: "0.6rem", padding: "0.35rem" }}><option value="hourly">Hourly</option><option value="every-6-hours">Every 6 hours</option><option value="daily">Daily</option></select></label><button type="button" style={actionStyle(true)} onClick={() => enableAutomaticMonitoring({ workspaceId: connection.workspaceId, connectionId: connection.connectionId, targetId: `pm1:target:${connection.workspaceId}:live:${connection.connectionId}`, frequency, enabledAt: new Date().toISOString() })}>Enable Monitoring</button></> : <>
+      {!monitoringPolicy?.enabled ? <><label style={{ color: cockpit.textSoft, fontSize: "0.58rem" }}>Frequency<select aria-label="Monitoring frequency" value={frequency} onChange={(event) => setFrequency(event.target.value as NexoraMonitoringFrequency)} style={{ display: "block", width: "100%", marginTop: "0.25rem", background: cockpit.panel, border: `1px solid ${cockpit.border}`, borderRadius: cockpit.radius.sm, color: cockpit.textSoft, fontFamily: "inherit", fontSize: "0.6rem", padding: "0.35rem" }}><option value="hourly">Hourly</option><option value="every-6-hours">Every 6 hours</option><option value="daily">Daily</option></select></label><button type="button" style={actionStyle(true)} onClick={() => { void coordinateWorkspaceMutation({ workspaceId: connection.workspaceId }, () => { enableAutomaticMonitoring({ workspaceId: connection.workspaceId, connectionId: connection.connectionId, targetId: `pm1:target:${connection.workspaceId}:live:${connection.connectionId}`, frequency, enabledAt: new Date().toISOString() }); }); }}>Enable Monitoring</button></> : <>
         <span style={{ color: cockpit.textSoft, fontSize: "0.59rem" }}>{monitoringPolicy.frequency === "hourly" ? "Every hour" : monitoringPolicy.frequency === "every-6-hours" ? "Every 6 hours" : "Daily"} · Durable policy · {monitoringPolicy.executionOwner === "background" ? "Persistent server runner" : "Foreground/session runner"}</span>
         <span style={{ color: cockpit.muted, fontSize: "0.57rem" }}>{monitoringPolicy.executionOwner === "background" ? "Monitoring continues while the Executive UI is closed" : "Monitoring resumes when Nexora is open"}</span>
         <strong style={{ color: monitoringPolicy.executionOwner === "background" ? cockpit.accent : cockpit.muted, fontSize: "0.58rem" }}>{monitoringPolicy.executionOwner === "background" ? "Background Monitoring" : "Foreground Monitoring"}</strong>
@@ -391,7 +412,7 @@ function LiveSourceView({ connection, observations, activeSourceContextId, onAct
       </>}
     </details>
     {message ? <span style={{ color: connection.status === "degraded" ? cockpit.warning : cockpit.success, fontSize: "0.6rem", lineHeight: 1.4 }}>{message}</span> : null}
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}><button type="button" data-testid="nexora-rdi4-card-refresh" style={actionStyle(true)} disabled={busy || connection.status === "disconnected"} onClick={() => void refresh()}>{busy ? "Refreshing…" : "Refresh"}</button>{latest && !active ? <button type="button" style={actionStyle()} onClick={() => onActivate(latest)}>Use as Active Source</button> : null}{intelligence ? <><button type="button" style={actionStyle()} onClick={() => { const target = intelligence.affectedObjects.find((item) => item.stageObjectId)?.stageObjectId; if (target) onViewOnStage(target); }}>View on Stage</button><button type="button" data-testid="nexora-data-source-ask-nexora" style={actionStyle()} onClick={() => onAdvisorContext(createExecutiveSourceAdvisorContext(intelligence))}>Ask Nexora</button></> : null}<button type="button" style={actionStyle()} onClick={() => setManagement((value) => !value)}>More</button></div>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}><button type="button" data-testid="nexora-rdi4-card-refresh" style={actionStyle(true)} disabled={busy || connection.status === "disconnected"} onClick={() => void refresh()}>{busy ? "Refreshing…" : "Refresh"}</button>{latest ? <button type="button" data-testid="nexora-monitoring-remove-observation" style={actionStyle()} onClick={() => { void coordinateWorkspaceMutation({ workspaceId: connection.workspaceId }, async () => { removeWorkspaceLiveObservation({ workspaceId: connection.workspaceId, connectionId: connection.connectionId, observationId: latest.observationId, removedAt: new Date().toISOString() }); await persistDurableMonitoringRuntimeBrowser(globalThis.localStorage, new Date().toISOString()); }).catch(async () => { await recoverDurableMonitoringRuntimeBrowser(globalThis.localStorage, new Date().toISOString()); setMessage("The observation could not be removed; previous truth remains intact."); }); }}>Remove observation</button> : null}{latest && !active ? <button type="button" style={actionStyle()} onClick={() => onActivate(latest)}>Use as Active Source</button> : null}{intelligence ? <><button type="button" style={actionStyle()} onClick={() => { const target = intelligence.affectedObjects.find((item) => item.stageObjectId)?.stageObjectId; if (target) onViewOnStage(target); }}>View on Stage</button><button type="button" data-testid="nexora-data-source-ask-nexora" style={actionStyle()} onClick={() => onAdvisorContext(createExecutiveSourceAdvisorContext(intelligence))}>Ask Nexora</button></> : null}<button type="button" style={actionStyle()} onClick={() => setManagement((value) => !value)}>More</button></div>
     {management ? <section data-testid="nexora-rdi4-disconnect-safety" style={{ borderTop: `1px solid ${cockpit.border}`, paddingTop: "0.45rem" }}>{active ? <span style={{ color: cockpit.warning, fontSize: "0.61rem", lineHeight: 1.4 }}>This connection supplies active business data. Replace it before disconnecting. Historical observations will be retained.</span> : <button type="button" style={actionStyle(false, true)} onClick={() => { const result = disconnectNexoraLiveConnection({ workspaceId: connection.workspaceId, connectionId: connection.connectionId, activeSourceContextId, disconnectedAt: new Date().toISOString() }); setMessage(result.disconnected ? "Disconnected. Historical observations were retained." : "Disconnect was refused safely."); }}>Disconnect Source</button>}</section> : null}
   </section>;
 }
@@ -416,6 +437,12 @@ export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeL
   const hostedCustomer = isCustomerHostedWorkspaceId(workspaceId);
   const projectWorkspace = workspaceKind === "PROJECT" || getWorkspaceById(workspaceId)?.kind === "PROJECT";
   const managerDataWorkspace = isRealManagerWorkspaceId(workspaceId) || hostedCustomer;
+  const deckSnapshot = useSyncExternalStore(subscribeDeckRegistry, getDeckRegistrySnapshot, getDeckRegistrySnapshot);
+  const datasetReferenceSnapshot = useSyncExternalStore(subscribeDeckDatasetReferences, getDeckDatasetReferenceSnapshot, getDeckDatasetReferenceSnapshot);
+  const deckAssignmentReady = managerDataWorkspace && managerDeckWorkspaceEligible(workspaceId);
+  const activeDeckId = deckAssignmentReady ? deckSnapshot.workspaces[workspaceId]?.activeDeckId ?? null : null;
+  const activeDeckName = deckSnapshot.workspaces[workspaceId]?.decks.find((deck) => deck.deckId === activeDeckId)?.name ?? "";
+  const [assignmentFailure, setAssignmentFailure] = useState<string | null>(null);
   const imports = listCsvRealDataImports(workspaceId);
   const pendingCandidates = listCsvImportCandidates(workspaceId);
   const liveConnections = readManagerLiveConnections(workspaceId);
@@ -478,15 +505,34 @@ export function NexoraExecutiveDataExplorer({ workspaceId, activeImport, activeL
 
     <section aria-label="CSV files" style={{ display: "grid", gap: "0.18rem" }}>
       <p style={{ margin: 0, color: cockpit.lowMuted, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>CSV files</p>
+      {deckAssignmentReady && activeDeckId ? <p data-testid="deck-dataset-panel" data-active-deck-id={activeDeckId} style={{ margin: 0, color: cockpit.muted, fontSize: "0.62rem", lineHeight: 1.45 }}>Workspace datasets stay owned by this workspace. Active deck: {activeDeckName}. Assigning a dataset does not copy it.</p> : null}
+      {assignmentFailure ? <p role="alert" data-testid="deck-dataset-save-failure" style={{ margin: 0, color: cockpit.warning, fontSize: "0.62rem" }}>{assignmentFailure}</p> : null}
       {library.csvEmpty ? <div data-testid="nexora-data-rail-empty" data-hosted-data-phase={hostedCustomer ? hostedDataPhase : "local"} style={{ padding: "0.85rem 0.25rem", borderBottom: `1px solid ${cockpit.border}` }}>{hostedCustomer && hostedDataPhase === "loading" ? <p data-testid="hosted-data-loading" style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem" }}>Loading workspace data…</p> : hostedCustomer && hostedDataPhase === "error" ? <p data-testid="hosted-data-error" style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem" }}>Unable to load workspace data</p> : managerDataWorkspace ? <div data-testid="manager-workspace-ready"><p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem", lineHeight: 1.45 }}>{projectWorkspace ? "Your project workspace is ready." : "Your workspace is ready."}</p><p style={{ margin: "0.35rem 0 0", color: cockpit.muted, fontSize: "0.64rem", lineHeight: 1.5 }}>{projectWorkspace ? "Add project data to begin." : "Add your business data to begin."}</p></div> : <><p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.72rem" }}>No CSV sources yet.</p><p style={{ margin: "0.45rem 0 0", color: cockpit.muted, fontSize: "0.64rem", lineHeight: 1.5 }}>Add a CSV to let Nexora work with your business data.</p></>}{managerDataWorkspace && hostedDataPhase !== "loading" && hostedDataPhase !== "error" && library.connectedCount === 0 ? <div data-testid="try-a-demo" style={{ marginTop: "0.7rem" }}><p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.68rem", lineHeight: 1.45 }}>Want to see how Nexora works?</p><button type="button" data-testid="try-a-demo-action" aria-label="Try a Demo. Opens example situations without changing this workspace." onClick={() => requestDemoLibraryFocus()} style={{ marginTop: "0.4rem", font: "inherit", fontSize: "0.68rem", color: cockpit.text, background: "transparent", border: `1px solid ${cockpit.border}`, borderRadius: "0.3rem", padding: "0.28rem 0.5rem", cursor: "pointer" }}>Try a Demo</button><p style={{ margin: "0.35rem 0 0", color: cockpit.lowMuted, fontSize: "0.6rem", lineHeight: 1.4 }}>Your workspace stays unchanged.</p></div> : null}</div> : null}
       {library.csvRows.map((row) => {
         const committed = imports.find((entry) => entry.sourceContextId === row.id) ?? null;
         const selectedCard = selectedSourceId === row.id;
-        return <button key={row.id} type="button" data-testid={committed ? `nexora-rdi3-source-${committed.importId}` : "nexora-csv-pending-row"} data-source-filename={row.label} data-source-active={row.active} data-source-selected={selectedCard} data-source-status={row.statusLabel} data-source-kind="csv" data-source-lifecycle={row.lifecycle} data-data-object-id={committed ? projectCsvImportAsDecisionTheatreDataObject(committed).id : "pending"} onClick={() => selectRow(row.id)} style={{ border: "none", borderLeft: `2px solid ${selectedCard ? cockpit.accent : "transparent"}`, borderBottom: `1px solid ${cockpit.border}`, background: selectedCard ? "rgba(56,189,248,0.06)" : "transparent", color: cockpit.text, cursor: "pointer", fontFamily: "inherit", padding: "0.62rem 0.55rem", textAlign: "left", minWidth: 0 }}>
-          <span style={{ display: "flex", justifyContent: "space-between", gap: "0.4rem", alignItems: "baseline" }}><strong style={{ fontSize: "0.7rem", fontWeight: 560, overflowWrap: "anywhere" }}>{row.label}</strong>{row.active ? <span style={{ color: cockpit.accent, fontSize: "0.52rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>Active</span> : null}</span>
-          <span style={{ display: "block", marginTop: "0.22rem", color: row.attention ? cockpit.warning : cockpit.success, fontSize: "0.59rem" }}>{row.typeLabel} · {row.statusLabel}</span>
-          {row.lifecycle === "pending" ? <span style={{ display: "block", marginTop: "0.16rem", color: cockpit.lowMuted, fontSize: "0.55rem" }}>Needs review</span> : row.relatedObjectLabels.length > 0 ? <span style={{ display: "block", marginTop: "0.16rem", color: cockpit.lowMuted, fontSize: "0.55rem" }}>{row.relatedObjectLabels.join(" · ")}</span> : null}
-        </button>;
+        const assigned = committed != null && activeDeckId != null && listManagerDeckDatasetIds(workspaceId, activeDeckId).includes(committed.sourceContextId);
+        const referencedDeckNames = committed == null ? [] : listManagerDecksReferencingDataset(workspaceId, committed.sourceContextId).map((deckId) => deckSnapshot.workspaces[workspaceId]?.decks.find((deck) => deck.deckId === deckId)?.name ?? deckId);
+        void datasetReferenceSnapshot;
+        return <div key={row.id}>
+          <button type="button" data-testid={committed ? `nexora-rdi3-source-${committed.importId}` : "nexora-csv-pending-row"} data-dataset-id={committed?.sourceContextId ?? ""} data-deck-assigned={assigned ? "true" : "false"} data-source-filename={row.label} data-source-active={row.active} data-source-selected={selectedCard} data-source-status={row.statusLabel} data-source-kind="csv" data-source-lifecycle={row.lifecycle} data-data-object-id={committed ? projectCsvImportAsDecisionTheatreDataObject(committed).id : "pending"} onClick={() => selectRow(row.id)} style={{ width: "100%", border: "none", borderLeft: `2px solid ${selectedCard ? cockpit.accent : "transparent"}`, borderBottom: `1px solid ${cockpit.border}`, background: selectedCard ? "rgba(56,189,248,0.06)" : "transparent", color: cockpit.text, cursor: "pointer", fontFamily: "inherit", padding: "0.62rem 0.55rem", textAlign: "left", minWidth: 0 }}>
+            <span style={{ display: "flex", justifyContent: "space-between", gap: "0.4rem", alignItems: "baseline" }}><strong style={{ fontSize: "0.7rem", fontWeight: 560, overflowWrap: "anywhere" }}>{row.label}</strong>{row.active ? <span style={{ color: cockpit.accent, fontSize: "0.52rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>Active</span> : null}</span>
+            <span style={{ display: "block", marginTop: "0.22rem", color: row.attention ? cockpit.warning : cockpit.success, fontSize: "0.59rem" }}>{row.typeLabel} · {row.statusLabel}</span>
+            {row.lifecycle === "pending" ? <span style={{ display: "block", marginTop: "0.16rem", color: cockpit.lowMuted, fontSize: "0.55rem" }}>Needs review</span> : row.relatedObjectLabels.length > 0 ? <span style={{ display: "block", marginTop: "0.16rem", color: cockpit.lowMuted, fontSize: "0.55rem" }}>{row.relatedObjectLabels.join(" · ")}</span> : null}
+          </button>
+          {deckAssignmentReady && committed && activeDeckId ? <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center", padding: "0.2rem 0.55rem 0.45rem" }}>
+            <button type="button" data-testid={assigned ? `deck-dataset-remove-${committed.sourceContextId}` : `deck-dataset-assign-${committed.sourceContextId}`} onClick={() => {
+              void coordinateWorkspaceMutation({ workspaceId }, () => {
+                const result = assigned
+                  ? removeManagerDatasetReference({ workspaceId, deckId: activeDeckId, datasetId: committed.sourceContextId })
+                  : assignManagerDatasetReference({ workspaceId, deckId: activeDeckId, datasetId: committed.sourceContextId });
+                setAssignmentFailure(result.ok ? null : "That dataset reference was not saved on this device.");
+              }).catch(() => setAssignmentFailure("That dataset reference was not saved on this device."));
+            }} style={{ font: "inherit", fontSize: "0.62rem", color: cockpit.text, background: "transparent", border: `1px solid ${cockpit.border}`, borderRadius: "0.25rem", padding: "0.18rem 0.4rem", cursor: "pointer" }}>{assigned ? "Remove from deck" : "Assign to deck"}</button>
+            <button type="button" data-testid={`dataset-replace-import-${committed.sourceContextId}`} onClick={() => { setUpdatingSource(committed); setCsvIntake("update"); setAdding(true); setAddKind("csv"); }} style={{ font: "inherit", fontSize: "0.62rem", color: cockpit.text, background: "transparent", border: `1px solid ${cockpit.border}`, borderRadius: "0.25rem", padding: "0.18rem 0.4rem", cursor: "pointer" }}>Replace current import</button>
+            <span data-testid={`deck-dataset-used-by-${committed.sourceContextId}`} style={{ color: cockpit.lowMuted, fontSize: "0.58rem" }}>{referencedDeckNames.length > 0 ? `Referenced by ${referencedDeckNames.join(", ")}` : "Not assigned"}</span>
+          </div> : null}
+        </div>;
       })}
     </section>
 

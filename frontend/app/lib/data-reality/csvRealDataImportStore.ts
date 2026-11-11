@@ -1,7 +1,16 @@
 /** Workspace-scoped atomic commit store for prepared RDI:2 imports. */
 
+import { dropDatasetReferences } from "../deck/nexoraDeckDatasetReferenceRegistry.ts";
+import {
+  archiveRelationshipsForRemovedObject,
+  canonicalDataObjectId,
+} from "../scene-org/canonicalRelationshipGraph.ts";
+import { detachCanonicalDatasetSource } from "../scene-org/canonicalObjectRegistry.ts";
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { evaluateWorkspaceAuthority, requireWorkspaceMutationCoordination } from "../workspace/workspaceAuthorityFence.ts";
 import { refuseCrossWorkspaceCsvTarget } from "../workspace/liveManagerDataWorkspaceGuard.ts";
+import { recoverWorkspaceRegistryFromStorage } from "../workspace/workspaceRegistryStore.ts";
+import { workspaceMutationsBlocked } from "../workspace/workspaceDeletionGuard.ts";
 import type {
   CsvImportFlowState,
   CsvMappingReview,
@@ -31,7 +40,10 @@ export type CsvImportCommitResult = Readonly<{
     | "workspace_mismatch"
     | "refused_workflow_key"
     | "wrong_workspace"
-    | "source_exists";
+    | "source_exists"
+    | "deletion-in-progress"
+    | "coordination-required"
+    | "coordination-unavailable";
   previous: CsvCommittedImport | null;
   current: CsvCommittedImport | null;
 }>;
@@ -310,6 +322,30 @@ export function commitPreparedCsvRealDataImport(input: Readonly<{
   mode: CsvReimportMode;
   committedAt: string;
 }>): CsvImportCommitResult {
+  if (
+    input.prepared.workspaceId !== input.expectedWorkspaceId ||
+    (input.prepared.handoff != null && input.prepared.handoff.workspaceId !== input.expectedWorkspaceId)
+  ) {
+    const existing = getCsvRealDataImport(input.expectedWorkspaceId, input.prepared.sourceContextId);
+    return Object.freeze({ committed: false, reason: "workspace_mismatch", previous: existing, current: existing });
+  }
+  const coordination = requireWorkspaceMutationCoordination();
+  if (coordination) {
+    const existing = getCsvRealDataImport(input.expectedWorkspaceId, input.prepared.sourceContextId);
+    return Object.freeze({ committed: false, reason: coordination, previous: existing, current: existing });
+  }
+  recoverWorkspaceRegistryFromStorage();
+  const authority = evaluateWorkspaceAuthority(input.expectedWorkspaceId);
+  if (!authority.ok || workspaceMutationsBlocked(input.expectedWorkspaceId)) {
+    const existing = getCsvRealDataImport(input.expectedWorkspaceId, input.prepared.sourceContextId);
+    const deleting = workspaceMutationsBlocked(input.expectedWorkspaceId) || authority.ok === false && authority.reason === "deletion-in-progress";
+    return Object.freeze({
+      committed: false,
+      reason: deleting ? "deletion-in-progress" : "wrong_workspace",
+      previous: existing,
+      current: existing,
+    });
+  }
   const refusal = refuseCrossWorkspaceCsvTarget(input.expectedWorkspaceId);
   if (refusal) {
     const existing = getCsvRealDataImport(input.expectedWorkspaceId, input.prepared.sourceContextId);
@@ -326,9 +362,6 @@ export function commitPreparedCsvRealDataImport(input: Readonly<{
   }
   if (!input.prepared.ready || !input.prepared.handoff || !input.prepared.dataReality || !input.prepared.runtime || !input.prepared.advisor) {
     return Object.freeze({ committed: false, reason: "not_ready", previous: existing, current: existing });
-  }
-  if (input.prepared.workspaceId !== input.expectedWorkspaceId || input.prepared.handoff.workspaceId !== input.expectedWorkspaceId) {
-    return Object.freeze({ committed: false, reason: "workspace_mismatch", previous: existing, current: existing });
   }
   if (existing && input.mode === "new") {
     return Object.freeze({ committed: false, reason: "source_exists", previous: existing, current: existing });
@@ -437,6 +470,15 @@ export function removeCsvRealDataImport(input: Readonly<{
     sourceContextId: input.sourceContextId,
     importId: existing.importId,
   }]);
+  dropDatasetReferences(input.workspaceId, input.sourceContextId);
+  archiveRelationshipsForRemovedObject(
+    input.workspaceId,
+    canonicalDataObjectId(input.workspaceId, input.sourceContextId),
+  );
+  detachCanonicalDatasetSource({
+    workspaceId: input.workspaceId,
+    datasetId: input.sourceContextId,
+  });
   notify("remove");
   return Object.freeze({
     removed: true,
@@ -485,12 +527,28 @@ export function removeWorkspaceCsvData(workspaceId: WorkspaceId): Readonly<{
     const discarded = discardCsvImportCandidate(workspaceId, candidate.candidateId);
     if (discarded) discardedCandidateIds.push(candidate.candidateId);
   }
+  forgetWorkspaceCsvRemovalHistory(workspaceId);
   return Object.freeze({
     removed: true,
     reason: "removed",
     removedSourceIds: Object.freeze(removedSourceIds),
     discardedCandidateIds: Object.freeze(discardedCandidateIds),
   });
+}
+
+/** Drops non-current removal history for one Workspace. Committed imports of other Workspaces stay. */
+export function listCsvRemovalHistoryWorkspaceIds(): readonly WorkspaceId[] {
+  return Object.freeze(Object.keys(removedByWorkspace));
+}
+
+export function forgetWorkspaceCsvRemovalHistory(workspaceId: WorkspaceId): boolean {
+  if (!removedByWorkspace[workspaceId]) return false;
+  const next = { ...removedByWorkspace };
+  delete next[workspaceId];
+  removedByWorkspace = Object.freeze(next);
+  withoutWorkspaceKpis(workspaceId);
+  notify("remove");
+  return true;
 }
 
 export function getCsvRealDataImportCommitInvocationCount(): number {

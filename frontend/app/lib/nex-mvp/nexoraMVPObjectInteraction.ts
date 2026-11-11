@@ -1769,6 +1769,19 @@ export function jumpNexoraMVPObjectInteractionNavigationTrail(
  * presentation state, and environment intent.
  * STAGE-2D:5/6 — Overview is a reset boundary; navigation trail clears in-scope.
  */
+/**
+ * A subject survives a workspace or demo-profile change only when its
+ * canonical id is still in the destination catalog. A null subject is
+ * already overview and does not need a reset.
+ */
+export function executiveSubjectRemainsInCatalog(
+  subjectId: string | null,
+  catalogObjectIds: readonly string[],
+): boolean {
+  if (subjectId == null) return true;
+  return catalogObjectIds.includes(subjectId);
+}
+
 export function resetNexoraMVPObjectInteractionOverview(
   state: NexoraMVPObjectInteractionState,
 ): NexoraMVPObjectInteractionState {

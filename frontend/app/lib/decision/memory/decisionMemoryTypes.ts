@@ -9,6 +9,8 @@ export type DecisionMemoryEntry = {
   id: string;
   created_at: number;
   workspace_id?: string | null;
+  /** Present only for a record written inside an active demo profile. */
+  demo_profile_id?: "manufacturing" | "project" | null;
   project_id?: string | null;
   title: string;
   prompt?: string | null;

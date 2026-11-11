@@ -21,6 +21,8 @@ import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision
 import type { NexoraDecisionTheatreComparisonLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
 import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
 import { Nexora3DExecutiveStage, type NexoraStageMenuSlotElements } from "./stage/Nexora3DExecutiveStage";
+import type { CanonicalRelationshipInspection } from "./stage/NexoraStageDataObjectInspection";
+import type { DecisionImpactAnalysis } from "@/app/lib/scene-org/decisionImpactPreview";
 import type { NexoraDecisionTheatreDecisionCommitment } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionCommitment.ts";
 import type { NexoraDecisionTheatreFoundation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts";
 import type { NexoraVisualView } from "@/app/lib/director/nexoraVisualIntelligence.ts";
@@ -95,6 +97,17 @@ type Props = {
   readonly onShowDecisionHistory?: () => void;
   readonly dataObjectStage: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject: (dataObjectId: string) => void;
+  readonly onRepositionDataObject?: (
+    dataObjectId: string,
+    position: { x: number; y: number; z: 0 },
+  ) => boolean;
+  readonly spatialEpoch?: string;
+  readonly solarLayout?: import("@/app/lib/scene-org/organizationalSolarView").OrganizationalSolarLayout | null;
+  readonly decisionSolarLayout?: import("@/app/lib/scene-org/decisionSolarProjection").DecisionSolarLayout | null;
+  readonly relationshipInspection?: CanonicalRelationshipInspection | null;
+  readonly impactAnalysis?: DecisionImpactAnalysis | null;
+  readonly onAnalyzeImpact?: (decisionId: string) => void;
+  readonly onIncreaseImpactDepth?: () => void;
   readonly onRemoveDataObjectFromStage: (dataObjectId: string) => void;
   readonly onOpenDataRail: () => void;
   readonly onAskDataObject: (question: string) => void;
@@ -145,6 +158,14 @@ export function NexoraStageMount({
   learningReassessment = null,
   dataObjectStage,
   onSelectDataObject,
+  onRepositionDataObject,
+  spatialEpoch,
+  solarLayout = null,
+  decisionSolarLayout = null,
+  relationshipInspection = null,
+  impactAnalysis = null,
+  onAnalyzeImpact,
+  onIncreaseImpactDepth,
   onRemoveDataObjectFromStage,
   onOpenDataRail,
   onAskDataObject,
@@ -358,6 +379,10 @@ export function NexoraStageMount({
         onDismissVisual={onDismissVisual}
         dataObjectStage={dataObjectStage}
         onSelectDataObject={onSelectDataObject}
+        onRepositionDataObject={onRepositionDataObject}
+        spatialEpoch={spatialEpoch}
+        solarLayout={solarLayout}
+        decisionSolarLayout={decisionSolarLayout}
         backGuidedAttentionCue={backGuidedAttentionCue}
         menuSlots={menuSlots}
       />
@@ -367,6 +392,11 @@ export function NexoraStageMount({
           onRemoveFromStage={onRemoveDataObjectFromStage}
           onOpenDataRail={onOpenDataRail}
           onAskNexora={onAskDataObject}
+          relationshipInspection={relationshipInspection}
+          impactAnalysis={impactAnalysis}
+          onAnalyzeImpact={onAnalyzeImpact}
+          onIncreaseImpactDepth={onIncreaseImpactDepth}
+          onInspectImpactObject={onSelectDataObject}
         />
       ) : null}
     </div>

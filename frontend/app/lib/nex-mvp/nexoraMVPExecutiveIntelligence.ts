@@ -29,6 +29,7 @@ import {
   NEXORA_MVP_CONTEXT_SUBJECT_FIXTURES,
   type NexoraMVPContextSubjectFixture,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteractionFixtures";
+import { BUSINESS_DEMO_WORKSPACE_ID } from "@/app/lib/workspace/workspaceRegistryContract";
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
@@ -243,12 +244,49 @@ export function buildNexoraMVPIntelligenceContextKey(input: {
   ].join("|");
 }
 
-function overviewAttentionItems(): NexoraMVPExecutiveIntelligenceContext["overviewAttention"] {
+function hasActionableCatalogSignal(entry: {
+  readonly attention?: NexoraMVPStageObjectFixture["attention"];
+  readonly status?: NexoraMVPStageObjectFixture["status"];
+}): boolean {
+  const attention = attentionOf(entry.attention) ?? "normal";
+  const status = entry.status ?? "stable";
+  return attention !== "normal" || status !== "stable";
+}
+
+/** Presence in the Business Demo catalog is not an attention ranking. */
+function isQuietBusinessDemoCatalog(
+  catalogObjects:
+    | readonly {
+        readonly id: string;
+        readonly attention?: NexoraMVPStageObjectFixture["attention"];
+        readonly status?: NexoraMVPStageObjectFixture["status"];
+      }[]
+    | undefined,
+): boolean {
+  if (catalogObjects == null || catalogObjects.length === 0) return false;
+  const prefix = `business-demo:${BUSINESS_DEMO_WORKSPACE_ID}:`;
+  return (
+    catalogObjects.every((entry) => entry.id.startsWith(prefix)) &&
+    !catalogObjects.some((entry) => hasActionableCatalogSignal(entry))
+  );
+}
+
+function overviewAttentionItems(
+  catalogObjects?: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly attention?: NexoraMVPStageObjectFixture["attention"];
+    readonly status?: NexoraMVPStageObjectFixture["status"];
+  }[],
+): NexoraMVPExecutiveIntelligenceContext["overviewAttention"] {
+  const source = catalogObjects ?? NEXORA_MVP_STAGE_OBJECT_FIXTURES;
+  if (isQuietBusinessDemoCatalog(catalogObjects)) return Object.freeze([]);
   return Object.freeze(
-    [...NEXORA_MVP_STAGE_OBJECT_FIXTURES]
+    [...source]
       .sort(
         (a, b) =>
-          ATTENTION_RANK[b.attention] - ATTENTION_RANK[a.attention] ||
+          ATTENTION_RANK[attentionOf(b.attention) ?? "normal"] -
+            ATTENTION_RANK[attentionOf(a.attention) ?? "normal"] ||
           a.id.localeCompare(b.id),
       )
       .slice(0, 3)
@@ -256,8 +294,8 @@ function overviewAttentionItems(): NexoraMVPExecutiveIntelligenceContext["overvi
         Object.freeze({
           id: entry.id,
           label: entry.label,
-          attention: entry.attention,
-          status: entry.status,
+          attention: attentionOf(entry.attention) ?? "normal",
+          status: entry.status === "unresolved" ? "stable" : entry.status ?? "stable",
         }),
       ),
   );
@@ -272,6 +310,13 @@ export function deriveNexoraMVPExecutiveIntelligenceContext(input: {
   readonly focusedSubject: NexoraMVPInteractionSubject | null;
   readonly selectedSubject: NexoraMVPInteractionSubject | null;
   readonly breadcrumb: readonly NexoraMVPInteractionSubject[];
+  /** When set, including an empty list, overview attention uses only these objects. */
+  readonly catalogObjects?: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly attention?: NexoraMVPStageObjectFixture["attention"];
+    readonly status?: NexoraMVPStageObjectFixture["status"];
+  }[];
 }): NexoraMVPExecutiveIntelligenceContext {
   // UX:3 — Advisor current subject is explicit Stage focus only.
   // Do not treat selection leftovers or breadcrumb trail as the current subject.
@@ -330,7 +375,7 @@ export function deriveNexoraMVPExecutiveIntelligenceContext(input: {
     availableActions: input.presentationViewModel.availableActions,
     summary: input.presentationViewModel.summary,
     capability: input.presentationViewModel.capability,
-    overviewAttention: overviewAttentionItems(),
+    overviewAttention: overviewAttentionItems(input.catalogObjects),
   });
 }
 

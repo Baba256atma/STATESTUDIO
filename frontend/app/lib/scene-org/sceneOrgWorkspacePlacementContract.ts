@@ -3,7 +3,25 @@ import type {
   SceneOrgRegionId,
 } from "./sceneOrgRegionContract";
 import type { SceneOrgVisibilityLevel } from "./sceneOrgVisibilityContract";
-import { isLegacyWorkflowWorkspaceIdentifier } from "../workspace/workspaceRegistryContract";
+import {
+  isLegacyWorkflowWorkspaceIdentifier,
+  isProtectedDemoWorkspaceId,
+} from "../workspace/workspaceRegistryContract";
+import {
+  parseSceneOrgSavedSceneSpatialState,
+  type SceneOrgSavedSceneSpatialState,
+} from "./sceneOrgSavedSceneSpatialState";
+import {
+  CAUSAL_INVESTIGATION_VIEW,
+  DECISION_SOLAR_VIEW,
+  ORGANIZATIONAL_SOLAR_VIEW,
+  parseStagePresentationView,
+  type StagePresentationView,
+} from "./organizationalSolarView";
+import {
+  parseCanonicalTopologyPresentation,
+  type CanonicalTopologyType,
+} from "./canonicalTopologyEngine";
 
 /** NPA-T ORG:4 — placement and saved-view metadata, never business truth. */
 export const sceneOrgWorkspacePlacementContractIdentity =
@@ -119,7 +137,68 @@ export type SceneOrgSavedScene = Readonly<{
   visibility: Readonly<Partial<Record<SceneOrgRegionId, SceneOrgVisibilityLevel>>>;
   /** Canonical Manager Workspace that owns this Scene. Absent means unassigned. */
   managerWorkspaceId?: string;
+  /** Set only for demo_workspace. Absent means a legacy unowned scene. */
+  demoProfileId?: "manufacturing" | "project";
+  /**
+   * Manager Deck that owns this Scene.
+   * Absent on Demo Scenes and on manager records saved before Deck ownership.
+   */
+  ownerDeckId?: string;
+  /**
+   * Scene-owned stage-plane positions. Absent on Scenes saved before spatial
+   * persistence; those Scenes keep the layout solver.
+   */
+  spatialState?: SceneOrgSavedSceneSpatialState;
+  /**
+   * Stage presentation mode. Absent means the existing Stage view.
+   * Organizational Solar is a presentation mode, not a workflow or a Deck.
+   */
+  stageView?: StagePresentationView;
+  /**
+   * NexoCause identities only. Resolved Dataset values are not scene truth.
+   * Absent on Scenes saved before investigation selection.
+   */
+  causalSelection?: SceneOrgCausalSelection;
+  /**
+   * Selected topology presentation. Absent means no topology layout was chosen.
+   * This is not a copy of the canonical relationship graph.
+   */
+  topologyPresentation?: CanonicalTopologyType;
+  /**
+   * Content revision of this Scene record. Absent on records saved before
+   * revision checks. Readers treat absence as revision 1. That is compatibility
+   * on read, not a reconstructed history of earlier edits.
+   */
+  revision?: number;
 }>;
+
+export type SceneOrgCausalSelection = Readonly<{
+  investigationId: string;
+  hypothesisId: string | null;
+  canonicalObjectId: string | null;
+}>;
+
+function causalIdentity(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  if (text.length === 0 || text.length > 180 || /\s/.test(text)) return null;
+  return text;
+}
+
+/** Keeps investigation identities. Any other field, including a resolved value, drops the selection. */
+export function parseSceneOrgCausalSelection(value: unknown): SceneOrgCausalSelection | null {
+  if (value == null || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const allowed = new Set(["investigationId", "hypothesisId", "canonicalObjectId"]);
+  if (Object.keys(record).some((key) => !allowed.has(key))) return null;
+  const investigationId = causalIdentity(record.investigationId);
+  if (!investigationId) return null;
+  const hypothesisId = record.hypothesisId == null ? null : causalIdentity(record.hypothesisId);
+  const canonicalObjectId = record.canonicalObjectId == null ? null : causalIdentity(record.canonicalObjectId);
+  if (record.hypothesisId != null && hypothesisId == null) return null;
+  if (record.canonicalObjectId != null && canonicalObjectId == null) return null;
+  return Object.freeze({ investigationId, hypothesisId, canonicalObjectId });
+}
 
 /** Workflow-mode strings are not Manager Workspace owners. */
 export function savedSceneManagerWorkspaceId(value: unknown): string | null {
@@ -157,6 +236,13 @@ export function createSceneOrgSavedScene(input: {
   readonly layout: SceneOrgSavedSceneLayoutPreferences;
   readonly visibility?: Partial<Record<SceneOrgRegionId, SceneOrgVisibilityLevel>>;
   readonly managerWorkspaceId?: string | null;
+  readonly demoProfileId?: "manufacturing" | "project" | null;
+  readonly ownerDeckId?: string | null;
+  readonly spatialState?: SceneOrgSavedSceneSpatialState | null;
+  readonly stageView?: StagePresentationView | null;
+  readonly topologyPresentation?: CanonicalTopologyType | null;
+  readonly causalSelection?: SceneOrgCausalSelection | null;
+  readonly revision?: number | null;
 }): SceneOrgSavedScene {
   const sceneId = input.sceneId.trim();
   const name = input.name.trim();
@@ -164,6 +250,37 @@ export function createSceneOrgSavedScene(input: {
     throw new Error("ORG:4 Saved Scenes require an identity and name.");
   }
   const managerWorkspaceId = savedSceneManagerWorkspaceId(input.managerWorkspaceId);
+  const demoProfileId =
+    managerWorkspaceId === "demo_workspace" &&
+    (input.demoProfileId === "manufacturing" || input.demoProfileId === "project")
+      ? input.demoProfileId
+      : null;
+  const ownerDeckId =
+    managerWorkspaceId &&
+    !isProtectedDemoWorkspaceId(managerWorkspaceId) &&
+    typeof input.ownerDeckId === "string" &&
+    input.ownerDeckId.trim().length > 0
+      ? input.ownerDeckId.trim()
+      : null;
+  const spatialState = input.spatialState == null
+    ? null
+    : parseSceneOrgSavedSceneSpatialState(input.spatialState);
+  if (input.spatialState != null && spatialState == null) {
+    throw new Error("ORG:4 Saved Scenes reject an invalid spatial layout.");
+  }
+  const parsedView = parseStagePresentationView(input.stageView);
+  const stageView = parsedView === ORGANIZATIONAL_SOLAR_VIEW
+    || parsedView === DECISION_SOLAR_VIEW
+    || parsedView === CAUSAL_INVESTIGATION_VIEW
+    ? parsedView
+    : null;
+  const causalSelection = stageView === CAUSAL_INVESTIGATION_VIEW
+    ? parseSceneOrgCausalSelection(input.causalSelection)
+    : null;
+  const topologyPresentation = parseCanonicalTopologyPresentation(input.topologyPresentation);
+  const revision = Number.isInteger(input.revision) && (input.revision ?? 0) >= 1
+    ? input.revision
+    : null;
   return Object.freeze({
     sceneId,
     name,
@@ -173,7 +290,55 @@ export function createSceneOrgSavedScene(input: {
     layout: Object.freeze({ ...input.layout }),
     visibility: Object.freeze({ ...(input.visibility ?? {}) }),
     ...(managerWorkspaceId ? { managerWorkspaceId } : {}),
+    ...(demoProfileId ? { demoProfileId } : {}),
+    ...(ownerDeckId ? { ownerDeckId } : {}),
+    ...(spatialState ? { spatialState } : {}),
+    ...(stageView ? { stageView } : {}),
+    ...(causalSelection ? { causalSelection } : {}),
+    ...(topologyPresentation ? { topologyPresentation } : {}),
+    ...(revision ? { revision } : {}),
   });
+}
+
+/** True when two Scenes belong to the same Workspace, Demo Profile, and Deck collection. */
+export function sameSceneOrgSavedSceneCollection(
+  scene: Pick<SceneOrgSavedScene, "managerWorkspaceId" | "demoProfileId" | "ownerDeckId">,
+  owner: {
+    readonly managerWorkspaceId: string | null;
+    readonly demoProfileId?: "manufacturing" | "project" | null;
+    readonly ownerDeckId?: string | null;
+  },
+): boolean {
+  return (scene.managerWorkspaceId ?? null) === owner.managerWorkspaceId
+    && (scene.demoProfileId ?? null) === (owner.demoProfileId ?? null)
+    && (scene.ownerDeckId ?? null) === (owner.ownerDeckId ?? null);
+}
+
+/**
+ * Keeps a stable name-derived id inside one collection.
+ * A record owned by another Workspace, Deck, or Demo Profile keeps its id.
+ */
+export function allocateSceneOrgSavedSceneId(input: {
+  readonly requestedSceneId: string;
+  readonly scenes: readonly SceneOrgSavedScene[];
+  readonly managerWorkspaceId: string;
+  readonly ownerDeckId: string | null;
+  readonly demoProfileId?: "manufacturing" | "project" | null;
+}): string {
+  const owner = {
+    managerWorkspaceId: input.managerWorkspaceId,
+    ownerDeckId: input.ownerDeckId,
+    demoProfileId: input.demoProfileId ?? null,
+  };
+  const occupied = input.scenes.find((scene) => scene.sceneId === input.requestedSceneId);
+  if (!occupied || sameSceneOrgSavedSceneCollection(occupied, owner)) return input.requestedSceneId;
+  const scope = input.ownerDeckId ?? input.demoProfileId ?? input.managerWorkspaceId;
+  let candidate = `${input.requestedSceneId}-${scope}`;
+  const collision = input.scenes.find((scene) => scene.sceneId === candidate);
+  if (collision && !sameSceneOrgSavedSceneCollection(collision, owner)) {
+    candidate = `${input.requestedSceneId}-${scope}-${input.managerWorkspaceId}`;
+  }
+  return candidate;
 }
 
 export type SceneOrgResolvedSavedScene<T> = Readonly<{

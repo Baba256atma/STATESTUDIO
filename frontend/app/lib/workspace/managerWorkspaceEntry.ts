@@ -1,4 +1,5 @@
 import {
+  BUSINESS_DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_ID,
   isLegacyWorkflowWorkspaceIdentifier,
   isManagerWorkspaceKind,
@@ -6,11 +7,12 @@ import {
   type ManagerWorkspaceKind,
   type WorkspaceRegistrySnapshot,
 } from "./workspaceRegistryContract.ts";
+import { ensureManagerExecutiveDeck } from "../deck/nexoraDeckRegistryAuthority.ts";
 import { createManagerWorkspace, type ManagerWorkspace } from "./managerWorkspaceIdentity.ts";
 import { getActiveWorkspaceId } from "./workspaceRegistryStore.ts";
 import { selectWorkspaceForRuntime } from "./workspaceSelectionBinding.ts";
 
-export type ManagerWorkspaceEntryRole = "business" | "project" | "demo";
+export type ManagerWorkspaceEntryRole = "business" | "project" | "demo" | "business-demo";
 
 export type ManagerWorkspaceEntry = Readonly<{
   workspaceId: string;
@@ -24,6 +26,7 @@ export type ManagerWorkspaceEntryProjection = Readonly<{
   active: ManagerWorkspaceEntry;
   real: readonly ManagerWorkspaceEntry[];
   demo: ManagerWorkspaceEntry | null;
+  businessDemo: ManagerWorkspaceEntry | null;
   hasRealWorkspace: boolean;
 }>;
 
@@ -40,6 +43,15 @@ function entryForWorkspace(
       role: "demo",
       typeLabel: "Demo",
       identityLabel: "Nexora Demo · Demo",
+    });
+  }
+  if (workspaceId === BUSINESS_DEMO_WORKSPACE_ID) {
+    return Object.freeze({
+      workspaceId,
+      name: "Business Demo",
+      role: "business-demo",
+      typeLabel: "Demo",
+      identityLabel: "Business Demo",
     });
   }
   if (kind === "BUSINESS") {
@@ -68,17 +80,19 @@ export function projectManagerWorkspaceEntries(
 ): ManagerWorkspaceEntryProjection {
   const real: ManagerWorkspaceEntry[] = [];
   let demo: ManagerWorkspaceEntry | null = null;
+  let businessDemo: ManagerWorkspaceEntry | null = null;
   for (const workspaceId of snapshot.workspaceOrder) {
     const workspace = snapshot.workspaces[workspaceId];
     if (!workspace || workspace.status !== "active") continue;
     const entry = entryForWorkspace(workspace.workspaceId, workspace.workspaceName, workspace.kind);
     if (!entry) continue;
     if (entry.role === "demo") demo = entry;
+    else if (entry.role === "business-demo") businessDemo = entry;
     else real.push(entry);
   }
   const activeId = snapshot.activeWorkspaceId;
   const active =
-    [...real, ...(demo ? [demo] : [])].find((entry) => entry.workspaceId === activeId) ??
+    [...real, ...(demo ? [demo] : []), ...(businessDemo ? [businessDemo] : [])].find((entry) => entry.workspaceId === activeId) ??
     demo ??
     Object.freeze({
       workspaceId: DEMO_WORKSPACE_ID,
@@ -91,6 +105,7 @@ export function projectManagerWorkspaceEntries(
     active,
     real: Object.freeze(real),
     demo,
+    businessDemo,
     hasRealWorkspace: real.length > 0,
   });
 }
@@ -127,6 +142,7 @@ export function createManagerWorkspaceFromEntry(input: {
     }
     return null;
   }
+  ensureManagerExecutiveDeck(created.workspaceId);
   return created;
 }
 

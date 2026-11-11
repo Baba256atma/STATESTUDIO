@@ -175,6 +175,7 @@ function runDownstreamIntelligenceForWorkspace(workspaceId: WorkspaceId): void {
 }
 
 async function seedEntitiesCsv(workspaceId: WorkspaceId): Promise<boolean> {
+  setActiveWorkspace(workspaceId);
   const upload = await uploadWorkspaceCsv(
     makeCsvFile({ name: "entities.csv", body: ENTITIES_CSV }),
     workspaceId

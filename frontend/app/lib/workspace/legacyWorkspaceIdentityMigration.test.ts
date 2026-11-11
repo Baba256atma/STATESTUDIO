@@ -56,7 +56,10 @@ import {
 import { DEMO_WORKSPACE_ID } from "./workspaceRegistryContract.ts";
 import {
   getActiveWorkspaceId,
+  getWorkspaceById,
   resetWorkspaceRegistryForTests,
+  setActiveWorkspace,
+  upsertWorkspace,
 } from "./workspaceRegistryStore.ts";
 
 const SHELL = new URL("../../executive/nex-mvp/NexoraExecutiveShell.tsx", import.meta.url);
@@ -76,6 +79,7 @@ test.afterEach(() => {
 
 test("I1 I4 I8 — ambiguous history is not assigned to the active manager workspace", () => {
   const ambiguous = commitCsv("overview", "delivery.csv", "mwi3-ambiguous");
+  activateCsvOwner("workspace-a");
   const canonical = commitCsv("workspace-a", "canonical.csv", "mwi3-canonical");
   const baha = createManagerWorkspace({ name: "BAHA Doors", kind: "BUSINESS" });
   const factory = createManagerWorkspace({ name: "Factory Expansion Project", kind: "PROJECT" });
@@ -143,6 +147,7 @@ test("I2 I7 I8 — explicit source proof migrates once and a second pass is stab
   const factory = createManagerWorkspace({ name: "Factory Expansion Project", kind: "PROJECT" });
   assert.ok(baha);
   assert.ok(factory);
+  setActiveWorkspace(baha.workspaceId);
   const canonical = commitCsv(baha.workspaceId, "baha-live.csv", "mwi3-baha-live");
   const exported = exportCsvRealDataImportState();
   const proof = {
@@ -361,6 +366,21 @@ test("I9 I10 — migration does not add a workspace authority or replace NMI", (
   assert.equal(MWI3_HISTORICAL_IDENTITY_DEBT.some((entry) => entry.identity === "default_workspace"), true);
   assert.equal(MWI3_HISTORICAL_IDENTITY_DEBT.some((entry) => entry.system === "monitoring-and-live-connection"), true);
 });
+
+function activateCsvOwner(workspaceId: string): void {
+  if (!getWorkspaceById(workspaceId)) {
+    upsertWorkspace({
+      workspaceId,
+      workspaceName: workspaceId,
+      status: "active",
+      createdAt: "2026-10-12T12:00:00.000Z",
+      updatedAt: "2026-10-12T12:00:00.000Z",
+      lastOpenedAt: "2026-10-12T12:00:00.000Z",
+      metadata: { authorityGeneration: 1 },
+    });
+  }
+  setActiveWorkspace(workspaceId);
+}
 
 function commitCsv(workspaceId: string, fileName: string, importId: string): CsvCommittedImport {
   const prepared = prepareCsvRealDataImport({

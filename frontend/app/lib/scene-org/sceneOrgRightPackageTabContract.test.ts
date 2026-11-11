@@ -23,6 +23,7 @@ import {
   findSceneOrgRightPackageTab,
   openSceneOrgRightPackageTab,
   resolveSceneOrgRightActivePackageTab,
+  retainSceneOrgRightPackageTabsInCatalog,
   sceneOrgRightPackageTabId,
 } from "./sceneOrgRightPackageTabContract.ts";
 
@@ -160,6 +161,10 @@ test("working context hosts the existing Object Card without Stage chrome or Ope
         canonicalId: "ctx-problem-capacity",
         view: "working-context" as const,
         label: "Capacity Gap",
+        ownerWorkspaceId: null,
+        ownerDemoProfileId: null,
+        ownerDeckId: null,
+        catalogBound: false,
       }),
       investigation,
     }),
@@ -240,4 +245,146 @@ test("working-context projection stays on the tab canonical ID after Stage selec
   );
   assert.match(html, /data-right-package-canonical-id="ctx-problem-capacity"/);
   assert.doesNotMatch(html, /data-right-package-canonical-id="ctx-problem-margin"/);
+});
+
+const manufacturingAuthority = {
+  workspaceId: "demo_workspace",
+  demoProfileId: "manufacturing",
+  catalogObjectIds: ["obj-capacity"],
+} as const;
+
+test("a package tab closes when the demo profile catalog no longer owns it", () => {
+  const opened = openSceneOrgRightPackageTab(
+    createEmptySceneOrgRightPackageTabSession(),
+    {
+      package: "investigation",
+      canonicalId: "obj-capacity",
+      label: "Capacity",
+      ownerWorkspaceId: "demo_workspace",
+      ownerDemoProfileId: "manufacturing",
+      catalogBound: true,
+    },
+  );
+  const active = activateSceneOrgRightPackageTab(opened, opened.tabs[0]!.tabId);
+  const project = retainSceneOrgRightPackageTabsInCatalog(active, {
+    workspaceId: "demo_workspace",
+    demoProfileId: "project",
+    catalogObjectIds: ["demo-subject:project:project-control"],
+  });
+  assert.equal(project.tabs.length, 0);
+  assert.equal(project.activeSurface, "advisor");
+  const restored = retainSceneOrgRightPackageTabsInCatalog(opened, manufacturingAuthority);
+  assert.equal(restored, opened);
+});
+
+test("workspace and catalog replacement drop obsolete tabs and keep a valid one", () => {
+  const capacity = openSceneOrgRightPackageTab(
+    createEmptySceneOrgRightPackageTabSession(),
+    {
+      package: "investigation",
+      canonicalId: "obj-capacity",
+      label: "Capacity",
+      ownerWorkspaceId: "demo_workspace",
+      ownerDemoProfileId: "manufacturing",
+    },
+  );
+  const business = retainSceneOrgRightPackageTabsInCatalog(capacity, {
+    workspaceId: "business_demo_workspace",
+    demoProfileId: null,
+    catalogObjectIds: ["business-demo:business_demo_workspace:revenue"],
+  });
+  assert.equal(business.tabs.length, 0);
+  const revenue = openSceneOrgRightPackageTab(business, {
+    package: "investigation",
+    canonicalId: "business-demo:business_demo_workspace:revenue",
+    label: "Revenue",
+    ownerWorkspaceId: "business_demo_workspace",
+    ownerDemoProfileId: null,
+  });
+  const details = activateSceneOrgRightPackageTab(revenue, "details");
+  const removed = retainSceneOrgRightPackageTabsInCatalog(details, {
+    workspaceId: "business_demo_workspace",
+    demoProfileId: null,
+    catalogObjectIds: [],
+  });
+  assert.equal(removed.tabs.length, 0);
+  assert.equal(removed.activeSurface, "details");
+});
+
+test("a non-catalog reference survives inside its owner and closes on owner change", () => {
+  const opened = openSceneOrgRightPackageTab(
+    createEmptySceneOrgRightPackageTabSession(),
+    {
+      package: "investigation",
+      canonicalId: "ctx-problem-capacity",
+      label: "Capacity Gap",
+      ownerWorkspaceId: "demo_workspace",
+      ownerDemoProfileId: "manufacturing",
+      catalogBound: false,
+    },
+  );
+  const same = retainSceneOrgRightPackageTabsInCatalog(opened, manufacturingAuthority);
+  assert.equal(same.tabs.length, 1);
+  const project = retainSceneOrgRightPackageTabsInCatalog(opened, {
+    workspaceId: "demo_workspace",
+    demoProfileId: "project",
+    catalogObjectIds: ["demo-subject:project:project-control"],
+  });
+  assert.equal(project.tabs.length, 0);
+});
+
+test("rapid catalog transitions keep only the latest owned tab", () => {
+  let session = openSceneOrgRightPackageTab(
+    createEmptySceneOrgRightPackageTabSession(),
+    {
+      package: "investigation",
+      canonicalId: "obj-capacity",
+      label: "Capacity",
+      ownerWorkspaceId: "demo_workspace",
+      ownerDemoProfileId: "manufacturing",
+    },
+  );
+  session = retainSceneOrgRightPackageTabsInCatalog(session, {
+    workspaceId: "demo_workspace",
+    demoProfileId: "project",
+    catalogObjectIds: ["demo-subject:project:project-control"],
+  });
+  session = openSceneOrgRightPackageTab(session, {
+    package: "investigation",
+    canonicalId: "demo-subject:project:project-control",
+    label: "Project Control",
+    ownerWorkspaceId: "demo_workspace",
+    ownerDemoProfileId: "project",
+  });
+  session = retainSceneOrgRightPackageTabsInCatalog(session, manufacturingAuthority);
+  session = openSceneOrgRightPackageTab(session, {
+    package: "investigation",
+    canonicalId: "obj-capacity",
+    label: "Capacity",
+    ownerWorkspaceId: "demo_workspace",
+    ownerDemoProfileId: "manufacturing",
+  });
+  assert.deepEqual(session.tabs.map((tab) => tab.canonicalId), ["obj-capacity"]);
+});
+
+test("a Deck change closes a package tab that the demo profile alone would keep", () => {
+  const session = openSceneOrgRightPackageTab(
+    createEmptySceneOrgRightPackageTabSession(),
+    {
+      package: "investigation",
+      canonicalId: "obj-capacity",
+      label: "Capacity",
+      ownerWorkspaceId: "demo_workspace",
+      ownerDemoProfileId: "manufacturing",
+      ownerDeckId: "manufacturing",
+    },
+  );
+  const retained = retainSceneOrgRightPackageTabsInCatalog(session, {
+    workspaceId: "demo_workspace",
+    demoProfileId: "manufacturing",
+    deckId: "executive",
+    catalogObjectIds: ["obj-capacity"],
+  });
+  assert.equal(retained.tabs.length, 0);
+  assert.equal(retained.activeSurface, "advisor");
 });

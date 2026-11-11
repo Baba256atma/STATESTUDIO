@@ -7,9 +7,11 @@
  */
 
 import {
+  BUSINESS_DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_ID,
   isLegacyWorkflowWorkspaceIdentifier,
   isManagerWorkspaceKind,
+  normalizeWorkspaceId,
   type WorkspaceId,
 } from "./workspaceRegistryContract.ts";
 import { getActiveWorkspace, getWorkspaceById } from "./workspaceRegistryStore.ts";
@@ -24,21 +26,34 @@ export function legacyWorkflowKeyBlockedForActiveManager(workspaceId: unknown): 
  * OWN-MVP:2 — manager CSV may be written only for the canonical live workspace.
  * A workflow mode is not an owner. A caller-supplied id is not reassigned.
  */
+/**
+ * A CSV mutation may name only the live workspace.
+ * Cockpit-mode keys stay on their existing legacy contract: they are refused
+ * while a real manager workspace is active, and they are not workspace ids.
+ * A Deck id is not a workspace id and cannot authorize a write.
+ */
 export function refuseCrossWorkspaceCsvTarget(
   workspaceId: unknown,
 ): "wrong_workspace" | "refused_workflow_key" | null {
   if (isLegacyWorkflowWorkspaceIdentifier(workspaceId)) {
     return legacyWorkflowKeyBlockedForActiveManager(workspaceId) ? "refused_workflow_key" : null;
   }
-  if (typeof workspaceId !== "string" || workspaceId.trim().length === 0) return "wrong_workspace";
-  const live = readLiveExecutiveDataWorkspaceId();
-  if (isRealManagerWorkspaceId(workspaceId) && workspaceId !== live) return "wrong_workspace";
-  if (workspaceId === DEMO_WORKSPACE_ID && isRealManagerWorkspaceId(live)) return "wrong_workspace";
+  const target = normalizeWorkspaceId(workspaceId);
+  if (!target) return "wrong_workspace";
+  if (target !== readLiveExecutiveDataWorkspaceId()) return "wrong_workspace";
   return null;
 }
 
 export function isRealManagerWorkspaceId(workspaceId: WorkspaceId): boolean {
+  if (workspaceId === DEMO_WORKSPACE_ID || workspaceId === BUSINESS_DEMO_WORKSPACE_ID) return false;
   return isManagerWorkspaceKind(getWorkspaceById(workspaceId)?.kind);
+}
+
+/** Product fixtures stay off for customer workspaces, the modern demo, and Business Demo. */
+export function productFixturesPermittedForWorkspace(workspaceId: string): boolean {
+  if (workspaceId === BUSINESS_DEMO_WORKSPACE_ID) return false;
+  if (isRealManagerWorkspaceId(workspaceId)) return false;
+  return true;
 }
 
 /** Shared unnamed bucket used when Decision Memory, Approval, or Collaboration omit a workspace. */

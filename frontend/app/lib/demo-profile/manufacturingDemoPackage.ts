@@ -38,8 +38,6 @@ import {
 } from "../data-reality/csvRealDataVerticalSlice.ts";
 import { DEMO_WORKSPACE_ID, type WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
 import { MANUFACTURING_DEMO_PROFILE_ID } from "./demoProfileContract.ts";
-import { retireInactiveDemoProfileImports } from "./demoProfilePackageTransition.ts";
-
 export const manufacturingDemoPackageIdentity = "DEMO-MVP:1/ManufacturingPackage" as const;
 
 export const MANUFACTURING_DEMO_COMMITTED_AT = "2026-08-31T00:00:00.000Z";
@@ -191,10 +189,6 @@ export function ensureManufacturingDemoPackage(input: {
   }
 
   const commitInvocationsBefore = getCsvRealDataImportCommitInvocationCount();
-  retireInactiveDemoProfileImports({
-    workspaceId: input.workspaceId,
-    activeProfileId: MANUFACTURING_DEMO_PROFILE_ID,
-  });
   const retired = retireLegacyDemoCsv(input.workspaceId);
   const files: ManufacturingDemoPackageFileReport[] = [];
 

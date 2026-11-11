@@ -8,6 +8,11 @@ import type {
   NexoraMVPStageObjectPresentation,
 } from "../nex-mvp/nexora3DExecutiveStage.ts";
 import type { NexoraDecisionTheatreDataObject } from "./nexoraDecisionTheatreDataObjectProjection.ts";
+import {
+  resolveExecutiveStageSharedCaptionBox,
+  type ExecutiveStageLabelSide,
+} from "../spatial-presentation/executiveStageObjectLabelTerritory.ts";
+import { parseStagePlanePosition } from "../scene-org/sceneOrgSavedSceneSpatialState.ts";
 
 export const nexoraDecisionTheatreDataObjectStageProjectionIdentity =
   "DATA-UX:4/DirectorDataObjectStageProjection" as const;
@@ -76,7 +81,22 @@ export function projectNexoraDecisionTheatreDataObjectsToStage(input: Readonly<{
   businessFocusId: string | null;
   stageObjects: readonly NexoraMVPStageObjectPresentation[];
   sceneIntentKind?: string | null;
+  labelSide?: ExecutiveStageLabelSide;
+  /** Scene-owned stage-plane positions. Present entries replace the solver. */
+  spatialPositions?: Readonly<Record<string, { readonly x: number; readonly y: number }>>;
+  /**
+   * Workspace-owned edges already authorized for this Deck.
+   * They are drawn between data objects and are not invented here.
+   */
+  graphEdges?: readonly {
+    readonly relationshipId: string;
+    readonly sourceObjectId: string;
+    readonly targetObjectId: string;
+    readonly relationshipType: string;
+    readonly direction: "DIRECTED" | "UNDIRECTED";
+  }[];
 }>): NexoraDecisionTheatreDataObjectStageProjection {
+  const labelSide = input.labelSide ?? "bottom";
   const requestedIds = stableUnique(input.visibleDataObjectIds);
   const omitForDensity = DENSITY_OMIT_INTENTS.includes(
     input.sceneIntentKind as (typeof DENSITY_OMIT_INTENTS)[number],
@@ -88,9 +108,23 @@ export function projectNexoraDecisionTheatreDataObjectsToStage(input: Readonly<{
   const visible = visibleIds.flatMap((id) => byId.get(id) ?? []);
   const participants = Object.freeze(
     visible.map((dataObject, index): NexoraDecisionTheatreDataObjectStageParticipant => {
-      const position = resolvePlacement(index, visible.length, input.stageObjects);
+      const saved = parseStagePlanePosition(
+        input.spatialPositions?.[dataObject.id]
+          ? { x: input.spatialPositions[dataObject.id].x, y: input.spatialPositions[dataObject.id].y, z: 0 }
+          : null,
+      );
+      const position = saved
+        ? Object.freeze([saved.x, saved.y, 0] as const)
+        : resolvePlacement(index, visible.length, input.stageObjects);
       const selected = dataObject.id === input.selectedDataObjectId;
       const unresolved = dataObject.unresolvedFieldCount > 0;
+      const caption = resolveExecutiveStageSharedCaptionBox({
+        ownerX: position[0],
+        ownerY: position[1],
+        halfExtent: 0.45,
+        lines: [dataObject.label, `CSV · ${unresolved ? "Needs clarification" : "Ready"}`],
+        side: labelSide,
+      });
       return Object.freeze({
         dataObject,
         presentation: Object.freeze({
@@ -117,10 +151,10 @@ export function projectNexoraDecisionTheatreDataObjectsToStage(input: Readonly<{
           labelVisible: true,
           labelPrimaryLine: dataObject.label,
           labelSecondaryLine: `CSV · ${unresolved ? "Needs clarification" : "Ready"}`,
-          labelSide: "bottom" as const,
-          labelWorldOffsetX: 0,
-          labelWorldOffsetY: -0.72,
-          labelOwnerDistance: 0.72,
+          labelSide,
+          labelWorldOffsetX: caption.offsetX,
+          labelWorldOffsetY: caption.offsetY,
+          labelOwnerDistance: Math.hypot(caption.offsetX, caption.offsetY),
           labelVisibilityMode: selected ? "full" as const : "compact" as const,
           labelTerritoryStatus: "owned" as const,
           stageLabelContract: "stage-label-1" as const,
@@ -138,8 +172,27 @@ export function projectNexoraDecisionTheatreDataObjectsToStage(input: Readonly<{
     }),
   );
   const visibleStageIds = new Set(input.stageObjects.map((entry) => entry.id));
-  const connections = Object.freeze(
-    participants.flatMap(({ dataObject }) =>
+  const participantIds = new Set(participants.map((entry) => entry.dataObject.id));
+  const graphConnections = Object.freeze((input.graphEdges ?? []).flatMap((edge): readonly NexoraMVPStageConnectionPresentation[] => {
+    if (!participantIds.has(edge.sourceObjectId) || !participantIds.has(edge.targetObjectId)) return [];
+    return [Object.freeze({
+      id: edge.relationshipId,
+      sourceId: edge.sourceObjectId,
+      targetId: edge.targetObjectId,
+      emphasized: edge.sourceObjectId === input.selectedDataObjectId || edge.targetObjectId === input.selectedDataObjectId,
+      opacity: 0.72,
+      relation: edge.relationshipType,
+      visualRole: "context" as const,
+      directionCue: edge.direction === "DIRECTED" ? "source-to-target" as const : "none" as const,
+      lineWidth: 1.2,
+      impliesCausality: false as const,
+      linePattern: "solid" as const,
+      routeKind: "straight" as const,
+    })];
+  }));
+  const connections = Object.freeze([
+    ...graphConnections,
+    ...participants.flatMap(({ dataObject }) =>
       dataObject.relationships.flatMap((relationship): readonly NexoraMVPStageConnectionPresentation[] => {
         if (!visibleStageIds.has(relationship.targetId)) return [];
         return [Object.freeze({
@@ -158,7 +211,7 @@ export function projectNexoraDecisionTheatreDataObjectsToStage(input: Readonly<{
         })];
       }),
     ),
-  );
+  ]);
   return Object.freeze({
     identity: nexoraDecisionTheatreDataObjectStageProjectionIdentity,
     participants,

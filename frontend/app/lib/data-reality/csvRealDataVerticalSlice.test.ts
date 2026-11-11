@@ -31,6 +31,7 @@ import {
   listCsvRealDataImports,
   resetCsvRealDataImportStoreForTests,
 } from "./csvRealDataImportStore.ts";
+import { resetWorkspaceRegistryForTests, setActiveWorkspace, upsertWorkspace } from "../workspace/workspaceRegistryStore.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const baselineCsv = readFileSync(join(here, "fixtures/rdi2-baseline.csv"), "utf8");
@@ -68,7 +69,28 @@ function prepare(options: Partial<CsvVerticalSliceInput> = {}): CsvPreparedImpor
   return prepareCsvRealDataImport(value, confirmSuggestions(suggestCsvColumnMappings(parsed.columns, value.importId)));
 }
 
-test.beforeEach(() => resetCsvRealDataImportStoreForTests());
+function useLiveWorkspace(workspaceId: string): void {
+  upsertWorkspace({
+    workspaceId,
+    workspaceName: workspaceId,
+    status: "active",
+    createdAt: importedAt,
+    updatedAt: importedAt,
+    lastOpenedAt: importedAt,
+    metadata: { authorityGeneration: 1 },
+  });
+  setActiveWorkspace(workspaceId);
+}
+
+test.beforeEach(() => {
+  resetCsvRealDataImportStoreForTests();
+  resetWorkspaceRegistryForTests();
+  useLiveWorkspace("workspace-a");
+});
+
+test.afterEach(() => {
+  resetWorkspaceRegistryForTests();
+});
 
 test("publishes the RDI:2 identity and deterministic state vocabularies", () => {
   assert.equal(csvRealDataVerticalSliceIdentity, "RDI:2/NexoraCsvRealDataVerticalSlice");
@@ -219,6 +241,7 @@ test("FIX2 — source requirements and committed imports remain workspace isolat
   const validB = prepare({ workspaceId: "workspace-b", importId: "baseline-b", sourceContextId: "csv:workspace-b:finance" });
   assert.equal(invalidA.ready, false);
   assert.equal(validB.ready, true);
+  useLiveWorkspace("workspace-b");
   assert.equal(commitPreparedCsvRealDataImport({ prepared: validB, expectedWorkspaceId: "workspace-b", mode: "new", committedAt: importedAt }).committed, true);
   assert.equal(listCsvRealDataImports("workspace-a").length, 0);
   assert.equal(listCsvRealDataImports("workspace-b").length, 1);

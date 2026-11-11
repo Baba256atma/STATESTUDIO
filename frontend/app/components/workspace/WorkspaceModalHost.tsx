@@ -16,6 +16,7 @@ import {
   renameWorkspace,
   subscribeWorkspaceRegistry,
 } from "../../lib/workspace/workspaceRegistryStore";
+import { coordinateCanonicalStoreMutation, coordinateWorkspaceDeletion } from "../../lib/workspace/workspaceAuthorityFence";
 import {
   bindActiveWorkspaceToRuntimeContext,
   selectWorkspaceForRuntime,
@@ -274,15 +275,19 @@ export function WorkspaceModalHost(): React.ReactElement | null {
     (workspaceName: string) => {
       if (!modalState) return;
       if (modalState.kind === "create") {
-        const created = createWorkspace(workspaceName);
-        emitWorkspaceHubDiagnostic("Workspace Created", {
-          workspaceId: created.workspaceId,
-          workspaceName: created.workspaceName,
+        void coordinateCanonicalStoreMutation(() => {
+          const created = createWorkspace(workspaceName);
+          emitWorkspaceHubDiagnostic("Workspace Created", {
+            workspaceId: created.workspaceId,
+            workspaceName: created.workspaceName,
+          });
+          bindActiveWorkspaceToRuntimeContext(created.workspaceId);
         });
-        bindActiveWorkspaceToRuntimeContext(created.workspaceId);
       } else if (modalState.kind === "rename" && workspace) {
-        renameWorkspace(workspace.workspaceId, workspaceName);
-        refreshActiveRuntimeContext();
+        void coordinateCanonicalStoreMutation(() => {
+          renameWorkspace(workspace.workspaceId, workspaceName);
+          refreshActiveRuntimeContext();
+        });
       }
       closeWorkspaceModal();
     },
@@ -291,17 +296,21 @@ export function WorkspaceModalHost(): React.ReactElement | null {
 
   const handleArchive = useCallback(() => {
     if (!workspace) return;
-    archiveWorkspace(workspace.workspaceId);
-    emitWorkspaceHubDiagnostic("Workspace Archived", { workspaceId: workspace.workspaceId });
-    refreshActiveRuntimeContext();
+    void coordinateCanonicalStoreMutation(() => {
+      archiveWorkspace(workspace.workspaceId);
+      emitWorkspaceHubDiagnostic("Workspace Archived", { workspaceId: workspace.workspaceId });
+      refreshActiveRuntimeContext();
+    });
     closeWorkspaceModal();
   }, [refreshActiveRuntimeContext, workspace]);
 
   const handleDelete = useCallback(() => {
     if (!workspace) return;
-    deleteWorkspace(workspace.workspaceId);
-    emitWorkspaceHubDiagnostic("Workspace Deleted", { workspaceId: workspace.workspaceId });
-    refreshActiveRuntimeContext();
+    void coordinateWorkspaceDeletion(workspace.workspaceId, () => {
+      deleteWorkspace(workspace.workspaceId);
+      emitWorkspaceHubDiagnostic("Workspace Deleted", { workspaceId: workspace.workspaceId });
+      refreshActiveRuntimeContext();
+    });
     closeWorkspaceModal();
   }, [refreshActiveRuntimeContext, workspace]);
 

@@ -1,3 +1,4 @@
+import { demoProfileIdForWrite, demoProfileVisible } from "../../demo-profile/demoProfileOwnership.ts";
 import { resolveManagerRecordWorkspaceId } from "../../workspace/liveManagerDataWorkspaceGuard.ts";
 import type { DecisionMemoryEntry } from "./decisionMemoryTypes";
 
@@ -36,7 +37,7 @@ function signature(entry: DecisionMemoryEntry) {
     .toLowerCase();
 }
 
-export function loadDecisionMemoryEntries(
+function readDecisionMemoryEntries(
   workspaceId?: string | null,
   projectId?: string | null,
   storage: DecisionMemoryStorage | null = browserStorage(),
@@ -51,6 +52,17 @@ export function loadDecisionMemoryEntries(
   } catch {
     return [];
   }
+}
+
+export function loadDecisionMemoryEntries(
+  workspaceId?: string | null,
+  projectId?: string | null,
+  storage: DecisionMemoryStorage | null = browserStorage(),
+): DecisionMemoryEntry[] {
+  const owner = resolveManagerRecordWorkspaceId(workspaceId);
+  return readDecisionMemoryEntries(workspaceId, projectId, storage).filter((entry) =>
+    demoProfileVisible(owner, entry.demo_profile_id),
+  );
 }
 
 export function loadOrgScopedDecisionMemoryEntries(
@@ -69,7 +81,7 @@ export function loadOrgScopedDecisionMemoryEntries(
       if (!raw) continue;
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) continue;
-      collected.push(...parsed);
+      collected.push(...parsed.filter((entry) => demoProfileVisible(owner, entry?.demo_profile_id)));
     }
     return pruneDecisionMemoryEntries(
       collected.filter((entry): entry is DecisionMemoryEntry => Boolean(entry?.id)),
@@ -117,7 +129,7 @@ export function appendDecisionMemoryEntry(params: {
   const owner = resolveManagerRecordWorkspaceId(params.workspaceId);
   const entry = params.entry;
   const current =
-    params.existing ?? loadDecisionMemoryEntries(params.workspaceId, params.projectId, params.storage);
+    params.existing ?? readDecisionMemoryEntries(params.workspaceId, params.projectId, params.storage);
 
   if (!entry || !owner) {
     return pruneDecisionMemoryEntries(current, params.limit ?? DEFAULT_LIMIT);
@@ -130,12 +142,18 @@ export function appendDecisionMemoryEntry(params: {
   ) {
     return current;
   }
-  const stamped = entryOwner && entryOwner !== "default_workspace"
-    ? entry
-    : { ...entry, workspace_id: owner };
+  const profileId = demoProfileIdForWrite(owner);
+  const stamped = {
+    ...(entryOwner && entryOwner !== "default_workspace" ? entry : { ...entry, workspace_id: owner }),
+    ...(profileId ? { demo_profile_id: profileId } : {}),
+  };
 
   const nextSignature = signature(stamped);
-  const deduped = current.filter((candidate) => signature(candidate) !== nextSignature);
+  const deduped = current.filter((candidate) => {
+    if (signature(candidate) !== nextSignature) return true;
+    if (candidate.demo_profile_id !== stamped.demo_profile_id) return true;
+    return false;
+  });
   const next = pruneDecisionMemoryEntries([stamped, ...deduped], params.limit ?? DEFAULT_LIMIT);
   saveDecisionMemoryEntries(params.workspaceId, params.projectId, next, params.storage);
   return next;

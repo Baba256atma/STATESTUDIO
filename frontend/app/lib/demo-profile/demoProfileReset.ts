@@ -23,6 +23,7 @@ import {
   exportAutomaticMonitoringRecoverySnapshot,
   hydrateAutomaticMonitoringRecoverySnapshot,
 } from "../data-reality/automaticMonitoringRuntime.ts";
+import { removeDemoProfileLiveObservations } from "../data-reality/liveDataConnectionStore.ts";
 import {
   exportCsvRealDataImportState,
   hydrateCsvRealDataImportState,
@@ -36,7 +37,7 @@ import {
 } from "../scene-org/sceneOrgSavedSceneDurability.ts";
 import { readLiveExecutiveDataWorkspaceId } from "../workspace/managerWorkspaceIdentity.ts";
 import { DEMO_WORKSPACE_ID } from "../workspace/workspaceRegistryContract.ts";
-import { isDemoProfileId, type DemoProfileId } from "./demoProfileContract.ts";
+import { demoProfileImportPrefix, isDemoProfileId, type DemoProfileId } from "./demoProfileContract.ts";
 import { readActiveDemoProfile } from "./demoProfileStore.ts";
 import { ensureManufacturingDemoPackage } from "./manufacturingDemoPackage.ts";
 import { ensureProjectDemoPackage } from "./projectDemoPackage.ts";
@@ -148,12 +149,15 @@ function storageKeys(storage: DemoResetStorage): readonly string[] {
   return keys;
 }
 
-function removeDemoWorkspaceCsv(): readonly string[] {
+function removeDemoWorkspaceCsv(profileId: DemoProfileId): readonly string[] {
+  const prefix = demoProfileImportPrefix(profileId);
   const exported = exportCsvRealDataImportState();
-  const removedCommitted = exported.committed.filter((entry) => entry.workspaceId === DEMO_WORKSPACE_ID);
+  const removedCommitted = exported.committed.filter(
+    (entry) => entry.workspaceId === DEMO_WORKSPACE_ID && entry.importId.startsWith(prefix),
+  );
   const removedIds = removedCommitted.map((entry) => entry.importId);
   const pendingIds = exported.pending
-    .filter((entry) => entry.workspaceId === DEMO_WORKSPACE_ID)
+    .filter((entry) => entry.workspaceId === DEMO_WORKSPACE_ID && entry.input.importId.startsWith(prefix))
     .map((entry) => entry.input.importId);
   releaseCsvPublishedKpiObservationsForRemovedSources(
     DEMO_WORKSPACE_ID,
@@ -162,19 +166,20 @@ function removeDemoWorkspaceCsv(): readonly string[] {
       importId: entry.importId,
     })),
   );
+  const dropImport = (importId: string) => removedIds.includes(importId) || pendingIds.includes(importId);
   hydrateCsvRealDataImportState({
-    committed: exported.committed.filter((entry) => entry.workspaceId !== DEMO_WORKSPACE_ID),
-    pending: exported.pending.filter((entry) => entry.workspaceId !== DEMO_WORKSPACE_ID),
-    removed: exported.removed.filter((entry) => entry.workspaceId !== DEMO_WORKSPACE_ID),
+    committed: exported.committed.filter((entry) => !dropImport(entry.importId)),
+    pending: exported.pending.filter((entry) => !dropImport(entry.input.importId)),
+    removed: exported.removed,
   });
   return Object.freeze([...removedIds, ...pendingIds]);
 }
 
-function filterDecisions(input: ResetActiveDemoInput): readonly string[] {
+function filterDecisions(input: ResetActiveDemoInput, profileId: DemoProfileId): readonly string[] {
   const removed: string[] = [];
   if (input.decisionRuntime) {
     const kept = input.decisionRuntime.adapter.listDecisions().filter((decision) => {
-      if (decision.workspaceId === DEMO_WORKSPACE_ID) {
+      if (decision.workspaceId === DEMO_WORKSPACE_ID && decision.demoProfileId === profileId) {
         removed.push(decision.decisionId);
         return false;
       }
@@ -196,7 +201,7 @@ function filterDecisions(input: ResetActiveDemoInput): readonly string[] {
   if (!serialized) return Object.freeze([]);
   const hydrated = hydrateNexoraCanonicalDecisionRuntimeRecords(serialized, []);
   const kept = hydrated.filter((decision) => {
-    if (decision.workspaceId === DEMO_WORKSPACE_ID) {
+    if (decision.workspaceId === DEMO_WORKSPACE_ID && decision.demoProfileId === profileId) {
       removed.push(decision.decisionId);
       return false;
     }
@@ -209,11 +214,11 @@ function filterDecisions(input: ResetActiveDemoInput): readonly string[] {
   return Object.freeze(removed);
 }
 
-function filterExecutions(input: ResetActiveDemoInput): readonly string[] {
+function filterExecutions(input: ResetActiveDemoInput, profileId: DemoProfileId): readonly string[] {
   const removed: string[] = [];
   if (input.executionRuntime) {
     const kept = input.executionRuntime.listExecutions().filter((execution) => {
-      if (execution.workspaceId === DEMO_WORKSPACE_ID) {
+      if (execution.workspaceId === DEMO_WORKSPACE_ID && execution.demoProfileId === profileId) {
         removed.push(execution.executionId);
         return false;
       }
@@ -235,7 +240,7 @@ function filterExecutions(input: ResetActiveDemoInput): readonly string[] {
   if (!serialized) return Object.freeze([]);
   const hydrated = hydrateNexoraCanonicalExecutionRuntimeRecords(serialized, []);
   const kept = hydrated.filter((execution) => {
-    if (execution.workspaceId === DEMO_WORKSPACE_ID) {
+    if (execution.workspaceId === DEMO_WORKSPACE_ID && execution.demoProfileId === profileId) {
       removed.push(execution.executionId);
       return false;
     }
@@ -263,12 +268,30 @@ function filterOwnedKeys(storage: DemoResetStorage | null): Readonly<{
   const approvalKeys: string[] = [];
   const collaborationKeys: string[] = [];
   const learningKeys: string[] = [];
+  const activeProfile = readActiveDemoProfile();
   for (const key of storageKeys(storage)) {
     if (key.startsWith(DEMO_OWNED_KEY_PREFIXES[0])) approvalKeys.push(key);
     else if (key.startsWith(DEMO_OWNED_KEY_PREFIXES[1])) collaborationKeys.push(key);
-    else if (key.startsWith(DEMO_OWNED_KEY_PREFIXES[2])) learningKeys.push(key);
+    else if (key.startsWith(DEMO_OWNED_KEY_PREFIXES[2])) {
+      const raw = storage.getItem(key);
+      let entries: { demo_profile_id?: string }[] = [];
+      try {
+        const parsed = raw ? JSON.parse(raw) : [];
+        entries = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        entries = [];
+      }
+      const kept = entries.filter((entry) => entry.demo_profile_id !== activeProfile);
+      if (kept.length === 0) {
+        learningKeys.push(key);
+        storage.removeItem(key);
+      } else if (kept.length !== entries.length) {
+        learningKeys.push(key);
+        storage.setItem(key, JSON.stringify(kept));
+      }
+    }
   }
-  for (const key of [...approvalKeys, ...collaborationKeys, ...learningKeys]) {
+  for (const key of [...approvalKeys, ...collaborationKeys]) {
     storage.removeItem(key);
   }
   return Object.freeze({
@@ -290,8 +313,11 @@ function filterScenes(storage: SceneOrgSavedSceneStorage | null): Readonly<{
       failure: `saved-scenes-${loaded.status}`,
     });
   }
-  const removed = loaded.scenes.filter((scene) => scene.managerWorkspaceId === DEMO_WORKSPACE_ID);
-  const kept = loaded.scenes.filter((scene) => scene.managerWorkspaceId !== DEMO_WORKSPACE_ID);
+  const removed = loaded.scenes.filter(
+    (scene) => scene.managerWorkspaceId === DEMO_WORKSPACE_ID && scene.demoProfileId === readActiveDemoProfile(),
+  );
+  const removedIds = new Set(removed.map((scene) => scene.sceneId));
+  const kept = loaded.scenes.filter((scene) => !removedIds.has(scene.sceneId));
   if (removed.length === 0) return Object.freeze({ sceneIds: Object.freeze([]), failure: null });
   const persisted = persistSceneOrgSavedScenes(kept, storage);
   if (!persisted.persisted) {
@@ -317,13 +343,15 @@ function filterOutcomes(): readonly string[] {
 
 function filterMonitoring(storage: DemoResetStorage | null): readonly string[] {
   const snapshot = exportAutomaticMonitoringRecoverySnapshot();
+  const activeProfile = readActiveDemoProfile();
   const removed = snapshot.policies
-    .filter((policy) => policy.workspaceId === DEMO_WORKSPACE_ID)
+    .filter((policy) => policy.workspaceId === DEMO_WORKSPACE_ID && policy.demoProfileId === activeProfile)
     .map((policy) => policy.policyId);
+  const removedIds = new Set(removed);
   hydrateAutomaticMonitoringRecoverySnapshot(
     {
-      policies: snapshot.policies.filter((policy) => policy.workspaceId !== DEMO_WORKSPACE_ID),
-      runtimeStates: snapshot.runtimeStates.filter((state) => state.workspaceId !== DEMO_WORKSPACE_ID),
+      policies: snapshot.policies.filter((policy) => !removedIds.has(policy.policyId)),
+      runtimeStates: snapshot.runtimeStates.filter((state) => !removedIds.has(state.policyId)),
     },
     "2026-08-31T00:00:00.000Z",
   );
@@ -332,20 +360,23 @@ function filterMonitoring(storage: DemoResetStorage | null): readonly string[] {
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as {
-          policies?: { workspaceId?: string }[];
-          runtimeStates?: { workspaceId?: string }[];
+          policies?: { workspaceId?: string; demoProfileId?: string; policyId?: string }[];
+          runtimeStates?: { workspaceId?: string; policyId?: string }[];
           liveData?: {
-            connections?: { workspaceId?: string }[];
-            observations?: { workspaceId?: string }[];
+            observations?: { workspaceId?: string; demoProfileId?: string; observationId?: string }[];
           };
         };
-        const keep = <T extends { workspaceId?: string }>(records: T[] | undefined) =>
-          (records ?? []).filter((record) => record.workspaceId !== DEMO_WORKSPACE_ID);
-        parsed.policies = keep(parsed.policies);
-        parsed.runtimeStates = keep(parsed.runtimeStates);
-        if (parsed.liveData) {
-          parsed.liveData.connections = keep(parsed.liveData.connections);
-          parsed.liveData.observations = keep(parsed.liveData.observations);
+        const removedPolicyIds = new Set(
+          (parsed.policies ?? [])
+            .filter((record) => record.workspaceId === DEMO_WORKSPACE_ID && record.demoProfileId === activeProfile)
+            .map((record) => record.policyId),
+        );
+        parsed.policies = (parsed.policies ?? []).filter((record) => !removedPolicyIds.has(record.policyId));
+        parsed.runtimeStates = (parsed.runtimeStates ?? []).filter((record) => !removedPolicyIds.has(record.policyId));
+        if (parsed.liveData?.observations) {
+          parsed.liveData.observations = parsed.liveData.observations.filter(
+            (observation) => !(observation.workspaceId === DEMO_WORKSPACE_ID && observation.demoProfileId === activeProfile),
+          );
         }
         storage.setItem(DURABLE_MONITORING_STORAGE_KEY, JSON.stringify(parsed));
       } catch {
@@ -391,12 +422,13 @@ export function resetActiveDemo(input: ResetActiveDemoInput = {}): DemoResetResu
     return result;
   }
 
-  const csvImportIds = removeDemoWorkspaceCsv();
-  const decisionIds = filterDecisions(input);
-  const executionIds = filterExecutions(input);
+  const csvImportIds = removeDemoWorkspaceCsv(profileId);
+  const decisionIds = filterDecisions(input, profileId);
+  const executionIds = filterExecutions(input, profileId);
   const owned = filterOwnedKeys(input.localStorage === undefined ? browserLocalStorage() : input.localStorage);
   const scenes = filterScenes(input.sceneStorage === undefined ? browserLocalStorage() : input.sceneStorage);
   const outcomeIds = filterOutcomes();
+  removeDemoProfileLiveObservations(profileId);
   const monitoringPolicyIds = filterMonitoring(
     input.localStorage === undefined ? browserLocalStorage() : input.localStorage,
   );

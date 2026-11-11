@@ -202,6 +202,14 @@ export function parseCsvDurableSnapshot(raw: string): CsvDurabilityRecoverReport
   });
 }
 
+/** A replacement may publish only when durable storage still has the import the manager reviewed. */
+export function csvReplacementConflicts(input: Readonly<{
+  expectedImportId: string | null;
+  durableImportId: string | null;
+}>): boolean {
+  return input.durableImportId !== input.expectedImportId;
+}
+
 export function createCsvDurableSnapshot(writtenAt: string): CsvDurableSnapshot {
   const state = exportCsvRealDataImportState();
   return deepFreeze({

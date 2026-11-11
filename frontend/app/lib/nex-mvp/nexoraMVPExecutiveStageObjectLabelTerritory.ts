@@ -3,6 +3,7 @@
  * Runs after final object XY (readability/containment). Does not move objects.
  */
 
+import { readBusinessDemoOwnedLabelValue } from "@/app/lib/demo-profile/businessDemoStageCatalog";
 import type { NexoraMVPStageInteractionPresentation } from "./nexoraMVPObjectInteraction";
 import {
   getExecutiveStageObjectLabelObservability,
@@ -34,6 +35,8 @@ export function applyExecutiveStageObjectLabelTerritoryToStagePresentation(
   presentation: NexoraMVPStageInteractionPresentation,
   options?: {
     readonly presentationLevel?: "minimum" | "report" | "operation";
+    readonly viewport?: import("@/app/lib/spatial-presentation/executiveStageObjectLabelTerritory").ExecutiveStageLabelViewport | null;
+    readonly obstacles?: readonly import("@/app/lib/spatial-presentation/executiveStageObjectLabelTerritory").ExecutiveStageLabelLayoutObstacle[];
   },
 ): NexoraMVPStageInteractionPresentation {
   const level =
@@ -50,7 +53,7 @@ export function applyExecutiveStageObjectLabelTerritoryToStagePresentation(
     }
   ).stage2dReadability;
 
-  const obstacles: readonly never[] = [];
+  const obstacles = options?.obstacles ?? [];
 
   const layout = resolveExecutiveStageOwnedLabelPlacement({
     objects: presentation.scene.objects.map((object) => {
@@ -86,12 +89,14 @@ export function applyExecutiveStageObjectLabelTerritoryToStagePresentation(
         labelVisible: object.labelVisible,
         disclosureState: object.disclosureState,
         opacity: object.opacity,
+        valueText: readBusinessDemoOwnedLabelValue(object.id, object.primaryValue),
       });
     }),
     obstacles,
     presentationLevel: level,
     anchorObjectId:
       readability?.anchorObjectId ?? presentation.scene.focusedObjectId,
+    ...(options?.viewport != null ? { viewport: options.viewport } : {}),
   });
 
   const objects = Object.freeze(
@@ -103,6 +108,7 @@ export function applyExecutiveStageObjectLabelTerritoryToStagePresentation(
         ...object,
         labelPrimaryLine: ownership.primaryLine || object.labelPrimaryLine,
         labelSecondaryLine: ownership.secondaryLine,
+        labelValueLine: ownership.valueLine,
         labelVisible: object.labelVisible === false ? false : visible,
         labelProminence:
           ownership.visibility === "full"

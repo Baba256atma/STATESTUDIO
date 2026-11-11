@@ -228,7 +228,7 @@ test("Demo and workflow ids cannot be saved as a Manager Workspace", () => {
   assert.doesNotMatch(control, /Save My Workspace/);
   const shell = readFileSync(fileURLToPath(new URL("../../executive/nex-mvp/NexoraExecutiveShell.tsx", import.meta.url)), "utf8");
   assert.match(shell, /managerWorkspaceProjectionReady &&/);
-  assert.match(shell, /useLayoutEffect\(\(\) => \{\n\s+if \(hostedManagerRegistryRecovery\(deploymentMode\) === "contain"\) return;\n\s+recoverWorkspaceRegistryFromStorage\(\);/);
+  assert.match(shell, /useLayoutEffect\(\(\) => \{\n\s+if \(hostedManagerRegistryRecovery\(deploymentMode\) !== "contain"\) \{\n\s+recoverWorkspaceRegistryFromStorage\(\);/);
   const recoverAt = shell.indexOf("recoverWorkspaceRegistryFromStorage();");
   const bootstrapAt = shell.indexOf("ensureCsvMvpDemoBootstrap({");
   assert.ok(recoverAt >= 0 && recoverAt < bootstrapAt);

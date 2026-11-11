@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   createWorkspace,
   resetWorkspaceRegistryForTests,
+  setActiveWorkspace,
 } from "./workspaceRegistryStore.ts";
 import { getWorkspaceDataSources } from "./workspaceContextResolver.ts";
 import {
@@ -149,6 +150,7 @@ test("does not register invalid CSV uploads", async () => {
 test("keeps CSV uploads isolated by workspace", async () => {
   const workspaceA = createWorkspace("Workspace A");
   const workspaceB = createWorkspace("Workspace B");
+  setActiveWorkspace(workspaceA.workspaceId);
 
   await uploadWorkspaceCsv(
     makeCsvFile({ name: "pipeline.csv", body: "id,value\n1,alpha\n" }),

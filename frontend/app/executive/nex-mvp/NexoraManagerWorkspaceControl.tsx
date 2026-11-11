@@ -6,9 +6,20 @@ import { beginNexoraSignIn, endNexoraSession } from "@/app/lib/auth/nexoraAuthBr
 import type { NexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode";
 import { ANONYMOUS_NEXORA_SESSION, type NexoraClientSessionProjection } from "@/app/lib/auth/nexoraPrincipal";
 import { assessHostedMyWorkspaceAccess } from "@/app/lib/auth/hostedWorkspaceGate";
-import { readStoredHostedWorkspaceSelection, rememberHostedWorkspaceSelection, selectAuthorizedHostedWorkspace } from "@/app/lib/workspace-auth/hostedActiveWorkspace";
+import { hostedWorkspaceSelectionForHydration, readStoredHostedWorkspaceSelection, rememberHostedWorkspaceSelection, selectAuthorizedHostedWorkspace } from "@/app/lib/workspace-auth/hostedActiveWorkspace";
 import { releaseWorkspaceCsvAuthority } from "@/app/lib/data-reality/csvRealDataImportStore";
+import { persistCsvRealDataImportDurabilityBrowser } from "@/app/lib/data-reality/csvRealDataImportDurability";
+import { persistDurableMonitoringRuntimeBrowser } from "@/app/lib/data-reality/durableMonitoringRuntime";
 import { releaseAuthorizedHostedWorkspace } from "@/app/lib/workspace/workspaceRegistryStore";
+import {
+  confirmWorkspaceDeletion,
+  localWorkspaceDeletionPermitted,
+  previewWorkspaceDeletion,
+  readWorkspaceDeletionIntent,
+  requestWorkspaceDeletion,
+  retryWorkspaceDeletion,
+} from "@/app/lib/workspace/workspaceDeletionLifecycle";
+import { coordinateCanonicalStoreMutation, coordinateWorkspaceDeletion, WORKSPACE_UNAVAILABLE_MESSAGE } from "@/app/lib/workspace/workspaceAuthorityFence";
 import type { HostedWorkspaceProjection } from "@/app/lib/workspace-auth/hostedWorkspaceRecord";
 import { createPortal } from "react-dom";
 import { cockpit } from "../exs1/shell/executiveCockpitTheme";
@@ -26,10 +37,11 @@ import {
   subscribeDemoProfile,
 } from "@/app/lib/demo-profile/demoProfileStore";
 import { resetActiveDemo } from "@/app/lib/demo-profile/demoProfileReset";
+import { openBusinessDemo, readBusinessDemoActivationStatus, subscribeBusinessDemoActivation } from "@/app/lib/demo-profile/businessDemoActivation";
 import { saveActiveManagerWorkspace } from "@/app/lib/workspace/managerWorkspaceSave";
 import { listCsvRealDataImports, subscribeCsvRealDataImports, getCsvRealDataImportVersion } from "@/app/lib/data-reality/csvRealDataImportStore";
 import { getCsvDurabilityHealth, subscribeCsvDurabilityHealth } from "@/app/lib/data-reality/csvRealDataImportDurability";
-import { DEMO_WORKSPACE_ID } from "@/app/lib/workspace/workspaceRegistryContract";
+import { BUSINESS_DEMO_WORKSPACE_ID, DEMO_WORKSPACE_ID } from "@/app/lib/workspace/workspaceRegistryContract";
 import {
   createManagerWorkspaceFromEntry,
   projectManagerWorkspaceEntries,
@@ -39,6 +51,7 @@ import {
 } from "@/app/lib/workspace/managerWorkspaceEntry";
 import type { ManagerWorkspaceKind } from "@/app/lib/workspace/workspaceRegistryContract";
 import {
+  getActiveWorkspaceId,
   getWorkspaceRegistrySnapshot,
   recoverWorkspaceRegistryFromStorage,
   subscribeWorkspaceRegistry,
@@ -117,6 +130,8 @@ export function DemoLibrarySection({
   notice,
   failure,
   onOpen,
+  businessDemoActive = false,
+  onOpenBusinessDemo,
   onRequestReset,
   onConfirmReset,
   onCancelReset,
@@ -126,6 +141,8 @@ export function DemoLibrarySection({
   readonly notice: string | null;
   readonly failure: string | null;
   readonly onOpen: (id: DemoProfileId) => void;
+  readonly businessDemoActive?: boolean;
+  readonly onOpenBusinessDemo?: () => void;
   readonly onRequestReset: () => void;
   readonly onConfirmReset: () => void;
   readonly onCancelReset: () => void;
@@ -179,6 +196,42 @@ export function DemoLibrarySection({
           </button>
         </article>
       ))}
+      <article
+        data-testid="demo-library-business"
+        data-demo-library-item="business-demo"
+        data-demo-library-active={businessDemoActive ? "true" : "false"}
+        aria-current={businessDemoActive ? "true" : undefined}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.28rem",
+          border: `1px solid ${businessDemoActive ? cockpit.borderStrong : cockpit.border}`,
+          borderRadius: "0.35rem",
+          background: businessDemoActive ? cockpit.accentSoft : cockpit.panelSoft,
+          padding: "0.5rem 0.55rem",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "baseline" }}>
+          <strong style={{ fontSize: "0.78rem", fontWeight: 560 }}>Business Demo</strong>
+          <span style={{ fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: cockpit.lowMuted }}>
+            {businessDemoActive ? "Active" : "Example"}
+          </span>
+        </div>
+        <p style={{ margin: 0, color: cockpit.muted, fontSize: "0.66rem", lineHeight: 1.4 }}>
+          Explore revenue, inventory, and operating cost.
+        </p>
+        <p style={{ margin: 0, color: cockpit.lowMuted, fontSize: "0.6rem" }}>3 data sources · Business</p>
+        <button
+          type="button"
+          data-testid="open-business-demo"
+          aria-pressed={businessDemoActive}
+          aria-label="Business Demo. Explore revenue, inventory, and operating cost. Try Demo."
+          onClick={() => onOpenBusinessDemo?.()}
+          style={{ ...quietButton, alignSelf: "flex-start", marginTop: "0.15rem" }}
+        >
+          Try Demo
+        </button>
+      </article>
       {library.resetOffered ? (
         <div data-testid="current-demo" style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
           <p style={{ ...sectionLabel, marginTop: "0.15rem" }}>Current Demo</p>
@@ -452,6 +505,125 @@ function HostedMyWorkspaceGate({
   );
 }
 
+function LocalWorkspaceDeletionPreview({
+  workspaceId,
+  operationId,
+  acknowledged,
+  error,
+  onAcknowledge,
+  onCancel,
+  onResult,
+  onDeleted,
+}: {
+  readonly workspaceId: string;
+  readonly operationId: string;
+  readonly acknowledged: boolean;
+  readonly error: string | null;
+  readonly onAcknowledge: (value: boolean) => void;
+  readonly onCancel: () => void;
+  readonly onResult: (message: string) => void;
+  readonly onDeleted: () => void;
+}) {
+  const preview = previewWorkspaceDeletion(workspaceId);
+  const intent = readWorkspaceDeletionIntent(workspaceId);
+  const blocked = intent?.phase === "DELETE_BLOCKED";
+  const flushDeletedDurableStores = async () => {
+    await persistDurableMonitoringRuntimeBrowser(globalThis.localStorage, new Date().toISOString());
+    await persistCsvRealDataImportDurabilityBrowser();
+  };
+  const confirmDeletion = () => {
+    if (!acknowledged || preview.fingerprint.length === 0) return;
+    void coordinateWorkspaceDeletion(workspaceId, async () => {
+      const requested = requestWorkspaceDeletion({ workspaceId, operationId });
+      if (!requested.ok && requested.reason !== "requested") {
+        onResult(requested.reason);
+        return;
+      }
+      const confirmed = confirmWorkspaceDeletion({
+        workspaceId,
+        operationId,
+        fingerprint: preview.fingerprint,
+      });
+      if (!confirmed.ok) {
+        onResult(confirmed.failedStep ? `${confirmed.reason} at ${confirmed.failedStep}` : confirmed.reason);
+        return;
+      }
+      try {
+        await flushDeletedDurableStores();
+      } catch {
+        onResult("durable-cleanup-failed");
+        return;
+      }
+      onDeleted();
+    });
+  };
+  const retry = () => {
+    void coordinateWorkspaceDeletion(workspaceId, async () => {
+      const resumed = retryWorkspaceDeletion({ workspaceId, operationId: intent?.operationId ?? operationId });
+      if (!resumed.ok) {
+        onResult(resumed.failedStep ? `${resumed.reason} at ${resumed.failedStep}` : resumed.reason);
+        return;
+      }
+      try {
+        await flushDeletedDurableStores();
+      } catch {
+        onResult("durable-cleanup-failed");
+        return;
+      }
+      onDeleted();
+    });
+  };
+  return (
+    <div data-testid="workspace-delete-preview" style={{ margin: "0.35rem 0.7rem", padding: "0.45rem", border: `1px solid ${cockpit.border}`, borderRadius: 6 }}>
+      <p style={{ margin: "0 0 0.25rem", fontSize: "0.72rem", color: cockpit.text }}>
+        Delete {preview.workspaceName ?? "workspace"}
+      </p>
+      <p data-testid="workspace-delete-identity" style={{ margin: "0 0 0.25rem", fontSize: "0.64rem", color: cockpit.lowMuted }}>
+        {workspaceId}
+      </p>
+      <p style={{ margin: "0 0 0.25rem", fontSize: "0.64rem", color: cockpit.muted }}>
+        {preview.decks} decks, {preview.objects} objects, {preview.relationships} relationships, {preview.datasets} datasets, {preview.datasetReferences} dataset references, {preview.investigations} investigations, {preview.observations} observations, {preview.hypotheses} hypotheses, {preview.reviews} reviews, {preview.decisions} decisions, {preview.scenes} scenes, {preview.monitoring} monitoring records.
+      </p>
+      <p style={{ margin: "0 0 0.35rem", fontSize: "0.64rem", color: cockpit.warning }}>
+        This browser-local deletion cannot be restored. It is not hosted production deletion, and it is not one atomic transaction across browser stores.
+      </p>
+      {blocked ? (
+        <p data-testid="workspace-delete-blocked" style={{ margin: "0 0 0.35rem", fontSize: "0.64rem", color: cockpit.warning }}>
+          Cleanup is incomplete{intent?.failedStep ? ` at ${intent.failedStep}` : ""}. The Workspace stays visible until retry finishes.
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" data-testid="workspace-delete-error" style={{ margin: "0 0 0.35rem", fontSize: "0.64rem", color: cockpit.warning }}>
+          {error}
+        </p>
+      ) : null}
+      <label style={{ display: "flex", gap: "0.35rem", alignItems: "center", fontSize: "0.64rem", color: cockpit.text }}>
+        <input
+          type="checkbox"
+          data-testid="workspace-delete-acknowledge"
+          checked={acknowledged}
+          onChange={(event) => onAcknowledge(event.target.checked)}
+        />
+        I understand this Workspace and its owned records will be removed.
+      </label>
+      <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.35rem" }}>
+        {blocked ? (
+          <button type="button" data-testid="workspace-delete-retry" onClick={retry} style={quietButton}>
+            Retry cleanup
+          </button>
+        ) : (
+          <button type="button" data-testid="workspace-delete-confirm" disabled={!acknowledged || !preview.permitted} onClick={confirmDeletion} style={quietButton}>
+            Confirm deletion
+          </button>
+        )}
+        <button type="button" data-testid="workspace-delete-cancel" onClick={onCancel} style={quietButton}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function NexoraManagerWorkspaceControl({
   deploymentMode = "local",
   session = ANONYMOUS_NEXORA_SESSION,
@@ -492,6 +664,12 @@ export function NexoraManagerWorkspaceControl({
   const demoImports = onDemo ? listCsvRealDataImports(DEMO_WORKSPACE_ID) : [];
   const manufacturingActive = demoProfile === MANUFACTURING_DEMO_PROFILE_ID;
   const projectActive = demoProfile === PROJECT_DEMO_PROFILE_ID;
+  const businessDemoActive = view.active.workspaceId === BUSINESS_DEMO_WORKSPACE_ID;
+  const businessDemoStatus = useSyncExternalStore(
+    subscribeBusinessDemoActivation,
+    readBusinessDemoActivationStatus,
+    () => null,
+  );
   const manufacturingImportCount = demoImports.filter((entry) =>
     entry.importId.startsWith("demo-profile:manufacturing:"),
   ).length;
@@ -502,7 +680,12 @@ export function NexoraManagerWorkspaceControl({
   const [draftKind, setDraftKind] = useState<ManagerWorkspaceKind | null>(null);
   const [draftName, setDraftName] = useState("");
   const [failure, setFailure] = useState<string | null>(null);
+  const [deletionWorkspaceId, setDeletionWorkspaceId] = useState<string | null>(null);
+  const [deletionOperationId, setDeletionOperationId] = useState<string | null>(null);
+  const [deletionAcknowledged, setDeletionAcknowledged] = useState(false);
+  const [deletionError, setDeletionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [authorityNotice, setAuthorityNotice] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [authPhase, setAuthPhase] = useState<"idle" | "loading" | "failed">("idle");
   const [accountWorkspaces, setAccountWorkspaces] = useState(hostedWorkspaces);
@@ -520,12 +703,25 @@ export function NexoraManagerWorkspaceControl({
   }, [deploymentMode]);
 
   useEffect(() => {
+    const onUnavailable = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail;
+      setAuthorityNotice(typeof detail === "string" && detail.length > 0 ? detail : WORKSPACE_UNAVAILABLE_MESSAGE);
+    };
+    window.addEventListener("nexora-workspace-unavailable", onUnavailable);
+    return () => window.removeEventListener("nexora-workspace-unavailable", onUnavailable);
+  }, []);
+
+  useEffect(() => {
     setAccountWorkspaces(hostedWorkspaces.filter((workspace) => !releasedHostedWorkspaceIds.current.has(workspace.workspaceId)));
   }, [hostedWorkspaces]);
 
   useLayoutEffect(() => {
     if (deploymentMode !== "hosted") return;
-    const stored = readStoredHostedWorkspaceSelection();
+    const stored = hostedWorkspaceSelectionForHydration(readStoredHostedWorkspaceSelection());
+    if (readStoredHostedWorkspaceSelection() && stored == null) {
+      rememberHostedWorkspaceSelection(null);
+      return;
+    }
     const known = hostedWorkspaces.find((workspace) => workspace.workspaceId === stored);
     if (!known) return;
     selectAuthorizedHostedWorkspace(known, hostedWorkspaces);
@@ -581,21 +777,40 @@ export function NexoraManagerWorkspaceControl({
 
   const selectEntry = (workspaceId: string) => {
     if (hosted) return;
-    const accepted = selectManagerWorkspaceEntry(workspaceId);
-    if (!accepted) {
-      setFailure("That workspace could not be opened.");
-      return;
-    }
-    close();
+    void coordinateCanonicalStoreMutation(() => {
+      const accepted = selectManagerWorkspaceEntry(workspaceId);
+      if (!accepted) {
+        setFailure("That workspace could not be opened.");
+        return;
+      }
+      close();
+    });
   };
 
   const openLibraryItem = (id: DemoProfileId) => {
-    const opened = openDemoLibraryItem(id);
-    if (!opened?.opened) {
-      setFailure("That demo could not be opened.");
-      return;
-    }
-    close();
+    void coordinateCanonicalStoreMutation(() => {
+      const opened = openDemoLibraryItem(id);
+      if (!opened?.opened) {
+        setFailure("That demo could not be opened.");
+        return;
+      }
+      rememberHostedWorkspaceSelection(null);
+      close();
+    });
+  };
+
+  const openBusinessDemoItem = () => {
+    void coordinateCanonicalStoreMutation(() => openBusinessDemo()).then((result) => {
+      if (getActiveWorkspaceId() !== BUSINESS_DEMO_WORKSPACE_ID) return;
+      if (!result.opened) {
+        setFailure(result.status === "failed_persistence"
+          ? "Business Demo data could not be saved on this device."
+          : "Business Demo could not be opened.");
+        return;
+      }
+      rememberHostedWorkspaceSelection(null);
+      close();
+    });
   };
 
   const submitCreate = () => {
@@ -626,12 +841,14 @@ export function NexoraManagerWorkspaceControl({
       });
       return;
     }
-    const created = createManagerWorkspaceFromEntry({ name: draftName, kind: draftKind });
-    if (!created) {
-      setFailure("Enter a name to create this workspace.");
-      return;
-    }
-    close();
+    void coordinateCanonicalStoreMutation(() => {
+      const created = createManagerWorkspaceFromEntry({ name: draftName, kind: draftKind });
+      if (!created) {
+        setFailure("Enter a name to create this workspace.");
+        return;
+      }
+      close();
+    });
   };
 
   const nameReady = draftName.trim().length > 0;
@@ -655,6 +872,11 @@ export function NexoraManagerWorkspaceControl({
 
   return (
     <div style={{ position: "relative", flexShrink: 0, minWidth: 0 }}>
+      {authorityNotice ? (
+        <p role="alert" data-testid="workspace-unavailable" style={{ margin: "0 0 0.25rem", color: cockpit.warning, fontSize: "0.68rem", maxWidth: "18rem" }}>
+          {authorityNotice}
+        </p>
+      ) : null}
       <button
         type="button"
         aria-haspopup="dialog"
@@ -705,6 +927,11 @@ export function NexoraManagerWorkspaceControl({
         >
           {headerLabel}
         </span>
+        {businessDemoActive && (businessDemoStatus === "failed_validation" || businessDemoStatus === "failed_persistence") ? (
+          <span role="alert" data-testid="business-demo-load-failure" style={{ fontSize: "0.58rem", letterSpacing: "0.04em", textTransform: "uppercase", color: cockpit.warning, flexShrink: 0 }}>
+            {businessDemoStatus === "failed_persistence" ? "Not saved" : "Data failed"}
+          </span>
+        ) : null}
         {saveStatus?.status === "saved" && !csvStoreFailed ? (
           <span data-testid="manager-workspace-saved" aria-label="Workspace saved on this device." style={{ fontSize: "0.58rem", letterSpacing: "0.08em", textTransform: "uppercase", color: cockpit.lowMuted, flexShrink: 0 }}>
             Saved
@@ -846,10 +1073,12 @@ export function NexoraManagerWorkspaceControl({
               ) : null}
               <DemoLibrarySection
                 activeProfile={demoProfile}
+                businessDemoActive={businessDemoActive}
                 confirmingReset={confirmingReset}
                 notice={notice}
                 failure={failure}
                 onOpen={openLibraryItem}
+                onOpenBusinessDemo={openBusinessDemoItem}
                 onRequestReset={() => {
                   setFailure(null);
                   setConfirmingReset(true);
@@ -941,14 +1170,50 @@ export function NexoraManagerWorkspaceControl({
                       </div>
                     ) : (
                       visibleReal.map((entry) => (
-                        <MenuRow
-                          key={entry.workspaceId}
-                          entry={entry}
-                          selected={entry.workspaceId === view.active.workspaceId && !modernDemoActive}
-                          onSelect={selectEntry}
-                        />
+                        <div key={entry.workspaceId}>
+                          <MenuRow
+                            entry={entry}
+                            selected={entry.workspaceId === view.active.workspaceId && !modernDemoActive}
+                            onSelect={selectEntry}
+                          />
+                          {localWorkspaceDeletionPermitted(entry.workspaceId) ? (
+                            <button
+                              type="button"
+                              data-testid={`workspace-delete-request-${entry.workspaceId}`}
+                              onClick={() => {
+                                const existing = readWorkspaceDeletionIntent(entry.workspaceId);
+                                setDeletionWorkspaceId(entry.workspaceId);
+                                setDeletionOperationId(existing?.operationId ?? `delete-${entry.workspaceId}-${Date.now().toString(36)}`);
+                                setDeletionAcknowledged(false);
+                                setDeletionError(null);
+                              }}
+                              style={{ ...quietButton, margin: "0 0.7rem 0.35rem" }}
+                            >
+                              Delete workspace
+                            </button>
+                          ) : null}
+                        </div>
                       ))
                     )}
+                    {deletionWorkspaceId && deletionOperationId ? (
+                      <LocalWorkspaceDeletionPreview
+                        workspaceId={deletionWorkspaceId}
+                        operationId={deletionOperationId}
+                        acknowledged={deletionAcknowledged}
+                        error={deletionError}
+                        onAcknowledge={setDeletionAcknowledged}
+                        onCancel={() => {
+                          setDeletionWorkspaceId(null);
+                          setDeletionError(null);
+                        }}
+                        onResult={(message) => setDeletionError(message)}
+                        onDeleted={() => {
+                          setDeletionWorkspaceId(null);
+                          setDeletionAcknowledged(false);
+                          setNotice("Workspace deleted from this browser.");
+                        }}
+                      />
+                    ) : null}
                     <p style={{ margin: "0.35rem 0.7rem 0.15rem", color: cockpit.lowMuted, fontSize: "0.62rem" }}>
                       Start with your own data.
                     </p>

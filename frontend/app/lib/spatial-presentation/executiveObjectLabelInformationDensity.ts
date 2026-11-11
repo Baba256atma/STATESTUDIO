@@ -210,6 +210,8 @@ export type ExecutiveObjectLabelPresentation = {
   readonly visible: boolean;
   readonly pointerEvents: "none";
   readonly maxNameCharacters: number;
+  /** Business Demo value captions keep each resolved line on one row. */
+  readonly keepLinesIntact?: boolean;
   readonly statusClass: ExecutiveObjectStateVisualClass;
   readonly recommendationCue: boolean;
   readonly anchor: ExecutiveObjectLabelAnchorPresentation;

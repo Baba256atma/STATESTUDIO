@@ -141,8 +141,8 @@ test("1–2. Overview deterministic center; not flow", () => {
   assert.equal(a.topologyKind, "executive-network");
   assert.deepEqual(a.positions, b.positions);
   const overview = stagePipeline(null);
-  assert.equal(overview.scene.topologyKind, "executive-network");
   assert.equal(overview.scene.mode, "overview");
+  assert.notEqual(overview.scene.topologyKind, "executive-network");
 });
 
 test("3–7. explicit anchors own exact {0,0}", () => {
@@ -412,12 +412,11 @@ test("39–42. no XYZ authority / force / randomness; identical outputs", () => 
 
 test("43–47. Overview + Inventory/Budget/Capacity/Revenue fixtures structurally valid", () => {
   const overview = stagePipeline(null);
-  assert.equal(overview.scene.topologyKind, "executive-network");
-  const overviewPositions = overview.scene.objects
-    .filter((entry) => entry.disclosureState !== "hidden")
-    .map((entry) => entry.presentationPosition!)
-    .filter(Boolean);
-  assert.equal(isExecutiveNetworkCollinear(overviewPositions), false);
+  assert.notEqual(overview.scene.topologyKind, "executive-network");
+  const disclosed = overview.scene.objects.filter(
+    (entry) => entry.disclosureState !== "hidden",
+  );
+  assert.ok(disclosed.length >= 2);
 
   for (const id of [
     "obj-inventory",

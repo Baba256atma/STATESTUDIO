@@ -337,6 +337,57 @@ test("AE/AF/AG/AH — object overlap/clip + label clip/reserved remain zero", ()
   assert.equal(layout.reservedCollisionCount, 0);
 });
 
+test("unified geometry centers the painted box and shares a side when the group fits", () => {
+  const layout = resolveExecutiveStageOwnedLabelPlacement({
+    presentationLevel: "minimum",
+    viewport: { width: 1440, height: 900 },
+    objects: [
+      { id: "a", label: "Revenue", kind: "object", status: "stable", x: -1.2, y: 0, halfExtent: 0.42, valueText: "546,400 USD" },
+      { id: "b", label: "Inventory", kind: "object", status: "stable", x: 0, y: 0, halfExtent: 0.42, valueText: "140 units" },
+      { id: "c", label: "Operating Cost", kind: "object", status: "stable", x: 1.2, y: 0, halfExtent: 0.42, valueText: "324,800 USD" },
+    ],
+  });
+  assert.equal(layout.visibleCount, 3);
+  assert.equal(layout.labelLabelOverlapCount, 0);
+  assert.equal(layout.bodyOverlapCount, 0);
+  assert.equal(layout.clippedCount, 0);
+  const sides = layout.ownerships.map((entry) => entry.resolvedSide);
+  assert.ok(sides.every((side) => side === "top-right" || side === "top"));
+  for (const ownership of layout.ownerships) {
+    const centerX = (ownership.bounds.minX + ownership.bounds.maxX) / 2;
+    const centerY = (ownership.bounds.minY + ownership.bounds.maxY) / 2;
+    assert.ok(Math.abs(centerX - (ownership.anchorPoint[0] + ownership.worldOffsetX)) < 1e-4);
+    assert.ok(Math.abs(centerY - (ownership.anchorPoint[1] + ownership.worldOffsetY)) < 1e-4);
+    assert.equal(Number.isFinite(ownership.worldOffsetX), true);
+    assert.equal(Number.isFinite(ownership.worldOffsetY), true);
+  }
+});
+
+test("a narrow viewport discloses captions instead of overlapping them", () => {
+  const layout = resolveExecutiveStageOwnedLabelPlacement({
+    presentationLevel: "minimum",
+    viewport: {
+      width: 390,
+      height: 844,
+      ndc: { left: -0.92, right: 0.92, top: 0.9, bottom: -0.82 },
+    },
+    objects: Array.from({ length: 5 }, (_, index) => ({
+      id: `crowd-${index}`,
+      label: `Operating Cost ${index}`,
+      kind: "object",
+      status: "stable",
+      x: -1.6 + index * 0.8,
+      y: 0,
+      halfExtent: 0.42,
+      valueText: "324,800 USD",
+    })),
+  });
+  assert.equal(layout.labelLabelOverlapCount, 0);
+  assert.equal(layout.bodyOverlapCount, 0);
+  assert.equal(layout.clippedCount, 0);
+  assert.ok(layout.visibleCount <= 5);
+});
+
 test("AI — deterministic placement", () => {
   const a = pipeline("obj-capacity").presentation;
   const b = pipeline("obj-capacity").presentation;

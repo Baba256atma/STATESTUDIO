@@ -12,8 +12,10 @@ import {
 } from "./sceneOrgWorkspacePlacementContract.ts";
 import {
   loadSceneOrgSavedScenes,
+  mergePersistSceneOrgSavedScenes,
   parseSceneOrgSavedScenes,
   persistSceneOrgSavedScenes,
+  readSceneContentRevision,
   SCENE_ORG_SAVED_SCENE_DURABILITY_BOUNDARY,
   SCENE_ORG_SAVED_SCENE_DURABILITY_VERSION,
   SCENE_ORG_SAVED_SCENE_STORAGE_KEY,
@@ -208,4 +210,69 @@ test("shell hydrates once and explicit save/default writes precede runtime ackno
   const save = shell.slice(shell.indexOf('case "SAVE_SCENE"'), shell.indexOf('case "OPEN_SCENE"'));
   assert.ok(save.indexOf("persistSceneOrgSavedScenes") < save.indexOf("setSavedScenes"));
   assert.match(save, /previous Saved Scenes are unchanged/);
+  assert.match(save, /SAVED_SCENE_STALE_MESSAGE/);
+});
+
+test("a stale save of the same Scene does not replace a newer revision", () => {
+  const storage = memoryStorage();
+  const initial = scene("scene-capacity", "obj-capacity");
+  assert.equal(mergePersistSceneOrgSavedScenes([initial], storage).persisted, true);
+  const loaded = loadSceneOrgSavedScenes(storage).scenes[0]!;
+  assert.equal(readSceneContentRevision(loaded), 1);
+  const tabA = createSceneOrgSavedScene({
+    ...loaded,
+    name: "Capacity after Tab A",
+    revision: readSceneContentRevision(loaded),
+  });
+  const savedA = mergePersistSceneOrgSavedScenes([tabA], storage);
+  assert.equal(savedA.persisted, true);
+  assert.equal(savedA.current?.name, "Capacity after Tab A");
+  assert.equal(readSceneContentRevision(savedA.current!), 2);
+  const tabB = createSceneOrgSavedScene({
+    ...loaded,
+    name: "Capacity after Tab B",
+    revision: readSceneContentRevision(loaded),
+  });
+  const savedB = mergePersistSceneOrgSavedScenes([tabB], storage);
+  assert.equal(savedB.persisted, false);
+  assert.equal(savedB.reason, "revision-conflict");
+  const stored = loadSceneOrgSavedScenes(storage).scenes;
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0]?.name, "Capacity after Tab A");
+  assert.equal(readSceneContentRevision(stored[0]!), 2);
+});
+
+test("edits to different Scenes both survive", () => {
+  const storage = memoryStorage();
+  mergePersistSceneOrgSavedScenes([scene("scene-a", "obj-a"), scene("scene-b", "obj-b")], storage);
+  const loaded = loadSceneOrgSavedScenes(storage).scenes;
+  const sceneA = loaded.find((entry) => entry.sceneId === "scene-a")!;
+  const sceneB = loaded.find((entry) => entry.sceneId === "scene-b")!;
+  const savedA = mergePersistSceneOrgSavedScenes([
+    createSceneOrgSavedScene({ ...sceneA, name: "Machine A view", revision: 1 }),
+  ], storage);
+  const savedB = mergePersistSceneOrgSavedScenes([
+    createSceneOrgSavedScene({ ...sceneB, name: "Machine B view", revision: 1 }),
+  ], storage);
+  assert.equal(savedA.persisted, true);
+  assert.equal(savedB.persisted, true);
+  const stored = loadSceneOrgSavedScenes(storage).scenes;
+  assert.equal(stored.find((entry) => entry.sceneId === "scene-a")?.name, "Machine A view");
+  assert.equal(stored.find((entry) => entry.sceneId === "scene-b")?.name, "Machine B view");
+});
+
+test("a legacy Scene without revision metadata remains readable and updates from revision 1", () => {
+  const storage = memoryStorage();
+  const legacy = scene("scene-legacy", "obj-legacy");
+  persistSceneOrgSavedScenes([legacy], storage);
+  const loaded = loadSceneOrgSavedScenes(storage).scenes[0]!;
+  assert.equal(loaded.revision, undefined);
+  assert.equal(readSceneContentRevision(loaded), 1);
+  assert.equal(loaded.canonicalReferences[0]?.canonicalId, "obj-legacy");
+  const saved = mergePersistSceneOrgSavedScenes([
+    createSceneOrgSavedScene({ ...loaded, name: "Legacy updated", revision: 1 }),
+  ], storage);
+  assert.equal(saved.persisted, true);
+  assert.equal(readSceneContentRevision(saved.current!), 2);
+  assert.equal(saved.current?.canonicalReferences[0]?.canonicalId, "obj-legacy");
 });

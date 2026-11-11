@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import type { NexoraMVPAdvisorContextBridge } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type { NexoraMVPPresentationViewModel } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import type { NexoraMVPInteractionSubject } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
+import type { NexoraMVPStageObjectFixture } from "@/app/lib/nex-mvp/nexoraMVPStageFixtures";
 import type { ExecutiveExperienceContext } from "@/app/lib/nexora-entrance/nexoraExecutiveExperienceContext";
 import type { DataRealityAwareAdvisorBindingResult } from "@/app/lib/data-reality/dataRealityAwareAdvisorExperienceBinding";
 import type { ExecutiveSourceAdvisorContext } from "@/app/lib/data-reality/executiveSourceIntelligence";
@@ -131,6 +132,7 @@ type Props = {
   readonly learningWorkspaceId?: string | null;
   /** False until Manager Workspace recovery has settled, and false for real workspaces. */
   readonly productFixturesPermitted?: boolean;
+  readonly stageCatalogObjects?: readonly NexoraMVPStageObjectFixture[];
 };
 
 function projectConversationalAction(
@@ -216,6 +218,7 @@ export function NexoraAdvisorInsightRegion({
   onAskObjectCard,
   learningWorkspaceId = null,
   productFixturesPermitted = true,
+  stageCatalogObjects,
 }: Props) {
   const [internalPanelChrome, setInternalPanelChrome] = useState(() =>
     createSceneOrgRightPanelChromeState(),
@@ -298,6 +301,7 @@ export function NexoraAdvisorInsightRegion({
       focusedSubject,
       selectedSubject,
       breadcrumb: narrativeBridge.breadcrumb,
+      ...(stageCatalogObjects != null ? { catalogObjects: stageCatalogObjects } : {}),
     });
     const resolution = resolveNexoraMVPExecutiveIntelligence(context);
     const applied =
@@ -323,6 +327,7 @@ export function NexoraAdvisorInsightRegion({
       decisionMemory: advisorBridge.decisionMemory,
       advisorBinding: advisorRealityBinding ?? null,
       validatedDataSource,
+      restrictAttentionToCatalog: stageCatalogObjects != null,
     });
     const experience = composeNexoraExecutiveIntelligenceExperience({
       narrative: composed,
@@ -377,6 +382,7 @@ export function NexoraAdvisorInsightRegion({
     theatreComposition,
     learningWorkspaceId,
     productFixturesPermitted,
+    stageCatalogObjects,
   ]);
 
   useEffect(() => {
@@ -557,6 +563,7 @@ export function NexoraAdvisorInsightRegion({
           overflow: "hidden",
         }}
       >
+        <div id="nexora-causal-inspection-slot" data-testid="nexora-causal-inspection-slot" style={{ minWidth: 0, overflow: "auto" }} />
         <ExecutiveAdvisorHeader
           tab={tab}
           onTabChange={onTabChange}

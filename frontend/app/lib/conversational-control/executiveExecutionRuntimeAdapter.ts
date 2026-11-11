@@ -3,6 +3,7 @@
  * It is deliberately unrelated to command/LLM execution identifiers.
  */
 
+import { demoProfileMutationAllowed } from "../demo-profile/demoProfileOwnership.ts";
 import type { NexoraDecisionRuntimeAdapter } from "./executiveDecisionRuntimeAdapter.ts";
 import {
   assessDecisionExecutionEligibility,
@@ -35,6 +36,7 @@ export type NexoraCanonicalExecution = {
   readonly source: string;
   readonly createdFromDecision: true;
   readonly workspaceId: string | null;
+  readonly demoProfileId?: "manufacturing" | "project" | null;
   readonly modelId: string | null;
   /**
    * RECORDED_TIME. When CC:11 first stored this Execution.
@@ -210,6 +212,9 @@ export function createNexoraCanonicalExecutionRuntime(options: {
           (input.modelId ?? decision.modelId ?? null) !== (decision.modelId ?? null)) {
         return Object.freeze({ status: "scope-mismatch" as const, execution: null, reasons: Object.freeze(["execution-decision-scope-mismatch"]) });
       }
+      if (!demoProfileMutationAllowed(decision.workspaceId, decision.demoProfileId)) {
+        return Object.freeze({ status: "scope-mismatch" as const, execution: null, reasons: Object.freeze(["demo-profile-owned-elsewhere"]) });
+      }
       const existing = Object.values(records).find((e) => e.decisionId === decision.decisionId);
       if (existing) return Object.freeze({ status: "reused" as const, execution: existing, reasons: Object.freeze(["execution-existing-reused", "execution-decision-link-preserved"]) });
       const execution = freezeExecution({
@@ -219,7 +224,7 @@ export function createNexoraCanonicalExecutionRuntime(options: {
         status: "planned",
         ownerIds: Object.freeze([]), blockers: Object.freeze([]), risks: Object.freeze([]), milestones: Object.freeze([]),
         source: "conversation", createdFromDecision: true,
-        workspaceId: decision.workspaceId ?? null, modelId: decision.modelId ?? null,
+        workspaceId: decision.workspaceId ?? null, demoProfileId: decision.demoProfileId ?? null, modelId: decision.modelId ?? null,
         createdAt: now(),
         startedAt: null,
         completedAt: null,
@@ -231,6 +236,9 @@ export function createNexoraCanonicalExecutionRuntime(options: {
     transitionExecution(input) {
       const existing = records[input.executionId] ?? null;
       if (!existing) return Object.freeze({ status: "not-found" as const, execution: null, reasons: Object.freeze(["execution-not-found"]) });
+      if (!demoProfileMutationAllowed(existing.workspaceId, existing.demoProfileId)) {
+        return Object.freeze({ status: "transition-not-allowed" as const, execution: existing, reasons: Object.freeze(["demo-profile-owned-elsewhere"]) });
+      }
       if (!isExecutionTransitionAllowed(existing.status, input.action)) return Object.freeze({ status: "transition-not-allowed" as const, execution: existing, reasons: Object.freeze(["execution-transition-rejected"]) });
       const target = executionTransitionTarget(input.action);
       if (target === existing.status) return Object.freeze({ status: "reused" as const, execution: existing, reasons: Object.freeze(["execution-existing-reused"]) });

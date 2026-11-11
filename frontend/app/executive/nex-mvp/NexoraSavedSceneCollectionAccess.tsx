@@ -11,6 +11,10 @@ type Props = {
   readonly scenes: readonly SceneOrgSavedScene[];
   readonly activeSceneId: string | null;
   readonly onOpenScene: (scene: SceneOrgSavedScene) => void;
+  readonly onSaveScene?: (name: string) => void | boolean | Promise<void | boolean>;
+  readonly conflictMessage?: string | null;
+  readonly onReviewLatestScene?: () => void;
+  readonly onMakeDefaultScene?: (sceneId: string) => void;
   readonly onRenameScene: (
     sceneId: string,
     name: string,
@@ -28,9 +32,14 @@ export function NexoraSavedSceneCollectionAccess({
   scenes,
   activeSceneId,
   onOpenScene,
+  onSaveScene,
+  conflictMessage = null,
+  onReviewLatestScene,
+  onMakeDefaultScene,
   onRenameScene,
   onDeleteScene,
 }: Props) {
+  const [draftName, setDraftName] = useState("");
   const [activeRow, setActiveRow] = useState<{
     sceneId: string;
     mode: RowMode;
@@ -75,6 +84,49 @@ export function NexoraSavedSceneCollectionAccess({
           border: "1px solid color-mix(in srgb, currentColor 22%, transparent)",
         }}
       >
+        {onSaveScene ? (
+          <form
+            data-testid="nexora-saved-scene-save-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const name = draftName.trim();
+              if (name.length === 0 || !onSaveScene) return;
+              void Promise.resolve(onSaveScene(name)).then((accepted) => {
+                if (accepted !== false) setDraftName("");
+              });
+            }}
+            style={{ display: "flex", gap: 4, marginBottom: 6 }}
+          >
+            <input
+              aria-label="Scene name"
+              data-testid="nexora-saved-scene-name"
+              value={draftName}
+              onChange={(event) => setDraftName(event.target.value)}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                background: "transparent",
+                color: "inherit",
+                border: "1px solid color-mix(in srgb, currentColor 28%, transparent)",
+                borderRadius: 4,
+                padding: "0.2rem 0.3rem",
+              }}
+            />
+            <button type="submit" data-testid="nexora-saved-scene-save" style={actionButtonStyle}>
+              Save Scene
+            </button>
+          </form>
+        ) : null}
+        {conflictMessage ? (
+          <div data-testid="saved-scene-conflict" role="alert" style={{ marginBottom: 6 }}>
+            <div>{conflictMessage}</div>
+            {onReviewLatestScene ? (
+              <button type="button" data-testid="saved-scene-review-latest" onClick={onReviewLatestScene} style={actionButtonStyle}>
+                Review latest Scene
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         {scenes.length === 0 ? (
           <div data-testid="nexora-saved-scene-collection-empty" style={{ opacity: 0.75 }}>
             No saved scenes yet.
@@ -88,6 +140,7 @@ export function NexoraSavedSceneCollectionAccess({
                 key={scene.sceneId}
                 role="listitem"
                 data-testid={`nexora-saved-scene-row-${scene.sceneId}`}
+                data-owner-deck-id={scene.ownerDeckId ?? ""}
                 style={{ marginBottom: 4 }}
               >
                 <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
@@ -152,6 +205,16 @@ export function NexoraSavedSceneCollectionAccess({
                     >
                       Rename Scene
                     </button>
+                    {onMakeDefaultScene ? (
+                      <button
+                        type="button"
+                        data-testid={`nexora-saved-scene-default-${scene.sceneId}`}
+                        onClick={() => onMakeDefaultScene(scene.sceneId)}
+                        style={actionButtonStyle}
+                      >
+                        Make Default
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       data-testid={`nexora-saved-scene-delete-${scene.sceneId}`}

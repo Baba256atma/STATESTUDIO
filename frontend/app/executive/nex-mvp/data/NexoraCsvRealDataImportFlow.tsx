@@ -21,6 +21,7 @@ import {
   discardCsvImportCandidate,
   getCsvImportCandidate,
   getCsvRealDataImport,
+  hydrateCsvRealDataImportState,
   saveCsvImportCandidate,
   type CsvCommittedImport,
   type CsvImportCandidate,
@@ -41,8 +42,15 @@ import {
   csvUncertainMeaningCopy,
   csvUnconfirmedMappings,
 } from "./nexoraDataRailPresentation.ts";
+import {
+  createIndexedDbCsvDurabilityStorage,
+  csvReplacementConflicts,
+  parseCsvDurableSnapshot,
+  persistCsvRealDataImportDurabilityBrowser,
+} from "../../../lib/data-reality/csvRealDataImportDurability.ts";
 import { acceptHostedPendingCsv, discardHostedPendingReview, uploadHostedPendingCsv } from "../../../lib/workspace-auth/hostedManagerDataClient.ts";
 import { refuseCrossWorkspaceCsvTarget } from "../../../lib/workspace/liveManagerDataWorkspaceGuard.ts";
+import { coordinateWorkspaceMutation } from "../../../lib/workspace/workspaceAuthorityFence.ts";
 import { DEMO_WORKSPACE_ID, type WorkspaceId } from "../../../lib/workspace/workspaceRegistryContract.ts";
 import { getWorkspaceById } from "../../../lib/workspace/workspaceRegistryStore.ts";
 import { cockpit } from "../../exs1/shell/executiveCockpitTheme.ts";
@@ -434,24 +442,58 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
         }
         dispatch({ type: "completed", commit: { committed: true, reason: "committed", previous: null, current } });
         props.onCompleted?.(current);
-      }).catch(() => {
-        dispatch({ type: "error", message: "Import was not committed; previous Runtime truth is unchanged." });
+      }).catch((error: unknown) => {
+        dispatch({ type: "error", message: error instanceof Error && error.message.includes("no longer available")
+          ? error.message
+          : "Import was not committed; previous Runtime truth is unchanged." });
       });
       return;
     }
-    const result = commitPreparedCsvRealDataImport({
-      prepared: flow.prepared,
-      expectedWorkspaceId: props.workspaceId,
-      mode: replace ? "replace" : "new",
-      committedAt: new Date().toISOString(),
+    void coordinateWorkspaceMutation({ workspaceId: props.workspaceId }, async () => {
+      if (replace) {
+        const raw = await createIndexedDbCsvDurabilityStorage().get();
+        const parsed = raw ? parseCsvDurableSnapshot(raw) : null;
+        if (!parsed?.snapshot) {
+          dispatch({ type: "error", message: "Import was not committed; previous Runtime truth is unchanged." });
+          return;
+        }
+        const durable = parsed.snapshot.committed.find((entry) =>
+          entry.workspaceId === props.workspaceId && entry.sourceContextId === flow.prepared!.sourceContextId);
+        if (csvReplacementConflicts({
+          expectedImportId: replacement?.importId ?? null,
+          durableImportId: durable?.importId ?? null,
+        })) {
+          hydrateCsvRealDataImportState(parsed.snapshot);
+          dispatch({ type: "error", message: "A newer import was saved for this dataset. Review it before replacing again." });
+          return;
+        }
+      }
+      const result = commitPreparedCsvRealDataImport({
+        prepared: flow.prepared!,
+        expectedWorkspaceId: props.workspaceId,
+        mode: replace ? "replace" : "new",
+        committedAt: new Date().toISOString(),
+      });
+      if (!result.committed) {
+        dispatch({ type: "error", message: result.reason === "source_exists" ? "This source already exists. Choose Replace Existing Source Snapshot or cancel." : "Import was not committed; previous Runtime truth is unchanged." });
+        return;
+      }
+      const durableWrite = await persistCsvRealDataImportDurabilityBrowser();
+      if (!durableWrite.persisted) {
+        const durableRaw = await createIndexedDbCsvDurabilityStorage().get();
+        const durableParsed = durableRaw ? parseCsvDurableSnapshot(durableRaw) : null;
+        if (durableParsed?.snapshot) hydrateCsvRealDataImportState(durableParsed.snapshot);
+        dispatch({ type: "error", message: "Import was not committed; previous Runtime truth is unchanged." });
+        return;
+      }
+      dispatch({ type: "completed", commit: result });
+      if (result.current) props.onCompleted?.(result.current);
+    }).catch((error: unknown) => {
+      dispatch({ type: "error", message: error instanceof Error && error.message.includes("no longer available")
+        ? error.message
+        : "Import was not committed; previous Runtime truth is unchanged." });
     });
-    if (!result.committed) {
-      dispatch({ type: "error", message: result.reason === "source_exists" ? "This source already exists. Choose Replace Existing Source Snapshot or cancel." : "Import was not committed; previous Runtime truth is unchanged." });
-      return;
-    }
-    dispatch({ type: "completed", commit: result });
-    if (result.current) props.onCompleted?.(result.current);
-  }, [flow.mapping, flow.prepared, props]);
+  }, [flow.mapping, flow.prepared, props, replacement]);
 
   const existing = flow.prepared ? getCsvRealDataImport(props.workspaceId, flow.prepared.sourceContextId) : null;
   const showReview = Boolean(flow.parse && flow.mapping && flow.status !== "idle" && flow.status !== "file-selected");

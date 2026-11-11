@@ -185,7 +185,7 @@ test("Manufacturing and Project cards call the certified entry seams", () => {
     PROJECT_DEMO_RESOURCES_FILE,
     PROJECT_DEMO_SCHEDULE_FILE,
   ].sort());
-  assert.equal(fileNames("demo-profile:manufacturing:").length, 0);
+  assert.equal(fileNames("demo-profile:manufacturing:").length, 3);
   assert.equal(
     listCsvRealDataImports(DEMO_WORKSPACE_ID).some((entry) => entry.prepared.fileName === CSV_MVP_DEMO_INVENTORY_FILE),
     false,
@@ -196,7 +196,7 @@ test("Manufacturing and Project cards call the certified entry seams", () => {
   const returned = openDemoLibraryItem("manufacturing");
   assert.equal(returned?.opened, true);
   assert.equal(readActiveDemoProfile(), "manufacturing");
-  assert.equal(fileNames("demo-profile:project:").length, 0);
+  assert.equal(fileNames("demo-profile:project:").length, 3);
   assert.equal(fileNames("demo-profile:manufacturing:").length, 3);
   assert.equal(openDemoLibraryItem("finance"), null);
   assert.equal(readActiveDemoProfile(), "manufacturing");
@@ -302,12 +302,12 @@ test("returning from a manager workspace restores the selected demo through the 
   assert.equal(listCsvRealDataImports(company.workspaceId).some((entry) => entry.importId.startsWith("demo-profile:")), false);
   openDemoLibraryItem("manufacturing");
   assert.equal(readActiveDemoProfile(), "manufacturing");
-  assert.equal(fileNames("demo-profile:project:").length, 0);
+  assert.equal(fileNames("demo-profile:project:").length, 3);
   assert.equal(selectManagerWorkspaceEntry(expansion.workspaceId), true);
   assert.equal(readActiveDemoProfile(), null);
   openDemoLibraryItem("project");
   assert.equal(readActiveDemoProfile(), "project");
-  assert.equal(fileNames("demo-profile:manufacturing:").length, 0);
+  assert.equal(fileNames("demo-profile:manufacturing:").length, 3);
   assert.equal(listCsvRealDataImports(expansion.workspaceId).some((entry) => entry.importId.startsWith("demo-profile:")), false);
   assert.deepEqual(fingerprint(company.workspaceId), companyCsv);
   assert.deepEqual(fingerprint(expansion.workspaceId), projectCsv);

@@ -47,6 +47,18 @@ export type SceneOrgRightPackageTab = Readonly<{
   view: SceneOrgRightPackageView;
   /** Presentation label from canonical display identity. Not business truth. */
   label: string;
+  /** Workspace that owned the tab when it was opened. Null means unstamped. */
+  ownerWorkspaceId: string | null;
+  /** Demo profile that owned the tab when it was opened. Null means none. */
+  ownerDemoProfileId: string | null;
+  /** Deck that owned the tab. Null means the context has no Deck identity. */
+  ownerDeckId: string | null;
+  /**
+   * True when the id belonged to the Stage catalog at open.
+   * Those tabs close when the id leaves the catalog.
+   * False keeps a non-catalog reference until its owner context changes.
+   */
+  catalogBound: boolean;
 }>;
 
 export type SceneOrgRightPackageTabSession = Readonly<{
@@ -59,6 +71,17 @@ export type SceneOrgRightPackageTabOpenInput = Readonly<{
   canonicalId: string;
   label: string;
   view?: SceneOrgRightPackageView;
+  ownerWorkspaceId?: string | null;
+  ownerDemoProfileId?: string | null;
+  ownerDeckId?: string | null;
+  catalogBound?: boolean;
+}>;
+
+export type SceneOrgRightPackageTabAuthority = Readonly<{
+  workspaceId: string;
+  demoProfileId: string | null;
+  deckId?: string | null;
+  catalogObjectIds: readonly string[];
 }>;
 
 export const SCENE_ORG_RIGHT_PACKAGE_TAB_AUTHORITY_GUARD = Object.freeze({
@@ -95,6 +118,10 @@ export function createSceneOrgRightPackageTab(
     canonicalId,
     view: input.view ?? "working-context",
     label,
+    ownerWorkspaceId: input.ownerWorkspaceId ?? null,
+    ownerDemoProfileId: input.ownerDemoProfileId ?? null,
+    ownerDeckId: input.ownerDeckId ?? null,
+    catalogBound: input.catalogBound ?? true,
   });
 }
 
@@ -172,6 +199,51 @@ export function activateSceneOrgRightPackageTab(
   }
   if (!session.tabs.some((tab) => tab.tabId === surface)) return session;
   return Object.freeze({ ...session, activeSurface: surface });
+}
+
+/**
+ * A package tab is valid only while its canonical id is in the authoritative
+ * Stage catalog. Tabs for a previous workspace, demo profile, or removed
+ * object close. Advisor and Details stay available; an active obsolete tab
+ * returns to Advisor.
+ */
+function sceneOrgRightPackageTabRemains(
+  tab: SceneOrgRightPackageTab,
+  authority: SceneOrgRightPackageTabAuthority,
+): boolean {
+  const allowed = new Set(authority.catalogObjectIds);
+  if (
+    tab.ownerWorkspaceId != null &&
+    tab.ownerWorkspaceId !== authority.workspaceId
+  ) {
+    return false;
+  }
+  if (tab.ownerDemoProfileId !== authority.demoProfileId) {
+    return false;
+  }
+  if ((tab.ownerDeckId ?? null) !== (authority.deckId ?? null)) {
+    return false;
+  }
+  if (tab.catalogBound && !allowed.has(tab.canonicalId)) return false;
+  return true;
+}
+
+export function retainSceneOrgRightPackageTabsInCatalog(
+  session: SceneOrgRightPackageTabSession,
+  authority: SceneOrgRightPackageTabAuthority,
+): SceneOrgRightPackageTabSession {
+  const tabs = session.tabs.filter((tab) =>
+    sceneOrgRightPackageTabRemains(tab, authority),
+  );
+  if (tabs.length === session.tabs.length) return session;
+  const activeStillPresent =
+    session.activeSurface === "advisor" ||
+    session.activeSurface === "details" ||
+    tabs.some((tab) => tab.tabId === session.activeSurface);
+  return Object.freeze({
+    tabs: Object.freeze(tabs),
+    activeSurface: activeStillPresent ? session.activeSurface : "advisor",
+  });
 }
 
 export function closeSceneOrgRightPackageTab(

@@ -138,7 +138,7 @@ test("refuses an empty name or an unknown type without changing the registry", (
   assert.equal(createManagerWorkspaceFromEntry({ name: "", kind: "BUSINESS" }), null);
   assert.equal(createManagerWorkspaceFromEntry({ name: "BAHA Doors", kind: "overview" }), null);
   assert.equal(getActiveWorkspaceId(), DEMO_WORKSPACE_ID);
-  assert.equal(getWorkspaceRegistrySnapshot().workspaceOrder.length, 1);
+  assert.equal(getWorkspaceRegistrySnapshot().workspaceOrder.length, 2);
 });
 
 test("switches through the canonical selection path and preserves the registry as authority", () => {

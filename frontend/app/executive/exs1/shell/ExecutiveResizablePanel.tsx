@@ -74,7 +74,9 @@ export function ExecutiveResizablePanel({
       data-width={displayWidth}
       style={{
         width: displayWidth,
-        flexShrink: 0,
+        flex: collapsed ? `0 0 ${collapsedWidth}px` : `0 1 ${displayWidth}px`,
+        minWidth: collapsed ? collapsedWidth : `min(${minWidth}px, 42vw)`,
+        maxWidth: displayWidth,
         position: "relative",
         minHeight: 0,
         display: "flex",

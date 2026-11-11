@@ -23,6 +23,7 @@ import {
   createEmptyNexoraMVPObjectInteractionCatalog,
 } from "../nex-mvp/nexoraMVPObjectInteraction.ts";
 import { resolveNexoraMVPDataRealityAwareStageExperience } from "../nex-mvp/nexoraMVPDataRealityAwareStageExperience.ts";
+import { resolveActiveDemoProfileStageMaterials } from "./demoProfileStageCatalog.ts";
 import { isManagerWorkspaceKind } from "../workspace/workspaceRegistryContract.ts";
 import { createManagerWorkspace } from "../workspace/managerWorkspaceIdentity.ts";
 import { DEMO_WORKSPACE_ID } from "../workspace/workspaceRegistryContract.ts";
@@ -83,9 +84,16 @@ function packageImports() {
 }
 
 function manufacturingStage() {
+  const demo = resolveActiveDemoProfileStageMaterials();
+  if (!demo) {
+    return resolveNexoraMVPDataRealityAwareStageExperience({
+      baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
+      suppressUnownedDemoDataset: true,
+    });
+  }
   return resolveNexoraMVPDataRealityAwareStageExperience({
-    baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
-    suppressUnownedDemoDataset: true,
+    baseCatalog: demo.catalog,
+    dataset: demo.dataset,
   });
 }
 
@@ -226,9 +234,10 @@ test("Manufacturing contains fixture answers and the Executive Operations baseli
     subjects: live.advisorBundle.subjects,
   });
   for (const label of FIXTURE_LABELS) assert.doesNotMatch(text, new RegExp(label));
+  assert.ok(experience.catalog.objects.length > 0);
   assert.equal(experience.catalog.contextSubjects.length, 0);
   assert.notEqual(experience.runtimeState.datasetIdentity.datasetId, EXECUTIVE_OPERATIONS_DEMO_DATASET_ID);
-  assert.equal(experience.usesActiveDataSource, false);
+  assert.equal(experience.usesActiveDataSource, true);
   const legacy = resolveNexoraMVPDataRealityAwareStageExperience();
   assert.equal(legacy.runtimeState.datasetIdentity.datasetId, EXECUTIVE_OPERATIONS_DEMO_DATASET_ID);
   assert.match(JSON.stringify(legacy.catalog.contextSubjects), /Capacity Gap/);

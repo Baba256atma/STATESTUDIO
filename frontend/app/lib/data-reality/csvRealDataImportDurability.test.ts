@@ -26,10 +26,13 @@ import {
   persistCsvRealDataImportDurability,
   recoverCsvRealDataImportDurability,
   parseCsvDurableSnapshot,
+  csvReplacementConflicts,
   getCsvDurabilityHealth,
   csvRealDataImportDurabilityVersion,
 } from "./csvRealDataImportDurability.ts";
 import { prepareCsvRealDataImport } from "./csvRealDataVerticalSlice.ts";
+import { DEMO_WORKSPACE_ID } from "../workspace/workspaceRegistryContract.ts";
+import { setActiveWorkspace, upsertWorkspace } from "../workspace/workspaceRegistryStore.ts";
 import { interpretCsvSemantics } from "./csvSemanticUnderstanding.ts";
 import { parseCsvDeterministically, suggestCsvColumnMappings, updateCsvColumnMapping } from "./csvRealDataVerticalSlice.ts";
 import { projectExecutiveSourceIntelligence } from "./executiveSourceIntelligence.ts";
@@ -143,7 +146,17 @@ test("DATA-UX:6 multi committed, multi pending, workspace isolation, cancel, rem
   const b = commitFile("overview", "capacity.csv", ready, "ux6-b");
   const customer = "Customer Satisfaction,Maximum Satisfaction Score\n4.2,5";
   commitFile("overview", "customer.csv", customer, "ux6-c");
+  upsertWorkspace({
+    workspaceId: "workspace-b",
+    workspaceName: "Workspace B",
+    status: "active",
+    createdAt: T0,
+    updatedAt: T0,
+    lastOpenedAt: T0,
+  });
+  setActiveWorkspace("workspace-b");
   commitFile("workspace-b", "delivery.csv", ready, "ux6-b-delivery");
+  setActiveWorkspace(DEMO_WORKSPACE_ID);
   const storage = createMemoryCsvDurabilityStorage();
   await persistCsvRealDataImportDurability(storage, T0);
   resetCsvRealDataImportStoreForTests();
@@ -276,4 +289,10 @@ test("DATA-UX:6 corruption, incompatible version, write failure, and authority b
   assert.match(explorer, /nexora-csv-durability-warning/);
   assert.match(explorer, /setCsvIntake\("new"\)/);
   assert.equal(csvRealDataImportDurabilityVersion, "1.0.0");
+});
+
+test("a replacement conflicts when durable storage no longer has the reviewed import", () => {
+  assert.equal(csvReplacementConflicts({ expectedImportId: "RDI-old", durableImportId: "RDI-old" }), false);
+  assert.equal(csvReplacementConflicts({ expectedImportId: "RDI-old", durableImportId: "RDI-new" }), true);
+  assert.equal(csvReplacementConflicts({ expectedImportId: "RDI-old", durableImportId: null }), true);
 });

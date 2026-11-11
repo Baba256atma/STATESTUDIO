@@ -32,7 +32,26 @@ export type NexoraDecisionTheatreDataObject = Readonly<{
   visualFamily: "DATA_OBJECT";
   id: string;
   label: string;
-  sourceType: "csv";
+  sourceType: "csv" | "organizational-object" | "decision-domain";
+  impactRole?: "SELECTED_DECISION" | "DIRECT_TARGET" | "CONNECTED_OBJECT";
+  decisionDomain?: Readonly<{
+    kind: "GOAL" | "SCENARIO" | "DECISION" | "EXECUTION_PLAN";
+    lifecycleStatus: string;
+    provenance: string;
+    deckId: string;
+    related: readonly string[];
+    approvalStatus: string | null;
+  }>;
+  organizational?: Readonly<{
+    objectType: string;
+    lifecycleStatus: "ACTIVE" | "ARCHIVED";
+    provenance: string;
+    attributes: Readonly<Record<string, string | number | boolean>>;
+    deckIds: readonly string[];
+    reconciliationStatus: string;
+    sourceDatasetIds: readonly string[];
+    sourceAssociations?: readonly string[];
+  }>;
   workspaceId: string;
   sourceId: string;
   sourceSnapshotRef: string;
@@ -45,7 +64,7 @@ export type NexoraDecisionTheatreDataObject = Readonly<{
   confirmedFieldCount: number;
   unresolvedFieldCount: number;
   updatedAt: string;
-  authoritativeSource: "RDI:2/CsvCommittedImport";
+  authoritativeSource: "RDI:2/CsvCommittedImport" | "NPA-T CANONICAL-OBJECT-MODEL:1/WorkspaceCanonicalObjectRegistry" | "NPA-T DECISION-SOLAR-FOUNDATION:1/CanonicalDecisionDomain";
   projectionAuthority: typeof nexoraDecisionTheatreDataObjectProjectionIdentity;
   stageCompatibility: Readonly<{
     participantId: string;
@@ -60,7 +79,7 @@ export type NexoraDecisionTheatreDataObject = Readonly<{
     isEvidence: false;
     impliesCausality: false;
     createsBusinessTruth: false;
-    ambiguityRequiresClarification: true;
+    ambiguityRequiresClarification: boolean;
   }>;
   writes: Readonly<{
     dataReality: false;

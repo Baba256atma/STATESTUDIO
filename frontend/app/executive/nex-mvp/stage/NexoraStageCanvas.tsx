@@ -8,6 +8,8 @@ import { resolveExecutiveStageFixedCamera } from "@/app/lib/spatial-presentation
 import { shouldResetExecutiveStage2DToOverview } from "@/app/lib/spatial-presentation/executiveStage2DTopologyReadability";
 import { NexoraStageScene } from "./NexoraStageScene";
 import type { ExecutiveOvsIsometricTheatreVisual } from "@/app/lib/spatial-presentation/executiveOvsIsometricTheatreVisual";
+import type { OrganizationalSolarLayout } from "@/app/lib/scene-org/organizationalSolarView";
+import type { DecisionSolarLayout } from "@/app/lib/scene-org/decisionSolarProjection";
 
 type Props = {
   readonly presentation: NexoraMVPStageInteractionPresentation;
@@ -16,6 +18,13 @@ type Props = {
   readonly isometricVisual?: ExecutiveOvsIsometricTheatreVisual | null;
   readonly onSelectSubject: (subjectId: string) => void;
   readonly onSelectDataObject: (dataObjectId: string) => void;
+  readonly onRepositionDataObject?: (
+    dataObjectId: string,
+    position: { x: number; y: number; z: 0 },
+  ) => boolean;
+  readonly spatialEpoch?: string;
+  readonly solarLayout?: OrganizationalSolarLayout | null;
+  readonly decisionSolarLayout?: DecisionSolarLayout | null;
   readonly onClearSelection: () => void;
   readonly fitDistance?: number;
 };
@@ -30,6 +39,10 @@ export function NexoraStageCanvas({
   isometricVisual = null,
   onSelectSubject,
   onSelectDataObject,
+  onRepositionDataObject,
+  spatialEpoch,
+  solarLayout = null,
+  decisionSolarLayout = null,
   onClearSelection,
   fitDistance,
 }: Props) {
@@ -83,6 +96,10 @@ export function NexoraStageCanvas({
         isometricVisual={isometricVisual}
         onSelectSubject={onSelectSubject}
         onSelectDataObject={onSelectDataObject}
+        onRepositionDataObject={onRepositionDataObject}
+        spatialEpoch={spatialEpoch}
+        solarLayout={solarLayout}
+        decisionSolarLayout={decisionSolarLayout}
         onClearSelection={onClearSelection}
         fitDistance={fitDistance}
       />

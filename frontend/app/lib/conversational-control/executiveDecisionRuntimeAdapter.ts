@@ -5,6 +5,7 @@
  * EXS1 ExecutiveRuntimeStore can be adapted behind the same port.
  */
 
+import { demoProfileIdForWrite, demoProfileMutationAllowed } from "../demo-profile/demoProfileOwnership.ts";
 import type {
   NexoraDecisionRationale,
   NexoraExecutiveDecision,
@@ -155,6 +156,14 @@ function applyTransitionToRecord(
   input: NexoraDecisionRuntimeTransitionInput,
 ): NexoraDecisionRuntimeTransitionResult {
   const action = input.action;
+  const workspaceId = input.workspaceId ?? existing?.workspaceId ?? null;
+  if (existing && !demoProfileMutationAllowed(existing.workspaceId, existing.demoProfileId)) {
+    return Object.freeze({
+      status: "transition-not-allowed" as const,
+      decision: existing,
+      reasons: Object.freeze(["demo-profile-owned-elsewhere"]),
+    });
+  }
   const targetStatus = resolveTargetStatusForAction(
     action,
     existing?.status ?? null,
@@ -211,7 +220,8 @@ function applyTransitionToRecord(
         ? input.committedAt ?? existing?.committedAt
         : existing?.committedAt,
     source: "conversation" as const,
-    workspaceId: input.workspaceId ?? existing?.workspaceId ?? null,
+    workspaceId,
+    demoProfileId: existing?.demoProfileId ?? demoProfileIdForWrite(workspaceId),
     modelId: input.modelId ?? existing?.modelId ?? null,
     candidateId: input.candidateId ?? existing?.candidateId,
   });

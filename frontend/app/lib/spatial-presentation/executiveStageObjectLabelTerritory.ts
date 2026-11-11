@@ -8,11 +8,14 @@
  * name+state in one owned container, association vs neighbor silhouettes.
  */
 
-import {
-  EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT,
-  resolveExecutiveStage2DVisibleBounds,
-} from "./executiveStage2DHardSeparation.ts";
+import { EXECUTIVE_STAGE_2D_VISUAL_FOOTPRINT } from "./executiveStage2DHardSeparation.ts";
+import { resolveExecutiveStageFixedCamera } from "./executiveStage2DFixedCamera.ts";
 import { EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION } from "./executiveStageReservedRegionContainment.ts";
+import { resolveExecutiveObjectGeometryFamily } from "./executiveObjectGeometryLanguage.ts";
+import {
+  EXECUTIVE_OBJECT_LABEL_FONT_TOKENS,
+  projectExecutiveObjectLabelToNdc,
+} from "./executiveObjectLabelInformationDensity.ts";
 import {
   formatExecutiveObjectStageLabel,
   resolveExecutiveLabelWorldOffset,
@@ -95,9 +98,40 @@ export type ExecutiveStageObjectLabelOwnership = Readonly<{
   readonly visibility: ExecutiveStageLabelVisibilityMode;
   readonly primaryLine: string;
   readonly secondaryLine: string | null;
+  readonly valueLine: string | null;
   readonly worldOffsetX: number;
   readonly worldOffsetY: number;
   readonly priorityRank: number;
+}>;
+
+/**
+ * One paint contract for every Executive Stage caption.
+ * The measured CSS box is centered on the projected anchor.
+ * World size follows drei Html: css pixels × distanceFactor / viewport height.
+ * Character width matches the rendered uppercase caption, including tracking.
+ */
+export const EXECUTIVE_STAGE_LABEL_MEASUREMENT = Object.freeze({
+  paintOrigin: "center" as const,
+  distanceFactor: 10,
+  /** Uppercase IBM Plex Sans at weight 700 plus 0.04em tracking. */
+  charWidthEm: 0.76,
+  lineHeight: 1.15,
+  wrapCharacters: 16,
+  referenceViewport: Object.freeze({ width: 1440, height: 900 }),
+  /** Preferred caption edge gap. Hard overlap remains a smaller pad. */
+  preferredEdgeGapPx: 24,
+  hardLabelGapWorld: 0.04,
+});
+
+export type ExecutiveStageLabelViewport = Readonly<{
+  width: number;
+  height: number;
+  ndc?: Readonly<{
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+  }>;
 }>;
 
 export const EXECUTIVE_STAGE_LABEL_POLICY = Object.freeze({
@@ -126,12 +160,45 @@ export const EXECUTIVE_STAGE_LABEL_POLICY = Object.freeze({
     "top-left",
     "bottom",
   ] as const satisfies readonly ExecutiveStageLabelSide[]),
+  /**
+   * Object captions: Top-Right, then Top-Center.
+   * Other sides stay in the vocabulary for non-object captions.
+   */
+  objectCaptionSides: Object.freeze([
+    "top-right",
+    "top",
+  ] as const satisfies readonly ExecutiveStageLabelSide[]),
 });
 
 const SIDE_SET = new Set<string>(EXECUTIVE_STAGE_LABEL_POLICY.sideOrder);
 
+/** Screen gap expressed in the same world units as label footprints. */
+export function executiveStageLabelReadabilityGapWorld(viewportHeight: number): number {
+  const height =
+    viewportHeight > 0
+      ? viewportHeight
+      : EXECUTIVE_STAGE_LABEL_MEASUREMENT.referenceViewport.height;
+  return (
+    (EXECUTIVE_STAGE_LABEL_MEASUREMENT.preferredEdgeGapPx *
+      EXECUTIVE_STAGE_LABEL_MEASUREMENT.distanceFactor) /
+    height
+  );
+}
+
 function stabilize(value: number): number {
   return Math.round(value * 1e6) / 1e6;
+}
+
+function separationWorld(
+  a: ExecutiveStageLabelRect,
+  b: ExecutiveStageLabelRect,
+): number {
+  const gapX = Math.max(b.minX - a.maxX, a.minX - b.maxX, 0);
+  const gapY = Math.max(b.minY - a.maxY, a.minY - b.maxY, 0);
+  if (gapX === 0 && gapY === 0) return 0;
+  if (gapX === 0) return gapY;
+  if (gapY === 0) return gapX;
+  return Math.hypot(gapX, gapY);
 }
 
 function rectsOverlap(
@@ -207,15 +274,18 @@ export function resolveExecutiveStageOwnedLabelContent(input: {
   readonly objectName: string;
   readonly objectKind?: string | null;
   readonly status?: string | null;
+  readonly valueText?: string | null;
   readonly presentationLevel?: "minimum" | "report" | "operation";
   readonly visibility?: ExecutiveStageLabelVisibilityMode;
 }): Readonly<{
   readonly primaryLine: string;
   readonly secondaryLine: string | null;
+  readonly valueLine: string | null;
 }> {
   const visibility = input.visibility ?? "full";
+  const valueLine = input.valueText?.trim() || null;
   if (visibility === "hidden") {
-    return Object.freeze({ primaryLine: "", secondaryLine: null });
+    return Object.freeze({ primaryLine: "", secondaryLine: null, valueLine: null });
   }
 
   const kind = (input.objectKind ?? "").toLowerCase();
@@ -290,6 +360,7 @@ export function resolveExecutiveStageOwnedLabelContent(input: {
   return Object.freeze({
     primaryLine: primary,
     secondaryLine: secondary,
+    valueLine,
   });
 }
 
@@ -302,26 +373,10 @@ export function resolveExecutiveStageLabelPreferredSide(input: {
 }): ExecutiveStageLabelSide {
   void input.objectX;
   void input.objectY;
+  void input.focused;
+  void input.role;
   void input.nearestForeign;
-  // STAGE-LABEL:FIX1 — canonical caption sits above, centered. Collision may
-  // fall back to other sides; Objects never move.
-  if (input.focused || input.role === "focused") return "top";
-  return "top";
-}
-
-function sideDotTowardNeighbor(
-  side: ExecutiveStageLabelSide,
-  objectX: number,
-  objectY: number,
-  neighborX: number,
-  neighborY: number,
-): number {
-  const offset = resolveExecutiveLabelWorldOffset(side, 1);
-  const vx = neighborX - objectX;
-  const vy = neighborY - objectY;
-  const len = Math.hypot(vx, vy);
-  if (len < 1e-6) return 0;
-  return offset.x * (vx / len) + offset.y * (vy / len);
+  return "top-right";
 }
 
 function sidePreferenceList(
@@ -331,73 +386,73 @@ function sidePreferenceList(
   objectX: number,
   objectY: number,
 ): readonly ExecutiveStageLabelSide[] {
-  const base = focused
-    ? EXECUTIVE_STAGE_LABEL_POLICY.anchorPreferred
-    : EXECUTIVE_STAGE_LABEL_POLICY.sideOrder;
-  const ordered: ExecutiveStageLabelSide[] = [preferred];
-  const rest: ExecutiveStageLabelSide[] = [];
-  for (const side of base) {
-    if (!ordered.includes(side)) rest.push(side);
+  void preferred;
+  void focused;
+  void nearestForeign;
+  void objectX;
+  void objectY;
+  return EXECUTIVE_STAGE_LABEL_POLICY.objectCaptionSides;
+}
+
+function captionLinesForContent(
+  primaryLine: string,
+  secondaryLine: string | null,
+  valueLine: string | null,
+): readonly string[] {
+  const primary = primaryLine.trim();
+  const secondary = (secondaryLine ?? "").trim();
+  const value = (valueLine ?? "").trim();
+  if (value.length > 0) {
+    return Object.freeze([primary, value, secondary].filter((line) => line.length > 0));
   }
-  for (const side of EXECUTIVE_STAGE_LABEL_POLICY.sideOrder) {
-    if (!ordered.includes(side) && !rest.includes(side)) rest.push(side);
+  const wrap = EXECUTIVE_STAGE_LABEL_MEASUREMENT.wrapCharacters;
+  const source = primary.length > 0 ? primary : " ";
+  const lines: string[] = [];
+  for (let index = 0; index < source.length; index += wrap) {
+    lines.push(source.slice(index, index + wrap));
   }
-  if (nearestForeign != null) {
-    rest.sort((left, right) => {
-      const towardLeft = sideDotTowardNeighbor(
-        left,
-        objectX,
-        objectY,
-        nearestForeign.x,
-        nearestForeign.y,
-      );
-      const towardRight = sideDotTowardNeighbor(
-        right,
-        objectX,
-        objectY,
-        nearestForeign.x,
-        nearestForeign.y,
-      );
-      return towardLeft - towardRight;
-    });
-  }
-  for (const side of rest) ordered.push(side);
-  return Object.freeze(ordered);
+  if (secondary.length > 0) lines.push(secondary);
+  return Object.freeze(lines);
 }
 
 /**
- * Rendered captions wrap near one executive word and the Html portal
- * anchors the projected point to the caption's top-left. Width stays on
- * the column. Height grows with wrapped lines. `w`/`h` remain the radial
- * half-box so uncontested anchors do not jump.
+ * CSS size of the caption the renderer will paint, then converted to world
+ * units with the same distanceFactor the Html portal uses.
  */
 function labelFootprintForContent(
   mode: Exclude<ExecutiveStageLabelVisibilityMode, "hidden">,
   primaryLine: string,
   secondaryLine: string | null,
+  valueLine: string | null = null,
+  viewportHeight: number = EXECUTIVE_STAGE_LABEL_MEASUREMENT.referenceViewport.height,
 ): Readonly<{
   readonly w: number;
   readonly h: number;
   readonly paintedW: number;
   readonly paintedH: number;
+  readonly lines: readonly string[];
 }> {
-  const base = labelHalfForMode(mode);
-  const primary = primaryLine.trim();
-  const secondary = (secondaryLine ?? "").trim();
-  const longest = Math.max(primary.length, secondary.length, 6);
-  const w = Math.min(1.18, Math.max(base.w, longest * 0.038));
-  const h = secondary.length > 0 ? base.h * 1.32 : base.h;
-  const wrapChars = 10;
-  const primaryLines = Math.max(1, Math.ceil(Math.max(primary.length, 1) / wrapChars));
-  const lines = primaryLines + (secondary.length > 0 ? 1 : 0);
-  // Two lines match the historical half-box. Wrapped names add height only,
-  // capped so a long caption still has a legal side.
-  const extraLines = Math.min(2, Math.max(0, lines - 2));
+  const lines = captionLinesForContent(primaryLine, secondaryLine, valueLine);
+  const fontSize = EXECUTIVE_OBJECT_LABEL_FONT_TOKENS.identity;
+  void mode;
+  const longest = lines.reduce((max, line) => Math.max(max, line.length), 1);
+  const cssWidth = longest * fontSize * EXECUTIVE_STAGE_LABEL_MEASUREMENT.charWidthEm;
+  const cssHeight =
+    Math.max(lines.length, 1) *
+    fontSize *
+    EXECUTIVE_STAGE_LABEL_MEASUREMENT.lineHeight;
+  const height = viewportHeight > 1
+    ? viewportHeight
+    : EXECUTIVE_STAGE_LABEL_MEASUREMENT.referenceViewport.height;
+  const worldPerPixel = EXECUTIVE_STAGE_LABEL_MEASUREMENT.distanceFactor / height;
+  const paintedW = cssWidth * worldPerPixel;
+  const paintedH = cssHeight * worldPerPixel;
   return Object.freeze({
-    w,
-    h,
-    paintedW: base.w * 2,
-    paintedH: h * (1 + extraLines * 0.55),
+    w: paintedW / 2,
+    h: paintedH / 2,
+    paintedW,
+    paintedH,
+    lines,
   });
 }
 
@@ -422,19 +477,21 @@ function captionCloserToNeighborThanOwner(
   return false;
 }
 
-function labelHalfForMode(
-  mode: Exclude<ExecutiveStageLabelVisibilityMode, "hidden">,
-): Readonly<{ readonly w: number; readonly h: number }> {
-  return EXECUTIVE_STAGE_LABEL_POLICY.labelHalf[mode];
+function outwardHalf(
+  side: ExecutiveStageLabelSide,
+  halfX: number,
+  halfY: number,
+): number {
+  if (side === "left" || side === "right") return halfX;
+  if (side === "top" || side === "bottom") return halfY;
+  return Math.hypot(halfX, halfY) * 0.72;
 }
 
 function makeLabelRect(
   ownerX: number,
   ownerY: number,
-  ownerHalf: number,
+  body: ExecutiveStageLabelRect,
   side: ExecutiveStageLabelSide,
-  halfW: number,
-  halfH: number,
   paintedW: number,
   paintedH: number,
 ): Readonly<{
@@ -445,26 +502,138 @@ function makeLabelRect(
   readonly anchorX: number;
   readonly anchorY: number;
 }> {
-  const radial =
-    ownerHalf +
+  const bodyHalfX = Math.max(ownerX - body.minX, body.maxX - ownerX, 0.2);
+  const bodyHalfY = Math.max(ownerY - body.minY, body.maxY - ownerY, 0.2);
+  let radial =
+    outwardHalf(side, bodyHalfX, bodyHalfY) +
     EXECUTIVE_STAGE_LABEL_POLICY.ownerGap +
-    Math.max(halfH, halfW * 0.35);
-  const offset = resolveExecutiveLabelWorldOffset(side, radial);
-  const anchorX = stabilize(ownerX + offset.x);
-  const anchorY = stabilize(ownerY + offset.y);
-  // The Html portal paints down and to the right of this projected point.
+    outwardHalf(side, paintedW / 2, paintedH / 2);
+  const build = (distance: number) => {
+    const offset = resolveExecutiveLabelWorldOffset(side, distance);
+    const anchorX = stabilize(ownerX + offset.x);
+    const anchorY = stabilize(ownerY + offset.y);
+    return Object.freeze({
+      rect: Object.freeze({
+        minX: stabilize(anchorX - paintedW / 2),
+        maxX: stabilize(anchorX + paintedW / 2),
+        minY: stabilize(anchorY - paintedH / 2),
+        maxY: stabilize(anchorY + paintedH / 2),
+      }),
+      offsetX: offset.x,
+      offsetY: offset.y,
+      ownerDistance: Math.hypot(offset.x, offset.y),
+      anchorX,
+      anchorY,
+    });
+  };
+  let placed = build(radial);
+  for (let step = 0; step < 8 && rectsOverlap(placed.rect, body, 0.02); step += 1) {
+    radial += 0.06;
+    placed = build(radial);
+  }
+  return placed;
+}
+
+function bodyRectForObject(
+  object: ExecutiveStageLabelLayoutObjectInput,
+  level: "minimum" | "report" | "operation",
+): ExecutiveStageLabelRect {
+  const roleHalf =
+    object.halfExtent > 0 ? object.halfExtent : bodyHalfForRole(object.role, level);
+  const geometry = resolveExecutiveObjectGeometryFamily({
+    objectKind: object.kind && object.kind.trim().length > 0 ? object.kind : "object",
+  });
+  const halfW = Math.max(roleHalf, geometry.dimensions.width / 2);
+  const halfH = Math.max(roleHalf, geometry.dimensions.height / 2);
   return Object.freeze({
-    rect: Object.freeze({
-      minX: anchorX,
-      maxX: anchorX + paintedW,
-      minY: anchorY - paintedH,
-      maxY: anchorY,
-    }),
-    offsetX: offset.x,
-    offsetY: offset.y,
-    ownerDistance: Math.hypot(offset.x, offset.y),
-    anchorX,
-    anchorY,
+    minX: object.x - halfW,
+    maxX: object.x + halfW,
+    minY: object.y - halfH,
+    maxY: object.y + halfH,
+  });
+}
+
+function labelExceedsViewport(
+  rect: ExecutiveStageLabelRect,
+  viewport: ExecutiveStageLabelViewport | null,
+): boolean {
+  const ndc = viewport?.ndc;
+  if (viewport == null || ndc == null || viewport.width < 2 || viewport.height < 2) {
+    return false;
+  }
+  const camera = resolveExecutiveStageFixedCamera();
+  const aspect = viewport.width / viewport.height;
+  const corners = [
+    [rect.minX, rect.minY],
+    [rect.maxX, rect.minY],
+    [rect.minX, rect.maxY],
+    [rect.maxX, rect.maxY],
+  ] as const;
+  for (const [x, y] of corners) {
+    const projected = projectExecutiveObjectLabelToNdc({
+      world: { x, y, z: 0 },
+      cameraPosition: camera.position,
+      cameraTarget: camera.target,
+      fovDegrees: camera.fov,
+      aspect,
+    });
+    if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return true;
+    if (
+      projected.x < ndc.left - 1e-4 ||
+      projected.x > ndc.right + 1e-4 ||
+      projected.y < ndc.bottom - 1e-4 ||
+      projected.y > ndc.top + 1e-4
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function resolveExecutiveStageSharedCaptionBox(input: {
+  readonly ownerX: number;
+  readonly ownerY: number;
+  readonly halfExtent: number;
+  readonly kind?: string;
+  readonly lines: readonly string[];
+  readonly side?: ExecutiveStageLabelSide;
+  readonly viewportHeight?: number;
+}): Readonly<{
+  readonly offsetX: number;
+  readonly offsetY: number;
+  readonly rect: ExecutiveStageLabelRect;
+}> {
+  const side = input.side ?? "bottom";
+  const footprint = labelFootprintForContent(
+    "full",
+    input.lines[0] ?? "",
+    input.lines.length > 2 ? input.lines[2]! : input.lines.length > 1 ? null : null,
+    input.lines.length > 2 ? input.lines[1]! : input.lines[1] ?? null,
+    input.viewportHeight,
+  );
+  const body = bodyRectForObject(
+    {
+      id: "caption-owner",
+      label: input.lines[0] ?? "",
+      kind: input.kind,
+      x: input.ownerX,
+      y: input.ownerY,
+      halfExtent: input.halfExtent,
+    },
+    "minimum",
+  );
+  const placement = makeLabelRect(
+    input.ownerX,
+    input.ownerY,
+    body,
+    side,
+    footprint.paintedW,
+    footprint.paintedH,
+  );
+  return Object.freeze({
+    offsetX: placement.offsetX,
+    offsetY: placement.offsetY,
+    rect: placement.rect,
   });
 }
 
@@ -479,6 +648,71 @@ function maxOwnerDistance(
       Math.max(halfW, halfH)) *
     EXECUTIVE_STAGE_LABEL_POLICY.maxOwnerDistanceFactor
   );
+}
+
+function fitTopCenterInsideStage<T extends {
+  readonly rect: ExecutiveStageLabelRect;
+  readonly offsetX: number;
+  readonly offsetY: number;
+  readonly anchorX: number;
+  readonly anchorY: number;
+  readonly ownerDistance: number;
+}>(
+  placement: T,
+  usable: ExecutiveStageLabelRect,
+  ownerBody: ExecutiveStageLabelRect,
+): T | null {
+  let dx = 0;
+  let dy = 0;
+  const overflowLeft = usable.minX - placement.rect.minX;
+  const overflowRight = placement.rect.maxX - usable.maxX;
+  if (overflowLeft > 1e-6 && overflowRight > 1e-6) return null;
+  if (overflowLeft > 1e-6) dx = overflowLeft;
+  else if (overflowRight > 1e-6) dx = -overflowRight;
+  const shifted = (shiftX: number, shiftY: number): ExecutiveStageLabelRect =>
+    Object.freeze({
+      minX: stabilize(placement.rect.minX + shiftX),
+      maxX: stabilize(placement.rect.maxX + shiftX),
+      minY: stabilize(placement.rect.minY + shiftY),
+      maxY: stabilize(placement.rect.maxY + shiftY),
+    });
+  for (let pass = 0; pass < 4; pass += 1) {
+    const rect = shifted(dx, dy);
+    let raise = 0;
+    for (const region of EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION.hardReservedRegions) {
+      const bounds = {
+        minX: region.minX,
+        maxX: region.maxX,
+        minY: region.minY,
+        maxY: region.maxY,
+      };
+      if (!rectsOverlap(rect, bounds)) continue;
+      raise = Math.max(raise, bounds.maxY - rect.minY + 0.03);
+    }
+    if (raise <= 1e-6) break;
+    dy += raise;
+  }
+  if (dx === 0 && dy === 0) return placement;
+  const rect = shifted(dx, dy);
+  const inside =
+    rect.minX >= usable.minX - 1e-6 &&
+    rect.maxX <= usable.maxX + 1e-6 &&
+    rect.minY >= usable.minY - 1e-6 &&
+    rect.maxY <= usable.maxY + 1e-6 &&
+    rect.minX < ownerBody.maxX &&
+    rect.maxX > ownerBody.minX &&
+    placement.anchorY + dy > ownerBody.maxY &&
+    !labelIntersectsReserved(rect);
+  if (!inside) return null;
+  return Object.freeze({
+    ...placement,
+    rect,
+    offsetX: stabilize(placement.offsetX + dx),
+    offsetY: stabilize(placement.offsetY + dy),
+    anchorX: stabilize(placement.anchorX + dx),
+    anchorY: stabilize(placement.anchorY + dy),
+    ownerDistance: Math.hypot(placement.offsetX + dx, placement.offsetY + dy),
+  });
 }
 
 function labelIntersectsReserved(rect: ExecutiveStageLabelRect): boolean {
@@ -512,6 +746,7 @@ export type ExecutiveStageLabelLayoutObjectInput = Readonly<{
   readonly labelVisible?: boolean;
   readonly disclosureState?: string;
   readonly opacity?: number;
+  readonly valueText?: string | null;
 }>;
 
 export type ExecutiveStageLabelLayoutObstacle = Readonly<{
@@ -557,8 +792,12 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
   readonly obstacles?: readonly ExecutiveStageLabelLayoutObstacle[];
   readonly presentationLevel?: "minimum" | "report" | "operation";
   readonly anchorObjectId?: string | null;
+  readonly viewport?: ExecutiveStageLabelViewport | null;
 }): ExecutiveStageLabelLayoutResult {
   const level = input.presentationLevel ?? "minimum";
+  const viewportHeight =
+    input.viewport?.height ??
+    EXECUTIVE_STAGE_LABEL_MEASUREMENT.referenceViewport.height;
   const obstacles = input.obstacles ?? [];
   const visibleObjects = input.objects
     .filter(
@@ -580,14 +819,7 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
   for (const object of input.objects) {
     if (object.disclosureState === "hidden") continue;
     if (object.opacity != null && object.opacity <= 0.05) continue;
-    const half =
-      object.halfExtent > 0
-        ? object.halfExtent
-        : bodyHalfForRole(object.role, level);
-    bodyById.set(
-      object.id,
-      resolveExecutiveStage2DVisibleBounds(object.x, object.y, half),
-    );
+    bodyById.set(object.id, bodyRectForObject(object, level));
   }
 
   const placed: ExecutiveStageObjectLabelOwnership[] = [];
@@ -598,213 +830,302 @@ export function resolveExecutiveStageOwnedLabelPlacement(input: {
   let reservedCollisionCount = 0;
   let clippedCount = 0;
 
-  for (const object of visibleObjects) {
+  const considerSide = (
+    object: ExecutiveStageLabelLayoutObjectInput,
+    side: ExecutiveStageLabelSide,
+    mode: Exclude<ExecutiveStageLabelVisibilityMode, "hidden">,
+    reserved: readonly ExecutiveStageLabelRect[],
+    preferred: ExecutiveStageLabelSide,
+    labelClearance: number,
+  ): ExecutiveStageObjectLabelOwnership | null => {
     const ownerHalf =
       object.halfExtent > 0
         ? object.halfExtent
         : bodyHalfForRole(object.role, level);
-    const nearestForeign = (() => {
-      let best: { x: number; y: number; dist: number } | null = null;
-      for (const other of input.objects) {
-        if (other.id === object.id) continue;
-        if (other.disclosureState === "hidden") continue;
-        if (other.opacity != null && other.opacity <= 0.05) continue;
-        const dist = Math.hypot(object.x - other.x, object.y - other.y);
-        if (best == null || dist < best.dist) {
-          best = { x: other.x, y: other.y, dist };
+    const ownerBody = bodyById.get(object.id);
+    if (ownerBody == null) return null;
+    const content = resolveExecutiveStageOwnedLabelContent({
+      objectName: object.label,
+      objectKind: object.kind,
+      status: object.status,
+      valueText: object.valueText,
+      presentationLevel: level,
+      visibility: mode,
+    });
+    const footprint = labelFootprintForContent(
+      mode,
+      content.primaryLine,
+      content.secondaryLine,
+      content.valueLine,
+      viewportHeight,
+    );
+    const placement = makeLabelRect(
+      object.x,
+      object.y,
+      ownerBody,
+      side,
+      footprint.paintedW,
+      footprint.paintedH,
+    );
+    if (!Number.isFinite(placement.anchorX) || !Number.isFinite(placement.anchorY)) return null;
+    const usable = EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION.usableRect;
+    const fitted =
+      side === "top" ? fitTopCenterInsideStage(placement, usable, ownerBody) : placement;
+    if (fitted == null) return null;
+    if (fitted.ownerDistance > maxOwnerDistance(ownerHalf, footprint.w, footprint.h) + 1e-6) {
+      return null;
+    }
+    if (
+      fitted.rect.minX < usable.minX - 1e-6 ||
+      fitted.rect.maxX > usable.maxX + 1e-6 ||
+      fitted.rect.minY < usable.minY - 1e-6 ||
+      fitted.rect.maxY > usable.maxY + 1e-6 ||
+      labelExceedsViewport(fitted.rect, input.viewport ?? null) ||
+      labelIntersectsReserved(fitted.rect) ||
+      rectsOverlap(fitted.rect, ownerBody, 0.02)
+    ) {
+      return null;
+    }
+    for (const [bodyId, body] of bodyById) {
+      if (bodyId !== object.id && rectsOverlap(fitted.rect, body, 0.02)) return null;
+    }
+    for (const obstacle of obstacles) {
+      if (rectsOverlap(fitted.rect, obstacle.bounds, 0.02)) return null;
+    }
+    for (const other of reserved) {
+      if (rectsOverlap(fitted.rect, other, labelClearance)) return null;
+    }
+    if (
+      captionCloserToNeighborThanOwner(
+        fitted.anchorX,
+        fitted.anchorY,
+        object.id,
+        bodyById,
+        EXECUTIVE_STAGE_LABEL_POLICY.associationPad,
+      )
+    ) {
+      return null;
+    }
+    return Object.freeze({
+      ownerObjectId: object.id,
+      labelId: `label-${object.id}`,
+      preferredSide: preferred,
+      resolvedSide: side,
+      anchorPoint: Object.freeze([object.x, object.y] as const),
+      bounds: fitted.rect,
+      territoryBounds: Object.freeze({
+        minX: object.x - ownerHalf - footprint.w - EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
+        maxX: object.x + ownerHalf + footprint.w + EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
+        minY: object.y - ownerHalf - footprint.h - EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
+        maxY: object.y + ownerHalf + footprint.h + EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
+      }),
+      ownerDistance: fitted.ownerDistance,
+      visibility: mode,
+      primaryLine: content.primaryLine,
+      secondaryLine: content.secondaryLine,
+      valueLine: content.valueLine,
+      worldOffsetX: fitted.offsetX,
+      worldOffsetY: fitted.offsetY,
+      priorityRank: resolveExecutiveStageLabelPriorityRank(object),
+    });
+  };
+
+  const hardLabelGap = EXECUTIVE_STAGE_LABEL_MEASUREMENT.hardLabelGapWorld;
+  const readableGap = Math.max(
+    hardLabelGap,
+    executiveStageLabelReadabilityGapWorld(viewportHeight),
+  );
+  const trySharedBatch = (
+    clearance: number,
+  ): readonly ExecutiveStageObjectLabelOwnership[] | null => {
+    for (const mode of ["full"] as const) {
+      for (const side of ["top-right"] as const) {
+        const reserved: ExecutiveStageLabelRect[] = [];
+        const batch: ExecutiveStageObjectLabelOwnership[] = [];
+        let fits = true;
+        for (const object of visibleObjects) {
+          const hit = considerSide(object, side, mode, reserved, side, clearance);
+          if (hit == null) {
+            fits = false;
+            break;
+          }
+          batch.push(hit);
+          reserved.push(hit.bounds);
+        }
+        if (fits && batch.length === visibleObjects.length && batch.length > 0) {
+          return batch;
         }
       }
-      return best;
-    })();
-    const preferred = resolveExecutiveStageLabelPreferredSide({
-      objectX: object.x,
-      objectY: object.y,
-      focused: object.focused === true || object.id === input.anchorObjectId,
-      role: object.role,
-      nearestForeign:
+    }
+    return null;
+  };
+  const sharedBatch = trySharedBatch(readableGap);
+  if (sharedBatch != null) {
+    for (const ownership of sharedBatch) {
+      placed.push(ownership);
+      if (ownership.visibility !== "hidden") placedRects.push(ownership.bounds);
+    }
+  }
+
+  if (sharedBatch == null) {
+    const plans = visibleObjects.map((object) => {
+      const ownerHalf =
+        object.halfExtent > 0
+          ? object.halfExtent
+          : bodyHalfForRole(object.role, level);
+      const nearestForeign = (() => {
+        let best: { x: number; y: number; dist: number } | null = null;
+        for (const other of input.objects) {
+          if (other.id === object.id) continue;
+          if (other.disclosureState === "hidden") continue;
+          if (other.opacity != null && other.opacity <= 0.05) continue;
+          const dist = Math.hypot(object.x - other.x, object.y - other.y);
+          if (best == null || dist < best.dist) {
+            best = { x: other.x, y: other.y, dist };
+          }
+        }
+        return best;
+      })();
+      const preferred = resolveExecutiveStageLabelPreferredSide({
+        objectX: object.x,
+        objectY: object.y,
+        focused: object.focused === true || object.id === input.anchorObjectId,
+        role: object.role,
+        nearestForeign:
+          nearestForeign != null && nearestForeign.dist < 2.4
+            ? { x: nearestForeign.x, y: nearestForeign.y }
+            : null,
+      });
+      const sides = sidePreferenceList(
+        preferred,
+        object.focused === true || object.id === input.anchorObjectId,
         nearestForeign != null && nearestForeign.dist < 2.4
           ? { x: nearestForeign.x, y: nearestForeign.y }
           : null,
+        object.x,
+        object.y,
+      );
+      return { object, ownerHalf, preferred, sides };
     });
-    const sides = sidePreferenceList(
-      preferred,
-      object.focused === true || object.id === input.anchorObjectId,
-      nearestForeign != null && nearestForeign.dist < 2.4
-        ? { x: nearestForeign.x, y: nearestForeign.y }
-        : null,
-      object.x,
-      object.y,
-    );
     const modes: Exclude<ExecutiveStageLabelVisibilityMode, "hidden">[] = [
       "full",
       "compact",
       "minimal",
     ];
-
-    let resolved: ExecutiveStageObjectLabelOwnership | null = null;
-
-    for (const mode of modes) {
-      const content = resolveExecutiveStageOwnedLabelContent({
-        objectName: object.label,
-        objectKind: object.kind,
-        status: object.status,
-        presentationLevel: level,
-        visibility: mode,
-      });
-      const footprint = labelFootprintForContent(
-        mode,
-        content.primaryLine,
-        content.secondaryLine,
-      );
-      const maxDist = maxOwnerDistance(ownerHalf, footprint.w, footprint.h);
-      for (const side of sides) {
-        const placement = makeLabelRect(
-          object.x,
-          object.y,
-          ownerHalf,
-          side,
-          footprint.w,
-          footprint.h,
-          footprint.paintedW,
-          footprint.paintedH,
-        );
-        if (placement.ownerDistance > maxDist + 1e-6) continue;
-
-        const usable = EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION.usableRect;
-        const clipped =
-          placement.rect.minX < usable.minX - 1e-6 ||
-          placement.rect.maxX > usable.maxX + 1e-6 ||
-          placement.rect.minY < usable.minY - 1e-6 ||
-          placement.rect.maxY > usable.maxY + 1e-6;
-        if (clipped) continue;
-        if (labelIntersectsReserved(placement.rect)) continue;
-
-        let hitsForeignBody = false;
-        for (const [bodyId, body] of bodyById) {
-          if (bodyId === object.id) continue;
-          if (rectsOverlap(placement.rect, body, 0.02)) {
-            hitsForeignBody = true;
+    const search: { placed: ExecutiveStageObjectLabelOwnership[] | null } = { placed: null };
+    let bestGap = -1;
+    const exhaustive = plans.length <= 6;
+    if (exhaustive) {
+      const chosen: ExecutiveStageObjectLabelOwnership[] = [];
+      const walk = (
+        index: number,
+        runningMin: number,
+        mode: (typeof modes)[number],
+        budget: { nodes: number },
+      ) => {
+        if (budget.nodes > 80000 || bestGap + 1e-6 >= readableGap) return;
+        if (runningMin <= bestGap + 1e-6) return;
+        if (index >= plans.length) {
+          bestGap = runningMin;
+          search.placed = chosen.slice();
+          return;
+        }
+        const plan = plans[index]!;
+        for (const side of plan.sides) {
+          budget.nodes += 1;
+          const hit = considerSide(
+            plan.object,
+            side,
+            mode,
+            chosen.map((entry) => entry.bounds),
+            plan.preferred,
+            hardLabelGap,
+          );
+          if (hit == null) continue;
+          let nextMin = runningMin;
+          for (const previous of chosen) {
+            nextMin = Math.min(nextMin, separationWorld(hit.bounds, previous.bounds));
+          }
+          if (nextMin <= bestGap + 1e-6) continue;
+          chosen.push(hit);
+          walk(index + 1, nextMin, mode, budget);
+          chosen.pop();
+          if (bestGap + 1e-6 >= readableGap) return;
+        }
+      };
+      for (const mode of modes) {
+        if (search.placed != null) break;
+        bestGap = -1;
+        walk(0, Number.POSITIVE_INFINITY, mode, { nodes: 0 });
+      }
+    }
+    if (search.placed != null) {
+      for (const ownership of search.placed) {
+        placed.push(ownership);
+        placedRects.push(ownership.bounds);
+      }
+    } else {
+      for (const plan of plans) {
+        let resolved: ExecutiveStageObjectLabelOwnership | null = null;
+        for (const mode of modes) {
+          if (resolved != null) break;
+          for (const side of plan.sides) {
+            const hit = considerSide(
+              plan.object,
+              side,
+              mode,
+              placedRects,
+              plan.preferred,
+              hardLabelGap,
+            );
+            if (hit == null) continue;
+            resolved = hit;
             break;
           }
         }
-        if (hitsForeignBody) continue;
-
-        let hitsObstacle = false;
-        for (const obstacle of obstacles) {
-          if (rectsOverlap(placement.rect, obstacle.bounds, 0.02)) {
-            hitsObstacle = true;
-            break;
-          }
-        }
-        if (hitsObstacle) continue;
-
-        let hitsLabel = false;
-        for (const other of placedRects) {
-          if (rectsOverlap(placement.rect, other, 0.04)) {
-            hitsLabel = true;
-            break;
-          }
-        }
-        if (hitsLabel) continue;
-
-        if (
-          captionCloserToNeighborThanOwner(
-            placement.anchorX,
-            placement.anchorY,
-            object.id,
-            bodyById,
-            EXECUTIVE_STAGE_LABEL_POLICY.associationPad,
-          )
-        ) {
+        if (resolved == null) {
+          collisionCount += 1;
+          const content = resolveExecutiveStageOwnedLabelContent({
+            objectName: plan.object.label,
+            objectKind: plan.object.kind,
+            status: plan.object.status,
+            presentationLevel: level,
+            visibility: "hidden",
+          });
+          placed.push(
+            Object.freeze({
+              ownerObjectId: plan.object.id,
+              labelId: `label-${plan.object.id}`,
+              preferredSide: plan.preferred,
+              resolvedSide: plan.preferred,
+              anchorPoint: Object.freeze([plan.object.x, plan.object.y] as const),
+              bounds: Object.freeze({
+                minX: plan.object.x,
+                maxX: plan.object.x,
+                minY: plan.object.y,
+                maxY: plan.object.y,
+              }),
+              territoryBounds: Object.freeze({
+                minX: plan.object.x - plan.ownerHalf,
+                maxX: plan.object.x + plan.ownerHalf,
+                minY: plan.object.y - plan.ownerHalf,
+                maxY: plan.object.y + plan.ownerHalf,
+              }),
+              ownerDistance: 0,
+              visibility: "hidden" as const,
+              primaryLine: content.primaryLine,
+              secondaryLine: null,
+              valueLine: null,
+              worldOffsetX: 0,
+              worldOffsetY: 0,
+              priorityRank: resolveExecutiveStageLabelPriorityRank(plan.object),
+            }),
+          );
           continue;
         }
-        const territory = Object.freeze({
-          minX:
-            object.x -
-            ownerHalf -
-            footprint.w -
-            EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
-          maxX:
-            object.x +
-            ownerHalf +
-            footprint.w +
-            EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
-          minY:
-            object.y -
-            ownerHalf -
-            footprint.h -
-            EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
-          maxY:
-            object.y +
-            ownerHalf +
-            footprint.h +
-            EXECUTIVE_STAGE_LABEL_POLICY.ownerGap,
-        });
-
-        resolved = Object.freeze({
-          ownerObjectId: object.id,
-          labelId: `label-${object.id}`,
-          preferredSide: preferred,
-          resolvedSide: side,
-          anchorPoint: Object.freeze([object.x, object.y] as const),
-          bounds: placement.rect,
-          territoryBounds: territory,
-          ownerDistance: placement.ownerDistance,
-          visibility: mode,
-          primaryLine: content.primaryLine,
-          secondaryLine: content.secondaryLine,
-          worldOffsetX: placement.offsetX,
-          worldOffsetY: placement.offsetY,
-          priorityRank: resolveExecutiveStageLabelPriorityRank(object),
-        });
-        break;
+        placed.push(resolved);
+        placedRects.push(resolved.bounds);
       }
-      if (resolved != null) break;
-    }
-
-    if (resolved == null) {
-      collisionCount += 1;
-      const content = resolveExecutiveStageOwnedLabelContent({
-        objectName: object.label,
-        objectKind: object.kind,
-        status: object.status,
-        presentationLevel: level,
-        visibility: "hidden",
-      });
-      placed.push(
-        Object.freeze({
-          ownerObjectId: object.id,
-          labelId: `label-${object.id}`,
-          preferredSide: preferred,
-          resolvedSide: preferred,
-          anchorPoint: Object.freeze([object.x, object.y] as const),
-          bounds: Object.freeze({
-            minX: object.x,
-            maxX: object.x,
-            minY: object.y,
-            maxY: object.y,
-          }),
-          territoryBounds: Object.freeze({
-            minX: object.x - ownerHalf,
-            maxX: object.x + ownerHalf,
-            minY: object.y - ownerHalf,
-            maxY: object.y + ownerHalf,
-          }),
-          ownerDistance: 0,
-          visibility: "hidden" as const,
-          primaryLine: content.primaryLine,
-          secondaryLine: null,
-          worldOffsetX: 0,
-          worldOffsetY: 0,
-          priorityRank: resolveExecutiveStageLabelPriorityRank(object),
-        }),
-      );
-      continue;
-    }
-
-    placed.push(resolved);
-    if (resolved.visibility !== "hidden") {
-      placedRects.push(resolved.bounds);
     }
   }
 

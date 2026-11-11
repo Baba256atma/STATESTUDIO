@@ -5,7 +5,9 @@
  * injected observation function remains the RDI boundary; PM:2 never reads a
  * provider payload or computes business meaning.
  */
-import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { demoProfileIdForWrite, demoProfileVisible } from "../demo-profile/demoProfileOwnership.ts";
+import { coordinateWorkspaceMutation, evaluateWorkspaceAuthority, requireWorkspaceMutationCoordination } from "../workspace/workspaceAuthorityFence.ts";
+import { DEMO_WORKSPACE_ID, type WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
 import { legacyWorkflowKeyBlockedForActiveManager } from "../workspace/liveManagerDataWorkspaceGuard.ts";
 import type {
   NexoraLiveConnection,
@@ -91,6 +93,8 @@ export type NexoraMonitoringRuntimeStatus =
 export type NexoraAutomaticMonitoringPolicy = Readonly<{
   policyId: string;
   workspaceId: WorkspaceId;
+  /** Present only for a policy written inside an active demo profile. */
+  demoProfileId?: "manufacturing" | "project";
   connectionId: string;
   targetId: string;
   enabled: boolean;
@@ -173,6 +177,17 @@ function publish(): void {
   listeners.forEach((listener) => listener());
 }
 
+export function forgetWorkspaceAutomaticMonitoring(workspaceId: WorkspaceId): void {
+  if (!policies[workspaceId] && !runtimeStates[workspaceId]) return;
+  const nextPolicies = { ...policies };
+  delete nextPolicies[workspaceId];
+  policies = Object.freeze(nextPolicies);
+  const nextStates = { ...runtimeStates };
+  delete nextStates[workspaceId];
+  runtimeStates = Object.freeze(nextStates);
+  publish();
+}
+
 export function subscribeAutomaticMonitoringRuntime(listener: Listener): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -208,12 +223,18 @@ function baseRuntimeState(policy: NexoraAutomaticMonitoringPolicy): NexoraAutoma
   });
 }
 
+function monitoringSlot(policy: Pick<NexoraAutomaticMonitoringPolicy, "workspaceId" | "connectionId" | "demoProfileId">): string {
+  return policy.workspaceId === DEMO_WORKSPACE_ID && policy.demoProfileId
+    ? `${policy.connectionId}::${policy.demoProfileId}`
+    : policy.connectionId;
+}
+
 function savePolicy(policy: NexoraAutomaticMonitoringPolicy): NexoraAutomaticMonitoringPolicy {
   policies = Object.freeze({
     ...policies,
     [policy.workspaceId]: Object.freeze({
       ...(policies[policy.workspaceId] ?? {}),
-      [policy.connectionId]: policy,
+      [monitoringSlot(policy)]: policy,
     }),
   });
   publish();
@@ -221,11 +242,13 @@ function savePolicy(policy: NexoraAutomaticMonitoringPolicy): NexoraAutomaticMon
 }
 
 function saveRuntimeState(state: NexoraAutomaticMonitoringRuntimeState): NexoraAutomaticMonitoringRuntimeState {
+  const policy = Object.values(policies[state.workspaceId] ?? {}).find((entry) => entry.policyId === state.policyId);
+  const slot = policy ? monitoringSlot(policy) : state.connectionId;
   runtimeStates = Object.freeze({
     ...runtimeStates,
     [state.workspaceId]: Object.freeze({
       ...(runtimeStates[state.workspaceId] ?? {}),
-      [state.connectionId]: state,
+      [slot]: state,
     }),
   });
   publish();
@@ -236,13 +259,15 @@ export function getAutomaticMonitoringPolicy(
   workspaceId: WorkspaceId,
   connectionId: string,
 ): NexoraAutomaticMonitoringPolicy | null {
-  return policies[workspaceId]?.[connectionId] ?? null;
+  const profileId = workspaceId === DEMO_WORKSPACE_ID ? demoProfileIdForWrite(workspaceId) : null;
+  const slot = profileId ? `${connectionId}::${profileId}` : connectionId;
+  return policies[workspaceId]?.[slot] ?? null;
 }
 
 export function listAutomaticMonitoringPolicies(
   workspaceId: WorkspaceId,
 ): readonly NexoraAutomaticMonitoringPolicy[] {
-  return Object.freeze(Object.values(policies[workspaceId] ?? {}).sort((a, b) =>
+  return Object.freeze(Object.values(policies[workspaceId] ?? {}).filter((policy) => demoProfileVisible(policy.workspaceId, policy.demoProfileId)).sort((a, b) =>
     a.policyId.localeCompare(b.policyId)));
 }
 
@@ -250,7 +275,9 @@ export function getAutomaticMonitoringRuntimeState(
   workspaceId: WorkspaceId,
   connectionId: string,
 ): NexoraAutomaticMonitoringRuntimeState | null {
-  return runtimeStates[workspaceId]?.[connectionId] ?? null;
+  const profileId = workspaceId === DEMO_WORKSPACE_ID ? demoProfileIdForWrite(workspaceId) : null;
+  const slot = profileId ? `${connectionId}::${profileId}` : connectionId;
+  return runtimeStates[workspaceId]?.[slot] ?? null;
 }
 
 export function enableAutomaticMonitoring(input: Readonly<{
@@ -261,7 +288,11 @@ export function enableAutomaticMonitoring(input: Readonly<{
   enabledAt: string;
 }>): NexoraAutomaticMonitoringPolicy {
   const existing = getAutomaticMonitoringPolicy(input.workspaceId, input.connectionId);
-  if (legacyWorkflowKeyBlockedForActiveManager(input.workspaceId)) {
+  if (
+    requireWorkspaceMutationCoordination() ||
+    !evaluateWorkspaceAuthority(input.workspaceId).ok ||
+    legacyWorkflowKeyBlockedForActiveManager(input.workspaceId)
+  ) {
     return existing ?? Object.freeze({
       policyId: `pm2:policy:${input.workspaceId}:${input.connectionId}`,
       workspaceId: input.workspaceId,
@@ -283,9 +314,11 @@ export function enableAutomaticMonitoring(input: Readonly<{
       }),
     });
   }
+  const profileId = existing?.demoProfileId ?? demoProfileIdForWrite(input.workspaceId);
   const policy = Object.freeze({
     policyId: existing?.policyId ?? `pm2:policy:${input.workspaceId}:${input.connectionId}`,
     workspaceId: input.workspaceId,
+    ...(profileId ? { demoProfileId: profileId } : {}),
     connectionId: input.connectionId,
     targetId: input.targetId,
     enabled: true,
@@ -541,7 +574,8 @@ export async function runNexoraMonitoringObservation(input: Readonly<{
       return failureResult(input.trigger, "observation-failed");
     }
 
-    const committed = commitNexoraLiveObservation({ connection: input.connection, prepared, committedAt: input.observedAt });
+    const committed = await coordinateWorkspaceMutation({ workspaceId: input.connection.workspaceId }, () =>
+      commitNexoraLiveObservation({ connection: input.connection, prepared, committedAt: input.observedAt }));
     if (!committed.committed || !committed.observation) {
       if (policy) {
         const currentPolicy = getAutomaticMonitoringPolicy(policy.workspaceId, policy.connectionId) ?? policy;
@@ -621,7 +655,8 @@ export function startNexoraForegroundMonitoringRuntime(
 export function listAutomaticMonitoringRuntimeStates(
   workspaceId: WorkspaceId,
 ): readonly NexoraAutomaticMonitoringRuntimeState[] {
-  return Object.freeze(Object.values(runtimeStates[workspaceId] ?? {}).sort((a, b) =>
+  const visible = new Set(listAutomaticMonitoringPolicies(workspaceId).map((policy) => policy.policyId));
+  return Object.freeze(Object.values(runtimeStates[workspaceId] ?? {}).filter((state) => visible.has(state.policyId)).sort((a, b) =>
     a.policyId.localeCompare(b.policyId)));
 }
 

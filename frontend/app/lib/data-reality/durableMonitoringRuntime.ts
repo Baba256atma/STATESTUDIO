@@ -11,6 +11,7 @@ import {
   exportNexoraLiveDataRecoverySnapshot,
   hydrateNexoraLiveDataRecoverySnapshot,
   type NexoraLiveDataRecoverySnapshot,
+  type NexoraLiveObservationDeletion,
 } from "./liveDataConnectionStore.ts";
 import {
   exportProactiveAdvisorRecoverySnapshot,
@@ -18,6 +19,7 @@ import {
   type NexoraProactiveAdvisorRecoverySnapshot,
 } from "./proactiveAdvisorDelivery.ts";
 import { applyMonitoringLegacyIdentityMigration } from "../workspace/legacyWorkspaceIdentityMigration.ts";
+import { coordinateCanonicalStoreMutation, evaluateWorkspaceAuthority, requireWorkspaceMutationCoordination } from "../workspace/workspaceAuthorityFence.ts";
 
 export const durableMonitoringRuntimeIdentity =
   "PM:5/NexoraDurableMonitoringRuntime" as const;
@@ -79,6 +81,8 @@ export type NexoraDurableMonitoringSnapshot = Readonly<{
   policies: readonly NexoraAutomaticMonitoringPolicy[];
   runtimeStates: readonly NexoraDurableMonitoringRuntimeState[];
   liveData: NexoraLiveDataRecoverySnapshot;
+  /** Authorized profile deletions. Merge keeps these and refuses to restore their observations. */
+  observationDeletions: readonly NexoraLiveObservationDeletion[];
   advisorDelivery: NexoraProactiveAdvisorRecoverySnapshot;
   leases: readonly NexoraDurableMonitoringLease[];
 }>;
@@ -156,7 +160,10 @@ function validatedSnapshot(value: unknown): NexoraDurableMonitoringSnapshot | nu
       !Array.isArray(parsed.advisorDelivery?.briefs) ||
       !Array.isArray(parsed.leases)
     ) return null;
-  return deepFreeze(parsed);
+  return deepFreeze({
+    ...parsed,
+    observationDeletions: Array.isArray(parsed.observationDeletions) ? parsed.observationDeletions : [],
+  });
 }
 
 function parseSnapshot(storage: NexoraDurableMonitoringStorage): NexoraDurableMonitoringSnapshot | null {
@@ -179,6 +186,7 @@ function createDurableMonitoringSnapshot(
   const monitoring = exportAutomaticMonitoringRecoverySnapshot();
   const policiesById = new Map(monitoring.policies.map((policy) => [policy.policyId, policy]));
   const prior = parseSnapshot(storage);
+  const liveData = exportNexoraLiveDataRecoverySnapshot();
   const snapshot = deepFreeze({
     identity: durableMonitoringRuntimeIdentity,
     version: durableMonitoringRuntimeVersion,
@@ -190,7 +198,8 @@ function createDurableMonitoringSnapshot(
       const policy = policiesById.get(state.policyId);
       return policy ? [durableState(state, policy, writtenAt)] : [];
     })),
-    liveData: exportNexoraLiveDataRecoverySnapshot(),
+    liveData,
+    observationDeletions: Object.freeze([...(liveData.observationDeletions ?? [])]),
     advisorDelivery: exportProactiveAdvisorRecoverySnapshot(),
     leases: Object.freeze((prior?.leases ?? []).filter((lease) => lease.expiresAt > writtenAt)),
   } satisfies NexoraDurableMonitoringSnapshot);
@@ -198,11 +207,35 @@ function createDurableMonitoringSnapshot(
   return snapshot;
 }
 
+function stripUnauthorizedMonitoring(snapshot: NexoraDurableMonitoringSnapshot): NexoraDurableMonitoringSnapshot {
+  const kept = (workspaceId: string) => evaluateWorkspaceAuthority(workspaceId).ok;
+  const policies = snapshot.policies.filter((policy) => kept(policy.workspaceId));
+  const policyIds = new Set(policies.map((policy) => policy.policyId));
+  const observationDeletions = (snapshot.observationDeletions ?? []).filter((entry) => kept(entry.workspaceId));
+  const deleted = new Set(observationDeletions.map(observationDeletionIdentity));
+  return deepFreeze({
+    ...snapshot,
+    policies: Object.freeze(policies),
+    runtimeStates: Object.freeze(snapshot.runtimeStates.filter((state) => kept(state.workspaceId) && policyIds.has(state.policyId))),
+    observationDeletions: Object.freeze(observationDeletions),
+    leases: Object.freeze(snapshot.leases.filter((lease) => policyIds.has(lease.policyId))),
+    liveData: Object.freeze({
+      ...snapshot.liveData,
+      connections: Object.freeze(snapshot.liveData.connections.filter((connection) => kept(connection.workspaceId))),
+      observations: Object.freeze(snapshot.liveData.observations.filter((observation) =>
+        kept(observation.workspaceId) && !deleted.has(observationDeletionIdentity(observation)))),
+      observationDeletions: Object.freeze((snapshot.liveData.observationDeletions ?? []).filter((entry) => kept(entry.workspaceId))),
+    }),
+  } satisfies NexoraDurableMonitoringSnapshot);
+}
+
 export function persistDurableMonitoringRuntime(
   storage: NexoraDurableMonitoringStorage,
   writtenAt: string,
 ): NexoraDurableMonitoringSnapshot {
-  const snapshot = createDurableMonitoringSnapshot(storage, writtenAt);
+  const gate = requireWorkspaceMutationCoordination();
+  if (gate) throw Object.assign(new Error(gate), { reason: gate });
+  const snapshot = stripUnauthorizedMonitoring(createDurableMonitoringSnapshot(storage, writtenAt));
   storage.setItem(DURABLE_MONITORING_STORAGE_KEY, JSON.stringify(snapshot));
   return snapshot;
 }
@@ -230,29 +263,52 @@ function mergeByIdentity<T>(
   return Object.freeze([...merged.values()].sort((a, b) => identity(a).localeCompare(identity(b))));
 }
 
-function mergeBrowserSnapshots(
+function observationDeletionIdentity(value: Readonly<{
+  workspaceId: string;
+  connectionId: string;
+  observationId: string;
+  demoProfileId?: string | null;
+}>): string {
+  return `${value.workspaceId}:${value.connectionId}:${value.demoProfileId ?? ""}:${value.observationId}`;
+}
+
+/** IndexedDB merge authority. Deletions from either snapshot permanently suppress matching observations. */
+export function mergeDurableMonitoringSnapshots(
   prior: NexoraDurableMonitoringSnapshot | null,
   current: NexoraDurableMonitoringSnapshot,
 ): NexoraDurableMonitoringSnapshot {
   if (!prior) return current;
+  const observationDeletions = mergeByIdentity(
+    prior.observationDeletions ?? [],
+    current.observationDeletions ?? [],
+    observationDeletionIdentity,
+  );
+  const deleted = new Set(observationDeletions.map(observationDeletionIdentity));
   const observations = mergeByIdentity(
     prior.liveData.observations,
     current.liveData.observations,
-    (value) => `${value.workspaceId}:${value.connectionId}:${value.observationId}`,
-  );
+    observationDeletionIdentity,
+  ).filter((observation) => !deleted.has(observationDeletionIdentity(observation)));
   const newestObservations = Object.freeze([...observations]
     .sort((a, b) => a.observedAt.localeCompare(b.observedAt) || a.observationId.localeCompare(b.observationId))
     .filter((observation, index, ordered) => ordered
-      .filter((candidate) => candidate.workspaceId === observation.workspaceId && candidate.connectionId === observation.connectionId)
+      .filter((candidate) =>
+        candidate.workspaceId === observation.workspaceId &&
+        candidate.connectionId === observation.connectionId &&
+        (candidate.demoProfileId ?? "") === (observation.demoProfileId ?? ""),
+      )
       .slice(-2)
       .some((candidate) => candidate.observationId === observation.observationId)));
   return deepFreeze({
     ...current,
     policies: mergeByIdentity(prior.policies, current.policies, (value) => value.policyId),
     runtimeStates: mergeByIdentity(prior.runtimeStates, current.runtimeStates, (value) => value.policyId),
+    observationDeletions,
     liveData: Object.freeze({
+      ...current.liveData,
       connections: mergeByIdentity(prior.liveData.connections, current.liveData.connections, (value) => `${value.workspaceId}:${value.connectionId}`),
       observations: newestObservations,
+      observationDeletions,
     }),
     advisorDelivery: Object.freeze({
       briefs: mergeByIdentity(prior.advisorDelivery.briefs, current.advisorDelivery.briefs, (value) => value.briefId),
@@ -270,7 +326,7 @@ async function mergeWriteDurableMonitoringDatabase(snapshot: NexoraDurableMonito
     const request = store.get(DURABLE_MONITORING_DATABASE_CURRENT_KEY);
     let next = snapshot;
     request.onsuccess = () => {
-      next = mergeBrowserSnapshots(validatedSnapshot(request.result), snapshot);
+      next = stripUnauthorizedMonitoring(mergeDurableMonitoringSnapshots(validatedSnapshot(request.result), snapshot));
       store.put(next, DURABLE_MONITORING_DATABASE_CURRENT_KEY);
     };
     request.onerror = () => transaction.abort();
@@ -299,10 +355,21 @@ export async function persistDurableMonitoringRuntimeBrowser(
   storage: NexoraDurableMonitoringStorage,
   writtenAt: string,
 ): Promise<NexoraDurableMonitoringSnapshot> {
-  const snapshot = await mergeWriteDurableMonitoringDatabase(createDurableMonitoringSnapshot(storage, writtenAt));
+  return coordinateCanonicalStoreMutation(() => persistDurableMonitoringRuntimeBrowserInsideLock(storage, writtenAt));
+}
+
+async function persistDurableMonitoringRuntimeBrowserInsideLock(
+  storage: NexoraDurableMonitoringStorage,
+  writtenAt: string,
+): Promise<NexoraDurableMonitoringSnapshot> {
+  const snapshot = await mergeWriteDurableMonitoringDatabase(stripUnauthorizedMonitoring(createDurableMonitoringSnapshot(storage, writtenAt)));
   const head = deepFreeze({
     ...snapshot,
-    liveData: Object.freeze({ connections: Object.freeze([]), observations: Object.freeze([]) }),
+    liveData: Object.freeze({
+      connections: Object.freeze([]),
+      observations: Object.freeze([]),
+      observationDeletions: snapshot.observationDeletions,
+    }),
     advisorDelivery: Object.freeze({ briefs: Object.freeze([]) }),
   } satisfies NexoraDurableMonitoringSnapshot);
   storage.removeItem(DURABLE_MONITORING_STORAGE_KEY);
@@ -337,7 +404,17 @@ export function hydrateDurableMonitoringSnapshot(
 ): NexoraDurableMonitoringRecoveryReport {
   const migrated = applyMonitoringLegacyIdentityMigration(snapshot);
   const source = migrated.state;
-  hydrateNexoraLiveDataRecoverySnapshot(source.liveData);
+  const observationDeletions = source.observationDeletions ?? [];
+  hydrateNexoraLiveDataRecoverySnapshot(Object.freeze({
+    ...source.liveData,
+    observations: source.liveData.observations.filter((observation) => !observationDeletions.some((deletion) =>
+      deletion.workspaceId === observation.workspaceId &&
+      deletion.connectionId === observation.connectionId &&
+      deletion.observationId === observation.observationId &&
+      deletion.demoProfileId === observation.demoProfileId,
+    )),
+    observationDeletions,
+  }));
   hydrateAutomaticMonitoringRecoverySnapshot(runtimeRecoverySnapshot(source), recoveredAt);
   hydrateProactiveAdvisorRecoverySnapshot(source.advisorDelivery);
   const enabled = source.policies.filter((policy) => policy.enabled && !policy.paused);
@@ -433,6 +510,43 @@ export function releaseDurableMonitoringLease(input: Readonly<{
   const next = deepFreeze({ ...snapshot, leases: Object.freeze(snapshot.leases.filter((entry) => entry.policyId !== input.policyId)) });
   input.storage.setItem(DURABLE_MONITORING_STORAGE_KEY, JSON.stringify(next));
   return true;
+}
+
+/** Removes one Workspace from the durable monitoring snapshot. Tombstones for other Workspaces stay. */
+export function forgetWorkspaceDurableMonitoring(
+  workspaceId: string,
+  storage: NexoraDurableMonitoringStorage,
+): "ok" | "absent" | "corrupt" | "residual" {
+  const raw = storage.getItem(DURABLE_MONITORING_STORAGE_KEY);
+  if (!raw) return "absent";
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return "corrupt";
+  }
+  const snapshot = validatedSnapshot(parsed);
+  if (!snapshot) return "corrupt";
+  if (!raw.includes(workspaceId)) return "ok";
+  const policies = snapshot.policies.filter((policy) => policy.workspaceId !== workspaceId);
+  const policyIds = new Set(policies.map((policy) => policy.policyId));
+  const next = deepFreeze({
+    ...snapshot,
+    policies: Object.freeze(policies),
+    runtimeStates: Object.freeze(snapshot.runtimeStates.filter((state) => state.workspaceId !== workspaceId)),
+    observationDeletions: Object.freeze(snapshot.observationDeletions.filter((entry) => entry.workspaceId !== workspaceId)),
+    leases: Object.freeze(snapshot.leases.filter((lease) => policyIds.has(lease.policyId))),
+    liveData: Object.freeze({
+      ...snapshot.liveData,
+      connections: Object.freeze(snapshot.liveData.connections.filter((connection) => connection.workspaceId !== workspaceId)),
+      observations: Object.freeze(snapshot.liveData.observations.filter((observation) => observation.workspaceId !== workspaceId)),
+      observationDeletions: Object.freeze((snapshot.liveData.observationDeletions ?? []).filter((entry) => entry.workspaceId !== workspaceId)),
+    }),
+  });
+  const encoded = JSON.stringify(next);
+  if (encoded.includes(workspaceId)) return "residual";
+  storage.setItem(DURABLE_MONITORING_STORAGE_KEY, encoded);
+  return "ok";
 }
 
 export function clearDurableMonitoringRuntimeForTests(storage: NexoraDurableMonitoringStorage): void {

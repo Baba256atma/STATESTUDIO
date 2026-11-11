@@ -221,8 +221,9 @@ export function NexoraStageObject({
       const primary =
         presentation.labelPrimaryLine?.trim() || base.nameText || objectName;
       const secondary = presentation.labelSecondaryLine ?? null;
+      const valueLine = presentation.labelValueLine?.trim() || null;
       const lines = Object.freeze(
-        [primary, secondary].filter(
+        [primary, valueLine, secondary].filter(
           (line): line is string =>
             typeof line === "string" && line.trim().length > 0,
         ),
@@ -237,6 +238,7 @@ export function NexoraStageObject({
         showMetricLabel: false,
         showSecondaryContext: false,
         lines,
+        keepLinesIntact: valueLine != null,
         visible: ownedVisible,
         opacity: ownedVisible ? base.opacity : 0,
         anchor: Object.freeze({

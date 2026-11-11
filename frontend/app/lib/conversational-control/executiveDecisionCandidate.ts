@@ -70,6 +70,8 @@ export type NexoraExecutiveDecision = {
   readonly committedAt?: string;
   readonly source: "conversation";
   readonly workspaceId?: string | null;
+  /** Present only when workspaceId is demo_workspace and a demo profile owned the write. */
+  readonly demoProfileId?: "manufacturing" | "project" | null;
   readonly modelId?: string | null;
   readonly candidateId?: string;
 };

@@ -23,6 +23,7 @@ import { hostNmiLiveManagementIntelligence } from "../nmi/nmiLivePipeline.ts";
 import { collectNexoraLivePrioritySources } from "../nex-mvp/nexoraLiveEpistemicProjection.ts";
 import { createEmptyNexoraMVPObjectInteractionCatalog } from "../nex-mvp/nexoraMVPObjectInteraction.ts";
 import { resolveNexoraMVPDataRealityAwareStageExperience } from "../nex-mvp/nexoraMVPDataRealityAwareStageExperience.ts";
+import { resolveActiveDemoProfileStageMaterials } from "./demoProfileStageCatalog.ts";
 import { createManagerWorkspace } from "../workspace/managerWorkspaceIdentity.ts";
 import {
   DEMO_WORKSPACE_ID,
@@ -89,9 +90,16 @@ function profileImports(profileId: "manufacturing" | "project") {
 }
 
 function projectStage() {
+  const demo = resolveActiveDemoProfileStageMaterials();
+  if (!demo) {
+    return resolveNexoraMVPDataRealityAwareStageExperience({
+      baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
+      suppressUnownedDemoDataset: true,
+    });
+  }
   return resolveNexoraMVPDataRealityAwareStageExperience({
-    baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
-    suppressUnownedDemoDataset: true,
+    baseCatalog: demo.catalog,
+    dataset: demo.dataset,
   });
 }
 
@@ -205,17 +213,21 @@ test("opening Project again does not duplicate imports", () => {
   assert.equal(profileImports("project").length, 3);
 });
 
-test("Manufacturing to Project retires only the Manufacturing package", () => {
+test("Manufacturing to Project keeps Manufacturing stored and selects Project", () => {
   openManufacturingDemo();
   assert.equal(profileImports("manufacturing").length, 3);
   const switched = openProjectDemo();
   assert.equal(switched.opened, true);
   assert.equal(readActiveDemoProfile(), "project");
   assert.equal(getActiveWorkspaceId(), DEMO_WORKSPACE_ID);
-  assert.equal(profileImports("manufacturing").length, 0);
+  assert.equal(profileImports("manufacturing").length, 3);
   assert.equal(profileImports("project").length, 3);
   const names = listCsvRealDataImports(DEMO_WORKSPACE_ID).map((entry) => entry.prepared.fileName);
-  assert.deepEqual(names.filter((name) => name.startsWith("manufacturing-")), []);
+  assert.deepEqual(names.filter((name) => name.startsWith("manufacturing-")).sort(), [
+    "manufacturing-inventory.csv",
+    "manufacturing-orders.csv",
+    "manufacturing-production.csv",
+  ]);
   assert.equal(names.includes(CSV_MVP_DEMO_INVENTORY_FILE), false);
 });
 
@@ -226,10 +238,10 @@ test("Project to Manufacturing restores Manufacturing without duplicates", () =>
   const returned = openManufacturingDemo();
   assert.equal(returned.opened, true);
   assert.equal(readActiveDemoProfile(), "manufacturing");
-  assert.equal(profileImports("project").length, 0);
+  assert.equal(profileImports("project").length, 3);
   assert.equal(profileImports("manufacturing").length, 3);
   const afterReturn = getCsvRealDataImportCommitInvocationCount();
-  assert.ok(afterReturn > beforeReturn);
+  assert.equal(afterReturn, beforeReturn);
   openManufacturingDemo();
   assert.equal(getCsvRealDataImportCommitInvocationCount(), afterReturn);
   assert.equal(profileImports("manufacturing").length, 3);
@@ -274,6 +286,8 @@ test("legacy bootstrap and Executive Operations dataset stay out of Project Demo
   );
   const experience = projectStage();
   assert.notEqual(experience.runtimeState.datasetIdentity.datasetId, EXECUTIVE_OPERATIONS_DEMO_DATASET_ID);
+  assert.ok(experience.catalog.objects.length > 0);
+  assert.equal(experience.usesActiveDataSource, true);
   assert.equal(experience.catalog.contextSubjects.length, 0);
   resetDemoProfileForTests();
   setActiveWorkspace(DEMO_WORKSPACE_ID);

@@ -41,6 +41,10 @@ import { NexoraStageDeepZEnvironment } from "./NexoraStageDeepZEnvironment";
 import { NexoraStageMotionController } from "./NexoraStageMotionController";
 import { NexoraStageObject } from "./NexoraStageObject";
 import { NexoraStageDataObject } from "./NexoraStageDataObject";
+import { NexoraOrganizationalSolarGuides } from "./NexoraOrganizationalSolarGuides";
+import { NexoraDecisionSolarGuides } from "./NexoraDecisionSolarGuides";
+import type { DecisionSolarLayout } from "@/app/lib/scene-org/decisionSolarProjection";
+import type { OrganizationalSolarLayout } from "@/app/lib/scene-org/organizationalSolarView";
 import { ExecutiveOvsIsometricTheatreStructures } from "./ExecutiveOvsIsometricTheatreStructures";
 import type { ExecutiveOvsIsometricTheatreVisual } from "@/app/lib/spatial-presentation/executiveOvsIsometricTheatreVisual";
 
@@ -51,6 +55,13 @@ type Props = {
   readonly isometricVisual?: ExecutiveOvsIsometricTheatreVisual | null;
   readonly onSelectSubject: (subjectId: string) => void;
   readonly onSelectDataObject: (dataObjectId: string) => void;
+  readonly onRepositionDataObject?: (
+    dataObjectId: string,
+    position: { x: number; y: number; z: 0 },
+  ) => boolean;
+  readonly spatialEpoch?: string;
+  readonly solarLayout?: OrganizationalSolarLayout | null;
+  readonly decisionSolarLayout?: DecisionSolarLayout | null;
   readonly onClearSelection: () => void;
   readonly fitDistance?: number;
 };
@@ -126,6 +137,10 @@ export function NexoraStageScene({
   isometricVisual = null,
   onSelectSubject,
   onSelectDataObject,
+  onRepositionDataObject,
+  spatialEpoch,
+  solarLayout = null,
+  decisionSolarLayout = null,
   onClearSelection,
   fitDistance,
 }: Props) {
@@ -503,11 +518,16 @@ export function NexoraStageScene({
             />
           ))}
 
+          <NexoraOrganizationalSolarGuides layout={solarLayout} />
+          <NexoraDecisionSolarGuides layout={decisionSolarLayout} />
+
           {dataObjectStage.participants.map((participant) => (
             <NexoraStageDataObject
               key={participant.dataObject.id}
               participant={participant}
               onSelect={onSelectDataObject}
+              onReposition={onRepositionDataObject}
+              spatialEpoch={spatialEpoch}
             />
           ))}
 

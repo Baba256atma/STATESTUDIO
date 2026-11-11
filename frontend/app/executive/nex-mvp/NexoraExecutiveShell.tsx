@@ -49,7 +49,18 @@ import {
   subscribeCsvDurabilityHealth,
 } from "@/app/lib/data-reality/csvRealDataImportDurability";
 import { ensureCsvMvpDemoBootstrap } from "@/app/lib/data-reality/csvRealDataMvpDemoBootstrap";
-import { isDemoProfileId, MANUFACTURING_DEMO_PROFILE_ID, PROJECT_DEMO_PROFILE_ID } from "@/app/lib/demo-profile/demoProfileContract";
+import { deckIdentityForDemoProfile, NEXORA_EXECUTIVE_DECK_ID } from "@/app/lib/deck/nexoraDeckIdentityContract";
+import { ensureManagerExecutiveDeck, managerDeckWorkspaceEligible } from "@/app/lib/deck/nexoraDeckRegistryAuthority";
+import { listManagerDeckDatasetIds } from "@/app/lib/deck/nexoraDeckDatasetReferenceAuthority";
+import { resolveDeckStageProjection, retainDeckStageSelection } from "@/app/lib/deck/nexoraDeckStageProjection";
+import { getDeckDatasetReferenceSnapshot, recoverDeckDatasetReferencesFromStorage, subscribeDeckDatasetReferences } from "@/app/lib/deck/nexoraDeckDatasetReferenceRegistry";
+import { getDeckRegistrySnapshot, recoverDeckRegistryFromStorage, subscribeDeckRegistry } from "@/app/lib/deck/nexoraDeckRegistry";
+import { demoProfileImportPrefix, isDemoProfileId, MANUFACTURING_DEMO_PROFILE_ID, PROJECT_DEMO_PROFILE_ID } from "@/app/lib/demo-profile/demoProfileContract";
+import { demoProfileMutationAllowed } from "@/app/lib/demo-profile/demoProfileOwnership";
+import { resolveActiveDemoProfileStageMaterials } from "@/app/lib/demo-profile/demoProfileStageCatalog";
+import { publishBusinessDemoActivation } from "@/app/lib/demo-profile/businessDemoActivation";
+import { ensureBusinessDemoPackage } from "@/app/lib/demo-profile/businessDemoPackage";
+import { resolveBusinessDemoStageMaterials } from "@/app/lib/demo-profile/businessDemoStageCatalog";
 import { ensureManufacturingDemoPackage } from "@/app/lib/demo-profile/manufacturingDemoPackage";
 import { ensureProjectDemoPackage } from "@/app/lib/demo-profile/projectDemoPackage";
 import { resetActiveDemo, subscribeDemoReset } from "@/app/lib/demo-profile/demoProfileReset";
@@ -64,8 +75,8 @@ import {
   resolveLiveExecutiveDataWorkspace,
   resolveStageActiveManagerWorkspaceId,
 } from "@/app/lib/workspace/managerWorkspaceIdentity";
-import { isRealManagerWorkspaceId } from "@/app/lib/workspace/liveManagerDataWorkspaceGuard";
-import { DEMO_WORKSPACE_ID } from "@/app/lib/workspace/workspaceRegistryContract";
+import { isRealManagerWorkspaceId, productFixturesPermittedForWorkspace } from "@/app/lib/workspace/liveManagerDataWorkspaceGuard";
+import { BUSINESS_DEMO_WORKSPACE_ID, DEMO_WORKSPACE_ID } from "@/app/lib/workspace/workspaceRegistryContract";
 import { hostedManagerRegistryRecovery, type NexoraDeploymentMode } from "@/app/lib/auth/nexoraDeploymentMode";
 import { loadHostedManagerSnapshot } from "@/app/lib/workspace-auth/hostedManagerDataClient";
 import { loadHostedOperations, saveHostedOperations } from "@/app/lib/workspace-auth/hostedOperationalClient";
@@ -74,6 +85,9 @@ import { isCustomerHostedWorkspaceId } from "@/app/lib/workspace-auth/hostedWork
 import type { NexoraAuthProviderId } from "@/app/lib/auth/nexoraAuthProviders";
 import { ANONYMOUS_NEXORA_SESSION, type NexoraClientSessionProjection } from "@/app/lib/auth/nexoraPrincipal";
 import { recoverWorkspaceRegistryFromStorage, subscribeWorkspaceRegistry } from "@/app/lib/workspace/workspaceRegistryStore";
+import { syncWorkspaceDeletionGuards } from "@/app/lib/workspace/workspaceDeletionLifecycle";
+import { coordinateWorkspaceMutation, coordinateCanonicalStoreMutation, installWorkspaceAuthorityStorageSync } from "@/app/lib/workspace/workspaceAuthorityFence";
+import { workspaceMutationsBlocked } from "@/app/lib/workspace/workspaceDeletionGuard";
 import type {
   CsvSemanticClarification,
   CsvSemanticClarificationResult,
@@ -127,6 +141,7 @@ import {
   mapNexoraMVPInteractionStateToApplicationSubjects,
   openNexoraMVPExecutiveChangeCollection,
   openNexoraMVPExecutiveQueueCollection,
+  executiveSubjectRemainsInCatalog,
   resetNexoraMVPObjectInteractionOverview,
   resolveNexoraMVPInteractionSubject,
   acknowledgeNexoraMVPExecutiveChanges,
@@ -328,6 +343,7 @@ import {
   deriveNexoraMVPWorkspacePresentation,
 } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
 import { ExecutiveContextBar } from "../exs1/shell/ExecutiveContextBar";
+import { NexoraDeckSelector } from "./NexoraDeckSelector";
 import { NexoraManagerWorkspaceControl } from "./NexoraManagerWorkspaceControl";
 import { ExecutiveEmptyState } from "../exs1/shell/ExecutiveEmptyState";
 import { ExecutiveExplorerDrawer } from "../exs1/shell/ExecutiveExplorerDrawer";
@@ -359,6 +375,7 @@ import { NexoraExecutiveFlowContextIndicator } from "./flow/NexoraExecutiveFlowC
 import { NexoraFlowFloatingContent } from "./flow/NexoraFlowFloatingContent";
 import { NexoraFlowJournalExplorer } from "./flow/NexoraFlowJournalExplorer";
 import { NexoraStageMount } from "./NexoraStageMount";
+import { NexoraCausalInvestigationView } from "./stage/NexoraCausalInvestigationView";
 import { hostNmiLiveManagementIntelligence } from "@/app/lib/nmi/nmiLivePipeline";
 import { projectStageProdLiveFoundation, stageProdRequestedVisualRemainsValid } from "@/app/lib/stage-prod/stageProdPublicIndex";
 import {
@@ -391,7 +408,7 @@ import {
   NexoraWorkspaceRegionBoundary,
 } from "./scene-org/NexoraWorkspaceRegionBoundary";
 import { createSceneOrgCanonicalReference } from "@/app/lib/scene-org/sceneOrgRegionContract";
-import { emptySceneOrgDetailReference } from "@/app/lib/scene-org/sceneOrgDetailWorkspaceContract";
+import { emptySceneOrgDetailReference, retainSceneOrgDetailReference } from "@/app/lib/scene-org/sceneOrgDetailWorkspaceContract";
 import { listSupportedGroundedLearningForSubject } from "@/app/lib/executive-intelligence/nexoraGroundedLearningIntelligence";
 import {
   collectLiveHistoricalObservations,
@@ -408,20 +425,27 @@ import {
   subscribeLiveDataConnections,
 } from "@/app/lib/data-reality/liveDataConnectionStore";
 import {
+  allocateSceneOrgSavedSceneId,
   createSceneOrgSavedScene,
   resolveSceneOrgSavedSceneCaptureId,
   resolveSceneOrgSavedScene,
+  sameSceneOrgSavedSceneCollection,
   type SceneOrgSavedScene,
 } from "@/app/lib/scene-org/sceneOrgWorkspacePlacementContract";
 import {
   loadSceneOrgSavedScenes,
+  mergePersistSceneOrgSavedScenes,
+  readSceneContentRevision,
+  SAVED_SCENE_STALE_MESSAGE,
   persistSceneOrgSavedScenes,
   SCENE_ORG_SAVED_SCENE_DURABILITY_VERSION,
   SCENE_ORG_SAVED_SCENE_DURABILITY_BOUNDARY,
 } from "@/app/lib/scene-org/sceneOrgSavedSceneDurability";
 import {
   assessSceneOrgSavedSceneOpen,
+  listSceneOrgSavedScenesForDeck,
   listSceneOrgSavedScenesForManagerWorkspace,
+  resolveDeckSavedSceneRestoration,
   resolveSceneOrgSavedSceneAccess,
   type SceneOrgSavedSceneAccessResolution,
 } from "@/app/lib/scene-org/sceneOrgSavedSceneCollectionAccess";
@@ -430,6 +454,68 @@ import {
   type SceneOrgSavedSceneCollectionMutation,
   type SceneOrgSavedSceneMutationResult,
 } from "@/app/lib/scene-org/sceneOrgSavedSceneCollectionMutation";
+import {
+  captureSceneOrgSavedSceneSpatialState,
+  EMPTY_SCENE_SPATIAL_POSITIONS,
+  parseStagePlanePosition,
+  resolveAuthorizedSceneSpatialPositions,
+  SCENE_ORG_STAGE_NUDGE_STEP,
+} from "@/app/lib/scene-org/sceneOrgSavedSceneSpatialState";
+import {
+  CAUSAL_INVESTIGATION_VIEW,
+  DECISION_SOLAR_VIEW,
+  ORGANIZATIONAL_SOLAR_VIEW,
+  projectOrganizationalSolarLayout,
+  STAGE_PRESENTATION_VIEW,
+  type StagePresentationView,
+} from "@/app/lib/scene-org/organizationalSolarView";
+import {
+  publishCausalInvestigationUiSelection,
+  readCausalInvestigationUiSelection,
+} from "@/app/lib/scene-org/causalInvestigationUiSession";
+import {
+  emptyDecisionSolarLayout,
+  presentDecisionNodeForStage,
+  projectDecisionSolar,
+} from "@/app/lib/scene-org/decisionSolarProjection";
+import {
+  decisionDomainRevision,
+  subscribeDecisionDomain,
+} from "@/app/lib/scene-org/canonicalDecisionDomain";
+import { previewDecisionImpact } from "@/app/lib/scene-org/decisionImpactPreview";
+import {
+  analyzeCanonicalTopology,
+  projectCanonicalTopology,
+  type CanonicalTopologyType,
+} from "@/app/lib/scene-org/canonicalTopologyEngine";
+import {
+  describeTopologyMembership,
+  mergePresentationPositions,
+} from "@/app/lib/scene-org/canonicalTopologyPresentation";
+import { NexoraTopologyInspection } from "./stage/NexoraTopologyInspection";
+import { NexoraOrganizationalObjectControls } from "./stage/NexoraOrganizationalObjectControls";
+import { NexoraDecisionDomainControls } from "./stage/NexoraDecisionDomainControls";
+import {
+  canonicalObjectRevision,
+  listDeckCanonicalObjects,
+  presentCanonicalObjectForStage,
+  recoverCanonicalMutations,
+  removeCanonicalObjectFromDeck,
+  subscribeCanonicalObjects,
+} from "@/app/lib/scene-org/canonicalObjectRegistry";
+import {
+  archiveCanonicalRelationship,
+  canonicalRelationshipAuthorityStatus,
+  canonicalRelationshipRevision,
+  declareCanonicalRelationship,
+  deleteCanonicalRelationship,
+  editCanonicalRelationshipType,
+  listCanonicalRelationships,
+  resolveDeckRelationshipGraph,
+  restoreCanonicalRelationship,
+  subscribeCanonicalRelationships,
+  type CanonicalRelationshipType,
+} from "@/app/lib/scene-org/canonicalRelationshipGraph";
 import { NexoraSavedSceneCollectionAccess } from "./NexoraSavedSceneCollectionAccess";
 import {
   createSceneOrgRightPanelChromeState,
@@ -440,6 +526,7 @@ import {
   closeSceneOrgRightPackageTab,
   createEmptySceneOrgRightPackageTabSession,
   openSceneOrgRightPackageTab,
+  retainSceneOrgRightPackageTabsInCatalog,
   syncSceneOrgRightSelectedObjectTab,
 } from "@/app/lib/scene-org/sceneOrgRightPackageTabContract";
 
@@ -475,6 +562,8 @@ function applyInteractionToApplication(
  * connections/context around the P2:6 anchor. Interaction remains independent
  * of business truth.
  */
+const unresolvedWorkspaceAdvisorCatalog = createEmptyNexoraMVPObjectInteractionCatalog().objects;
+
 export function NexoraExecutiveShell({
   datasetScenario = "baseline",
   entranceRequested = false,
@@ -569,22 +658,84 @@ export function NexoraExecutiveShell({
     () => true,
     () => false,
   );
+  const [workspaceAuthorityReady, setWorkspaceAuthorityReady] = useState(false);
+  const deckRegistry = useSyncExternalStore(
+    subscribeDeckRegistry,
+    getDeckRegistrySnapshot,
+    getDeckRegistrySnapshot,
+  );
+  const datasetReferenceSnapshot = useSyncExternalStore(
+    subscribeDeckDatasetReferences,
+    getDeckDatasetReferenceSnapshot,
+    getDeckDatasetReferenceSnapshot,
+  );
   const modernDemoActive =
     isDemoProfileId(storedDemoProfile) && dataWorkspaceId === DEMO_WORKSPACE_ID;
+  const managerDecksEligible = managerDeckWorkspaceEligible(dataWorkspaceId);
+  const activeDeckId = managerDecksEligible
+    ? deckRegistry.workspaces[dataWorkspaceId]?.activeDeckId ?? NEXORA_EXECUTIVE_DECK_ID
+    : deckIdentityForDemoProfile(dataWorkspaceId, storedDemoProfile)?.deckId ?? null;
+  const deckStageUnassigned =
+    managerDecksEligible && activeDeckId !== NEXORA_EXECUTIVE_DECK_ID;
   const permitProductFixtures =
+    workspaceAuthorityReady &&
     managerWorkspaceProjectionReady &&
-    !isRealManagerWorkspaceId(dataWorkspaceId) &&
+    productFixturesPermittedForWorkspace(dataWorkspaceId) &&
     !modernDemoActive;
   const dataWorkspaceIdRef = useRef(dataWorkspaceId);
   dataWorkspaceIdRef.current = dataWorkspaceId;
   useLayoutEffect(() => {
-    if (hostedManagerRegistryRecovery(deploymentMode) === "contain") return;
-    recoverWorkspaceRegistryFromStorage();
+    if (hostedManagerRegistryRecovery(deploymentMode) !== "contain") {
+      recoverWorkspaceRegistryFromStorage();
+    }
+    recoverDeckRegistryFromStorage();
+    recoverDeckDatasetReferencesFromStorage();
+    setWorkspaceAuthorityReady(true);
+    return installWorkspaceAuthorityStorageSync();
   }, [deploymentMode]);
   useEffect(() => {
-    setActiveCsvImport((current) => current && current.workspaceId !== dataWorkspaceId ? null : current);
+    if (!workspaceAuthorityReady || !managerDecksEligible) return;
+    void coordinateWorkspaceMutation({ workspaceId: dataWorkspaceId }, () => {
+      ensureManagerExecutiveDeck(dataWorkspaceId);
+    });
+  }, [workspaceAuthorityReady, managerDecksEligible, dataWorkspaceId]);
+  useEffect(() => {
+    void coordinateCanonicalStoreMutation(() => {
+      syncWorkspaceDeletionGuards();
+    });
   }, [dataWorkspaceId]);
   useEffect(() => {
+    setActiveCsvImport((current) => {
+      if (!current || current.workspaceId !== dataWorkspaceId) return current ? null : current;
+      if (
+        modernDemoActive &&
+        isDemoProfileId(storedDemoProfile) &&
+        !current.importId.startsWith(demoProfileImportPrefix(storedDemoProfile))
+      ) {
+        return null;
+      }
+      return current;
+    });
+  }, [dataWorkspaceId, modernDemoActive, storedDemoProfile]);
+  useEffect(() => {
+    if (dataWorkspaceId !== BUSINESS_DEMO_WORKSPACE_ID) publishBusinessDemoActivation(null);
+    if (dataWorkspaceId === BUSINESS_DEMO_WORKSPACE_ID) {
+      let cancelled = false;
+      let unbind: (() => void) | null = null;
+      void (async () => {
+        const report = await ensureBusinessDemoPackage();
+        if (cancelled || dataWorkspaceIdRef.current !== BUSINESS_DEMO_WORKSPACE_ID) return;
+        publishBusinessDemoActivation(report.status);
+        setCsvHydrated(true);
+        if (report.status === "loaded" || report.status === "already_present") {
+          unbind = bindCsvRealDataImportDurabilityPersistence();
+        }
+      })();
+      return () => {
+        cancelled = true;
+        unbind?.();
+      };
+    }
     if (hostedManagerRegistryRecovery(deploymentMode) === "contain") {
       let cancelled = false;
       if (isCustomerHostedWorkspaceId(dataWorkspaceId)) {
@@ -677,13 +828,104 @@ export function NexoraExecutiveShell({
     };
   }, [dataWorkspaceId, storedDemoProfile, deploymentMode]);
   const committedCsvImports = useMemo(
-    () => listCsvRealDataImports(dataWorkspaceId),
-    [csvImportStoreVersion, dataWorkspaceId],
+    () => {
+      const imports = listCsvRealDataImports(dataWorkspaceId);
+      if (!modernDemoActive || !isDemoProfileId(storedDemoProfile)) return imports;
+      const prefix = demoProfileImportPrefix(storedDemoProfile);
+      return imports.filter((entry) => entry.importId.startsWith(prefix));
+    },
+    [csvImportStoreVersion, dataWorkspaceId, modernDemoActive, storedDemoProfile],
   );
   const csvDataObjects = useMemo(
     () => committedCsvImports.map(projectCsvImportAsDecisionTheatreDataObject),
     [committedCsvImports],
   );
+  const deckStageProjection = useMemo(() => {
+    if (!managerDecksEligible || activeDeckId == null) {
+      return resolveDeckStageProjection({
+        workspaceId: dataWorkspaceId,
+        deck: null,
+        references: [],
+        datasets: [],
+      });
+    }
+    const record = deckRegistry.workspaces[dataWorkspaceId]?.decks.find((entry) => entry.deckId === activeDeckId) ?? null;
+    const references = datasetReferenceSnapshot.references.filter(
+      (reference) => reference.workspaceId === dataWorkspaceId && reference.deckId === activeDeckId,
+    );
+    const datasets = references.map((reference) => {
+      if (!csvHydrated) {
+        return Object.freeze({
+          workspaceId: dataWorkspaceId,
+          datasetId: reference.datasetId,
+          availability: "loading" as const,
+          contentRevision: null,
+        });
+      }
+      const imported = committedCsvImports.find(
+        (entry) => entry.workspaceId === dataWorkspaceId && entry.sourceContextId === reference.datasetId,
+      );
+      if (!imported) {
+        return Object.freeze({
+          workspaceId: dataWorkspaceId,
+          datasetId: reference.datasetId,
+          availability: "missing" as const,
+          contentRevision: null,
+        });
+      }
+      return Object.freeze({
+        workspaceId: imported.workspaceId,
+        datasetId: imported.sourceContextId,
+        availability: "loaded" as const,
+        contentRevision: imported.importId,
+      });
+    });
+    return resolveDeckStageProjection({
+      workspaceId: dataWorkspaceId,
+      deck: record == null ? null : Object.freeze({
+        deckId: record.deckId,
+        workspaceId: record.workspaceId,
+        status: record.status,
+      }),
+      references,
+      datasets,
+    });
+  }, [
+    activeDeckId,
+    committedCsvImports,
+    csvHydrated,
+    dataWorkspaceId,
+    datasetReferenceSnapshot,
+    deckRegistry,
+    managerDecksEligible,
+  ]);
+  const canonicalObjectRevisionValue = useSyncExternalStore(
+    subscribeCanonicalObjects,
+    canonicalObjectRevision,
+    () => 0,
+  );
+  useEffect(() => {
+    recoverCanonicalMutations();
+  }, []);
+  const deckOrganizationalObjects = useMemo(() => {
+    if (!managerDecksEligible || activeDeckId == null) return [];
+    return listDeckCanonicalObjects(dataWorkspaceId, activeDeckId);
+  }, [activeDeckId, canonicalObjectRevisionValue, dataWorkspaceId, managerDecksEligible]);
+  const organizationalStageObjects = useMemo(
+    () => deckOrganizationalObjects.map(presentCanonicalObjectForStage),
+    [deckOrganizationalObjects],
+  );
+  const authorizedCanonicalObjectIds = useMemo(() => Object.freeze([
+    ...deckStageProjection.objects.map((object) => object.identity.objectId),
+    ...deckOrganizationalObjects.map((object) => object.canonicalObjectId),
+  ]), [deckOrganizationalObjects, deckStageProjection.objects]);
+  const deckStageCatalogMode = !managerDecksEligible
+    ? "demo"
+    : deckStageProjection.status === "loading"
+      ? "loading"
+      : deckStageProjection.objects.length > 0
+        ? "projected"
+        : "empty";
   const [activeLiveObservation, setActiveLiveObservation] =
     useState<NexoraLiveCommittedObservation | null>(null);
   const [sourceAdvisorContext, setSourceAdvisorContext] =
@@ -694,16 +936,43 @@ export function NexoraExecutiveShell({
   const experienceContext = resolveExecutiveExperienceContext(entranceSession);
 
   const dataRealityExperience = useMemo(() => {
+    void csvImportStoreVersion;
     const restrained = isNexoraEntranceRestrained(entranceSession);
     const result = resolveNexoraMVPDataRealityAwareStageExperience({
       datasetScenario,
       ...(activeSourceDataset ? { dataset: activeSourceDataset } : {}),
       ...(permitProductFixtures
         ? {}
-        : {
-            baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
-            suppressUnownedDemoDataset: true,
-          }),
+          : dataWorkspaceId === BUSINESS_DEMO_WORKSPACE_ID
+          ? (() => {
+              const businessStage = resolveBusinessDemoStageMaterials();
+              return businessStage
+                ? {
+                    baseCatalog: businessStage.catalog,
+                    dataset: businessStage.dataset,
+                  }
+                : {
+                    baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
+                    suppressUnownedDemoDataset: true as const,
+                  };
+            })()
+          : modernDemoActive
+          ? (() => {
+              const demoStage = resolveActiveDemoProfileStageMaterials();
+              return demoStage
+                ? {
+                    baseCatalog: demoStage.catalog,
+                    dataset: demoStage.dataset,
+                  }
+                : {
+                    baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
+                    suppressUnownedDemoDataset: true as const,
+                  };
+            })()
+          : {
+              baseCatalog: createEmptyNexoraMVPObjectInteractionCatalog(),
+              suppressUnownedDemoDataset: true,
+            }),
       focusedObjectId: interaction.focusedSubject?.id,
       selectedObjectId: interaction.selectedSubject?.id,
       selectedObjectIds: interaction.selectedSubject
@@ -718,10 +987,16 @@ export function NexoraExecutiveShell({
           }
         : {}),
     });
-    if (!restrained) return result;
+    const stageResult = restrained
+      ? Object.freeze({
+          ...result,
+          catalog: stabilizeEntranceCatalog(result.catalog),
+        })
+      : result;
+    if (!deckStageUnassigned) return stageResult;
     return Object.freeze({
-      ...result,
-      catalog: stabilizeEntranceCatalog(result.catalog),
+      ...stageResult,
+      catalog: createEmptyNexoraMVPObjectInteractionCatalog(),
     });
   }, [
     datasetScenario,
@@ -732,7 +1007,51 @@ export function NexoraExecutiveShell({
     interaction.presentationState,
     entranceSession,
     permitProductFixtures,
+    modernDemoActive,
+    dataWorkspaceId,
+    csvImportStoreVersion,
+    deckStageUnassigned,
   ]);
+
+  const observedWorkspaceId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!workspaceAuthorityReady) return;
+    const previousWorkspaceId = observedWorkspaceId.current;
+    observedWorkspaceId.current = dataWorkspaceId;
+    if (previousWorkspaceId == null || previousWorkspaceId === dataWorkspaceId) return;
+    setInteraction((current) => {
+      const subjectId = current.focusedSubject?.id ?? current.selectedSubject?.id ?? null;
+      const stillAuthorized = executiveSubjectRemainsInCatalog(
+        subjectId,
+        dataRealityExperience.catalog.objects.map((object) => object.id),
+      );
+      return stillAuthorized ? current : resetNexoraMVPObjectInteractionOverview(current);
+    });
+  }, [workspaceAuthorityReady, dataWorkspaceId, dataRealityExperience.catalog.objects]);
+
+  const observedDemoProfile = useRef<string | null>(null);
+  useEffect(() => {
+    if (!workspaceAuthorityReady) return;
+    const previousProfile = observedDemoProfile.current;
+    observedDemoProfile.current = storedDemoProfile;
+    if (previousProfile == null || previousProfile === storedDemoProfile) return;
+    const materials =
+      dataWorkspaceId === BUSINESS_DEMO_WORKSPACE_ID
+        ? resolveBusinessDemoStageMaterials()
+        : resolveActiveDemoProfileStageMaterials();
+    const catalogIds = (materials?.catalog.objects ?? []).map((object) => object.id);
+    setInteraction((current) => {
+      const subjectId = current.focusedSubject?.id ?? current.selectedSubject?.id ?? null;
+      return executiveSubjectRemainsInCatalog(subjectId, catalogIds)
+        ? current
+        : resetNexoraMVPObjectInteractionOverview(current);
+    });
+  }, [workspaceAuthorityReady, storedDemoProfile, dataWorkspaceId]);
+
+  const stageCatalogKey = [
+    ...dataRealityExperience.catalog.objects.map((object) => object.id),
+    ...authorizedCanonicalObjectIds,
+  ].join("\0");
 
   const dataRealityAdvisorExperience = useMemo(
     () =>
@@ -894,12 +1213,24 @@ export function NexoraExecutiveShell({
   const [savedScenes, setSavedScenes] = useState<readonly SceneOrgSavedScene[]>(
     Object.freeze([]),
   );
+  const [savedSceneConflict, setSavedSceneConflict] = useState<string | null>(null);
+  const [savedSceneReload, setSavedSceneReload] = useState(0);
   const savedScenesRef = useRef(savedScenes);
   savedScenesRef.current = savedScenes;
-  const managerSavedScenes = useMemo(
-    () => listSceneOrgSavedScenesForManagerWorkspace(savedScenes, dataWorkspaceId),
-    [savedScenes, dataWorkspaceId],
-  );
+  const managerSavedScenes = useMemo(() => {
+    if (!managerDecksEligible) {
+      return listSceneOrgSavedScenesForManagerWorkspace(savedScenes, dataWorkspaceId);
+    }
+    const record = deckRegistry.workspaces[dataWorkspaceId]?.decks.find(
+      (entry) => entry.deckId === activeDeckId,
+    ) ?? null;
+    return listSceneOrgSavedScenesForDeck(
+      savedScenes,
+      dataWorkspaceId,
+      activeDeckId ?? "",
+      record?.status === "ACTIVE" ? "ACTIVE" : record ? "ARCHIVED" : "missing",
+    );
+  }, [activeDeckId, dataWorkspaceId, deckRegistry, managerDecksEligible, savedScenes, storedDemoProfile]);
   const [savedSceneHydration, setSavedSceneHydration] = useState<Readonly<{
     status: "pending" | "loaded" | "empty" | "unavailable" | "invalid" | "incompatible";
     rejectedRecords: number;
@@ -920,7 +1251,7 @@ export function NexoraExecutiveShell({
         `Saved Scene durability rejected ${loaded.rejectedRecords} record(s): ${loaded.status}.`,
       );
     }
-  }, [deploymentMode]);
+  }, [deploymentMode, savedSceneReload]);
   const [activeSavedSceneId, setActiveSavedSceneId] = useState<string | null>(null);
   const [savedSceneAccessResolution, setSavedSceneAccessResolution] =
     useState<SceneOrgSavedSceneAccessResolution | null>(null);
@@ -937,7 +1268,72 @@ export function NexoraExecutiveShell({
     requestedPresentationDepth: NexoraMVPPresentationState;
     resolvedPresentationDepth: NexoraMVPPresentationState;
     truthSource: "current-canonical-authorities";
+    unavailableIds?: readonly string[];
   }> | null>(null);
+  const [sceneSpatialSession, setSceneSpatialSession] = useState<{
+    workspaceId: string;
+    deckId: string | null;
+    demoProfileId: "manufacturing" | "project" | null;
+    positions: Readonly<Record<string, { readonly x: number; readonly y: number }>>;
+    manualIds: readonly string[];
+  }>({
+    workspaceId: "",
+    deckId: null,
+    demoProfileId: null,
+    positions: {},
+    manualIds: [],
+  });
+  const spatialContextDeckId = managerDecksEligible ? activeDeckId : null;
+  const spatialContextDemo =
+    !managerDecksEligible &&
+    dataWorkspaceId === DEMO_WORKSPACE_ID &&
+    (storedDemoProfile === "manufacturing" || storedDemoProfile === "project")
+      ? storedDemoProfile
+      : null;
+  const sceneSpatialPositions =
+    sceneSpatialSession.workspaceId === dataWorkspaceId &&
+    sceneSpatialSession.deckId === spatialContextDeckId &&
+    (sceneSpatialSession.demoProfileId ?? null) === spatialContextDemo
+      ? sceneSpatialSession.positions
+      : EMPTY_SCENE_SPATIAL_POSITIONS;
+  const spatialEpoch = `${dataWorkspaceId}|${spatialContextDeckId ?? ""}|${spatialContextDemo ?? ""}`;
+  const [stageViewSession, setStageViewSession] = useState<{
+    workspaceId: string;
+    deckId: string | null;
+    demoProfileId: "manufacturing" | "project" | null;
+    view: StagePresentationView;
+  }>({
+    workspaceId: "",
+    deckId: null,
+    demoProfileId: null,
+    view: STAGE_PRESENTATION_VIEW,
+  });
+  const stageView =
+    stageViewSession.workspaceId === dataWorkspaceId &&
+    stageViewSession.deckId === spatialContextDeckId &&
+    (stageViewSession.demoProfileId ?? null) === spatialContextDemo
+      ? stageViewSession.view
+      : STAGE_PRESENTATION_VIEW;
+  const topologyContextKey = `${dataWorkspaceId}:${spatialContextDeckId ?? ""}`;
+  const [topologySelection, setTopologySelection] = useState<{
+    key: string;
+    type: CanonicalTopologyType | null;
+    hierarchy: boolean;
+    revalidation: "match" | "fallback" | "none";
+  }>({ key: "", type: null, hierarchy: false, revalidation: "none" });
+  const selectedTopology = topologySelection.key === topologyContextKey ? topologySelection.type : null;
+  const selectedTopologyHierarchy = topologySelection.key === topologyContextKey && topologySelection.hierarchy;
+  const topologyRevalidation = topologySelection.key === topologyContextKey ? topologySelection.revalidation : "none";
+  useEffect(() => {
+    if (savedSceneHydration.status === "pending") return;
+    if (
+      activeSavedSceneId != null &&
+      !managerSavedScenes.some((scene) => scene.sceneId === activeSavedSceneId)
+    ) {
+      setActiveSavedSceneId(null);
+      setSavedSceneRestoration(null);
+    }
+  }, [activeSavedSceneId, managerSavedScenes, savedSceneHydration.status]);
   const [explorerWidth, setExplorerWidth] = useState(300);
   const [advisorTab, setAdvisorTab] = useState<ExecutiveAdvisorTab>("Assist");
   const [packageTabSession, setPackageTabSession] = useState(
@@ -952,6 +1348,55 @@ export function NexoraExecutiveShell({
       ),
     );
   }, []);
+  useEffect(() => {
+    if (!workspaceAuthorityReady) return;
+    const catalogIds = stageCatalogKey.length === 0 ? [] : stageCatalogKey.split("\0");
+    setPackageTabSession((session) =>
+      retainSceneOrgRightPackageTabsInCatalog(session, {
+        workspaceId: dataWorkspaceId,
+        demoProfileId: storedDemoProfile,
+        deckId: activeDeckId,
+        catalogObjectIds: catalogIds,
+      }),
+    );
+    setInteraction((current) => {
+      const subjectId = current.focusedSubject?.id ?? current.selectedSubject?.id ?? null;
+      return executiveSubjectRemainsInCatalog(subjectId, catalogIds)
+        ? current
+        : resetNexoraMVPObjectInteractionOverview(current);
+    });
+    setSourceAdvisorContext((current) => {
+      if (current == null || current.workspaceId !== dataWorkspaceId) {
+        return current == null ? current : null;
+      }
+      const activeSourceIds = new Set(committedCsvImports.map((entry) => entry.sourceContextId));
+      if (current.sourceIds.some((id) => !activeSourceIds.has(id))) return null;
+      if (
+        current.affectedStageObjectIds.length > 0 &&
+        current.affectedStageObjectIds.every((id) => !catalogIds.includes(id))
+      ) {
+        return null;
+      }
+      return current;
+    });
+  }, [workspaceAuthorityReady, dataWorkspaceId, storedDemoProfile, activeDeckId, stageCatalogKey, committedCsvImports]);
+  useEffect(() => {
+    if (!managerDecksEligible || activeDeckId == null) return;
+    const allowed = new Set(listManagerDeckDatasetIds(dataWorkspaceId, activeDeckId));
+    setSourceAdvisorContext((current) => {
+      if (current == null) return current;
+      if (current.workspaceId !== dataWorkspaceId) return null;
+      if (current.sourceIds.length === 0 || current.sourceIds.every((id) => allowed.has(id))) return current;
+      return null;
+    });
+  }, [managerDecksEligible, activeDeckId, dataWorkspaceId, datasetReferenceSnapshot]);
+  useEffect(() => {
+    if (managerDecksEligible && (!csvHydrated || deckStageProjection.status === "loading")) return;
+    const objectIds = managerDecksEligible
+      ? authorizedCanonicalObjectIds
+      : csvDataObjects.map((entry) => entry.id);
+    setSelectedDataObjectId((current) => retainDeckStageSelection(current, objectIds));
+  }, [authorizedCanonicalObjectIds, managerDecksEligible, deckStageProjection, csvDataObjects, csvHydrated]);
   const [timelineLens, setTimelineLens] =
     useState<ExecutiveTimelineLens>("week");
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
@@ -964,6 +1409,20 @@ export function NexoraExecutiveShell({
   const [stagedDataObjectIds, setStagedDataObjectIds] = useState<readonly string[]>(Object.freeze([]));
   const [csvRemovalReviewSourceId, setCsvRemovalReviewSourceId] = useState<string | null>(null);
   const [dataRailSelectedSourceId, setDataRailSelectedSourceId] = useState<string | null>(null);
+  useEffect(() => {
+    const sourceIds = committedCsvImports.map((entry) => entry.sourceContextId);
+    const catalogIds = stageCatalogKey.length === 0 ? [] : stageCatalogKey.split("\0");
+    setDataRailSelectedSourceId((current) => retainDeckStageSelection(current, sourceIds));
+    setActiveLiveObservation((current) =>
+      current == null || current.workspaceId === dataWorkspaceId ? current : null,
+    );
+    setDetailLaunchReference((current) => {
+      if (current == null) return current;
+      if (current.kind === "data-source") return retainSceneOrgDetailReference(current, sourceIds);
+      if (managerDecksEligible && (!csvHydrated || deckStageProjection.status === "loading")) return current;
+      return retainSceneOrgDetailReference(current, catalogIds);
+    });
+  }, [committedCsvImports, csvHydrated, dataWorkspaceId, deckStageProjection.status, managerDecksEligible, stageCatalogKey]);
 
   // CC:5/CC:7 — short-lived conversational session + structured executive context.
   const [conversationalMessages, setConversationalMessages] = useState<
@@ -1361,14 +1820,20 @@ export function NexoraExecutiveShell({
   const selectedObject = interaction.focusedSubject ?? interaction.selectedSubject;
   useEffect(() => {
     if (selectedObject == null) return;
+    const catalogIds = stageCatalogKey.length === 0 ? [] : stageCatalogKey.split("\0");
+    if (!catalogIds.includes(selectedObject.id)) return;
     setPackageTabSession((session) =>
       syncSceneOrgRightSelectedObjectTab(session, {
         package: "investigation",
         canonicalId: selectedObject.id,
         label: selectedObject.label,
+        ownerWorkspaceId: dataWorkspaceId,
+        ownerDemoProfileId: storedDemoProfile,
+        ownerDeckId: activeDeckId,
+        catalogBound: true,
       }),
     );
-  }, [selectedObject?.id, selectedObject?.label]);
+  }, [selectedObject?.id, selectedObject?.label, stageCatalogKey, dataWorkspaceId, storedDemoProfile, activeDeckId]);
   const [comparisonAuthority, setComparisonAuthority] =
     useState<NexoraDecisionTheatreComparisonAuthority | null>(null);
   const [decisionReviewOpen, setDecisionReviewOpen] = useState(false);
@@ -1520,7 +1985,8 @@ export function NexoraExecutiveShell({
       interaction,
       stageCatalog,
       {
-        ...(experienceContext === "GUIDED_ENTRANCE"
+        ...(experienceContext === "GUIDED_ENTRANCE" ||
+        stageManagerWorkspaceId === BUSINESS_DEMO_WORKSPACE_ID
           ? { overviewOccupancy: "current-catalog" as const }
           : {}),
         activeManagerWorkspaceId: stageManagerWorkspaceId,
@@ -1634,25 +2100,278 @@ export function NexoraExecutiveShell({
     ],
   );
   const managementLevelSpatial = managementLevels.spatial;
+  const relationshipRevision = useSyncExternalStore(
+    subscribeCanonicalRelationships,
+    canonicalRelationshipRevision,
+    () => 0,
+  );
+  const relationshipAuthorityStatus = canonicalRelationshipAuthorityStatus();
+  const deckRelationshipGraph = useMemo(() => {
+    if (!managerDecksEligible || activeDeckId == null) return null;
+    return resolveDeckRelationshipGraph({
+      workspaceId: dataWorkspaceId,
+      deckId: activeDeckId,
+      authorizedObjectIds: authorizedCanonicalObjectIds,
+    });
+  }, [activeDeckId, authorizedCanonicalObjectIds, dataWorkspaceId, managerDecksEligible, relationshipAuthorityStatus, relationshipRevision]);
+  const topologyAnalysis = useMemo(() => {
+    if (!managerDecksEligible || activeDeckId == null || deckRelationshipGraph == null) return null;
+    return analyzeCanonicalTopology({
+      workspaceId: dataWorkspaceId,
+      deckId: activeDeckId,
+      contextKey: topologyContextKey,
+      nodeIds: authorizedCanonicalObjectIds,
+      relationships: deckRelationshipGraph.relationships,
+    });
+  }, [activeDeckId, authorizedCanonicalObjectIds, dataWorkspaceId, deckRelationshipGraph, managerDecksEligible, topologyContextKey]);
+  useEffect(() => {
+    if (topologyAnalysis == null || topologySelection.key !== topologyAnalysis.contextKey || topologySelection.type == null) return;
+    const current = topologyAnalysis.candidates.find((candidate) =>
+      candidate.topologyType === topologySelection.type &&
+      candidate.hierarchy === topologySelection.hierarchy &&
+      candidate.structuralStatus === "MATCH");
+    if (current) return;
+    setTopologySelection((selection) => selection.type == null ? selection : {
+      ...selection,
+      type: null,
+      revalidation: "fallback",
+    });
+  }, [topologyAnalysis, topologySelection]);
+  const deckRelationshipGraphRef = useRef(deckRelationshipGraph);
+  deckRelationshipGraphRef.current = deckRelationshipGraph;
 
+  const decisionDomainRevisionValue = useSyncExternalStore(
+    subscribeDecisionDomain,
+    decisionDomainRevision,
+    () => 0,
+  );
+  const [impactRequest, setImpactRequest] = useState<{ decisionId: string; depth: number } | null>(null);
+  useEffect(() => {
+    setImpactRequest(null);
+  }, [activeDeckId, dataWorkspaceId]);
+  const impactAnalysis = useMemo(() => {
+    if (!managerDecksEligible || activeDeckId == null || impactRequest == null) return null;
+    return previewDecisionImpact({
+      workspaceId: dataWorkspaceId,
+      deckId: activeDeckId,
+      decisionId: impactRequest.decisionId,
+      maxDepth: impactRequest.depth,
+    });
+  }, [
+    activeDeckId,
+    canonicalObjectRevisionValue,
+    csvImportStoreVersion,
+    dataWorkspaceId,
+    decisionDomainRevisionValue,
+    impactRequest,
+    managerDecksEligible,
+    relationshipRevision,
+  ]);
+  const decisionSolar = useMemo(() => {
+    if (!managerDecksEligible || activeDeckId == null) return emptyDecisionSolarLayout();
+    return projectDecisionSolar({ workspaceId: dataWorkspaceId, deckId: activeDeckId });
+  }, [activeDeckId, dataWorkspaceId, decisionDomainRevisionValue, managerDecksEligible]);
+  const decisionStageObjects = useMemo(() => {
+    if (stageView !== DECISION_SOLAR_VIEW) return [];
+    return decisionSolar.nodes.flatMap((node) => {
+      if (node.kind === "ORGANIZATIONAL_OBJECT") return [];
+      return [presentDecisionNodeForStage({
+        workspaceId: dataWorkspaceId,
+        node,
+        related: decisionSolar.edges
+          .filter((edge) => edge.sourceId === node.id || edge.targetId === node.id)
+          .map((edge) => `${edge.relationshipType}:${edge.sourceId === node.id ? edge.targetId : edge.sourceId}`),
+      })];
+    });
+  }, [dataWorkspaceId, decisionSolar, stageView]);
+  const impactRoles = useMemo(() => {
+    const roles = new Map<string, "SELECTED_DECISION" | "DIRECT_TARGET" | "CONNECTED_OBJECT">();
+    if (stageView !== DECISION_SOLAR_VIEW || impactAnalysis?.status !== "ready") return roles;
+    roles.set(impactAnalysis.preview.decisionId, "SELECTED_DECISION");
+    for (const target of impactAnalysis.preview.directTargets) roles.set(target.objectId, "DIRECT_TARGET");
+    for (const connected of impactAnalysis.preview.connectedObjects) roles.set(connected.objectId, "CONNECTED_OBJECT");
+    return roles;
+  }, [impactAnalysis, stageView]);
   const dataObjectStage = useMemo(
     () => projectNexoraDecisionTheatreDataObjectsToStage({
-      dataObjects: csvDataObjects,
-      visibleDataObjectIds: stagedDataObjectIds,
+      dataObjects: (managerDecksEligible ? [...csvDataObjects, ...organizationalStageObjects, ...decisionStageObjects] : csvDataObjects).map((object) => {
+        const impactRole = impactRoles.get(object.id);
+        return impactRole ? { ...object, impactRole } : object;
+      }),
+      visibleDataObjectIds: managerDecksEligible
+        ? [...authorizedCanonicalObjectIds, ...decisionStageObjects.map((object) => object.id)]
+        : stagedDataObjectIds,
       selectedDataObjectId,
       businessFocusId: interaction.focusedSubject?.id ?? null,
       stageObjects: stageInteraction.scene.objects,
       sceneIntentKind: theatreProjection.sceneIntent.intentKind,
+      ...(managerDecksEligible ? { labelSide: "top-right" as const } : {}),
+      spatialPositions: sceneSpatialPositions,
+      graphEdges: deckRelationshipGraph?.relationships ?? [],
     }),
     [
+      authorizedCanonicalObjectIds,
       csvDataObjects,
+      impactRoles,
+      decisionStageObjects,
+      deckRelationshipGraph,
       interaction.focusedSubject?.id,
+      organizationalStageObjects,
+      managerDecksEligible,
+      sceneSpatialPositions,
       selectedDataObjectId,
       stagedDataObjectIds,
       stageInteraction.scene.objects,
       theatreProjection.sceneIntent.intentKind,
     ],
   );
+  const solarLayout = useMemo(() => {
+    if (stageView !== ORGANIZATIONAL_SOLAR_VIEW) return null;
+    return projectOrganizationalSolarLayout({
+      objectIds: dataObjectStage.participants.map((participant) => participant.dataObject.id),
+      relationships: (deckRelationshipGraph?.relationships ?? []).map((relationship) => ({
+        relationshipId: relationship.relationshipId,
+        sourceObjectId: relationship.sourceObjectId,
+        targetObjectId: relationship.targetObjectId,
+        relationshipType: relationship.relationshipType,
+        direction: relationship.direction,
+      })),
+    });
+  }, [dataObjectStage, deckRelationshipGraph, stageView]);
+  useEffect(() => {
+    if (stageView !== ORGANIZATIONAL_SOLAR_VIEW || solarLayout == null) return;
+    const workspaceId = dataWorkspaceId;
+    const deckId = spatialContextDeckId;
+    const demoProfileId = spatialContextDemo;
+    setSceneSpatialSession((current) => {
+      const sameContext =
+        current.workspaceId === workspaceId &&
+        current.deckId === deckId &&
+        (current.demoProfileId ?? null) === demoProfileId;
+      const next = sameContext ? { ...current.positions } : {};
+      let changed = !sameContext;
+      const live = new Set(solarLayout.placements.map((placement) => placement.canonicalObjectId));
+      for (const objectId of Object.keys(next)) {
+        if (!live.has(objectId)) {
+          delete next[objectId];
+          changed = true;
+        }
+      }
+      for (const placement of solarLayout.placements) {
+        if (next[placement.canonicalObjectId]) continue;
+        next[placement.canonicalObjectId] = {
+          x: placement.position.x,
+          y: placement.position.y,
+        };
+        changed = true;
+      }
+      if (!changed) return current;
+      return {
+        workspaceId,
+        deckId,
+        demoProfileId,
+        positions: next,
+        manualIds: sameContext ? current.manualIds.filter((id) => next[id] != null) : [],
+      };
+    });
+  }, [dataWorkspaceId, solarLayout, spatialContextDeckId, spatialContextDemo, stageView]);
+  useEffect(() => {
+    if (stageView !== DECISION_SOLAR_VIEW) return;
+    const workspaceId = dataWorkspaceId;
+    const deckId = spatialContextDeckId;
+    const demoProfileId = spatialContextDemo;
+    setSceneSpatialSession((current) => {
+      const sameContext =
+        current.workspaceId === workspaceId &&
+        current.deckId === deckId &&
+        (current.demoProfileId ?? null) === demoProfileId;
+      const next = sameContext ? { ...current.positions } : {};
+      let changed = !sameContext;
+      for (const placement of decisionSolar.placements) {
+        if (next[placement.id]) continue;
+        next[placement.id] = { x: placement.position.x, y: placement.position.y };
+        changed = true;
+      }
+      if (!changed) return current;
+      return {
+        workspaceId,
+        deckId,
+        demoProfileId,
+        positions: next,
+        manualIds: sameContext ? current.manualIds : [],
+      };
+    });
+  }, [dataWorkspaceId, decisionSolar, spatialContextDeckId, spatialContextDemo, stageView]);
+  const relationshipInspection = useMemo(() => {
+    if (!managerDecksEligible || selectedDataObjectId == null || deckRelationshipGraph == null) return null;
+    const authorizedIds = [...authorizedCanonicalObjectIds];
+    if (!authorizedIds.includes(selectedDataObjectId)) return null;
+    const labels = new Map([
+      ...csvDataObjects.map((object) => [object.id, object.label] as const),
+      ...organizationalStageObjects.map((object) => [object.id, object.label] as const),
+    ]);
+    const authorized = new Set(authorizedIds);
+    const membership = describeTopologyMembership({
+      analysis: topologyAnalysis,
+      objectId: selectedDataObjectId,
+      selectedType: selectedTopology,
+      hierarchy: selectedTopologyHierarchy,
+    });
+    return {
+      authorityStatus: deckRelationshipGraph.authorityStatus,
+      topologyMembership: membership,
+      candidates: authorizedIds.map((objectId) => ({ objectId, label: labels.get(objectId) ?? objectId })),
+      relationships: listCanonicalRelationships(dataWorkspaceId).filter((relationship) =>
+        (relationship.sourceObjectId === selectedDataObjectId || relationship.targetObjectId === selectedDataObjectId) &&
+        authorized.has(relationship.sourceObjectId) &&
+        authorized.has(relationship.targetObjectId)
+      ),
+      onCreate: (targetObjectId: string, relationshipType: CanonicalRelationshipType) => {
+        void coordinateWorkspaceMutation({ workspaceId: dataWorkspaceId }, () => {
+          declareCanonicalRelationship({
+            workspaceId: dataWorkspaceId,
+            sourceObjectId: selectedDataObjectId,
+            targetObjectId,
+            relationshipType,
+            knownObjectIds: authorizedIds,
+          });
+        });
+      },
+      onEditType: (relationshipId: string, relationshipType: CanonicalRelationshipType) => {
+        void coordinateWorkspaceMutation({ workspaceId: dataWorkspaceId }, () => {
+          editCanonicalRelationshipType({ workspaceId: dataWorkspaceId, relationshipId, relationshipType });
+        });
+      },
+      onArchive: (relationshipId: string) => {
+        void coordinateWorkspaceMutation({ workspaceId: dataWorkspaceId }, () => {
+          archiveCanonicalRelationship(dataWorkspaceId, relationshipId);
+        });
+      },
+      onRestore: (relationshipId: string) => {
+        void coordinateWorkspaceMutation({ workspaceId: dataWorkspaceId }, () => {
+          restoreCanonicalRelationship(dataWorkspaceId, relationshipId);
+        });
+      },
+      onDelete: (relationshipId: string) => {
+        void coordinateWorkspaceMutation({ workspaceId: dataWorkspaceId }, () => {
+          deleteCanonicalRelationship(dataWorkspaceId, relationshipId);
+        });
+      },
+    };
+  }, [
+    authorizedCanonicalObjectIds,
+    csvDataObjects,
+    dataWorkspaceId,
+    deckRelationshipGraph,
+    organizationalStageObjects,
+    managerDecksEligible,
+    relationshipAuthorityStatus,
+    relationshipRevision,
+    selectedDataObjectId,
+    selectedTopology,
+    selectedTopologyHierarchy,
+    topologyAnalysis,
+  ]);
 
   // NPA-T: establish change baseline only after hydration. Derive must not write
   // or consult the process-global store during SSR (Queue <li> mismatch).
@@ -2156,6 +2875,165 @@ export function NexoraExecutiveShell({
   const interactionRef = useRef(interaction);
   interactionRef.current = interaction;
 
+  const sceneDeckContextRef = useRef({
+    managerDecksEligible: false,
+    activeDeckId: null as string | null,
+    deckActive: false,
+    selectedDataObjectId: null as string | null,
+    loading: false,
+    authorizedObjectIds: [] as readonly string[],
+    visibleSpatial: [] as readonly { canonicalObjectId: string; x: number; y: number }[],
+    stageView: STAGE_PRESENTATION_VIEW as StagePresentationView,
+    topologyPresentation: null as CanonicalTopologyType | null,
+    topologyHierarchy: false,
+  });
+  sceneDeckContextRef.current = {
+    managerDecksEligible,
+    activeDeckId,
+    deckActive: !managerDecksEligible || deckRegistry.workspaces[dataWorkspaceId]?.decks.find(
+      (entry) => entry.deckId === activeDeckId,
+    )?.status === "ACTIVE",
+    selectedDataObjectId,
+    loading: managerDecksEligible && (!csvHydrated || deckStageProjection.status === "loading"),
+    authorizedObjectIds: managerDecksEligible
+      ? authorizedCanonicalObjectIds
+      : dataRealityExperience.catalog.objects.map((object) => object.id),
+    visibleSpatial: dataObjectStage.participants.map((participant) => ({
+      canonicalObjectId: participant.dataObject.id,
+      x: participant.presentation.targetPosition[0],
+      y: participant.presentation.targetPosition[1],
+    })),
+    stageView,
+    topologyPresentation: selectedTopology,
+    topologyHierarchy: selectedTopologyHierarchy,
+  };
+  const placeStageObject = useCallback((id: string, x: number, y: number) => {
+    const position = parseStagePlanePosition({ x, y, z: 0 });
+    const context = sceneDeckContextRef.current;
+    if (
+      !position ||
+      !context.visibleSpatial.some((entry) => entry.canonicalObjectId === id)
+    ) {
+      return false;
+    }
+    const workspaceId = dataWorkspaceIdRef.current;
+    const deckId = context.managerDecksEligible ? context.activeDeckId : null;
+    const demoProfileId =
+      context.managerDecksEligible || workspaceId !== DEMO_WORKSPACE_ID
+        ? null
+        : storedDemoProfile === "manufacturing" || storedDemoProfile === "project"
+          ? storedDemoProfile
+          : null;
+    setSceneSpatialSession((current) => {
+      const same =
+        current.workspaceId === workspaceId &&
+        current.deckId === deckId &&
+        current.demoProfileId === demoProfileId;
+      const positions = { ...(same ? current.positions : {}), [id]: { x: position.x, y: position.y } };
+      const manualIds = same ? current.manualIds : [];
+      return {
+        workspaceId,
+        deckId,
+        demoProfileId,
+        positions,
+        manualIds: manualIds.includes(id) ? manualIds : [...manualIds, id],
+      };
+    });
+    return true;
+  }, [storedDemoProfile]);
+  const setStagePresentationView = useCallback((
+    nextView: StagePresentationView,
+  ) => {
+    const context = sceneDeckContextRef.current;
+    setTopologySelection({
+      key: `${dataWorkspaceIdRef.current}:${context.managerDecksEligible ? context.activeDeckId ?? "" : ""}`,
+      type: null,
+      hierarchy: false,
+      revalidation: "none",
+    });
+    const solarRelationships = (deckRelationshipGraphRef.current?.relationships ?? []).map((relationship) => ({
+      relationshipId: relationship.relationshipId,
+      sourceObjectId: relationship.sourceObjectId,
+      targetObjectId: relationship.targetObjectId,
+      relationshipType: relationship.relationshipType,
+      direction: relationship.direction,
+    }));
+    const solarProposal = nextView === ORGANIZATIONAL_SOLAR_VIEW
+      ? Object.fromEntries(projectOrganizationalSolarLayout({
+        objectIds: context.visibleSpatial.map((object) => object.canonicalObjectId),
+        relationships: solarRelationships,
+      }).placements.map((placement) => [
+        placement.canonicalObjectId,
+        { x: placement.position.x, y: placement.position.y },
+      ]))
+      : null;
+    setStageViewSession({
+      workspaceId: dataWorkspaceIdRef.current,
+      deckId: context.managerDecksEligible ? context.activeDeckId : null,
+      demoProfileId:
+        context.managerDecksEligible || dataWorkspaceIdRef.current !== DEMO_WORKSPACE_ID
+          ? null
+          : storedDemoProfile === "manufacturing" || storedDemoProfile === "project"
+            ? storedDemoProfile
+            : null,
+      view: nextView,
+    });
+    setSceneSpatialSession((current) => {
+      const workspaceId = dataWorkspaceIdRef.current;
+      const deckId = context.managerDecksEligible ? context.activeDeckId : null;
+      const demoProfileId =
+        context.managerDecksEligible || workspaceId !== DEMO_WORKSPACE_ID
+          ? null
+          : storedDemoProfile === "manufacturing" || storedDemoProfile === "project"
+            ? storedDemoProfile
+            : null;
+      const same =
+        current.workspaceId === workspaceId &&
+        current.deckId === deckId &&
+        current.demoProfileId === demoProfileId;
+      const merged = mergePresentationPositions({
+        current: same ? current.positions : {},
+        manualIds: same ? current.manualIds : [],
+        proposed: solarProposal,
+        action: "preserve",
+      });
+      return { workspaceId, deckId, demoProfileId, positions: merged.positions, manualIds: merged.manualIds };
+    });
+  }, [storedDemoProfile]);
+  const selectTopologyPresentation = useCallback((
+    topologyType: CanonicalTopologyType,
+    hierarchy: boolean,
+  ) => {
+    if (topologyAnalysis == null) return;
+    const projection = projectCanonicalTopology({ analysis: topologyAnalysis, topologyType, hierarchy });
+    if (projection == null || projection.limitation != null || Object.keys(projection.positions).length === 0) return;
+    const context = sceneDeckContextRef.current;
+    setTopologySelection({
+      key: topologyAnalysis.contextKey,
+      type: topologyType,
+      hierarchy,
+      revalidation: "match",
+    });
+    setStageViewSession({
+      workspaceId: dataWorkspaceIdRef.current,
+      deckId: context.managerDecksEligible ? context.activeDeckId : null,
+      demoProfileId: null,
+      view: STAGE_PRESENTATION_VIEW,
+    });
+    const applied = mergePresentationPositions({
+      current: {},
+      manualIds: [],
+      proposed: Object.fromEntries(Object.entries(projection.positions).map(([id, position]) => [id, { x: position.x, y: position.y }])),
+      action: "apply",
+    });
+    setSceneSpatialSession({
+      workspaceId: dataWorkspaceIdRef.current,
+      deckId: context.managerDecksEligible ? context.activeDeckId : null,
+      demoProfileId: null,
+      positions: applied.positions,
+      manualIds: applied.manualIds,
+    });
+  }, [topologyAnalysis]);
   const applyWorkspacePresentationAction = useCallback(
     async (
       action: NexoraConversationalWorkspaceActionPayload,
@@ -2231,25 +3109,37 @@ export function NexoraExecutiveShell({
           return "Showing recent recorded activity.";
         case "SAVE_SCENE": {
           if (!sceneLabel) return "Name the scene you want to save.";
-          const savedSceneSubjectId = resolveSceneOrgSavedSceneCaptureId({
+          const sceneContext = sceneDeckContextRef.current;
+          if (sceneContext.managerDecksEligible && !sceneContext.deckActive) {
+            return "Choose an active Deck before saving a scene.";
+          }
+          const catalogSubjectId = resolveSceneOrgSavedSceneCaptureId({
             focusedSubjectId: current.focusedSubject?.id ?? null,
             selectedSubjectId: current.selectedSubject?.id ?? null,
             resolvedReferentId: resolvedTargetId,
           });
-          const savedSceneSubject = savedSceneSubjectId
+          const catalogSubject = catalogSubjectId
             ? resolveNexoraMVPInteractionSubject(
-                savedSceneSubjectId,
+                catalogSubjectId,
                 dataRealityExperience.catalog,
               )
             : null;
+          const authorizedDataObjectId =
+            sceneContext.selectedDataObjectId != null &&
+            sceneContext.authorizedObjectIds.includes(sceneContext.selectedDataObjectId)
+              ? sceneContext.selectedDataObjectId
+              : null;
+          const savedSceneSubjectId = catalogSubject
+            ? catalogSubjectId
+            : authorizedDataObjectId;
           const references = savedSceneSubjectId
             ? Object.freeze([
                 createSceneOrgCanonicalReference({
                   canonicalId: savedSceneSubjectId,
                   kind:
-                    savedSceneSubject?.kind === "decision"
+                    catalogSubject?.kind === "decision"
                       ? "decision"
-                      : savedSceneSubject?.kind === "execution"
+                      : catalogSubject?.kind === "execution"
                         ? "execution"
                         : "object",
                   owner: "canonical MO/Object catalog",
@@ -2257,23 +3147,32 @@ export function NexoraExecutiveShell({
               ])
             : Object.freeze([]);
           const sceneOwnerId = readLiveExecutiveDataWorkspaceId();
+          const ownerDeckId = sceneContext.managerDecksEligible ? sceneContext.activeDeckId : null;
           const requestedSceneId = `scene-${action.sceneName
             ?.toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "")}`;
-          const occupied = savedScenesRef.current.find(
-            (candidate) => candidate.sceneId === requestedSceneId,
-          );
-          const sceneId =
-            occupied && occupied.managerWorkspaceId !== sceneOwnerId
-              ? `${requestedSceneId}-${sceneOwnerId}`
-              : requestedSceneId;
+          const sceneId = allocateSceneOrgSavedSceneId({
+            requestedSceneId,
+            scenes: savedScenesRef.current,
+            managerWorkspaceId: sceneOwnerId,
+            ownerDeckId,
+            demoProfileId: sceneOwnerId === DEMO_WORKSPACE_ID ? storedDemoProfile : null,
+          });
+          const capturedSpatial = captureSceneOrgSavedSceneSpatialState(sceneContext.visibleSpatial);
+          if (!capturedSpatial.ok) {
+            return `I couldn't durably save ${sceneLabel}; the previous Saved Scenes are unchanged.`;
+          }
+          const previousScene = savedScenesRef.current.find((candidate) => candidate.sceneId === sceneId);
           const scene = createSceneOrgSavedScene({
             sceneId,
             name: sceneLabel,
+            revision: previousScene ? readSceneContentRevision(previousScene) : undefined,
             kind: "SAVED",
             sceneIntentType: "manager-view",
             managerWorkspaceId: sceneOwnerId,
+            ownerDeckId,
+            demoProfileId: sceneOwnerId === DEMO_WORKSPACE_ID ? storedDemoProfile : null,
             canonicalReferences: references,
             layout: {
               presentationDepth: current.presentationState,
@@ -2283,6 +3182,18 @@ export function NexoraExecutiveShell({
                 : "contextual",
               detailWorkspace: activeNav === "Data" ? "open" : "closed",
             },
+            spatialState: capturedSpatial.spatialState,
+            stageView: sceneContext.stageView === ORGANIZATIONAL_SOLAR_VIEW
+              ? ORGANIZATIONAL_SOLAR_VIEW
+              : sceneContext.stageView === DECISION_SOLAR_VIEW
+                ? DECISION_SOLAR_VIEW
+                : sceneContext.stageView === CAUSAL_INVESTIGATION_VIEW
+                  ? CAUSAL_INVESTIGATION_VIEW
+                  : null,
+            causalSelection: sceneContext.stageView === CAUSAL_INVESTIGATION_VIEW && ownerDeckId
+              ? readCausalInvestigationUiSelection(sceneOwnerId, ownerDeckId)
+              : null,
+            topologyPresentation: sceneContext.topologyPresentation,
           });
           const nextScenes = Object.freeze([
             ...savedScenesRef.current.filter(
@@ -2290,14 +3201,24 @@ export function NexoraExecutiveShell({
             ),
             scene,
           ]);
+          const contextStillOwns = () =>
+            dataWorkspaceIdRef.current === sceneOwnerId &&
+            (!sceneContext.managerDecksEligible ||
+              sceneDeckContextRef.current.activeDeckId === ownerDeckId);
           if (!(deploymentMode === "hosted" && isCustomerHostedWorkspaceId(sceneOwnerId))) {
-            const persistence = persistSceneOrgSavedScenes(nextScenes);
+            const persistence = await coordinateWorkspaceMutation({ workspaceId: sceneOwnerId }, () => mergePersistSceneOrgSavedScenes([scene]));
+            if (persistence.reason === "revision-conflict") {
+              setSavedSceneConflict(SAVED_SCENE_STALE_MESSAGE);
+              return SAVED_SCENE_STALE_MESSAGE;
+            }
             if (!persistence.persisted) {
               return `I couldn't durably save ${sceneLabel}; the previous Saved Scenes are unchanged.`;
             }
-            savedScenesRef.current = nextScenes;
-            setSavedScenes(nextScenes);
-            setActiveSavedSceneId(sceneId);
+            setSavedSceneConflict(null);
+            const visibleScenes = persistence.scenes ?? nextScenes;
+            savedScenesRef.current = visibleScenes;
+            setSavedScenes(visibleScenes);
+            if (contextStillOwns()) setActiveSavedSceneId(sceneId);
             return `Saved ${sceneLabel} as view and canonical reference metadata.`;
           }
           try {
@@ -2307,6 +3228,9 @@ export function NexoraExecutiveShell({
           } catch {
             return `I couldn't durably save ${sceneLabel}; the previous Saved Scenes are unchanged.`;
           }
+          if (!contextStillOwns()) {
+            return `Saved ${sceneLabel} for its original Deck. The active Deck changed before it could open.`;
+          }
           savedScenesRef.current = nextScenes;
           setSavedScenes(nextScenes);
           setActiveSavedSceneId(sceneId);
@@ -2314,19 +3238,37 @@ export function NexoraExecutiveShell({
           return `Saved ${sceneLabel} as view and canonical reference metadata.`;
         }
         case "SHOW_SAVED_SCENES": {
-          const names = listSceneOrgSavedScenesForManagerWorkspace(
-            savedScenesRef.current,
-            readLiveExecutiveDataWorkspaceId(),
+          const sceneOwnerId = readLiveExecutiveDataWorkspaceId();
+          const sceneContext = sceneDeckContextRef.current;
+          const names = (sceneContext.managerDecksEligible
+            ? listSceneOrgSavedScenesForDeck(
+                savedScenesRef.current,
+                sceneOwnerId,
+                sceneContext.activeDeckId ?? "",
+                sceneContext.deckActive ? "ACTIVE" : "ARCHIVED",
+              )
+            : listSceneOrgSavedScenesForManagerWorkspace(
+                savedScenesRef.current,
+                sceneOwnerId,
+              )
           ).map((scene) => scene.name);
           if (names.length === 0) return "You don't have any saved scenes yet.";
           return `Saved scenes: ${names.join(", ")}.`;
         }
         case "OPEN_SCENE": {
           const sceneOwnerId = readLiveExecutiveDataWorkspaceId();
-          const ownedScenes = listSceneOrgSavedScenesForManagerWorkspace(
-            savedScenesRef.current,
-            sceneOwnerId,
-          );
+          const sceneContext = sceneDeckContextRef.current;
+          const ownedScenes = sceneContext.managerDecksEligible
+            ? listSceneOrgSavedScenesForDeck(
+                savedScenesRef.current,
+                sceneOwnerId,
+                sceneContext.activeDeckId ?? "",
+                sceneContext.deckActive ? "ACTIVE" : "ARCHIVED",
+              )
+            : listSceneOrgSavedScenesForManagerWorkspace(
+                savedScenesRef.current,
+                sceneOwnerId,
+              );
           const access = resolveSceneOrgSavedSceneAccess(ownedScenes, {
             sceneId: action.sceneId,
             phrase: action.sceneName,
@@ -2347,6 +3289,7 @@ export function NexoraExecutiveShell({
               savedScenesRef.current,
               action.sceneId,
               sceneOwnerId,
+              sceneContext.managerDecksEligible ? sceneContext.activeDeckId : null,
             );
             if (assessment.status === "mismatch") {
               return `${assessment.scene?.name ?? "That saved scene"} belongs to another Manager Workspace.`;
@@ -2356,17 +3299,115 @@ export function NexoraExecutiveShell({
             }
             return `I couldn't find ${sceneLabel ?? "that saved scene"}.`;
           }
-          const resolved = resolveSceneOrgSavedScene(scene, (reference) =>
-            resolveNexoraMVPInteractionSubject(
+          const restoration = resolveDeckSavedSceneRestoration({
+            references: scene.canonicalReferences,
+            authorizedIds: sceneContext.authorizedObjectIds,
+            loading: sceneContext.loading,
+          });
+          if (
+            restoration.status === "loading" ||
+            (scene.spatialState != null && sceneContext.loading)
+          ) {
+            return "Saved scene objects are still loading.";
+          }
+          const decisionSceneIds = scene.stageView === DECISION_SOLAR_VIEW &&
+            sceneContext.managerDecksEligible &&
+            sceneContext.activeDeckId != null
+            ? projectDecisionSolar({
+              workspaceId: sceneOwnerId,
+              deckId: sceneContext.activeDeckId,
+            }).nodes.map((node) => node.id)
+            : [];
+          const spatial = resolveAuthorizedSceneSpatialPositions({
+            spatialState: scene.spatialState,
+            authorizedIds: sceneContext.authorizedObjectIds.concat(
+              decisionSceneIds,
+              sceneContext.visibleSpatial.map((entry) => entry.canonicalObjectId),
+            ),
+          });
+          const openedDeckId = sceneContext.activeDeckId;
+          const resolved = resolveSceneOrgSavedScene(scene, (reference) => {
+            if (!sceneContext.authorizedObjectIds.includes(reference.canonicalId)) return null;
+            return resolveNexoraMVPInteractionSubject(
               reference.canonicalId,
               dataRealityExperience.catalog,
-            ),
-          );
+            ) ?? (
+              sceneContext.managerDecksEligible
+                ? { id: reference.canonicalId, kind: "data-object" as const }
+                : null
+            );
+          });
           const liveSubject = resolved.live.find(
             (entry) => entry.content != null,
-          )?.content;
+          )?.content ?? null;
+          const restoredDataObjectId =
+            liveSubject != null && "kind" in liveSubject && liveSubject.kind === "data-object"
+              ? liveSubject.id
+              : null;
+          if (
+            dataWorkspaceIdRef.current !== sceneOwnerId ||
+            (sceneContext.managerDecksEligible &&
+              sceneDeckContextRef.current.activeDeckId !== openedDeckId)
+          ) {
+            return "The Deck changed before this scene could open.";
+          }
+          const unavailableIds = Object.freeze([
+            ...new Set([...restoration.unavailableIds, ...spatial.unavailableIds]),
+          ]);
+          const openedDemoProfile =
+            sceneContext.managerDecksEligible || sceneOwnerId !== DEMO_WORKSPACE_ID
+              ? null
+              : storedDemoProfile === "manufacturing" || storedDemoProfile === "project"
+                ? storedDemoProfile
+                : null;
+          const openedTopology = scene.topologyPresentation ?? null;
+          const openedAnalysis = analyzeCanonicalTopology({
+            workspaceId: sceneOwnerId,
+            deckId: openedDeckId ?? "",
+            contextKey: `${sceneOwnerId}:${sceneContext.managerDecksEligible ? openedDeckId ?? "" : ""}`,
+            nodeIds: sceneContext.authorizedObjectIds,
+            relationships: deckRelationshipGraphRef.current?.workspaceId === sceneOwnerId
+              ? deckRelationshipGraphRef.current.relationships
+              : [],
+          });
+          const openedMatch = openedTopology != null && openedAnalysis.candidates.some((candidate) =>
+            candidate.topologyType === openedTopology && candidate.structuralStatus === "MATCH");
+          setTopologySelection({
+            key: openedAnalysis.contextKey,
+            type: openedMatch ? openedTopology : null,
+            hierarchy: openedMatch && openedAnalysis.candidates.some((candidate) =>
+              candidate.topologyType === openedTopology && candidate.hierarchy && candidate.structuralStatus === "MATCH"),
+            revalidation: openedTopology == null ? "none" : openedMatch ? "match" : "fallback",
+          });
+          if (
+            scene.stageView === CAUSAL_INVESTIGATION_VIEW
+            && scene.causalSelection
+            && openedDeckId
+          ) {
+            publishCausalInvestigationUiSelection(sceneOwnerId, openedDeckId, scene.causalSelection);
+          }
+          setStageViewSession({
+            workspaceId: sceneOwnerId,
+            deckId: sceneContext.managerDecksEligible ? openedDeckId : null,
+            demoProfileId: openedDemoProfile,
+            view: scene.stageView === ORGANIZATIONAL_SOLAR_VIEW
+              ? ORGANIZATIONAL_SOLAR_VIEW
+              : scene.stageView === DECISION_SOLAR_VIEW
+                ? DECISION_SOLAR_VIEW
+                : scene.stageView === CAUSAL_INVESTIGATION_VIEW
+                  ? CAUSAL_INVESTIGATION_VIEW
+                  : STAGE_PRESENTATION_VIEW,
+          });
+          setSceneSpatialSession({
+            workspaceId: sceneOwnerId,
+            deckId: sceneContext.managerDecksEligible ? openedDeckId : null,
+            demoProfileId: openedDemoProfile,
+            positions: spatial.positions,
+            manualIds: Object.keys(spatial.positions),
+          });
+          setSelectedDataObjectId(restoredDataObjectId);
           setInteraction((previous) => {
-            const selected = liveSubject
+            const selected = liveSubject && restoredDataObjectId == null
               ? selectNexoraMVPInteractionSubject(
                   previous,
                   liveSubject.id,
@@ -2393,10 +3434,11 @@ export function NexoraExecutiveShell({
                 status: resolved.status,
                 requestedCanonicalId:
                   scene.canonicalReferences[0]?.canonicalId ?? null,
-                restoredCanonicalId: resolved.restoredCanonicalId,
+                restoredCanonicalId: restoredDataObjectId ?? resolved.restoredCanonicalId,
                 requestedPresentationDepth: scene.layout.presentationDepth,
                 resolvedPresentationDepth: next.presentationState,
                 truthSource: "current-canonical-authorities" as const,
+                unavailableIds,
               }),
             );
             return next;
@@ -2411,28 +3453,42 @@ export function NexoraExecutiveShell({
             scene.layout.detailWorkspace === "open" ? "Data" : "Home",
           );
           setActiveSavedSceneId(scene.sceneId);
-          return resolved.status === "canonical-subject-missing"
+          if (restoration.status === "partial" || spatial.unavailableIds.length > 0) {
+            return `Opened ${scene.name} with the objects that are still authorized. Unavailable: ${unavailableIds.join(", ")}.`;
+          }
+          return resolved.status === "canonical-subject-missing" || restoration.status === "missing"
             ? `Opened ${scene.name} in Overview because its saved subject is no longer available.`
             : `Opened ${scene.name} using current live canonical content.`;
         }
         case "MAKE_DEFAULT_SCENE": {
           const sceneOwnerId = readLiveExecutiveDataWorkspaceId();
+          const sceneContext = sceneDeckContextRef.current;
+          if (sceneContext.managerDecksEligible && !sceneContext.deckActive) {
+            return "Choose an active Deck before choosing a default scene.";
+          }
+          const targetSceneId = action.sceneId ?? activeSavedSceneId;
           const activeScene = savedScenesRef.current.find(
-            (scene) => scene.sceneId === activeSavedSceneId,
+            (scene) => scene.sceneId === targetSceneId,
           );
-          if (!activeScene || activeScene.managerWorkspaceId !== sceneOwnerId) {
+          const collectionOwner = {
+            managerWorkspaceId: sceneOwnerId,
+            ownerDeckId: sceneContext.managerDecksEligible ? sceneContext.activeDeckId : null,
+            demoProfileId: sceneOwnerId === DEMO_WORKSPACE_ID ? storedDemoProfile : null,
+          };
+          if (
+            !activeScene ||
+            !sameSceneOrgSavedSceneCollection(activeScene, collectionOwner)
+          ) {
             return "Save or open a scene before making it the default.";
           }
           const nextScenes = Object.freeze(
             savedScenesRef.current.map((scene) =>
-              scene.managerWorkspaceId !== sceneOwnerId
+              !sameSceneOrgSavedSceneCollection(scene, collectionOwner) ||
+              !demoProfileMutationAllowed(scene.managerWorkspaceId, scene.demoProfileId)
                 ? scene
                 : createSceneOrgSavedScene({
                     ...scene,
-                    kind:
-                      scene.sceneId === activeSavedSceneId
-                        ? "DEFAULT_MANAGER"
-                        : "SAVED",
+                    kind: scene.sceneId === targetSceneId ? "DEFAULT_MANAGER" : "SAVED",
                   }),
             ),
           );
@@ -2449,12 +3505,20 @@ export function NexoraExecutiveShell({
             setHostedOperationalPhase("ready");
             return "Made the current saved scene the default view.";
           }
-          const persistence = persistSceneOrgSavedScenes(nextScenes);
+          const persistence = await coordinateWorkspaceMutation({ workspaceId: sceneOwnerId }, () => mergePersistSceneOrgSavedScenes(
+            nextScenes.filter((scene, index) => scene.kind !== savedScenesRef.current[index]?.kind),
+          ));
+          if (persistence.reason === "revision-conflict") {
+            setSavedSceneConflict(SAVED_SCENE_STALE_MESSAGE);
+            return SAVED_SCENE_STALE_MESSAGE;
+          }
+          setSavedSceneConflict(null);
           if (!persistence.persisted) {
             return "I couldn't durably change the default Scene; the previous Saved Scenes are unchanged.";
           }
-          savedScenesRef.current = nextScenes;
-          setSavedScenes(nextScenes);
+          const visibleScenes = persistence.scenes ?? nextScenes;
+          savedScenesRef.current = visibleScenes;
+          setSavedScenes(visibleScenes);
           return "Made the current saved scene the default view.";
         }
       }
@@ -3171,11 +4235,16 @@ export function NexoraExecutiveShell({
 
   const onOpenInvestigationInRight = useCallback(
     (input: { readonly canonicalId: string; readonly label: string }) => {
+      const catalogIds = stageCatalogKey.length === 0 ? [] : stageCatalogKey.split("\0");
       setPackageTabSession((session) =>
         openSceneOrgRightPackageTab(session, {
           package: "investigation",
           canonicalId: input.canonicalId,
           label: input.label,
+          ownerWorkspaceId: dataWorkspaceId,
+          ownerDemoProfileId: storedDemoProfile,
+          ownerDeckId: activeDeckId,
+          catalogBound: catalogIds.includes(input.canonicalId),
         }),
       );
       setRightPanelChrome((chrome) =>
@@ -3184,7 +4253,7 @@ export function NexoraExecutiveShell({
           : chrome,
       );
     },
-    [],
+    [dataWorkspaceId, stageCatalogKey, storedDemoProfile, activeDeckId],
   );
 
   const onExplorerClose = useCallback(() => {
@@ -3225,9 +4294,16 @@ export function NexoraExecutiveShell({
   }, []);
 
   const onRemoveDataObjectFromStage = useCallback((dataObjectId: string) => {
+    if (dataObjectId.startsWith("org:") && managerDecksEligible && activeDeckId != null) {
+      removeCanonicalObjectFromDeck({
+        workspaceId: dataWorkspaceId,
+        canonicalObjectId: dataObjectId,
+        deckId: activeDeckId,
+      });
+    }
     setStagedDataObjectIds((current) => Object.freeze(current.filter((id) => id !== dataObjectId)));
     setSelectedDataObjectId((current) => current === dataObjectId ? null : current);
-  }, []);
+  }, [activeDeckId, dataWorkspaceId, managerDecksEligible]);
 
   const onCsvSourceRemoved = useCallback((sourceContextId: string) => {
     const dataObjectId = deriveNexoraDecisionTheatreDataObjectId(dataWorkspaceId, sourceContextId);
@@ -3441,17 +4517,27 @@ export function NexoraExecutiveShell({
       return result;
     };
     if (!(deploymentMode === "hosted" && isCustomerHostedWorkspaceId(managerWorkspaceId))) {
-      return accept(applySceneOrgSavedSceneCollectionMutation({
+      return coordinateWorkspaceMutation({ workspaceId: managerWorkspaceId }, () => applySceneOrgSavedSceneCollectionMutation({
         scenes: savedScenesRef.current,
         mutation,
         managerWorkspaceId,
-      }));
+        ownerDeckId: sceneDeckContextRef.current.managerDecksEligible
+          ? sceneDeckContextRef.current.activeDeckId
+          : null,
+      })).then((result) => {
+        if (result.status === "revision-conflict") setSavedSceneConflict(SAVED_SCENE_STALE_MESSAGE);
+        else if (result.status === "renamed" || result.status === "deleted") setSavedSceneConflict(null);
+        return accept(result);
+      });
     }
     const captured: { scenes: readonly SceneOrgSavedScene[] | null } = { scenes: null };
     const probed = applySceneOrgSavedSceneCollectionMutation({
       scenes: savedScenesRef.current,
       mutation,
       managerWorkspaceId,
+      ownerDeckId: sceneDeckContextRef.current.managerDecksEligible
+        ? sceneDeckContextRef.current.activeDeckId
+        : null,
       persist: (next) => {
         captured.scenes = next;
         return { persisted: false, reason: "write-failed" };
@@ -3513,9 +4599,41 @@ export function NexoraExecutiveShell({
           .map((scene) => scene.canonicalReferences[0]?.canonicalId ?? "none")
           .join(",") || "none"
       }
+      data-stage-view={stageView}
+      data-organizational-object-ids={deckOrganizationalObjects.map((object) => object.canonicalObjectId).join(",") || "none"}
+      data-organizational-object-names={deckOrganizationalObjects.map((object) => object.displayName).join("|") || "none"}
+      data-topology-candidates={topologyAnalysis?.candidates.map((candidate) => `${candidate.hierarchy ? "HIERARCHY" : candidate.topologyType}:${candidate.structuralStatus}`).join(",") || "none"}
+      data-topology-bus={topologyAnalysis?.busStatus ?? "none"}
+      data-topology-selected={selectedTopology ?? "none"}
+      data-topology-revalidation={topologyRevalidation}
+      data-topology-manual-ids={
+        sceneSpatialSession.workspaceId === dataWorkspaceId && sceneSpatialSession.deckId === spatialContextDeckId
+          ? sceneSpatialSession.manualIds.join(",") || "none"
+          : "none"
+      }
+      data-topology-relationships={topologyAnalysis?.inputRelationshipIds.join(",") || "none"}
+      data-graph-authority={deckRelationshipGraph?.authorityStatus ?? relationshipAuthorityStatus}
+      data-graph-edge-ids={deckRelationshipGraph?.relationships.map((relationship) => relationship.relationshipId).join(",") || "none"}
+      data-graph-edge-types={deckRelationshipGraph?.relationships.map((relationship) => relationship.relationshipType).join(",") || "none"}
+      data-graph-edge-directions={deckRelationshipGraph?.relationships.map((relationship) => relationship.direction).join(",") || "none"}
+      data-solar-semantic={solarLayout?.semanticLevel ?? "none"}
+      data-solar-center-kind={solarLayout?.center.kind ?? "none"}
+      data-solar-ring-count={solarLayout ? String(solarLayout.rings.length) : "0"}
+      data-decision-node-ids={decisionSolar.nodes.map((node) => node.id).join(",") || "none"}
+      data-decision-node-kinds={decisionSolar.nodes.map((node) => node.kind).join(",") || "none"}
+      data-decision-edge-types={decisionSolar.edges.map((edge) => edge.relationshipType).join(",") || "none"}
+      data-decision-missing={String(decisionSolar.missingReferences.length)}
+      data-impact-status={stageView === DECISION_SOLAR_VIEW ? impactAnalysis?.status ?? "idle" : "idle"}
+      data-impact-direct={stageView === DECISION_SOLAR_VIEW && impactAnalysis?.status === "ready" ? impactAnalysis.preview.directTargets.map((item) => item.objectId).join(",") || "none" : "none"}
+      data-impact-connected={stageView === DECISION_SOLAR_VIEW && impactAnalysis?.status === "ready" ? impactAnalysis.preview.connectedObjects.map((item) => item.objectId).join(",") || "none" : "none"}
+      data-impact-truncated={stageView === DECISION_SOLAR_VIEW && impactAnalysis?.status === "ready" ? String(impactAnalysis.preview.truncated) : "false"}
+      data-impact-fingerprint={stageView === DECISION_SOLAR_VIEW && impactAnalysis?.status === "ready" ? impactAnalysis.preview.fingerprint : "none"}
       data-saved-scene-views={
         managerSavedScenes.map((scene) => scene.layout.presentationDepth).join(",") ||
         "none"
+      }
+      data-saved-scene-stage-views={
+        managerSavedScenes.map((scene) => scene.stageView ?? "stage").join(",") || "none"
       }
       data-saved-scene-layouts={
         managerSavedScenes
@@ -3559,6 +4677,9 @@ export function NexoraExecutiveShell({
       }
       data-saved-scene-truth-source={
         savedSceneRestoration?.truthSource ?? "none"
+      }
+      data-saved-scene-unavailable={
+        savedSceneRestoration?.unavailableIds?.join(",") || "none"
       }
       data-saved-scene-resolution-status={
         savedSceneAccessResolution?.status ?? "none"
@@ -4368,14 +5489,17 @@ export function NexoraExecutiveShell({
         compact
         onHelp={() => setFloatingKind("wizard")}
         managerWorkspace={
-          <NexoraManagerWorkspaceControl
-            deploymentMode={deploymentMode}
-            session={session}
-            authProvider={authProvider}
-            authError={authError}
-            hostedWorkspaces={hostedWorkspaces}
-            hostedWorkspaceStatus={hostedWorkspaceStatus}
-          />
+          <>
+            <NexoraManagerWorkspaceControl
+              deploymentMode={deploymentMode}
+              session={session}
+              authProvider={authProvider}
+              authError={authError}
+              hostedWorkspaces={hostedWorkspaces}
+              hostedWorkspaceStatus={hostedWorkspaceStatus}
+            />
+            <NexoraDeckSelector workspaceId={dataWorkspaceId} />
+          </>
         }
       />
 
@@ -4441,6 +5565,8 @@ export function NexoraExecutiveShell({
         >
           <div
             data-testid="executive-stage-column"
+            data-deck-id={activeDeckId ?? ""}
+            data-deck-catalog={deckStageCatalogMode}
             data-mvp-stage-column="true"
             style={{
               flex: "1 1 78%",
@@ -4451,6 +5577,16 @@ export function NexoraExecutiveShell({
               transition: `flex-basis ${cockpit.drawerMs} ease`,
             }}
           >
+            {deckStageCatalogMode === "empty" ? (
+              <p data-testid="deck-stage-unassigned" style={{ margin: "0.4rem 0.8rem 0", color: cockpit.muted, fontSize: "0.72rem" }}>
+                Deck Stage — No objects assigned
+              </p>
+            ) : null}
+            {deckStageCatalogMode === "loading" ? (
+              <p data-testid="deck-stage-loading" style={{ margin: "0.4rem 0.8rem 0", color: cockpit.muted, fontSize: "0.72rem" }}>
+                Deck Stage — Loading workspace data
+              </p>
+            ) : null}
             <NexoraExecutiveFlowContextIndicator
               chain={flowContext.chain}
               workflow={workflowPresentation}
@@ -4485,6 +5621,11 @@ export function NexoraExecutiveShell({
                 <>
                   <NexoraSavedSceneCollectionAccess
                     scenes={managerSavedScenes}
+                    conflictMessage={savedSceneConflict}
+                    onReviewLatestScene={() => {
+                      setSavedSceneConflict(null);
+                      setSavedSceneReload((value) => value + 1);
+                    }}
                     activeSceneId={activeSavedSceneId}
                     onOpenScene={(scene) => {
                       applyWorkspacePresentationAction(
@@ -4492,6 +5633,29 @@ export function NexoraExecutiveShell({
                           action: "OPEN_SCENE",
                           sceneName: scene.name,
                           sceneId: scene.sceneId,
+                          useCurrentReferent: false,
+                        },
+                        null,
+                      );
+                    }}
+                    onSaveScene={async (sceneName) => {
+                      if (workspaceMutationsBlocked(dataWorkspaceId)) return false;
+                      const message = await applyWorkspacePresentationAction(
+                        {
+                          action: "SAVE_SCENE",
+                          sceneName,
+                          useCurrentReferent: true,
+                        },
+                        null,
+                      );
+                      return message !== SAVED_SCENE_STALE_MESSAGE;
+                    }}
+                    onMakeDefaultScene={(sceneId) => {
+                      void applyWorkspacePresentationAction(
+                        {
+                          action: "MAKE_DEFAULT_SCENE",
+                          sceneName: null,
+                          sceneId,
                           useCurrentReferent: false,
                         },
                         null,
@@ -4522,6 +5686,95 @@ export function NexoraExecutiveShell({
               }
               stageControls={
                 <>
+                  {dataObjectStage.participants.some((entry) => entry.dataObject.id === selectedDataObjectId) ? (
+                    <span data-testid="nexora-stage-spatial-nudge" style={{ display: "inline-flex", gap: "0.25rem" }}>
+                      {([
+                        ["up", 0, SCENE_ORG_STAGE_NUDGE_STEP],
+                        ["down", 0, -SCENE_ORG_STAGE_NUDGE_STEP],
+                        ["left", -SCENE_ORG_STAGE_NUDGE_STEP, 0],
+                        ["right", SCENE_ORG_STAGE_NUDGE_STEP, 0],
+                      ] as const).map(([name, dx, dy]) => (
+                        <button
+                          key={name}
+                          type="button"
+                          data-testid={`nexora-stage-nudge-${name}`}
+                          onClick={() => {
+                            const selected = dataObjectStage.participants.find(
+                              (entry) => entry.dataObject.id === selectedDataObjectId,
+                            );
+                            if (!selected) return;
+                            const [x, y] = selected.presentation.targetPosition;
+                            placeStageObject(selected.dataObject.id, x + dx, y + dy);
+                          }}
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </span>
+                  ) : null}
+                  <span data-testid="nexora-stage-view-switch" style={{ display: "inline-flex", gap: "0.25rem" }}>
+                    <button
+                      type="button"
+                      data-testid="nexora-stage-view-stage"
+                      aria-pressed={stageView === STAGE_PRESENTATION_VIEW}
+                      onClick={() => setStagePresentationView(STAGE_PRESENTATION_VIEW)}
+                    >
+                      Stage
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="nexora-stage-view-solar"
+                      aria-pressed={stageView === ORGANIZATIONAL_SOLAR_VIEW}
+                      onClick={() => setStagePresentationView(ORGANIZATIONAL_SOLAR_VIEW)}
+                    >
+                      Solar
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="nexora-stage-view-decision"
+                      aria-pressed={stageView === DECISION_SOLAR_VIEW}
+                      onClick={() => setStagePresentationView(DECISION_SOLAR_VIEW)}
+                    >
+                      Decision
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="nexora-stage-view-causal"
+                      aria-pressed={stageView === CAUSAL_INVESTIGATION_VIEW}
+                      onClick={() => setStagePresentationView(CAUSAL_INVESTIGATION_VIEW)}
+                    >
+                      NexoCause
+                    </button>
+                  </span>
+                  {solarLayout ? (
+                    <span data-testid="nexora-solar-notice" style={{ fontSize: 11, maxWidth: "16rem" }}>
+                      {solarLayout.notice}
+                    </span>
+                  ) : null}
+                  {managerDecksEligible && activeDeckId != null ? (
+                    <NexoraOrganizationalObjectControls
+                      workspaceId={dataWorkspaceId}
+                      deckId={activeDeckId}
+                      onInspect={setSelectedDataObjectId}
+                    />
+                  ) : null}
+                  {managerDecksEligible && activeDeckId != null ? (
+                    <NexoraDecisionDomainControls
+                      workspaceId={dataWorkspaceId}
+                      deckId={activeDeckId}
+                      onInspect={setSelectedDataObjectId}
+                    />
+                  ) : null}
+                  {managerDecksEligible ? (
+                    <NexoraTopologyInspection
+                      analysis={topologyAnalysis}
+                      selectedType={selectedTopology}
+                      selectedHierarchy={selectedTopologyHierarchy}
+                      revalidation={topologyRevalidation}
+                      onSelect={selectTopologyPresentation}
+                      onClear={() => setStagePresentationView(STAGE_PRESENTATION_VIEW)}
+                    />
+                  ) : null}
                   <NexoraStageDataControl open={detailWorkspaceOpen} attention={false} guidedAttentionCue={
                     guidedAttention.presentation?.target === "DATA_ENTRY"
                       ? guidedAttention.presentation.cue
@@ -4534,6 +5787,7 @@ export function NexoraExecutiveShell({
                 </>
               }
             >
+              <div style={{ display: stageView === CAUSAL_INVESTIGATION_VIEW ? "none" : "contents" }}>
               <NexoraStageMount
                 menuSlots={{ onStage: onStageSlot, navigation: navigationSlot }}
                 liveFoundation={liveStageFoundation}
@@ -4558,6 +5812,14 @@ export function NexoraExecutiveShell({
               warRoomAtmosphere={theatreProjection.warRoomAtmosphere}
               dataObjectStage={dataObjectStage}
               onSelectDataObject={onSelectStageDataObject}
+              onRepositionDataObject={(id, position) => placeStageObject(id, position.x, position.y)}
+              spatialEpoch={spatialEpoch}
+              solarLayout={solarLayout}
+              decisionSolarLayout={stageView === DECISION_SOLAR_VIEW ? decisionSolar : null}
+              relationshipInspection={relationshipInspection}
+              impactAnalysis={stageView === DECISION_SOLAR_VIEW ? impactAnalysis : null}
+              onAnalyzeImpact={(decisionId) => setImpactRequest({ decisionId, depth: 1 })}
+              onIncreaseImpactDepth={() => setImpactRequest((current) => current ? { ...current, depth: Math.min(3, current.depth + 1) } : current)}
               onRemoveDataObjectFromStage={onRemoveDataObjectFromStage}
               onOpenDataRail={() => setActiveNav("Data")}
               onAskDataObject={onSubmitConversationalUtterance}
@@ -4619,6 +5881,15 @@ export function NexoraExecutiveShell({
                 void onSubmitConversationalUtterance("compare the alternatives again");
               }}
               />
+              </div>
+              {stageView === CAUSAL_INVESTIGATION_VIEW ? (
+                <NexoraCausalInvestigationView
+                  workspaceId={dataWorkspaceId}
+                  deckId={managerDecksEligible ? activeDeckId : null}
+                  onInspectObject={setSelectedDataObjectId}
+                  onOpenDecision={() => setStagePresentationView(DECISION_SOLAR_VIEW)}
+                />
+              ) : null}
             </ExecutiveStageFrame>
 
             <ExecutiveTimelineDock
@@ -4671,6 +5942,15 @@ export function NexoraExecutiveShell({
             learningWorkspaceId={dataWorkspaceId}
             productFixturesPermitted={permitProductFixtures}
             advisorBridge={advisorBridge}
+            stageCatalogObjects={
+              !workspaceAuthorityReady
+                ? unresolvedWorkspaceAdvisorCatalog
+                : modernDemoActive ||
+                    dataWorkspaceId === BUSINESS_DEMO_WORKSPACE_ID ||
+                    (!permitProductFixtures && isRealManagerWorkspaceId(dataWorkspaceId))
+                  ? dataRealityExperience.catalog.objects
+                  : undefined
+            }
             presentationViewModel={presentationViewModel}
             focusedSubject={advisorFocusedSubject}
             selectedSubject={interaction.selectedSubject}

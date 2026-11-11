@@ -53,11 +53,18 @@ export type Workspace = Readonly<{
   metadata?: Readonly<Record<string, unknown>>;
 }>;
 
+/** Durable identity fence. Absence of a Workspace is not permission to recreate it. */
+export type RevokedWorkspaceIdentity = Readonly<{
+  revokedAt: string;
+  generation: number;
+}>;
+
 export type WorkspaceRegistrySnapshot = Readonly<{
   version: typeof WORKSPACE_REGISTRY_VERSION;
   workspaces: Readonly<Record<WorkspaceId, Workspace>>;
   workspaceOrder: readonly WorkspaceId[];
   activeWorkspaceId: WorkspaceId | null;
+  revokedWorkspaces: Readonly<Record<string, RevokedWorkspaceIdentity>>;
 }>;
 
 export type WorkspaceRegistryMutation =
@@ -70,6 +77,11 @@ export type WorkspaceRegistryMutation =
 export const DEMO_WORKSPACE_ID = "demo_workspace";
 export const DEMO_WORKSPACE_NAME = "Demo Workspace";
 export const DEMO_WORKSPACE_CREATED_AT = "2026-06-19T00:00:00.000Z";
+
+/** Independent browser-local Business Demo. Not a profile inside demo_workspace. */
+export const BUSINESS_DEMO_WORKSPACE_ID = "business_demo_workspace";
+export const BUSINESS_DEMO_WORKSPACE_NAME = "Business Demo";
+export const BUSINESS_DEMO_WORKSPACE_CREATED_AT = "2026-11-04T00:00:00.000Z";
 
 export const DEMO_WORKSPACE: Workspace = Object.freeze({
   workspaceId: DEMO_WORKSPACE_ID,
@@ -86,6 +98,26 @@ export const DEMO_WORKSPACE: Workspace = Object.freeze({
     phase: "NW-A:1",
   }),
 });
+
+export const BUSINESS_DEMO_WORKSPACE: Workspace = Object.freeze({
+  workspaceId: BUSINESS_DEMO_WORKSPACE_ID,
+  workspaceName: BUSINESS_DEMO_WORKSPACE_NAME,
+  status: "active",
+  createdAt: BUSINESS_DEMO_WORKSPACE_CREATED_AT,
+  updatedAt: BUSINESS_DEMO_WORKSPACE_CREATED_AT,
+  lastOpenedAt: BUSINESS_DEMO_WORKSPACE_CREATED_AT,
+  domain: null,
+  objectCount: null,
+  dataSourceCount: null,
+  metadata: Object.freeze({
+    source: "business_demo_workspace_identity",
+    phase: "BUSINESS-DEMO-WORKSPACE-IDENTITY:1",
+  }),
+});
+
+export function isProtectedDemoWorkspaceId(workspaceId: unknown): boolean {
+  return workspaceId === DEMO_WORKSPACE_ID || workspaceId === BUSINESS_DEMO_WORKSPACE_ID;
+}
 
 export function normalizeWorkspaceId(value: unknown): WorkspaceId | null {
   if (typeof value !== "string") return null;

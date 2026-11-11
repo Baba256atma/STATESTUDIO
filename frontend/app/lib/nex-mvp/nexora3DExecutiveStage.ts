@@ -9,7 +9,6 @@ import type {
   NexoraMVPPresentationState,
   NexoraMVPSceneEnvironmentIntent,
 } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation";
-import type { ManagerObjectKind } from "@/app/lib/manager-object/managerObjectInteractionFoundation.ts";
 import type {
   NexoraMVPStageObjectFixture,
   NexoraMVPStageRelationshipFixture,
@@ -109,7 +108,7 @@ export type NexoraMVPStageObject = {
   readonly label: string;
   readonly kind: string;
   /** Management identity passthrough. Absent means `kind` is the identity. */
-  readonly objectKind?: ManagerObjectKind;
+  readonly objectKind?: string;
   readonly managerWorkspaceId?: string;
   readonly authoritativePrimary?: boolean;
   readonly presentationAuthorized?: boolean;
@@ -143,7 +142,7 @@ export type NexoraMVPStageObjectPresentation = {
   readonly label: string;
   readonly kind: string;
   /** Forwarded management identity. Does not replace stage category `kind`. */
-  readonly objectKind?: ManagerObjectKind;
+  readonly objectKind?: string;
   readonly role: NexoraMVPStageObjectRole;
   readonly overviewPosition: readonly [number, number, number];
   readonly targetPosition: readonly [number, number, number];
@@ -205,6 +204,8 @@ export type NexoraMVPStageObjectPresentation = {
   /** SP:4.1C deterministic label hierarchy lines. */
   readonly labelPrimaryLine?: string;
   readonly labelSecondaryLine?: string | null;
+  /** Committed value line. Present only for a Business Demo caption. */
+  readonly labelValueLine?: string | null;
   /** SP:4.1C extra world-Y label clearance (focus silhouette breathing room). */
   readonly labelAnchorBoost?: number;
   /** STAGE-LABEL:1 — authoritative owned label placement. */

@@ -5,6 +5,7 @@
  * Does not persist, restore business truth, or own OPEN_SCENE restoration.
  */
 
+import { demoProfileVisible } from "../demo-profile/demoProfileOwnership";
 import {
   savedSceneManagerWorkspaceId,
   type SceneOrgSavedScene,
@@ -149,6 +150,72 @@ export function extractSavedSceneOpenRequest(
   });
 }
 
+/** Manager Scenes owned by one active Deck. Legacy records without a Deck stay stored and unlisted. */
+export function listSceneOrgSavedScenesForDeck(
+  scenes: readonly SceneOrgSavedScene[],
+  managerWorkspaceId: string,
+  ownerDeckId: string,
+  deckStatus: "ACTIVE" | "ARCHIVED" | "missing",
+): readonly SceneOrgSavedScene[] {
+  const owner = savedSceneManagerWorkspaceId(managerWorkspaceId);
+  const deckId = ownerDeckId.trim();
+  if (!owner || deckId.length === 0 || deckStatus !== "ACTIVE") return Object.freeze([]);
+  return Object.freeze(
+    scenes.filter(
+      (scene) => scene.managerWorkspaceId === owner && scene.ownerDeckId === deckId,
+    ),
+  );
+}
+
+export type DeckSavedSceneRestorationStatus =
+  | "loading"
+  | "restored"
+  | "partial"
+  | "missing"
+  | "empty";
+
+export type DeckSavedSceneRestoration = Readonly<{
+  status: DeckSavedSceneRestorationStatus;
+  authorizedIds: readonly string[];
+  unavailableIds: readonly string[];
+}>;
+
+/** Authorizes saved references against the current Deck catalog. Does not rewrite the Scene. */
+export function resolveDeckSavedSceneRestoration(input: {
+  readonly references: readonly { readonly canonicalId: string }[];
+  readonly authorizedIds: readonly string[];
+  readonly loading: boolean;
+}): DeckSavedSceneRestoration {
+  const requested = input.references.map((reference) => reference.canonicalId);
+  if (requested.length === 0) {
+    return Object.freeze({
+      status: "empty",
+      authorizedIds: Object.freeze([]),
+      unavailableIds: Object.freeze([]),
+    });
+  }
+  const authorized = new Set(input.authorizedIds);
+  const kept = requested.filter((id) => authorized.has(id));
+  const missing = requested.filter((id) => !authorized.has(id));
+  if (input.loading && missing.length > 0) {
+    return Object.freeze({
+      status: "loading",
+      authorizedIds: Object.freeze(kept),
+      unavailableIds: Object.freeze([]),
+    });
+  }
+  const status = kept.length === requested.length
+    ? "restored"
+    : kept.length === 0
+      ? "missing"
+      : "partial";
+  return Object.freeze({
+    status,
+    authorizedIds: Object.freeze(kept),
+    unavailableIds: Object.freeze(missing),
+  });
+}
+
 /** Scenes owned by one canonical Manager Workspace. Unassigned and other owners stay out. */
 export function listSceneOrgSavedScenesForManagerWorkspace(
   scenes: readonly SceneOrgSavedScene[],
@@ -156,7 +223,13 @@ export function listSceneOrgSavedScenesForManagerWorkspace(
 ): readonly SceneOrgSavedScene[] {
   const owner = savedSceneManagerWorkspaceId(managerWorkspaceId);
   if (!owner) return Object.freeze([]);
-  return Object.freeze(scenes.filter((scene) => scene.managerWorkspaceId === owner));
+  return Object.freeze(
+    scenes.filter(
+      (scene) =>
+        scene.managerWorkspaceId === owner &&
+        demoProfileVisible(scene.managerWorkspaceId, scene.demoProfileId),
+    ),
+  );
 }
 
 export type SceneOrgSavedSceneOpenAssessment = Readonly<{
@@ -169,6 +242,7 @@ export function assessSceneOrgSavedSceneOpen(
   scenes: readonly SceneOrgSavedScene[],
   sceneId: string | null | undefined,
   activeManagerWorkspaceId: string,
+  ownerDeckId?: string | null,
 ): SceneOrgSavedSceneOpenAssessment {
   const id = sceneId?.trim() ?? "";
   const scene = id ? scenes.find((candidate) => candidate.sceneId === id) ?? null : null;
@@ -177,6 +251,13 @@ export function assessSceneOrgSavedSceneOpen(
   if (!scene.managerWorkspaceId) return Object.freeze({ status: "unassigned", scene });
   if (!active || scene.managerWorkspaceId !== active) {
     return Object.freeze({ status: "mismatch", scene });
+  }
+  const deckId = typeof ownerDeckId === "string" ? ownerDeckId.trim() : "";
+  if (deckId.length > 0 && scene.ownerDeckId !== deckId) {
+    return Object.freeze({
+      status: scene.ownerDeckId ? "mismatch" : "unassigned",
+      scene,
+    });
   }
   return Object.freeze({ status: "allowed", scene });
 }

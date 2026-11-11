@@ -122,7 +122,7 @@ test("4–7. Delivery/Budget/Inventory/Revenue focus own presentation {0,0}", ()
   }
 });
 
-test("8. Overview remains executive-network without forced anchor", () => {
+test("8. Overview without a disclosed layout edge keeps Flow", () => {
   const state = createInitialNexoraMVPObjectInteractionState({
     workspace: "overview",
     presentationState: "minimum",
@@ -137,7 +137,7 @@ test("8. Overview remains executive-network without forced anchor", () => {
     ),
   );
   assert.equal(presentation.scene.mode, "overview");
-  assert.equal(presentation.scene.topologyKind, "executive-network");
+  assert.notEqual(presentation.scene.topologyKind, "executive-network");
   assert.equal(presentation.scene.focusedObjectId, null);
 });
 

@@ -18,6 +18,19 @@ export function emptySceneOrgDetailReference(): SceneOrgCanonicalReference {
   });
 }
 
+/**
+ * A Detail subject stays visible only while its canonical id is authorized
+ * in the active Workspace, Deck, or Demo catalog. The empty placeholder is
+ * not a subject.
+ */
+export function retainSceneOrgDetailReference(
+  reference: SceneOrgCanonicalReference | null,
+  authorizedIds: readonly string[],
+): SceneOrgCanonicalReference | null {
+  if (reference == null || reference.canonicalId === SCENE_ORG_EMPTY_DETAIL_CANONICAL_ID) return null;
+  return authorizedIds.includes(reference.canonicalId) ? reference : null;
+}
+
 export const SCENE_ORG_DETAIL_CAPABILITIES = Object.freeze([
   "DATA",
   "CONNECTIONS",

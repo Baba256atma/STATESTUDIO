@@ -353,6 +353,8 @@ export function composeNexoraProfessionalAdvisorPresentation(input: {
   readonly decisionMemory?: ExecutiveDecisionMemoryView | null;
   readonly advisorBinding?: DataRealityAwareAdvisorBindingResult | null;
   readonly validatedDataSource?: boolean;
+  /** Overview attention may name only the supplied catalog. No fixture fallback. */
+  readonly restrictAttentionToCatalog?: boolean;
 }): NexoraProfessionalAdvisorNarrative {
   const bridge = input.advisorBridge ?? null;
   const currentSubjectId =
@@ -381,7 +383,7 @@ export function composeNexoraProfessionalAdvisorPresentation(input: {
     : null;
   const recommendedFocusId = input.advisorBinding?.focus.recommendedObjectId ?? null;
   const attentionSubjectId = isOverview
-    ? (attentionEntry?.id ?? recommendedFocusId ?? null)
+    ? (attentionEntry?.id ?? (input.restrictAttentionToCatalog ? null : recommendedFocusId) ?? null)
     : recommendedFocusId != null && recommendedFocusId !== currentSubjectId
       ? recommendedFocusId
       : null;

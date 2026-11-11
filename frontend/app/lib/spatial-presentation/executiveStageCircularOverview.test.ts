@@ -361,5 +361,5 @@ test("production grammar, network, and plane keep the authorized ring", () => {
     }),
   );
   assert.equal(rewritten.scene.overviewAnchorId, null);
-  assert.equal(rewritten.scene.topologyKind, "executive-network");
+  assert.notEqual(rewritten.scene.topologyKind, "executive-network");
 });

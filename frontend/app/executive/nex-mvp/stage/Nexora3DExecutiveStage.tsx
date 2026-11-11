@@ -84,6 +84,7 @@ import {
   applyExecutiveStage2DTopologyRecompositionToStagePresentation,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStage2DTopologyRecomposition";
 import { applyExecutiveStageObjectLabelTerritoryToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStageObjectLabelTerritory";
+import { resolveExecutiveStageSharedCaptionBox } from "@/app/lib/spatial-presentation/executiveStageObjectLabelTerritory";
 import {
   getNexoraMVPExecutiveStage2DReadabilityObservability,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStage2DTopologyReadability";
@@ -243,6 +244,13 @@ export type Nexora3DExecutiveStageProps = {
   readonly onDismissVisual?: () => void;
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
+  readonly onRepositionDataObject?: (
+    dataObjectId: string,
+    position: { x: number; y: number; z: 0 },
+  ) => boolean;
+  readonly spatialEpoch?: string;
+  readonly solarLayout?: import("@/app/lib/scene-org/organizationalSolarView").OrganizationalSolarLayout | null;
+  readonly decisionSolarLayout?: import("@/app/lib/scene-org/decisionSolarProjection").DecisionSolarLayout | null;
   readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
   /** Portal targets owned by the process bar and stage navigation. Absent in isolated Stage renders. */
   readonly menuSlots?: NexoraStageMenuSlotElements;
@@ -421,6 +429,10 @@ export function Nexora3DExecutiveStage({
   onDismissVisual,
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
+  onRepositionDataObject,
+  spatialEpoch,
+  solarLayout = null,
+  decisionSolarLayout = null,
   backGuidedAttentionCue = null,
   menuSlots = EMPTY_STAGE_MENU_SLOTS,
 }: Nexora3DExecutiveStageProps) {
@@ -544,17 +556,50 @@ export function Nexora3DExecutiveStage({
       },
     );
     const fixed = applyExecutiveStageFixedCameraToStagePresentation(composed);
+    const width = Math.max(safeViewportInsets.width, 1);
+    const height = Math.max(safeViewportInsets.height, 1);
+    const captionObstacles = dataObjectStage.participants.map((participant) => {
+      const box = resolveExecutiveStageSharedCaptionBox({
+        ownerX: participant.presentation.targetPosition[0],
+        ownerY: participant.presentation.targetPosition[1],
+        halfExtent: 0.45,
+        kind: "object",
+        lines: [
+          participant.dataObject.label,
+          `Data source · CSV · ${participant.dataObject.unresolvedFieldCount > 0 ? "Needs clarification" : "Ready"}`,
+        ],
+        side: "bottom",
+        viewportHeight: height,
+      });
+      return Object.freeze({
+        id: `data-caption-${participant.dataObject.id}`,
+        bounds: box.rect,
+      });
+    });
     return applyExecutiveStageObjectLabelTerritoryToStagePresentation(fixed, {
       presentationLevel:
         presentationViewModel.state === "report" ||
         presentationViewModel.state === "operation"
           ? presentationViewModel.state
           : "minimum",
+      viewport: {
+        width,
+        height,
+        ndc: {
+          left: -1 + (safeViewportInsets.left / width) * 2,
+          right: 1 - (safeViewportInsets.right / width) * 2,
+          top: 1 - (safeViewportInsets.top / height) * 2,
+          bottom: -1 + (safeViewportInsets.bottom / height) * 2,
+        },
+      },
+      obstacles: captionObstacles,
     });
   }, [
+    dataObjectStage.participants,
     directorComposition,
     ovs3Visual,
     managementLevelSpatial,
+    safeViewportInsets,
     theatreComposition,
     presentationViewModel.state,
   ]);
@@ -2051,6 +2096,10 @@ export function Nexora3DExecutiveStage({
               fitDistance={safeViewportFit.effectiveDistance}
               onSelectSubject={(id) => onSelectSubject(id)}
               onSelectDataObject={onSelectDataObject}
+              onRepositionDataObject={onRepositionDataObject}
+              spatialEpoch={spatialEpoch}
+              solarLayout={solarLayout}
+              decisionSolarLayout={decisionSolarLayout}
               onClearSelection={onClearSelection}
             />
             <NexoraStageRenderedBoundsTruthOverlay

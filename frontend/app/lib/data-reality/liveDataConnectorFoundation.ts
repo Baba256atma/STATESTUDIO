@@ -130,6 +130,8 @@ export type NexoraLiveCommittedObservation = NexoraLivePreparedObservation & Rea
   advisor: DataRealityExecutiveAdvisorIntegrationResult;
   committedAt: string;
   connectionId: string;
+  /** Present only when the observation was committed inside an active demo profile. */
+  demoProfileId?: "manufacturing" | "project";
 }>;
 
 export function createNexoraLiveConnection(input: Readonly<{

@@ -338,7 +338,7 @@ test("reset then switch then reset returns each profile to its own baseline", ()
   assert.equal(readActiveDemoProfile(), "manufacturing");
   openProjectDemo();
   assert.equal(readActiveDemoProfile(), "project");
-  assert.equal(names("manufacturing").length, 0);
+  assert.equal(names("manufacturing").length, 3);
   const schedule = listCsvRealDataImports(DEMO_WORKSPACE_ID).find(
     (entry) => entry.prepared.fileName === PROJECT_DEMO_SCHEDULE_FILE,
   );
@@ -353,7 +353,7 @@ test("reset then switch then reset returns each profile to its own baseline", ()
   assert.equal(fact(PROJECT_DEMO_SCHEDULE_FILE, "scheduleVarianceDays"), 9);
   openManufacturingDemo();
   assert.equal(readActiveDemoProfile(), "manufacturing");
-  assert.equal(names("project").length, 0);
+  assert.equal(names("project").length, 3);
   assert.equal(fact(MANUFACTURING_DEMO_ORDERS_FILE, "ordersReceived"), 1230);
   assert.equal(fact(MANUFACTURING_DEMO_PRODUCTION_FILE, "usedCapacity"), 980);
   assert.equal(fact(MANUFACTURING_DEMO_INVENTORY_FILE, "onHand"), 320);
@@ -476,34 +476,36 @@ test("manager CSV, decisions, executions, learning, scenes, approval, collaborat
   assert.deepEqual(fingerprint(expansion.workspaceId), projectCsv);
   assert.deepEqual(decisions.adapter.listDecisions().map((decision) => decision.decisionId).sort(), [
     "dec-company",
+    "dec-demo",
     "dec-project",
     "dec-unassigned",
   ]);
   assert.deepEqual(executions.listExecutions().map((execution) => execution.executionId).sort(), [
     "execution-dec-company",
+    "execution-dec-demo",
     "execution-dec-project",
     "execution-dec-unassigned",
   ]);
-  assert.equal(session.getItem(NEXORA_CANONICAL_DECISION_RUNTIME_SESSION_KEY)?.includes("dec-demo"), false);
+  assert.equal(session.getItem(NEXORA_CANONICAL_DECISION_RUNTIME_SESSION_KEY)?.includes("dec-demo"), true);
   assert.equal(session.getItem(NEXORA_CANONICAL_DECISION_RUNTIME_SESSION_KEY)?.includes("dec-company"), true);
-  assert.equal(session.getItem(NEXORA_CANONICAL_EXECUTION_RUNTIME_SESSION_KEY)?.includes("execution-dec-demo"), false);
+  assert.equal(session.getItem(NEXORA_CANONICAL_EXECUTION_RUNTIME_SESSION_KEY)?.includes("execution-dec-demo"), true);
   assert.equal(session.getItem(NEXORA_CANONICAL_EXECUTION_RUNTIME_SESSION_KEY)?.includes("execution-dec-project"), true);
   assert.equal(storage.getItem(`nexora.approvalWorkflow.${company.workspaceId}.default_project.decision-a`)?.includes("company"), true);
   assert.equal(storage.getItem(`nexora.approvalWorkflow.${DEMO_WORKSPACE_ID}.default_project.decision-demo`), null);
   assert.equal(storage.getItem(`nexora.collaboration.${expansion.workspaceId}.default_project.decision-a`) != null, true);
   assert.equal(storage.getItem(`nexora.collaboration.${DEMO_WORKSPACE_ID}.default_project.decision-demo`), null);
   assert.equal(storage.getItem(`nexora.decisionMemory.${company.workspaceId}.default_project`)?.includes("memory-company"), true);
-  assert.equal(storage.getItem(`nexora.decisionMemory.${DEMO_WORKSPACE_ID}.default_project`), null);
+  assert.equal(storage.getItem(`nexora.decisionMemory.${DEMO_WORKSPACE_ID}.default_project`)?.includes("memory-demo"), true);
   const scenes = loadSceneOrgSavedScenes(storage).scenes.map((entry) => entry.sceneId).sort();
-  assert.deepEqual(scenes, ["scene-company", "scene-project", "scene-unassigned"]);
+  assert.deepEqual(scenes, ["scene-company", "scene-demo", "scene-project", "scene-unassigned"]);
   assert.equal(listAutomaticMonitoringPolicies(company.workspaceId).length, 1);
   assert.equal(listAutomaticMonitoringPolicies(DEMO_WORKSPACE_ID).length, 0);
   const monitoring = JSON.parse(storage.getItem(DURABLE_MONITORING_STORAGE_KEY) ?? "{}") as {
     policies: { policyId: string }[];
     liveData: { connections: { workspaceId: string }[] };
   };
-  assert.deepEqual(monitoring.policies.map((policy) => policy.policyId), ["policy-company"]);
-  assert.deepEqual(monitoring.liveData.connections.map((connection) => connection.workspaceId), [expansion.workspaceId]);
+  assert.deepEqual(monitoring.policies.map((policy) => policy.policyId), ["policy-demo", "policy-company"]);
+  assert.deepEqual(monitoring.liveData.connections.map((connection) => connection.workspaceId), [DEMO_WORKSPACE_ID, expansion.workspaceId]);
   openProjectDemo();
   assert.deepEqual(fingerprint(company.workspaceId), companyCsv);
   assert.deepEqual(fingerprint(expansion.workspaceId), projectCsv);
@@ -518,8 +520,8 @@ test("manager CSV, decisions, executions, learning, scenes, approval, collaborat
   assert.equal(again.profileId, "project");
   assert.deepEqual(fingerprint(company.workspaceId), companyCsv);
   assert.deepEqual(fingerprint(expansion.workspaceId), projectCsv);
-  assert.equal(decisions.adapter.listDecisions().length, 3);
-  assert.equal(executions.listExecutions().length, 3);
+  assert.equal(decisions.adapter.listDecisions().length, 4);
+  assert.equal(executions.listExecutions().length, 4);
 });
 
 test("reset does not read hidden truth, clear global CSV storage, switch profiles, or expose fixtures", () => {

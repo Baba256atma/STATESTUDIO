@@ -10,6 +10,7 @@ import type {
   OutcomeRegistrySnapshot,
   OutcomeWorkspaceId,
 } from "./outcomeLearningEngineTypes.ts";
+import { demoProfileIdForWrite, demoProfileMutationAllowed, demoProfileVisible } from "../demo-profile/demoProfileOwnership.ts";
 import { validateExecutiveOutcome } from "./outcomeLearningEngineValidation.ts";
 
 const outcomeRegistry = new Map<OutcomeId, ExecutiveOutcome>();
@@ -41,8 +42,27 @@ export function outcomeExists(outcomeId: OutcomeId): boolean {
   return outcomeRegistry.has(outcomeId);
 }
 
+function withDemoProfile(outcome: ExecutiveOutcome): ExecutiveOutcome {
+  const profileId = demoProfileIdForWrite(outcome.outcome.workspaceId);
+  if (!profileId || outcome.outcome.metadata.extensions.demoProfileId) return outcome;
+  return Object.freeze({
+    ...outcome,
+    outcome: Object.freeze({
+      ...outcome.outcome,
+      metadata: Object.freeze({
+        ...outcome.outcome.metadata,
+        extensions: Object.freeze({
+          ...outcome.outcome.metadata.extensions,
+          demoProfileId: profileId,
+        }),
+      }),
+    }),
+  });
+}
+
 export function registerOutcome(outcome: ExecutiveOutcome): OutcomeEngineResult<ExecutiveOutcome> {
-  const validation = validateExecutiveOutcome(outcome);
+  const stamped = withDemoProfile(outcome);
+  const validation = validateExecutiveOutcome(stamped);
   if (!validation.valid) {
     return Object.freeze({
       success: false,
@@ -52,7 +72,7 @@ export function registerOutcome(outcome: ExecutiveOutcome): OutcomeEngineResult<
       readOnly: true as const,
     });
   }
-  if (outcomeRegistry.has(outcome.outcome.outcomeId)) {
+  if (outcomeRegistry.has(stamped.outcome.outcomeId)) {
     return Object.freeze({
       success: false,
       reason: `Duplicate outcome id: ${outcome.outcome.outcomeId}.`,
@@ -79,12 +99,12 @@ export function registerOutcome(outcome: ExecutiveOutcome): OutcomeEngineResult<
       readOnly: true as const,
     });
   }
-  outcomeRegistry.set(outcome.outcome.outcomeId, outcome);
-  indexOutcome(outcome);
+  outcomeRegistry.set(stamped.outcome.outcomeId, stamped);
+  indexOutcome(stamped);
   return Object.freeze({
     success: true,
     reason: "Executive outcome registered.",
-    data: outcome,
+    data: stamped,
     error: null,
     readOnly: true as const,
   });
@@ -100,6 +120,20 @@ export function unregisterOutcome(outcomeId: OutcomeId): OutcomeEngineResult<Out
       error: Object.freeze({
         code: "outcome_not_found",
         message: "Outcome not found.",
+        field: "outcomeId",
+        readOnly: true as const,
+      }),
+      readOnly: true as const,
+    });
+  }
+  if (!demoProfileMutationAllowed(existing.outcome.workspaceId, existing.outcome.metadata.extensions.demoProfileId)) {
+    return Object.freeze({
+      success: false,
+      reason: "Outcome belongs to another demo profile.",
+      data: null,
+      error: Object.freeze({
+        code: "outcome_not_found",
+        message: "Outcome belongs to another demo profile.",
         field: "outcomeId",
         readOnly: true as const,
       }),
@@ -135,6 +169,7 @@ export function getOutcomes(workspaceId?: OutcomeWorkspaceId): readonly Executiv
     [...ids]
       .map((id) => outcomeRegistry.get(id))
       .filter((entry): entry is ExecutiveOutcome => entry !== undefined)
+      .filter((entry) => demoProfileVisible(entry.outcome.workspaceId, entry.outcome.metadata.extensions.demoProfileId))
       .sort((left, right) => left.outcome.outcomeId.localeCompare(right.outcome.outcomeId))
   );
 }

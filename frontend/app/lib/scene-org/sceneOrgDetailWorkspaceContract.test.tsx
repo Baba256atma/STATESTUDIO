@@ -10,8 +10,10 @@ import { NexoraDetailWorkspaceBoundary } from "@/app/executive/nex-mvp/scene-org
 import { createSceneOrgCanonicalReference } from "./sceneOrgRegionContract.ts";
 import {
   SCENE_ORG_DETAIL_AUTHORITY_GUARD,
+  emptySceneOrgDetailReference,
   preserveSceneOrgDetailExitContext,
   projectSceneOrgDetailWorkspace,
+  retainSceneOrgDetailReference,
 } from "./sceneOrgDetailWorkspaceContract.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -105,6 +107,19 @@ test("ORG:6 unavailable Connections or Configuration fail safely", () => {
     "CONNECTIONS",
     "CONFIGURATION",
   ]);
+});
+
+test("Detail drops a foreign source and keeps an authorized one", () => {
+  const company = createSceneOrgCanonicalReference({
+    canonicalId: "csv:npa_t_recert_company:production-csv",
+    kind: "data-source",
+    owner: "RDI source authority",
+  });
+  const manufacturing = ["csv:demo_workspace:manufacturing-production-csv"];
+  assert.equal(retainSceneOrgDetailReference(company, manufacturing), null);
+  assert.equal(retainSceneOrgDetailReference(company, [company.canonicalId])?.canonicalId, company.canonicalId);
+  assert.equal(retainSceneOrgDetailReference(emptySceneOrgDetailReference(), manufacturing), null);
+  assert.equal(retainSceneOrgDetailReference(null, manufacturing), null);
 });
 
 test("ORG:6 introduces no Data Reality, Gate, CSV, Object, or Manager authority", () => {

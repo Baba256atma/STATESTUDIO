@@ -31,8 +31,6 @@ import {
 } from "../data-reality/csvRealDataVerticalSlice.ts";
 import { DEMO_WORKSPACE_ID, type WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
 import { PROJECT_DEMO_PROFILE_ID } from "./demoProfileContract.ts";
-import { retireInactiveDemoProfileImports } from "./demoProfilePackageTransition.ts";
-
 export const projectDemoPackageIdentity = "DEMO-MVP:2/ProjectPackage" as const;
 
 export const PROJECT_DEMO_COMMITTED_AT = "2026-08-31T00:00:00.000Z";
@@ -145,10 +143,6 @@ export function ensureProjectDemoPackage(input: {
   }
 
   const commitInvocationsBefore = getCsvRealDataImportCommitInvocationCount();
-  const switched = retireInactiveDemoProfileImports({
-    workspaceId: input.workspaceId,
-    activeProfileId: PROJECT_DEMO_PROFILE_ID,
-  });
   const retired = retireLegacyDemoCsv(input.workspaceId);
   const files: ProjectDemoPackageFileReport[] = [];
 
@@ -233,7 +227,7 @@ export function ensureProjectDemoPackage(input: {
     workspaceId: input.workspaceId,
     refused: false,
     refusalReason: null,
-    retiredOtherProfileImportIds: switched.removedImportIds,
+    retiredOtherProfileImportIds: Object.freeze([]),
     legacyInventoryRemoved: retired.legacyInventoryRemoved,
     legacyPendingDiscarded: retired.legacyPendingDiscarded,
     commitInvocationsBefore,

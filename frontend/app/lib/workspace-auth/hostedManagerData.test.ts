@@ -16,6 +16,8 @@ import { projectAdvisorDataContext } from "../manager-object/nexoraAdvisorDataCo
 import { createHostedWorkspace } from "./hostedWorkspaceCommands.ts";
 import { authorizeNexoraWorkspace } from "./authorizeNexoraWorkspace.ts";
 import { applyHostedManagerSnapshot } from "./hostedManagerDataClient.ts";
+import { selectAuthorizedHostedWorkspace } from "./hostedActiveWorkspace.ts";
+import { projectHostedWorkspace } from "./hostedWorkspaceRecord.ts";
 import { ownershipShaped, postPending } from "./hostedManagerDataHttp.ts";
 import {
   HOSTED_CSV_MAX_BYTES,
@@ -176,6 +178,8 @@ test("hosted manager data is workspace-owned, temporary, and server-authoritativ
     );
     assert.equal((await readHostedManagerDataSnapshot(companyA.workspaceId)).sources.length, 1);
 
+    const companyProjection = projectHostedWorkspace(companyA);
+    assert.equal(selectAuthorizedHostedWorkspace(companyProjection, [companyProjection]), true);
     const staleText = "Date,Inventory On Hand\n2026-01-01,999999\n";
     const stalePrepared = prepareCsvRealDataImport({
       workspaceId: companyA.workspaceId as typeof companyA.workspaceId,

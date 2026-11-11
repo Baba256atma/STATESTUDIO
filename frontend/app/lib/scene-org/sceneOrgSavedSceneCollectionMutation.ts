@@ -5,10 +5,19 @@
  * Does not own restoration, canonical truth, or a second persistence key.
  */
 
-import { createSceneOrgSavedScene, type SceneOrgSavedScene } from "./sceneOrgWorkspacePlacementContract";
+import { demoProfileMutationAllowed } from "../demo-profile/demoProfileOwnership";
+import {
+  createSceneOrgSavedScene,
+  sameSceneOrgSavedSceneCollection,
+  type SceneOrgSavedScene,
+} from "./sceneOrgWorkspacePlacementContract";
 import { normalizeSavedSceneAccessName } from "./sceneOrgSavedSceneCollectionAccess";
 import {
+  commitSceneOrgSavedScene,
+  deleteSceneOrgSavedScene,
+  loadSceneOrgSavedScenes,
   persistSceneOrgSavedScenes,
+  readSceneContentRevision,
   type SceneOrgSavedScenePersistResult,
   type SceneOrgSavedSceneStorage,
 } from "./sceneOrgSavedSceneDurability";
@@ -22,6 +31,7 @@ export type SceneOrgSavedSceneRenameStatus =
   | "not-found"
   | "invalid-name"
   | "name-conflict"
+  | "revision-conflict"
   | "persistence-failed";
 
 export type SceneOrgSavedSceneDeleteStatus =
@@ -89,6 +99,7 @@ export function applySceneOrgSavedSceneCollectionMutation(input: {
   readonly persist?: PersistFn;
   readonly storage?: SceneOrgSavedSceneStorage | null;
   readonly managerWorkspaceId?: string | null;
+  readonly ownerDeckId?: string | null;
 }): SceneOrgSavedSceneMutationResult {
   const persist = input.persist ?? persistSceneOrgSavedScenes;
   const scenes = input.scenes;
@@ -116,8 +127,51 @@ export function applySceneOrgSavedSceneCollectionMutation(input: {
       scene: null,
     });
   }
+  const requestedDeckId = typeof input.ownerDeckId === "string" ? input.ownerDeckId.trim() : "";
+  if (requestedDeckId.length > 0 && current.ownerDeckId !== requestedDeckId) {
+    return freezeResult({
+      kind: input.mutation.kind,
+      status: "not-found",
+      sceneId,
+      scenes,
+      scene: null,
+    });
+  }
+  if (!demoProfileMutationAllowed(current.managerWorkspaceId, current.demoProfileId)) {
+    return freezeResult({
+      kind: input.mutation.kind,
+      status: "not-found",
+      sceneId,
+      scenes,
+      scene: null,
+    });
+  }
+
+  const storedScene = loadSceneOrgSavedScenes(input.storage).scenes.find((scene) => scene.sceneId === sceneId) ?? null;
 
   if (input.mutation.kind === "delete") {
+    if (input.persist == null && storedScene) {
+      const removed = deleteSceneOrgSavedScene({
+        sceneId,
+        expectedRevision: readSceneContentRevision(current),
+      }, input.storage);
+      if (!removed.persisted || !removed.scenes) {
+        return freezeResult({
+          kind: "delete",
+          status: removed.reason === "revision-conflict" ? "revision-conflict" : "persistence-failed",
+          sceneId,
+          scenes: removed.scenes ?? scenes,
+          scene: removed.current ?? current,
+        });
+      }
+      return freezeResult({
+        kind: "delete",
+        status: "deleted",
+        sceneId,
+        scenes: removed.scenes,
+        scene: null,
+      });
+    }
     const next = scenes.filter((scene) => scene.sceneId !== sceneId);
     return commit(
       scenes,
@@ -154,7 +208,11 @@ export function applySceneOrgSavedSceneCollectionMutation(input: {
   const conflict = scenes.some(
     (scene) =>
       scene.sceneId !== sceneId &&
-      scene.managerWorkspaceId === current.managerWorkspaceId &&
+      sameSceneOrgSavedSceneCollection(scene, {
+        managerWorkspaceId: current.managerWorkspaceId ?? null,
+        demoProfileId: current.demoProfileId ?? null,
+        ownerDeckId: current.ownerDeckId ?? null,
+      }) &&
       normalizeSavedSceneAccessName(scene.name) === normalized,
   );
   if (conflict) {
@@ -169,7 +227,30 @@ export function applySceneOrgSavedSceneCollectionMutation(input: {
   const renamed = createSceneOrgSavedScene({
     ...current,
     name,
+    revision: readSceneContentRevision(current),
   });
+  if (input.persist == null && storedScene) {
+    const written = commitSceneOrgSavedScene({
+      scene: renamed,
+      expectedRevision: readSceneContentRevision(current),
+    }, input.storage);
+    if (!written.persisted || !written.current || !written.scenes) {
+      return freezeResult({
+        kind: "rename",
+        status: written.reason === "revision-conflict" ? "revision-conflict" : "persistence-failed",
+        sceneId,
+        scenes: written.scenes ?? scenes,
+        scene: written.current ?? current,
+      });
+    }
+    return freezeResult({
+      kind: "rename",
+      status: "renamed",
+      sceneId,
+      scenes: written.scenes,
+      scene: written.current,
+    });
+  }
   const next = scenes.map((scene) =>
     scene.sceneId === sceneId ? renamed : scene,
   );

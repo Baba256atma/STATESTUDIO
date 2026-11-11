@@ -5,11 +5,16 @@ import {
 } from "./sceneOrgRegionContract";
 import {
   createSceneOrgSavedScene,
+  parseSceneOrgCausalSelection,
   savedSceneManagerWorkspaceId,
   SCENE_ORG_SAVED_SCENE_KINDS,
   type SceneOrgSavedScene,
 } from "./sceneOrgWorkspacePlacementContract";
+import { parseSceneOrgSavedSceneSpatialState } from "./sceneOrgSavedSceneSpatialState";
+import { parseStagePresentationView } from "./organizationalSolarView";
+import { parseCanonicalTopologyPresentation } from "./canonicalTopologyEngine";
 import { SCENE_ORG_VISIBILITY_LEVELS } from "./sceneOrgVisibilityContract";
+import { evaluateWorkspaceAuthority, requireWorkspaceMutationCoordination } from "../workspace/workspaceAuthorityFence";
 
 export const sceneOrgSavedSceneDurabilityIdentity =
   "NPA-T SAVED-SCENE-DURABILITY:1/LocalSavedSceneMetadata" as const;
@@ -36,8 +41,20 @@ export type SceneOrgSavedSceneLoadResult = Readonly<{
 
 export type SceneOrgSavedScenePersistResult = Readonly<{
   persisted: boolean;
-  reason: "persisted" | "unavailable" | "write-failed";
+  reason: "persisted" | "unavailable" | "write-failed" | "revision-conflict";
+  scenes?: readonly SceneOrgSavedScene[];
+  current?: SceneOrgSavedScene;
 }>;
+
+export const SAVED_SCENE_STALE_MESSAGE =
+  "This Saved Scene was changed in another tab. Review the latest version before saving again." as const;
+
+/** Missing revision metadata is revision 1. This does not invent earlier edit events. */
+export function readSceneContentRevision(scene: Pick<SceneOrgSavedScene, "revision">): number {
+  return typeof scene.revision === "number" && Number.isInteger(scene.revision) && scene.revision >= 1
+    ? scene.revision
+    : 1;
+}
 
 type DurableEnvelope = Readonly<{
   identity: typeof sceneOrgSavedSceneDurabilityIdentity;
@@ -130,6 +147,15 @@ function parseScene(value: unknown): SceneOrgSavedScene | null {
       kind: value.kind as "SAVED" | "DEFAULT_MANAGER",
       sceneIntentType: value.sceneIntentType,
       managerWorkspaceId: savedSceneManagerWorkspaceId(value.managerWorkspaceId),
+      demoProfileId:
+        value.demoProfileId === "manufacturing" || value.demoProfileId === "project"
+          ? value.demoProfileId
+          : null,
+      ownerDeckId: typeof value.ownerDeckId === "string" ? value.ownerDeckId : null,
+      spatialState: parseSceneOrgSavedSceneSpatialState(value.spatialState),
+      stageView: parseStagePresentationView(value.stageView),
+      causalSelection: parseSceneOrgCausalSelection(value.causalSelection),
+      topologyPresentation: parseCanonicalTopologyPresentation(value.topologyPresentation),
       canonicalReferences: references as NonNullable<(typeof references)[number]>[],
       layout: {
         presentationDepth: layout.presentationDepth as "minimum" | "report" | "operation",
@@ -138,6 +164,7 @@ function parseScene(value: unknown): SceneOrgSavedScene | null {
         detailWorkspace: layout.detailWorkspace as "closed" | "open",
       },
       visibility,
+      revision: typeof value.revision === "number" ? value.revision : null,
     });
   } catch {
     return null;
@@ -181,7 +208,9 @@ export function parseSceneOrgSavedScenes(raw: string): SceneOrgSavedSceneLoadRes
   let rejectedRecords = 0;
   for (const candidate of parsed.scenes) {
     const scene = parseScene(candidate);
-    const ownerKey = scene?.managerWorkspaceId ?? "";
+    const ownerKey = scene
+      ? `${scene.managerWorkspaceId ?? ""}\0${scene.demoProfileId ?? ""}\0${scene.ownerDeckId ?? ""}`
+      : "";
     if (
       !scene ||
       seenIds.has(scene.sceneId) ||
@@ -298,10 +327,150 @@ export function persistSceneOrgSavedScenes(
   storage: SceneOrgSavedSceneStorage | null = browserStorage(),
 ): SceneOrgSavedScenePersistResult {
   if (!storage) return Object.freeze({ persisted: false, reason: "unavailable" });
+  if (requireWorkspaceMutationCoordination()) return Object.freeze({ persisted: false, reason: "write-failed" });
+  const loaded = loadSceneOrgSavedScenes(storage);
+  if (loaded.status === "loaded") {
+    const previous = new Map(loaded.scenes.map((scene) => [scene.sceneId, JSON.stringify(scene)]));
+    for (const scene of scenes) {
+      if (previous.get(scene.sceneId) === JSON.stringify(scene)) continue;
+      const owner = savedSceneManagerWorkspaceId(scene.managerWorkspaceId);
+      if (owner && !evaluateWorkspaceAuthority(owner).ok) {
+        return Object.freeze({ persisted: false, reason: "write-failed" });
+      }
+    }
+  }
   try {
     storage.setItem(SCENE_ORG_SAVED_SCENE_STORAGE_KEY, serializeSceneOrgSavedScenes(scenes));
     return Object.freeze({ persisted: true, reason: "persisted" });
   } catch {
     return Object.freeze({ persisted: false, reason: "write-failed" });
   }
+}
+
+function sceneContentKey(scene: SceneOrgSavedScene): string {
+  const { revision: _revision, ...content } = scene;
+  return JSON.stringify(content);
+}
+
+function withSceneRevision(scene: SceneOrgSavedScene, revision: number): SceneOrgSavedScene {
+  return createSceneOrgSavedScene({ ...scene, revision });
+}
+
+/**
+ * Writes one Scene onto the latest collection.
+ * expectedRevision 0 creates a Scene that is not stored yet.
+ * An update must name the revision the caller read. A mismatch writes nothing.
+ */
+export function commitSceneOrgSavedScene(
+  input: Readonly<{ scene: SceneOrgSavedScene; expectedRevision: number }>,
+  storage: SceneOrgSavedSceneStorage | null = browserStorage(),
+): SceneOrgSavedScenePersistResult {
+  if (!storage) return Object.freeze({ persisted: false, reason: "unavailable" });
+  const loaded = loadSceneOrgSavedScenes(storage);
+  if (loaded.status === "invalid" || loaded.status === "incompatible" || loaded.status === "unavailable") {
+    return Object.freeze({ persisted: false, reason: "write-failed" });
+  }
+  const stored = loaded.scenes.find((scene) => scene.sceneId === input.scene.sceneId) ?? null;
+  if (!stored) {
+    if (input.expectedRevision !== 0) {
+      return Object.freeze({ persisted: false, reason: "revision-conflict" });
+    }
+    const created = withSceneRevision(input.scene, 1);
+    const written = persistSceneOrgSavedScenes(Object.freeze([...loaded.scenes, created]), storage);
+    return written.persisted
+      ? Object.freeze({ ...written, scenes: Object.freeze([...loaded.scenes, created]), current: created })
+      : written;
+  }
+  if (sceneContentKey(stored) === sceneContentKey(input.scene)) {
+    return Object.freeze({ persisted: true, reason: "persisted", scenes: loaded.scenes, current: stored });
+  }
+  if (readSceneContentRevision(stored) !== input.expectedRevision) {
+    return Object.freeze({ persisted: false, reason: "revision-conflict", current: stored, scenes: loaded.scenes });
+  }
+  const next = withSceneRevision(input.scene, input.expectedRevision + 1);
+  const scenes = Object.freeze(loaded.scenes.map((scene) => scene.sceneId === next.sceneId ? next : scene));
+  const written = persistSceneOrgSavedScenes(scenes, storage);
+  return written.persisted
+    ? Object.freeze({ ...written, scenes, current: next })
+    : written;
+}
+
+/** Removes one Scene when the caller read its current revision. Other Scenes stay. */
+export function deleteSceneOrgSavedScene(
+  input: Readonly<{ sceneId: string; expectedRevision: number }>,
+  storage: SceneOrgSavedSceneStorage | null = browserStorage(),
+): SceneOrgSavedScenePersistResult {
+  if (!storage) return Object.freeze({ persisted: false, reason: "unavailable" });
+  const loaded = loadSceneOrgSavedScenes(storage);
+  if (loaded.status !== "loaded") return Object.freeze({ persisted: false, reason: "write-failed" });
+  const stored = loaded.scenes.find((scene) => scene.sceneId === input.sceneId) ?? null;
+  if (!stored) return Object.freeze({ persisted: true, reason: "persisted", scenes: loaded.scenes });
+  if (readSceneContentRevision(stored) !== input.expectedRevision) {
+    return Object.freeze({ persisted: false, reason: "revision-conflict", current: stored, scenes: loaded.scenes });
+  }
+  const scenes = Object.freeze(loaded.scenes.filter((scene) => scene.sceneId !== input.sceneId));
+  const written = persistSceneOrgSavedScenes(scenes, storage);
+  return written.persisted ? Object.freeze({ ...written, scenes }) : written;
+}
+
+/**
+ * Applies the caller's scenes onto the latest stored collection.
+ * A scene id absent from the caller stays. A changed scene must carry the
+ * revision the caller read. Conflicting edits of that same scene are rejected.
+ */
+export function mergePersistSceneOrgSavedScenes(
+  scenes: readonly SceneOrgSavedScene[],
+  storage: SceneOrgSavedSceneStorage | null = browserStorage(),
+): SceneOrgSavedScenePersistResult {
+  const loaded = storage ? loadSceneOrgSavedScenes(storage) : null;
+  if (!loaded || loaded.status !== "loaded") {
+    const created = scenes.map((scene) => withSceneRevision(scene, readSceneContentRevision(scene)));
+    const written = persistSceneOrgSavedScenes(Object.freeze(created), storage);
+    return written.persisted ? Object.freeze({ ...written, scenes: Object.freeze(created) }) : written;
+  }
+  const storedById = new Map(loaded.scenes.map((scene) => [scene.sceneId, scene]));
+  const merged = [...loaded.scenes];
+  let current: SceneOrgSavedScene | undefined;
+  for (const incoming of scenes) {
+    const stored = storedById.get(incoming.sceneId);
+    if (!stored) {
+      const created = withSceneRevision(incoming, 1);
+      merged.push(created);
+      storedById.set(created.sceneId, created);
+      current = created;
+      continue;
+    }
+    if (sceneContentKey(stored) === sceneContentKey(incoming)) continue;
+    if (readSceneContentRevision(incoming) !== readSceneContentRevision(stored)) {
+      return Object.freeze({
+        persisted: false,
+        reason: "revision-conflict",
+        current: stored,
+        scenes: loaded.scenes,
+      });
+    }
+    const next = withSceneRevision(incoming, readSceneContentRevision(stored) + 1);
+    const index = merged.findIndex((scene) => scene.sceneId === incoming.sceneId);
+    merged[index] = next;
+    storedById.set(next.sceneId, next);
+    current = next;
+  }
+  const written = persistSceneOrgSavedScenes(Object.freeze(merged), storage);
+  return written.persisted
+    ? Object.freeze({ ...written, scenes: Object.freeze(merged), ...(current ? { current } : {}) })
+    : written;
+}
+
+/** Removes one Workspace's Scenes. Other Workspaces and Demo records stay. */
+export function forgetWorkspaceSavedScenes(
+  workspaceId: string,
+  storage: SceneOrgSavedSceneStorage | null = browserStorage(),
+): boolean {
+  const owner = savedSceneManagerWorkspaceId(workspaceId);
+  if (!owner || !storage) return false;
+  const loaded = loadSceneOrgSavedScenes(storage);
+  if (loaded.status !== "loaded") return false;
+  const next = loaded.scenes.filter((scene) => scene.managerWorkspaceId !== owner);
+  if (next.length === loaded.scenes.length) return false;
+  return persistSceneOrgSavedScenes(next, storage).persisted;
 }

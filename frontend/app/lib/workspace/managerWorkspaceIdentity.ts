@@ -15,6 +15,7 @@ import { BUSINESS_PROJECT_CONTEXT_BOUNDARY } from "../business-context-awareness
 import { NMI_AUTHORITY_BOUNDARY } from "../nmi/nmiAuthorityBoundary.ts";
 import { NMI_FOUNDATION_CONTRACT } from "../nmi/nmiContract.ts";
 import {
+  BUSINESS_DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_ID,
   isLegacyWorkflowWorkspaceIdentifier,
   isManagerWorkspaceKind,
@@ -44,6 +45,7 @@ export type WorkspaceIdentifierClass =
   | "manager_workspace"
   | "legacy_workflow"
   | "demo_test"
+  | "business_demo"
   | "unclassified_registry"
   | "unknown";
 
@@ -116,6 +118,7 @@ export function classifyWorkspaceIdentifier(value: unknown): WorkspaceIdentifier
   if (!workspaceId) return "unknown";
   if (isLegacyWorkflowWorkspaceIdentifier(workspaceId)) return "legacy_workflow";
   if (workspaceId === DEMO_WORKSPACE_ID) return "demo_test";
+  if (workspaceId === BUSINESS_DEMO_WORKSPACE_ID) return "business_demo";
   const workspace = getWorkspaceById(workspaceId);
   if (!workspace) return "unknown";
   if (isManagerWorkspaceKind(workspace.kind)) return "manager_workspace";
@@ -249,6 +252,12 @@ export function resolveStageActiveManagerWorkspaceId(): WorkspaceId | null {
     active.activeWorkspaceId === DEMO_WORKSPACE_ID
   ) {
     return DEMO_WORKSPACE_ID;
+  }
+  if (
+    active.classification === "business_demo" &&
+    active.activeWorkspaceId === BUSINESS_DEMO_WORKSPACE_ID
+  ) {
+    return BUSINESS_DEMO_WORKSPACE_ID;
   }
   return null;
 }
