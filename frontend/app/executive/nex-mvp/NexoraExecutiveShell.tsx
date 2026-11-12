@@ -482,6 +482,15 @@ import {
   decisionDomainRevision,
   subscribeDecisionDomain,
 } from "@/app/lib/scene-org/canonicalDecisionDomain";
+import {
+  causalInvestigationRevision,
+  subscribeCausalInvestigations,
+} from "@/app/lib/scene-org/canonicalCausalInvestigationDomain";
+import {
+  planExecutivePresentationAction,
+  routeExecutivePresentationActions,
+  type ExecutiveActionResolutionContext,
+} from "@/app/lib/nex-mvp/executiveActionRouting";
 import { previewDecisionImpact } from "@/app/lib/scene-org/decisionImpactPreview";
 import {
   analyzeCanonicalTopology,
@@ -1314,6 +1323,9 @@ export function NexoraExecutiveShell({
     (stageViewSession.demoProfileId ?? null) === spatialContextDemo
       ? stageViewSession.view
       : STAGE_PRESENTATION_VIEW;
+  const domainFocusBoundary = `${dataWorkspaceId}\0${activeDeckId ?? ""}`;
+  const [domainFocus, setDomainFocus] = useState<{ boundary: string; recordId: string } | null>(null);
+  const activeDomainFocus = domainFocus?.boundary === domainFocusBoundary ? domainFocus : null;
   const topologyContextKey = `${dataWorkspaceId}:${spatialContextDeckId ?? ""}`;
   const [topologySelection, setTopologySelection] = useState<{
     key: string;
@@ -2145,6 +2157,11 @@ export function NexoraExecutiveShell({
     decisionDomainRevision,
     () => 0,
   );
+  const causalInvestigationRevisionValue = useSyncExternalStore(
+    subscribeCausalInvestigations,
+    causalInvestigationRevision,
+    () => 0,
+  );
   const [impactRequest, setImpactRequest] = useState<{ decisionId: string; depth: number } | null>(null);
   useEffect(() => {
     setImpactRequest(null);
@@ -2418,6 +2435,33 @@ export function NexoraExecutiveShell({
     educationalCenter: educationalCenterSubject,
   });
 
+  const executiveActionContext = useMemo((): ExecutiveActionResolutionContext => {
+    const sourceObjectId = focusedSubject?.id ?? null;
+    const sourceObject = sourceObjectId == null
+      ? null
+      : dataRealityExperience.catalog.objects.find((entry) => entry.id === sourceObjectId) ?? null;
+    return Object.freeze({
+      workspaceId: dataWorkspaceId,
+      deckId: activeDeckId,
+      demoProfileId: isDemoProfileId(storedDemoProfile) ? storedDemoProfile : null,
+      sourceObjectId,
+      sourceInActiveCatalog: sourceObjectId != null && (
+        sourceObject != null ||
+        dataRealityExperience.catalog.contextSubjects.some((entry) => entry.id === sourceObjectId)
+      ),
+      sourceWorkspaceId: sourceObject?.managerWorkspaceId ?? null,
+      recordGeneration: causalInvestigationRevisionValue + decisionDomainRevisionValue,
+    });
+  }, [
+    activeDeckId,
+    causalInvestigationRevisionValue,
+    dataRealityExperience.catalog,
+    dataWorkspaceId,
+    decisionDomainRevisionValue,
+    focusedSubject?.id,
+    storedDemoProfile,
+  ]);
+
   const presentationViewModel = useMemo(() => {
     const base = deriveNexoraMVPPresentationViewModel({
       presentationState: interaction.presentationState,
@@ -2427,10 +2471,13 @@ export function NexoraExecutiveShell({
       subjectKind: focusedSubject?.kind ?? null,
       subjectLabel: focusedSubject?.label ?? null,
     });
-    const availableActions = resolveNexoraMVPFlowPresentationActions(
-      base.availableActions,
-      flowDomain,
-      focusedSubject?.id ?? null,
+    const availableActions = routeExecutivePresentationActions(
+      resolveNexoraMVPFlowPresentationActions(
+        base.availableActions,
+        flowDomain,
+        focusedSubject?.id ?? null,
+      ),
+      executiveActionContext,
     );
     const resolved = Object.freeze({
       ...base,
@@ -2452,7 +2499,7 @@ export function NexoraExecutiveShell({
       resolved,
       activeBinding,
     );
-  }, [dataRealityExperience, focusedSubject, flowDomain, interaction]);
+  }, [dataRealityExperience, executiveActionContext, focusedSubject, flowDomain, interaction]);
 
   const advisorBridge = useMemo(
     () =>
@@ -4164,6 +4211,27 @@ export function NexoraExecutiveShell({
 
   const onPresentationAction = useCallback(
     (action: NexoraMVPPresentationAvailableAction) => {
+      const domainPlan = planExecutivePresentationAction(action, executiveActionContext);
+      if (domainPlan.kind === "rejected") return;
+      if (domainPlan.kind === "open-investigation") {
+        publishCausalInvestigationUiSelection(domainPlan.workspaceId, domainPlan.deckId, {
+          investigationId: domainPlan.investigationId,
+          hypothesisId: null,
+          canonicalObjectId: domainPlan.canonicalObjectId,
+        });
+        setStagePresentationView(CAUSAL_INVESTIGATION_VIEW);
+        onPresentationStateChange("minimum");
+        return;
+      }
+      if (domainPlan.kind === "open-decision" || domainPlan.kind === "open-scenario") {
+        setDomainFocus({
+          boundary: `${domainPlan.workspaceId}\0${domainPlan.deckId}`,
+          recordId: domainPlan.kind === "open-decision" ? domainPlan.decisionId : domainPlan.scenarioId,
+        });
+        setStagePresentationView(DECISION_SOLAR_VIEW);
+        onPresentationStateChange("minimum");
+        return;
+      }
       if (!action.available) return;
       let accepted = false;
       if (action.kind === "select-subject" && action.targetSubjectId) {
@@ -4189,7 +4257,7 @@ export function NexoraExecutiveShell({
       }
       if (accepted) onPresentationStateChange("minimum");
     },
-    [applyFlowAction, onPresentationStateChange, onSelectSubject],
+    [applyFlowAction, executiveActionContext, onPresentationStateChange, onSelectSubject, setStagePresentationView],
   );
 
   const onIntelligenceAction = useCallback(
@@ -5762,6 +5830,7 @@ export function NexoraExecutiveShell({
                     <NexoraDecisionDomainControls
                       workspaceId={dataWorkspaceId}
                       deckId={activeDeckId}
+                      focusRecordId={activeDomainFocus?.recordId ?? null}
                       onInspect={setSelectedDataObjectId}
                     />
                   ) : null}

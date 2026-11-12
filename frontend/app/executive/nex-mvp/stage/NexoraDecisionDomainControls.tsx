@@ -26,6 +26,8 @@ type Props = Readonly<{
   workspaceId: string;
   deckId: string;
   onInspect: (id: string) => void;
+  /** Navigation focus. Display only; approval stays on the explicit submit buttons. */
+  focusRecordId?: string | null;
 }>;
 
 export type DecisionSelectionDraft = {
@@ -49,7 +51,7 @@ export function decisionSelectionForBoundary(selection: DecisionSelectionDraft, 
 }
 
 /** Manager authoring for the decision domain. Selection does not write records. */
-export function NexoraDecisionDomainControls({ workspaceId, deckId, onInspect }: Props) {
+export function NexoraDecisionDomainControls({ workspaceId, deckId, onInspect, focusRecordId = null }: Props) {
   useSyncExternalStore(subscribeDecisionDomain, decisionDomainRevision, () => 0);
   useSyncExternalStore(subscribeCanonicalObjects, canonicalObjectRevision, () => 0);
   useSyncExternalStore(subscribeCausalInvestigations, causalInvestigationRevision, () => 0);
@@ -69,6 +71,12 @@ export function NexoraDecisionDomainControls({ workspaceId, deckId, onInspect }:
   const goals = listDecisionGoals(workspaceId, deckId);
   const scenarios = listDecisionScenarios(workspaceId, deckId);
   const decisions = listManagerDecisions(workspaceId, deckId);
+  const requestedFocus = focusRecordId ?? "";
+  const focusIsVisible = requestedFocus.length > 0 && (
+    decisions.some((decision) => decision.decisionId === requestedFocus && decision.lifecycleStatus !== "DELETED") ||
+    scenarios.some((scenario) => scenario.scenarioId === requestedFocus && scenario.lifecycleStatus !== "DELETED")
+  );
+  const displayedId = focusIsVisible ? requestedFocus : selectedId;
   const plans = listExecutionPlans(workspaceId, deckId);
   const objects = listDeckCanonicalObjects(workspaceId, deckId);
   const report = (result: { ok: boolean; reason?: string }, success: string) => {
@@ -202,7 +210,7 @@ export function NexoraDecisionDomainControls({ workspaceId, deckId, onInspect }:
           const id = "goalId" in record ? record.goalId : "scenarioId" in record ? record.scenarioId : "decisionId" in record ? record.decisionId : record.planId;
           return (
             <li key={id}>
-              <button type="button" data-testid={`nexora-decision-record-${id}`} data-lifecycle={record.lifecycleStatus} onClick={() => { setSelectedId(id); onInspect(id); }}>
+              <button type="button" data-testid={`nexora-decision-record-${id}`} data-lifecycle={record.lifecycleStatus} data-focused={displayedId === id ? "true" : "false"} onClick={() => { setSelectedId(id); onInspect(id); }}>
                 {record.name} · {record.lifecycleStatus}
               </button>
             </li>
@@ -210,7 +218,17 @@ export function NexoraDecisionDomainControls({ workspaceId, deckId, onInspect }:
         })}
       </ul>
       {(() => {
-        const scenario = scenarios.find((entry) => entry.scenarioId === selectedId);
+        const decision = decisions.find((entry) => entry.decisionId === displayedId);
+        if (decision) {
+          return (
+            <article data-testid="nexora-decision-review-detail">
+              <p>{decision.name} · {decision.lifecycleStatus}</p>
+              <p>{decision.description}</p>
+              <p>Review does not approve or reject this Decision.</p>
+            </article>
+          );
+        }
+        const scenario = scenarios.find((entry) => entry.scenarioId === displayedId);
         if (!scenario) return null;
         const origin = scenario.causalOrigin;
         const currency = assessScenarioEvidenceCurrency({ workspaceId, deckId, scenarioId: scenario.scenarioId });

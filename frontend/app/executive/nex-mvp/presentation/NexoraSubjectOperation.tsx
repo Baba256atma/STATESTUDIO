@@ -13,6 +13,14 @@ type Props = {
   readonly onAction: (action: NexoraMVPPresentationAvailableAction) => void;
 };
 
+/** Same gate the Actions button uses. An unavailable action does not call the handler. */
+export function activateSubjectOperation(
+  action: NexoraMVPPresentationAvailableAction,
+  onAction: (action: NexoraMVPPresentationAvailableAction) => void,
+): void {
+  if (action.available) onAction(action);
+}
+
 /**
  * Operation action surface — only real or explicitly disabled actions.
  */
@@ -94,6 +102,8 @@ export function NexoraSubjectOperation({
             type="button"
             data-testid={`nexora-subject-action-${action.id}`}
             data-action-available={action.available ? "true" : "false"}
+            data-domain-action={action.domainAction?.identity}
+            data-domain-target={action.domainAction?.targetId}
             disabled={!action.available}
             title={
               action.available
@@ -101,7 +111,7 @@ export function NexoraSubjectOperation({
                 : (action.disabledReason ?? "Unavailable")
             }
             onClick={() => {
-              if (action.available) onAction(action);
+              activateSubjectOperation(action, onAction);
             }}
             style={{
               textAlign: "left",

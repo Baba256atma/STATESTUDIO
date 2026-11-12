@@ -89,6 +89,19 @@ export type NexoraMVPPresentationCapability = {
   readonly operation: boolean;
 };
 
+export type ExecutiveDomainActionIdentity =
+  | "investigate-problem"
+  | "review-decision"
+  | "open-scenario";
+
+/** Resolved domain route. Presentation fixture ids are not stored here. */
+export type ExecutiveDomainActionAttachment = {
+  readonly identity: ExecutiveDomainActionIdentity;
+  readonly status: "available" | "unavailable";
+  readonly targetId?: string;
+  readonly navigation?: "nexocause" | "decision-review" | "scenario";
+};
+
 export type NexoraMVPPresentationAvailableAction = {
   readonly id: string;
   readonly label: string;
@@ -97,6 +110,7 @@ export type NexoraMVPPresentationAvailableAction = {
   readonly disabledReason?: string;
   readonly targetSubjectId?: string;
   readonly panelKind?: NexoraMVPPresentationActionFixture["panelKind"];
+  readonly domainAction?: ExecutiveDomainActionAttachment;
 };
 
 export type NexoraMVPPresentationViewModel = {
@@ -177,7 +191,7 @@ export function resolveNexoraMVPPresentationCapability(
     return Object.freeze({
       minimum: true,
       report: subjectId != null,
-      operation: false,
+      operation: subjectId != null && subjectId.startsWith("org:"),
     });
   }
   return Object.freeze({
